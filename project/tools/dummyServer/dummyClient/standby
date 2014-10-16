@@ -1,0 +1,3 @@
+#!/bin/bash
+echo ${1}
+rsb-sendcpp0.11 /tabletop/BB"${1}"/standby ./rsb.conf

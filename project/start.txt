@@ -1,0 +1,13 @@
+This is the MuRoX dokuwiki.
+It containes the documentation of the Project and all its components
+
+It follows this structure:
+
+  * [[act:start|act]]: Action models of the robots
+  * [[sense:start|sense]]: Sense models of the robots
+  * [[process:start|process]]: Processes of the robots
+  * [[sandbox:start|sandbox]]: Developement playground
+  * [[includes:start|includes]]: Programm includes
+  * [[tools:start|tools]]: Tools for working with the project
+  * [[demo:start|demo]]: Demos and the manual how to start
+  * [[wiki:welcome|wiki]]: DokuWiki manuals

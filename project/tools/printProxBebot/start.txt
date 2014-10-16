@@ -1,0 +1,5 @@
+This program compiles with the cross compiler environment for the robot.
+It just captures the IR-Data and print it to the screen.
+
+Compile: cmake . && make
+Run: sense_ir -f 8  # Where -f <arg> is the polling frequency of the program

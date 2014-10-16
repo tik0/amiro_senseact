@@ -1,0 +1,2 @@
+#!/bin/bash
+rsb-sendcpp0.11 /tabletop/BB"${1}"/homing ./rsb.conf
