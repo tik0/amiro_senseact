@@ -7,12 +7,6 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 project ("${PROJECT_NAME}")
 
 
-# Read the pkg-config modules
-find_package(PkgConfig)
-
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-
 # Not needed. The libraries will be set manualy
 # link_directories(
 #     ${RSB_LIBRARY_DIRS}
@@ -22,8 +16,6 @@ pkg_check_modules(RSC rsc0.11)
 
 # Set the include pathe
 include_directories(
-    ${RSB_INCLUDE_DIRS}                                             # RSB
-    ${RSC_INCLUDE_DIRS}                                             # RSC
     "../../includes"                                                # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes

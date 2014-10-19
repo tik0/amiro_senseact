@@ -15,9 +15,6 @@
 // Reading inScope and outScope
 // #include <ioFlags.hpp>
 
-// Reading inScope, outScope and freq
-#include <ofFlags.hpp>
-
 #include <ControllerAreaNetwork.h>
 
 #include <vector>
