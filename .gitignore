@@ -1,0 +1,32 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+lib
+
+# Eclipse Project files
+.project
+.cproject
+.settings
+
+# Shadow Files
+*~
+
+# CMake files
+CMakeCache.txt
+*.cmake
+CMakeFiles
+Makefile
+build
+
+# Backupfiles
+*backup*
