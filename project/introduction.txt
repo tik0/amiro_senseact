@@ -9,7 +9,9 @@ These conceptual and implementation properties hopefully allow RSB to scale acro
 
 ====== Installation ======
 
-To use RSB on your own Debian based machine, you need to follow the instruction for the [[http://docs.cor-lab.de//rsb-manual/trunk/html/install-binary.html|pre-generated packages]]. As an alternative you can also build the whole system from source with the following bash script:
+To use RSB on your own Debian based machine, you need to follow the instruction for the [[http://docs.cor-lab.de//rsb-manual/trunk/html/install-binary.html|pre-generated packages]]. To use the [[http://docs.cor-lab.de//rst-manual/trunk/html/index.html|Robotic System Types]], which enhance the RSB installation with numerous extra datatypes which can be send, you also have to install these [[http://docs.cor-lab.de//rst-manual/trunk/html/install.html#debian-packages|pre-generated packages]].
+
+As an alternative you can also build the whole system from source with the following bash script:
 
   #!/bin/bash
   echo "Installing rsb"
@@ -105,3 +107,20 @@ To use RSB on your own Debian based machine, you need to follow the instruction 
 ====== First Steps ======
 
 After installation you have to make yourself familiar with the common [[http://docs.cor-lab.de//rsb-manual/trunk/html/examples.html|examples]].
+Below you'll find a list of links to become familiar with the RSB habitat: 
+
+   * [[http://docs.cor-lab.de/|Project overview]]
+   * [[http://docs.cor-lab.de//rsb-manual/trunk/html/index.html|RSB Project page]]
+
+How to go on:
+  - **Installation** of [[http://docs.cor-lab.de//rsb-manual/trunk/html/install-binary.html#debian-packages|Precompiled Debian packages]] and cloning of the [[http://docs.cor-lab.de//rsb-manual/trunk/html/install-source.html|RSB Sources]]
+  - Work through the [[http://docs.cor-lab.de//rsb-manual/trunk/html/examples.html|RSB Tutorials]]
+  - Check the **examples** in the source folder: <c++ source folder of RSB>/examples 
+  - To send self defined messages, check out the http://docs.cor-lab.de//rsb-manual/trunk/html/examples-writing-converters.html and [[https://developers.google.com/protocol-buffers/docs/cpptutorial|Protobuffer Examples]] 
+  - Check the **tutorials** on the [[http://docs.cor-lab.de/|Project overview]] site
+====== Coding Agreements ======
+
+We us in all our projects the [[http://google-styleguide.googlecode.com/svn/trunk/cppguide.html|Google Code Style]].
+To check whether your code meets the Google conventions, check out the [[http://google-styleguide.googlecode.com/svn/trunk/cppguide.html#cpplint|cpplint.py]] tool.
+
+**NOTE**: We use camel case for naming the variables.

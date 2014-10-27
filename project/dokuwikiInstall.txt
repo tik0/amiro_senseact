@@ -1,0 +1,26 @@
+====== DokuWiki Setup ======
+
+On a Linux system you need to install at least apache2 and php5:
+  $ sudo su
+  # apt-get install apache2 libapache2-mod-php5
+
+Add your user to the www-data group and vice versa
+  $ sudo su
+  # usermod -a -G www-data <yourUserName>
+  # usermod -a -G <yourGroupName> www-data
+
+
+Link the html folder to the project folder
+  $ sudo su
+  # rm -rf /var/www/html
+  # ln -s <your/project/root>/project /var/www/html
+  
+Link the dokuwiki content folder to the project folder
+  $ rm -rf <your/project/root>/dokuwiki/data/pages
+  $ ln -s  <your/project/root>/project <your/project/root>/dokuwiki/data/pages
+  
+===== Hacking the Core for mixed case names =====
+
+To make the folderstructure visible, you need to hack the dokuwiki core code by commenting out one line in the wiki/inc/pageutils.php about line 121, you will be able to use files with namesLikeThis. Look for this code and comment it out.
+
+  $id = utf8_strtolower($id);
