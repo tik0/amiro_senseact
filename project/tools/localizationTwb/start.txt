@@ -1,0 +1,11 @@
+====== localizationTwb ======
+
+This program is a standalone binary, which uses the Stemmer Imaging API, and therefor their hardware, in combination with OpenCV and ARToolKit for tracking robots in the camera frame.
+
+===== Installation =====
+
+  - Install the Stemmer Imaging API from [[tools:stemmerImagingGrabberExample:start|this]] example
+  - Install [[https://help.ubuntu.com/community/OpenCV|OpenCV]]
+  - Compile ARToolKit from [[tools:ARToolKit:README|this]] source
+    - Install missing packages ''sudo apt-get install build-essential freeglut3 freeglut3-dbg freeglut3-dev glut-doc glutg3-dev libglut3 libglut3-dev glutg3 libxmu-dev libxi-dev libxext-dev libgstreamer0.10-dev'' 
+    - Congfigure and make
