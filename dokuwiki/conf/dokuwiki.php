@@ -173,4 +173,8 @@ $conf['ftp']['user'] = 'user';
 $conf['ftp']['pass'] = 'password';
 $conf['ftp']['root'] = '/home/user/htdocs';
 
-
+$conf['ignorepattern'] = '^CMake*';            
+                                         // RegExp to ignore certain files and directories, 
+                                         // e.g. a value of "^CVS$" will ignore all files and directories 
+                                         // named exactly "CVS" (which are control directories for the 
+                                         // revision control system cvs)
