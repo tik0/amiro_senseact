@@ -1,0 +1,6 @@
+====== stemmerImagingGrabberExample ======
+
+This is a simple stand-alone grabber example using the Stemmer Imaging API and OpenCV.
+  - Extract the file ''CommonVisionBlox_CameraSuite_Ubuntu64Bit_2011SP3.zip'' which resides in this folder (tested with Ubuntu/Kubuntu 14.04)
+  - Follow the installation instruction
+  - Run the example
