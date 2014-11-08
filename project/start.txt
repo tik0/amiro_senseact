@@ -1,12 +1,16 @@
+====== MuRoX DokuWiki ======
+
+
 This is the MuRoX DokuWiki.
 It contains the documentation and startup of the Project and all its components
 
   * [[dokuwikiInstall|dokuwiki]]: How to run the DokuWiki 
   * [[introduction|introduction]]: Robotic Service Bus system and installation
   * [[tutorials|tutorials]]: Hands-on tutorials with the robots
+  * [[hints|hints]]: Good-to-know stuff
 
-====== Setup ======
-===== DokuWiki =====
+
+====== Project Structure ======
 
 
 It follows this structure:
