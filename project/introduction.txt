@@ -123,4 +123,6 @@ How to go on:
 We us in all our projects the [[http://google-styleguide.googlecode.com/svn/trunk/cppguide.html|Google Code Style]].
 To check whether your code meets the Google conventions, check out the [[http://google-styleguide.googlecode.com/svn/trunk/cppguide.html#cpplint|cpplint.py]] tool.
 
+For commenting we consider the doxygen JavaDoc style which can be found [[http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html|here]] in the first section.
+
 **NOTE**: We use camel case for naming the variables.
