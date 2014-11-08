@@ -2,5 +2,11 @@
 
 This is a simple stand-alone grabber example using the Stemmer Imaging API and OpenCV.
   - Extract the file ''CommonVisionBlox_CameraSuite_Ubuntu64Bit_2011SP3.zip'' which resides in this folder (tested with Ubuntu/Kubuntu 14.04)
-  - Follow the installation instruction
+  - Follow the [[tools:stemmerImagingGrabberExample:GettingStartedGuide|installation instruction]] carefully
+  - Configure network device as **Link Local**
+  - Add the camera device to the device list
+    - Run ''/opt/cvb/bin/GenICamBrowser''
+    - Click on the camera device you want to capture with
+    - Click on ''Add device (to the configuration)'' ->  The camera appears in the right column ''Configured Devices''
+    - Click on ''Save configured devices'' -> A ''/etc/opt/cvb/drivers/GenICam.ini'' file is created
   - Run the example

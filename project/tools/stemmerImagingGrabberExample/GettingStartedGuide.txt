@@ -1,0 +1,126 @@
+*************************************************************
+*
+*      STEMMER IMAGING COMMON VISION BLOX (CameraSuite)
+*
+*      Version 11.03.000
+*
+*************************************************************
+*
+*        Setup for UBUNTU based Linux 64 Bit distributions
+*
+*************************************************************
+
+Tested with:
+* Ubuntu 12.04 (64Bit)
+* Ubuntu 12.04 (32Bit)
+
+*************************************************************
+
+Installation:
+-------------
+* Copy the content of the install folder to a temporary directory on the target machine
+
+* make the install_cvb.sh file executable with "sudo chmod 755 install_cvb.sh"
+
+* Execute "sudo ./install_cvb sh" from the temporary directory
+  to install cvb
+
+Configuration:
+--------------
+  
+* If available add your CVB CameraSuite License Key for your camera via the 
+  "CVB Licensing Console". To do so open it over the start menu or with:
+  "sudo /opt/cvb/bin/cvblicenseconsole" click on "Enter/Edit CameraSuite Codes
+  and add your Camera Suite License Key via the new Entry button (green arrow with red plus)
+  
+* If a new user is created a reboot is necessary until CVB can work properly. 
+
+
+Documentation:
+--------------
+* The documentation is available as chm-files based on the win32/win64 
+  Installation of Common Vision Blox.  
+
+* The documentation can be found in /opt/cvb/doc  
+
+* To view these files you need to install your favourite chm viewer. 
+  (e.g. ChmSee, kchmviewer, xchm)
+
+
+Quick start:
+-----------
+
+* Start the "CVB GeniCam Browser" over your Start menu or from "/opt/cvb/bin/GenICamBrowser" 
+  and verify if you get an image from your connected camera.
+  If no camera is available do the following
+  
+  - If your camera is configured to use DHCP (this is the default setting) 
+    edit your "Network Connections" and change 
+    "IPv4 Settings" to "Link-Local Only".
+  - Cameras with a persistent IP not being in the same subnet of the network card 
+    and not being in the LLA range are not found. 
+    (Even if searched with "Ignore Subnet Discover".) 
+    To our information this is a restriction of the Linux IP stack. 
+    If you know the IP address of the camera you can change the IP address of 
+    your network card to the same subnet.
+    If you don't know the IP of the camera the easiest way to find and change
+    the IP of the camera is to use a windows system with Common Vision Blox and 
+    assign the persistent IP address which you want to use on your Linux system.
+  - If your network is configured with a static IP address use
+    "Ignore Subnet Discover" to find your camera.
+    Now the Camera should be visible with a yellow camera icon
+    (if the camera is configured to use DHCP/LLA (this is the default setting). 
+    Click on the AssignIP Button
+    Use "Assign temporary IP (Force)" to change the camera temporarily to the IP address
+    range of your network card. 
+    After that the camera should be available and visible as green camera icon.
+    Then you can use "Assign persistent IP (Static)" to save the IP address permanently to the 
+    camera.
+    If this doesn't work you have to change "IPv4 Settings" to 
+    "Link-Local Only" to get access to the camera. Change the IP address 
+    to the persistent IP you want. After that you can change the IP of 
+    your network card. 
+    
+  
+  If you still have problems to see the camera or that the system
+  can't recognize a connection to it, you may have to install a 
+  new network card driver (These problems may appear with Intel Pro 1000 network cards).
+  To resolve this you can download a new driver and 
+  compile it on your system. The compilation 
+  process is well documented and it is easy to install. After that the
+  System should detect a connection to your camera when it is plugged in. 
+  Do not forget to restart the system after installing the new network card driver.
+
+* Create your (first) GenICam.ini file 
+  Use the "Add selected Device to the configuration" to add cameras to your configuration.
+  Click on the save button to save the configuration to the GenICam.ini file.
+
+* The GenICam.ini file is located in /etc/opt/cvb/drivers
+  You need to edit the file manually to change additional settings like
+  the number of buffers, packet size and other settings. 
+  More information about these settings can be found in the GenICam User Guide
+  (opt/cvb/doc/GenICam_CVB_UserGuide.chm)
+
+* Build and run the GrabConsoleExample to test the acquisition of your camera
+  To do that copy the source files from "/opt/cvb/tutorial/ImageManager/GrabConsoleExample" 
+  to a directory where you have write access e.g. "/home". 
+  Then open a terminal window and type in "make" 
+  Now you can start the example with "./Release/GrabConsoleExample
+
+* If you are looking for a more advanced example you should take a look into the
+  ComplexMultiOsConsoleExample. 
+  To do that copy the source files from "/opt/cvb/tutorial/ImageManager/ComplexMultiOSConsoleExample" 
+  to a directory where you have write access e.g. "/home". 
+  Then open a terminal window and type in "make" 
+  Now you can start the example with "./Release/ComplexMultiOSConsoleExample
+
+
+Network settings:
+-------------------
+
+CVB changes /proc/sys/net/core/rmem_max. If this causes 
+trouble it may be undone after the setup is executed 
+in the /etc/sysctl.d/10-cvb.conf file.
+
+
+
