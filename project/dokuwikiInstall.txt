@@ -19,3 +19,25 @@ Link the dokuwiki content folder to the project folder
   $ rm -rf <your/project/root>/dokuwiki/data/pages
   $ ln -s  <your/project/root>/project <your/project/root>/dokuwiki/data/pages
   
+===== Make the Plugins Work =====
+
+In this Dokuwiki, certain plugins are used.
+The following instruction tells you, how to setup their environment.
+
+==== latex ====
+
+For writing LaTeX code in the wiki, the [[https://www.dokuwiki.org/plugin:latex|DokuWiki latex plugin]] is used. For the environment installation manual, to make the plugin work in your DokuWiki.
+
+\begin{eqnarray*}
+& & \frac{3}{4 \pi}   \sqrt{4 \cdot x^2   12}\\
+& & \lim_{n \to \infty}
+  \sum_{k=1}^n \frac{1}{k^2} = \frac{\pi^2}{6}\\
+& & {\it f}(x) = \frac{1}{\sqrt{x} x^2}\\
+& & e^{i \pi} + 1 = 0\;
+\end{eqnarray*}
+=== source ===
+
+The [[https://www.dokuwiki.org/plugin:source|DokuWiki source plugin]] is used for displaying file content in the wiki. No special installations are needed.
+
+
+<source http://localhost/data/pages/includes/types/twbTracking.proto #7-11 c|twbTracking.proto>
