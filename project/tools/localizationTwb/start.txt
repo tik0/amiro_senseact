@@ -1,6 +1,19 @@
 ====== localizationTwb ======
 
 This program is a standalone binary, which uses the Stemmer Imaging API, and therefor their hardware, in combination with OpenCV and ARToolKit for tracking robots in the camera frame.
+The setup of the TeleWorkBench (TWB) as seen below is used for tracking the marker on the robots, and publishing their coordinates and orientation via RSB.
+{{ :tools:localizationTwb:localizationofrobotsintwbsetup.png?400 |}}
+The coordinate system, in which the robots are tracked, resides in the camera.
+Therefore, all orientations and locations are in respect to the camera frame.
+{{ :tools:localizationTwb:localizationofrobotsintwbcoordinatesystems.png?400 |}}
+Below, a live top view of the tracking system can be seen.
+The recognized marker on top of the robots are highlighted by yellow rectangulars.
+The coordinates, which are also published by RSB can be seen in the console window on the bottom left. 
+{{ :tools:localizationTwb:localizationofrobotsintwb.png?400 | Tracking example}}
+The pose of the robots is published by RSB in an specific list, where all found markers reside.
+They are stored in a list as follow:
+<source http://localhost/data/pages/includes/types/twbTracking.proto c|twbTracking.proto>
+
 
 ===== Installation =====
 
@@ -9,3 +22,5 @@ This program is a standalone binary, which uses the Stemmer Imaging API, and the
   - Compile ARToolKit from [[tools:ARToolKit:README|this]] source
     - Install missing packages ''sudo apt-get install build-essential freeglut3 freeglut3-dbg freeglut3-dev glut-doc glutg3-dev libglut3 libglut3-dev glutg3 libxmu-dev libxi-dev libxext-dev libgstreamer0.10-dev'' 
     - Congfigure and make
+  - Run cmake ''cmake .'' and make ''make''
+  - Inspect the possible program options with the ''-h'' parameter
