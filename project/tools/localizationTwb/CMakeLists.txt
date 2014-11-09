@@ -13,9 +13,9 @@ find_package(PkgConfig)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(GLIB glib-2.0)
+pkg_check_modules(PROTO protobuf)
 pkg_check_modules(GSTR gstreamer-0.10)
 find_package( OpenCV REQUIRED )
-
 
 
 execute_process(COMMAND echo COMMAND ${CMAKE_CXX_COMPILER} -Wp,-v -x c++ - -fsyntax-only ERROR_VARIABLE GXX_OUTPUT)
@@ -28,6 +28,7 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${GLIB_INCLUDE_DIRS}                                            # glib
     ${GSTR_INCLUDE_DIRS}                                            # gstreamer
+    ${PROTO_INCLUDE_DIRS}                                           # Protobuffer
     "../../includes"                                                # Other includes like converters and stuff
     "$ENV{CVB}/include"                                               # Stemmer imaging
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
@@ -39,7 +40,7 @@ include_directories(
 )
 
 # add the executable
-add_executable ("${PROJECT_NAME}" main.cxx object.cpp)
+add_executable ("${PROJECT_NAME}" main.cxx object.cpp ../../includes/types/twbTracking.pb.cc)
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
@@ -82,7 +83,8 @@ target_link_libraries (
     ${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib/libARvideo.a
     # -- g-streamer
     ${GSTR_LIBRARIES}
-
+    # -- Protobuffer
+    ${PROTO_LIBRARIES}
 )
 
 message (STATUS  "${GLIB_LIBRARIES}")
@@ -90,5 +92,5 @@ message (STATUS  "${GLIB_LIBRARIES}")
 # Get rid of depricated warnings
 SET (
     CMAKE_CXX_FLAGS
-    "-Wno-deprecated-declarations -Wno-write-strings -o2"
+    "-Wno-deprecated-declarations -Wno-write-strings -O2"
 )

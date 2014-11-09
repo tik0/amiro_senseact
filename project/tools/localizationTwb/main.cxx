@@ -59,9 +59,17 @@
 #include <rsb/Factory.h>
 #include <rsb/Handler.h>
 
+// RST
+#include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
+
+// Proto types
+#include <types/twbTracking.pb.h>
+
 using namespace std;
 using namespace cv;
 using namespace boost;
+
 
 
 /**
@@ -115,7 +123,7 @@ ARParam cparam;
  */
 
 // Create an informer that is capable of sending events
-rsb::Informer<string>::Ptr informer;
+rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informer;
 
 // Scope for sending the data
 std::string rsbOutScope = "/murox/roboterlocation";
@@ -146,8 +154,13 @@ int main(int argc, char **argv) {
   // First get a factory instance that is used to create RSB domain objects
   rsb::Factory& factory = rsb::getFactory();
 
+  // Register new converter for the pose list
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList> >
+      converter(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+
   // Create an informer that is capable of sending events containing string data on the given scope.
-  informer = factory.createInformer<string> (rsbOutScope);
+  informer = factory.createInformer<twbTracking::proto::Pose2DList> (rsbOutScope);
 
   // Init glut (give it only one argument, because the arguments are already parsed by programOptions())
   int argcGlut = 1;
@@ -269,6 +282,10 @@ static void cleanup(void) {
 
 void tracking() {
 
+  rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
+
+  std::cout << "---ID\t x\t y\t f---" << std::endl;
+
   ARUint8 *dataPtr;
   ARMarkerInfo *marker_info;
   int marker_num;
@@ -321,7 +338,7 @@ void tracking() {
       }
 
       // If the confidence factor is high enough, the square around the object
-      // becomes green, and the transformation will be calculated
+      // becomes yellow, and the transformation will be calculated
       glColor3f(1.0, 1.0, 0.0);
       argDrawSquare(marker_info[idxMarker2Object].vertex, 0, 0);
       /* calculate the transform for each marker */
@@ -356,29 +373,29 @@ void tracking() {
       object[idxObject].marker_pos[1] = object[idxObject].marker_pos[1] + 0.5;
       object[idxObject].marker_grad = object[idxObject].marker_grad + 0.5;
 
-      // Save the robot id and position
-      const int idRobot           = object[idxObject].id;
-      const int xRobotPosition    = (int) object[idxObject].marker_pos[0];
-      const int yRobotPosition    = (int) object[idxObject].marker_pos[1];
-      const int zRobotOrientation = (int) object[idxObject].marker_grad;
+      // Print out the found position
+      std::cout
+          << "   "
+          << object[idxObject].id
+          << "\t "
+          << (int) object[idxObject].marker_pos[0]
+          << "\t "
+          << (int) object[idxObject].marker_pos[1]
+          << "\t "
+          << (int) object[idxObject].marker_grad
+          << std::endl;
 
-      // Merge everything to a string
-      char buffer[33];
-      sprintf(buffer, "%d", idRobot);
-      robotCoordinates = robotCoordinates + boost::lexical_cast<std::string>(idRobot) + ","
-          + boost::lexical_cast<std::string>(xRobotPosition) + ","
-          + boost::lexical_cast<std::string>(yRobotPosition) + ","
-          + boost::lexical_cast<std::string>(zRobotOrientation) + ";";
-
+      // Add a new robot to the list
+      twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
+      pose2D->set_x(float(object[idxObject].marker_pos[0]));
+      pose2D->set_y(float(object[idxObject].marker_pos[1]));
+      pose2D->set_orientation(float(object[idxObject].marker_grad));
+      pose2D->set_id(object[idxObject].id);
     }
-    // Print out the coordinates
-    std::cout << robotCoordinates << std::endl;
-
-    // Copy the string to a sendable container
-    rsb::Informer<string>::DataPtr s(new string(robotCoordinates));
 
     // Send the data
-    informer->publish(s);
+    informer->publish(pose2DList);
+
   }
 
   /*swap the graphics buffers*/
