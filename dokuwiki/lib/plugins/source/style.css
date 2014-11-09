@@ -1,0 +1,44 @@
+/*
+ * source plugin extension - style additions
+ *
+ * @author  Christopher Smith  chris@jalakai.co.uk
+ * @link    http://wiki.jalakai.co.uk/dokuwiki/doku.php/tutorials/codeplugin
+ */
+/* source plugin extensions */
+
+/* layout */
+div.source {
+  width: 92%;
+  margin: 1em auto;
+  border: 1px solid;
+  padding: 4px;
+}
+
+div.source p {
+  font-size: 90%;
+  margin: 0;
+  padding: 2px;
+}
+
+div.source p span {
+  font-weight: normal;
+}
+
+div.source pre.code {
+  margin: 4px 0 0 0;
+}
+
+/* colours */
+div.source {
+  border-color:  #bdb;
+  background: #e4f8f2;
+}
+
+div.source p {
+  background: #c4e4d4;
+}
+
+div.source pre.code {
+  border: 1px dashed #9c9;
+  background: #ecfaf6;
+}
