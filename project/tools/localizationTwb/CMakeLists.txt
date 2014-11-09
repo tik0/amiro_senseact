@@ -59,11 +59,8 @@ add_definitions (
 target_link_libraries (
     "${PROJECT_NAME}"
     rsb0.11
-#     boost_regex-mt
-#     boost_date_time-mt
-#     boost_program_options-mt
-#     boost_system-mt
-#     boost_thread
+    boost_system
+    boost_program_options
     rsc0.11
     ${OpenCV_LIBS}
     # -- stemmer imaging
@@ -72,22 +69,18 @@ target_link_libraries (
     :"$ENV{CVB}/lib/libCVCDriver.so"
     :"$ENV{CVB}/lib/libCVGenApi.so"
     #-lopencv_core -lopencv_highgui -lopencv_imgproc
-    # -- Own libraries
     # -- openGL and glut
     GL
     glut
     # -- glib
-    ${GSTR_LIBRARIES}
-
     ${GLIB_LIBRARIES}
     # -- ARToolKit
     ${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib/libAR.a
     ${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib/libARgsub.a
-#     ${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib/libARgsub_lite.a
     ${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib/libARgsubUtil.a
     ${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib/libARMulti.a
     ${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib/libARvideo.a
-    
+    # -- g-streamer
     ${GSTR_LIBRARIES}
 
 )
@@ -97,5 +90,5 @@ message (STATUS  "${GLIB_LIBRARIES}")
 # Get rid of depricated warnings
 SET (
     CMAKE_CXX_FLAGS
-    "-Wno-deprecated-declarations -Wno-write-strings -g -o0"
+    "-Wno-deprecated-declarations -Wno-write-strings -o2"
 )
