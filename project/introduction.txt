@@ -116,7 +116,7 @@ How to go on:
   - **Installation** of [[http://docs.cor-lab.de//rsb-manual/trunk/html/install-binary.html#debian-packages|Precompiled Debian packages]] and cloning of the [[http://docs.cor-lab.de//rsb-manual/trunk/html/install-source.html|RSB Sources]]
   - Work through the [[http://docs.cor-lab.de//rsb-manual/trunk/html/examples.html|RSB Tutorials]]
   - Check the **examples** in the source folder: <c++ source folder of RSB>/examples 
-  - To send self defined messages, check out the http://docs.cor-lab.de//rsb-manual/trunk/html/examples-writing-converters.html and [[https://developers.google.com/protocol-buffers/docs/cpptutorial|Protobuffer Examples]] 
+  - To send self defined messages, check out the http://docs.cor-lab.de//rsb-manual/trunk/html/examples-writing-converters.html and [[https://developers.google.com/protocol-buffers/docs/cpptutorial|Protobuffer Examples]] or [[https://developers.google.com/protocol-buffers/docs/proto|Protocol Buffer Language Guide]]
   - Check the **tutorials** on the [[http://docs.cor-lab.de/|Project overview]] site
 ====== Coding Agreements ======
 
