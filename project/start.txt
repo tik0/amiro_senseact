@@ -21,5 +21,6 @@ It follows this structure:
   * [[sandbox:start|sandbox]]: Developement playground
   * [[includes:start|includes]]: Programm includes
   * [[tools:start|tools]]: Tools for working with the project
+  * [[utilities:start|utilities]]: Utilities, which help you working with the environment
   * [[demo:start|demo]]: Demos and the manual how to start
   * [[wiki:welcome|wiki]]: DokuWiki manuals
