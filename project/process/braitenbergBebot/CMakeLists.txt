@@ -36,8 +36,12 @@ include_directories(
 )
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
-add_subdirectory (../../includes/converter/vecFloatConverter lib/vecFloatConverter)
+if (NOT TARGET vecIntConverter)
+    add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
+endif()
+if (NOT TARGET vecFloatConverter)
+    add_subdirectory (../../includes/converter/vecFloatConverter lib/vecFloatConverter)
+endif()
 
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
