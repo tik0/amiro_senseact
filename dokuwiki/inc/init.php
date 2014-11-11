@@ -230,7 +230,7 @@ mail_setup();
 function init_paths(){
     global $conf;
 
-    $paths = array('datadir'   => 'pages',
+    $paths = array('datadir'   => '../../project',
             'olddir'    => 'attic',
             'mediadir'  => 'media',
             'mediaolddir' => 'media_attic',

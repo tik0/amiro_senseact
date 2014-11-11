@@ -6,7 +6,7 @@
  */
 
 // location is prepended to all file names, restricting the filespace exposed to the plugin
-$conf['location'] = '';
+$conf['location'] = 'http://localhost/project/';
 
 // if allow array contains any elements, ONLY files with the extensions listed will be allowed
 $conf['allow'] = '';

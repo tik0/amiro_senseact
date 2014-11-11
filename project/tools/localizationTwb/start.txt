@@ -12,7 +12,7 @@ The coordinates, which are also published by RSB can be seen in the console wind
 {{ :tools:localizationTwb:localizationofrobotsintwb.png?400 | Tracking example}}
 The pose of the robots is published by RSB in an specific list, where all found markers reside.
 They are stored in a list as follow:
-<source http://localhost/data/pages/includes/types/twbTracking.proto c|twbTracking.proto>
+<source includes/types/twbTracking.proto c|twbTracking.proto>
 
 
 ===== Installation =====
