@@ -9,15 +9,10 @@ Add your user to the www-data group and vice versa
   # usermod -a -G www-data <yourUserName>
   # usermod -a -G <yourGroupName> www-data
 
-
 Link the html folder to the project folder
   $ sudo su
   # rm -rf /var/www/html
-  # ln -s <your/project/root>/project /var/www/html
-  
-Link the dokuwiki content folder to the project folder
-  $ rm -rf <your/project/root>/dokuwiki/data/pages
-  $ ln -s  <your/project/root>/project <your/project/root>/dokuwiki/data/pages
+  # ln -s <your/project/root> /var/www/html
   
 ===== Make the Plugins Work =====
 
@@ -38,6 +33,8 @@ For writing LaTeX code in the wiki, the [[https://www.dokuwiki.org/plugin:latex|
 === source ===
 
 The [[https://www.dokuwiki.org/plugin:source|DokuWiki source plugin]] is used for displaying file content in the wiki. No special installations are needed.
+All pathes to the files have to given relative to the ''project'' folder.
+If you host the dokuwiki somewhere wlse then localhost, you have to change the preamble ''$conf['location'] = 'http://localhost/project/';'' of the plugin in ''<repository_folder>/dokuwiki/lib/plugins/source/conf/default.php''.
 
 
-<source http://localhost/data/pages/includes/types/twbTracking.proto #7-11 c|twbTracking.proto>
+<source includes/types/twbTracking.proto #7-11 c|twbTracking.proto>
