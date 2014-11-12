@@ -22,9 +22,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-// Reading inScope and outScope
-#include <ioFlags.hpp>
-
 #include <iostream>
 #include <boost/thread.hpp>
 #include <boost/program_options.hpp>
