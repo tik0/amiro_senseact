@@ -20,7 +20,7 @@ They are stored in a list as follow:
   - Install the Stemmer Imaging API from [[tools:stemmerImagingGrabberExample:start|this]] example
   - Install [[https://help.ubuntu.com/community/OpenCV|OpenCV]]
   - Compile ARToolKit from [[tools:ARToolKit:README|this]] source
-    - Install missing packages ''sudo apt-get install build-essential freeglut3 freeglut3-dbg freeglut3-dev glut-doc glutg3-dev libglut3 libglut3-dev glutg3 libxmu-dev libxi-dev libxext-dev libgstreamer0.10-dev'' 
+    - Install missing packages ''sudo apt-get install build-essential freeglut3 freeglut3-dbg freeglut3-dev libxmu-dev libxi-dev libxext-dev libgstreamer0.10-dev'' 
     - Congfigure and make
   - Run cmake ''cmake .'' and make ''make''
   - Inspect the possible program options with the ''-h'' parameter
