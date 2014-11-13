@@ -126,3 +126,8 @@ To check whether your code meets the Google conventions, check out the [[http://
 For commenting we consider the doxygen JavaDoc style which can be found [[http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html|here]] in the first section.
 
 **NOTE**: We use camel case for naming the variables.
+
+====== Initialization and Usage of the MuRox Environment ======
+
+  - Initialize the environment as described in [[utilities:start#Initialize|Initialize]]
+  - Use the tools in [[utilities:start|Utilities]]
