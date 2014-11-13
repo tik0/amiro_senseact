@@ -9,10 +9,10 @@ Add your user to the www-data group and vice versa
   # usermod -a -G www-data <yourUserName>
   # usermod -a -G <yourGroupName> www-data
 
-Link the html folder to the project folder
+Link the html folder to the repository folder ''murox_dev''
   $ sudo su
   # rm -rf /var/www/html
-  # ln -s <your/project/root> /var/www/html
+  # ln -s <your/repository/root> /var/www/html
   
 ===== Make the Plugins Work =====
 
