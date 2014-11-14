@@ -8,7 +8,7 @@
 
 
 
-// #define INFO_MSG_
+#define INFO_MSG_
 // #define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-    ("inscope,i", po::value < std::string > (&g_sInScope_OGM), "Scope for receiving the grid maps.");
+    ("inscope,i", po::value < std::string > (&g_sInScope_OGM), "Scope for receiving the grid maps");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -76,7 +76,10 @@ int main(int argc, char **argv) {
       exit(1);
   }
   
-  INFO_MSG( "Inscope: " << g_sInScope_Prox)
+  // afterwards, let program options handle argument errors
+  po::notify(vm);
+  
+  INFO_MSG( "Inscope: " << g_sInScope_OGM)
 
   // Get the RSB factory
   rsb::Factory& factory = rsb::Factory::getInstance();
