@@ -295,9 +295,9 @@ void drawSensorInformation(shared_ptr<std::vector<int> > &messageIr, boost::shar
 
   // Show the map
 #ifndef __arm__
-  cv::flip(mapImage,mapImage,0); // Flip the image, to display the correct coordinates bottom-left
-  cv::imshow("Map",mapImage);
-  cv::waitKey(1);
+//   cv::flip(mapImage,mapImage,0); // Flip the image, to display the correct coordinates bottom-left
+//   cv::imshow("Map",mapImage);
+//   cv::waitKey(1);
 #endif
 
   // Copy image back to the map
