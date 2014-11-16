@@ -118,6 +118,23 @@ How to go on:
   - Check the **examples** in the source folder: <c++ source folder of RSB>/examples 
   - To send self defined messages, check out the http://docs.cor-lab.de//rsb-manual/trunk/html/examples-writing-converters.html and [[https://developers.google.com/protocol-buffers/docs/cpptutorial|Protobuffer Examples]] or [[https://developers.google.com/protocol-buffers/docs/proto|Protocol Buffer Language Guide]]
   - Check the **tutorials** on the [[http://docs.cor-lab.de/|Project overview]] site
+
+===== Introduction to MuRoX converter & types =====
+
+In the MuRoX environment own converter and types beside the [[http://docs.cor-lab.de//rst-manual/trunk/html/index.html|RST project]] ([[https://code.cor-lab.de/projects/rst|RST code]]) are used.
+
+==== Converter ====
+
+The converter are hard coded serializer/deserializer to reach full optimization with minimal overhead.  There exist already some converter in the [[http://docs.cor-lab.de//rst-manual/trunk/html/converters.html|RST project]]. Source code the converter can be found in [[https://code.cor-lab.de/projects/rsb/repository/rsb-cpp|RSB source folder]], and also in the [[https://code.cor-lab.de/projects/rst|RST converter project]].
+
+[[includes:converter:start|MuRoX converter]]
+
+==== Types ====
+
+The types are protobuffer generic code files, which produce serializer/deserializer out of ''.proto'' description files. Besides the already existing [[http://docs.cor-lab.de//rst-manual/trunk/html/data-types.html|RST types]], these own written types does often match better the demands of the MuRoX environment.
+
+[[includes:types:start|MuRoX types]]
+
 ====== Coding Agreements ======
 
 We us in all our projects the [[http://google-styleguide.googlecode.com/svn/trunk/cppguide.html|Google Code Style]].
