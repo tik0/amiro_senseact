@@ -49,3 +49,7 @@ Generate proper Eclipse project
 Make git ignore the ''chmod'' commands:
 
   git config core.fileMode false
+  
+====== DokuWiki ======
+
+[[wiki:welcome|wiki]]: DokuWiki manuals
