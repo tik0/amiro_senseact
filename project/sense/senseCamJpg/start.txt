@@ -1,4 +1,5 @@
-This is a x86 program for capturing and sending mat-images in jpeg format.
+====== senseCamJpg ======
 
-Compile: cmake . && make
-Run: capture_cam -i /scope   # Where -i <arg> is the scope to send on mat-images
+This is a camera driver which greps the given camera device over the OpenCV interface.
+Every single frame is published as a compressed JPEG image via a given scope.
+See the demo [[demo:cameraJpeg:start|Sending and displaying of camera images]] for a hands-on.
