@@ -6,7 +6,9 @@ The **utilities** folder contains scripts and tools which help you working with 
 
 ===== Initialize =====
 
-Run the ''./initMurox'' command in this folder. It will add this folder to the ''PATH'' variable in your ''~/.bashrc''.
+  - Run the ''./initMurox'' command in this folder. It will add this folder to the ''PATH'' variable in your ''~/.bashrc''.
+  - Create protobuffer files as described in [[includes:types:start]].
+
 
 ===== Tools =====
 
