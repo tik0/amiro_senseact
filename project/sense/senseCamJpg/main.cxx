@@ -63,6 +63,9 @@ int main(int argc, char **argv) {
         exit(1);
     }
     
+    // afterwards, let program options handle argument errors
+    po::notify(vm);
+    
     INFO_MSG( "Scope: " << g_sOutScope)
     INFO_MSG( "Device: " << g_iDevice)
     INFO_MSG( "JPEG Quality: " << g_uiQuality)

@@ -56,6 +56,9 @@ int main(int argc, char **argv) {
         exit(1);
     }
     
+    // afterwards, let program options handle argument errors
+    po::notify(vm);
+    
     INFO_MSG( "Scope: " << g_sInScope)
 
 
