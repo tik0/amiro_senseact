@@ -21,7 +21,42 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 
-int main() {
+#define INFO_MSG_
+// #define DEBUG_MSG_
+// #define SUCCESS_MSG_
+// #define WARNING_MSG_
+#define ERROR_MSG_
+#include <MSG.h>
+
+// For program options
+#include <boost/program_options.hpp>
+
+static std::string g_sInScope = "/image";
+
+int main(int argc, char **argv) {  
+
+    namespace po = boost::program_options;
+
+    po::options_description options("Allowed options");
+    options.add_options()("help,h", "Display a help message.")
+            ("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving compressed images");
+
+    // allow to give the value as a positional argument
+    po::positional_options_description p;
+    p.add("value", 1);
+
+    po::variables_map vm;
+    po::store(
+            po::command_line_parser(argc, argv).options(options).positional(p).run(),
+            vm);
+
+    // first, process the help option
+    if (vm.count("help")) {
+        std::cout << options << "\n";
+        exit(1);
+    }
+    
+    INFO_MSG( "Scope: " << g_sInScope)
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,7 +70,7 @@ int main() {
   rsb::Factory &factory = rsb::Factory::getInstance();
 
   // Create and start the listener
-  rsb::ListenerPtr listener = factory.createListener("/image");
+  rsb::ListenerPtr listener = factory.createListener(g_sInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<cv::Mat> > > imageQueue(
                       new rsc::threading::SynchronizedQueue<boost::shared_ptr<cv::Mat> >(1));
 

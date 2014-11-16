@@ -15,6 +15,11 @@ find_package(RSB REQUIRED)
 find_package(RSC REQUIRED)
 find_package(RST REQUIRED)
 
+# Get the system includes
+execute_process(COMMAND echo COMMAND ${CMAKE_CXX_COMPILER} -Wp,-v -x c++ - -fsyntax-only ERROR_VARIABLE GXX_OUTPUT)
+set(ENV{GXX_OUTPUT} ${GXX_OUTPUT})
+execute_process(COMMAND echo ${GXX_OUTPUT} COMMAND grep "^\ " COMMAND sed "s#\ ##g" COMMAND tr "\n" "\\;" OUTPUT_VARIABLE GXX_INCLUDES) 
+
 
 # Set the include pathe
 include_directories(
@@ -23,15 +28,12 @@ include_directories(
     ${RST_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}                                          # OpenCV
     "../../includes"                                                # Other includes like converters and stuff
-    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-    "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
+    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for 
+    ${GXX_INCLUDES}
 )
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory (../../includes/converter/matConverter lib/matConverter) 
-add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter) 
+add_subdirectory (../../includes/converter/matConverter lib/matConverter)
 
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
@@ -47,7 +49,6 @@ target_link_libraries (
     "${PROJECT_NAME}"
     # -- rsb
     ${RSB_LIBRARIES}
-    # :librsb0.11.so.0.11
     ${RSC_LIBRARIES}
     ${OpenCV_LIBRARIES}
     # -- boost
@@ -58,7 +59,6 @@ target_link_libraries (
     pthread
     # -- Own libraries
     matConverter
-    vecIntConverter
 )
 
 # Get rid of depricated warnings
@@ -67,5 +67,3 @@ SET (
     CMAKE_CXX_FLAGS
     "-Wall -Wno-deprecated-declarations -O2"
 )
-
-set( CMAKE_VERBOSE_MAKEFILE on )
