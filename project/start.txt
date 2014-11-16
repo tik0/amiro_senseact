@@ -62,11 +62,11 @@ Please use the [[start?do=index|Sitemap]] for a complete overview.
 
 The **utilities** folder contains scripts and tools which help you working with the MuRoX environment.
 
-[[tools:utilities:start|{{ :utilities:utilities.png?300 }}]]
+[[utilities:start|{{ :utilities:utilities.png?300 }}]]
 
 ===== demo =====
 
 The **demo** folder contains working demos and manuals for showing stuff in with MuRoX environment.
-Please use the [[start?do=index|Sitemap]] for a complete overview.
+Please use the [[demo:start?do=index|Sitemap]] for a complete overview.
 
-[[tools:utilities:start?do=index|{{ :demo:demo.png?300 }}]]
+[[demo:start?do=index|{{ :demo:demo.png?300 }}]]
