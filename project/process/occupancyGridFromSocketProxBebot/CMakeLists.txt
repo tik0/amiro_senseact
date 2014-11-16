@@ -98,5 +98,5 @@ target_link_libraries (
 
 SET (
     CMAKE_CXX_FLAGS
-    "-Wno-deprecated-declarations -O2"
+    "-std=c++0x -Wno-deprecated-declarations -O2"
 )
