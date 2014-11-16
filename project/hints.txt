@@ -33,3 +33,19 @@
 \end{tikzpicture}
 \textcolor{white}{text}
 </latex>
+
+====== CMake ======
+
+Set verbose mode on in ''CMakeLists.txt'' file:
+
+  set( CMAKE_VERBOSE_MAKEFILE on )
+  
+Generate proper Eclipse project
+
+  $ cmake -G"Eclipse CDT4 - Ninja" .
+
+====== git ======
+
+Make git ignore the ''chmod'' commands:
+
+  git config core.fileMode false
