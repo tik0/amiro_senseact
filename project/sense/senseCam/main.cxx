@@ -12,6 +12,14 @@
 // For program options
 #include <boost/program_options.hpp>
 
+
+#define INFO_MSG_
+// #define DEBUG_MSG_
+// #define SUCCESS_MSG_
+// #define WARNING_MSG_
+// #define ERROR_MSG_
+#include <MSG.h>
+
 using namespace boost;
 using namespace std;
 //using namespace cv;
@@ -19,7 +27,8 @@ using namespace rsb;
 using namespace muroxConverter; // The namespace for the own converters
 using namespace rsb::converter;
 
-std::string g_sOutScope = "/image";
+static std::string g_sOutScope = "/image";
+static int g_iDevice = 0;
 
 int main(int argc, char **argv) {
 
@@ -27,7 +36,8 @@ int main(int argc, char **argv) {
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
-	    ("outscope,o", po::value < std::string > (&g_sOutScope),"Scope for sending images.");
+            ("outscope,o", po::value < std::string > (&g_sOutScope),"Scope for sending images.")
+            ("device,d", po::value < int > (&g_iDevice),"Number of device.");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -43,6 +53,9 @@ int main(int argc, char **argv) {
         std::cout << options << "\n";
         exit(1);
     }
+    
+    INFO_MSG( "Scope: " << g_sOutScope)
+    INFO_MSG( "Device: " << g_iDevice)
     
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Register our converter within the collection of converters for
@@ -60,10 +73,9 @@ int main(int argc, char **argv) {
 
   // Creating the cam object
   cv::VideoCapture cam;
-  // Open the device /dev/video3
-  cam.open(3);
+  // Open the device /dev/video<g_iDevice>
+  cam.open(g_iDevice);
   // Allocate a frame object to store the picture
-//  cv::Mat frame;
   shared_ptr<cv::Mat> frame(new cv::Mat);
 
   // Process the cam forever

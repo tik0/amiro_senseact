@@ -15,12 +15,10 @@ pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(OPENCV opencv)
 pkg_check_modules(LIBV4l2 libv4l2)
 
-# Not needed. The libraries will be set manualy
-# link_directories(
-#     ${RSB_LIBRARY_DIRS}
-#     ${OPENCV_LIBRARY_DIRS}
-#     ${LIBV4l2_LIBRARY_DIRS}
-# )
+# Get the system includes
+execute_process(COMMAND echo COMMAND ${CMAKE_CXX_COMPILER} -Wp,-v -x c++ - -fsyntax-only ERROR_VARIABLE GXX_OUTPUT)
+set(ENV{GXX_OUTPUT} ${GXX_OUTPUT})
+execute_process(COMMAND echo ${GXX_OUTPUT} COMMAND grep "^\ " COMMAND sed "s#\ ##g" COMMAND tr "\n" "\\;" OUTPUT_VARIABLE GXX_INCLUDES) 
 
 # Set the include pathe
 include_directories(
@@ -30,9 +28,7 @@ include_directories(
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     "../../includes"                                                # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-    "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
+    ${GXX_INCLUDES}
 )
 
 # Add folders to build and run CMakeLists.txt in it
@@ -41,31 +37,19 @@ add_subdirectory (../../includes/converter/matConverter lib/matConverter)
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
 
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
-
-# Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
+# Link the executable to the library.
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
-
-# Link the executable to the library.
-# link_directories (
-#     "/usr/lib"                             # For standard libraries
-#     "/usr/local/lib/"                      # For OpenCV libraries
-#     "/usr/lib/x86_64-linux-gnu/"           # For boost libraries
-# )
 
 target_link_libraries (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
-    boost_regex-mt
-    boost_date_time-mt
-    boost_program_options-mt
-    boost_system-mt
+    boost_regex
+    boost_date_time
+    boost_program_options
+    boost_system
     boost_program_options
 #   OPENCV
     opencv_imgproc
