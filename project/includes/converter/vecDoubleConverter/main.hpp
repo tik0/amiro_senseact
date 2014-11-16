@@ -55,7 +55,7 @@
 #define SIZE_PAYLOAD_ sizeof(double)
 #define TYPE_PAYLOAD_ double
 #define TYPE_PAYLOAD_STRING_ "std::vector<double, std::allocator<double> >"
-#define INFO_PAYLOAD_STRING_ "vector of double"
+#define INFO_PAYLOAD_STRING_ "vector"
 #define CLASS_NAME_ vecDoubleConverter
 
 using namespace std;

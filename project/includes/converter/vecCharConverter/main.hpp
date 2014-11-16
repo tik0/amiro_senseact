@@ -55,7 +55,7 @@
 #define SIZE_PAYLOAD_ sizeof(char)
 #define TYPE_PAYLOAD_ char
 #define TYPE_PAYLOAD_STRING_ "std::vector<char, std::allocator<char> >"
-#define INFO_PAYLOAD_STRING_ "vector of char"
+#define INFO_PAYLOAD_STRING_ "vector"
 #define CLASS_NAME_ vecCharConverter
 
 using namespace std;

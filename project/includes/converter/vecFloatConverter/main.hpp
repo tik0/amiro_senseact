@@ -55,7 +55,7 @@
 #define SIZE_PAYLOAD_ sizeof(float)
 #define TYPE_PAYLOAD_ float
 #define TYPE_PAYLOAD_STRING_ "std::vector<float, std::allocator<float> >"
-#define INFO_PAYLOAD_STRING_ "vector of float"
+#define INFO_PAYLOAD_STRING_ "vector"
 #define CLASS_NAME_ vecFloatConverter
 
 using namespace std;
