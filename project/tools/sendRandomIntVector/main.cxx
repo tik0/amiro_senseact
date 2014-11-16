@@ -27,7 +27,7 @@
 #include <rsb/converter/Repository.h>
 
 // Include own converter
-#include <converter/vecIntConverter/main.hpp>
+#include <converter/vecConverter/main.hpp>
 
 using namespace std;
 using namespace muroxConverter;
@@ -72,9 +72,11 @@ int main (int argc, const char **argv){
   INFO_MSG( "Maximal value: " << g_vecMax)
 
   // Register new converter for std::vector<int>
-  boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
-  converterRepository<std::string>()->registerConverter(converter);
-  
+  boost::shared_ptr<vecConverter<int> > converter(new vecConverter<int>());
+
+
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+
   // Prepare RSB informer
   rsb::Factory& factory = rsb::Factory::getInstance();
   rsb::Informer< std::vector<int> >::Ptr informer_vec = factory.createInformer< std::vector<int> > (g_sOutScope_IR);
@@ -88,7 +90,7 @@ int main (int argc, const char **argv){
       vecData->at(idx) = rand() % g_vecMax;
     // Send IR data
     informer_vec->publish(vecData);
-//     INFO_MSG( "Send vector<int> with "<< g_vecAmount << " values to the scope " << g_sOutScope_IR )
+    DEBUG_MSG( "Send vector<int> with "<< g_vecAmount << " values to the scope " << g_sOutScope_IR )
     // Sleep for 125 ms
     boost::this_thread::sleep( boost::posix_time::milliseconds(125) );
   }

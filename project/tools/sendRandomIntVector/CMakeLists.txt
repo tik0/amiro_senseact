@@ -13,21 +13,19 @@ find_package(PkgConfig)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 
+# Get the system includes
+execute_process(COMMAND echo COMMAND ${CMAKE_CXX_COMPILER} -Wp,-v -x c++ - -fsyntax-only ERROR_VARIABLE GXX_OUTPUT)
+set(ENV{GXX_OUTPUT} ${GXX_OUTPUT})
+execute_process(COMMAND echo ${GXX_OUTPUT} COMMAND grep "^\ " COMMAND sed "s#\ ##g" COMMAND tr "\n" "\\;" OUTPUT_VARIABLE GXX_INCLUDES) 
+
 # Set the include pathe
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
     "../../includes"                                                # Other includes like converters and stuff
-    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-    "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
+    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for
+    ${GXX_INCLUDES}
 )
-
-# Add folders to build and run CMakeLists.txt in it
-if (NOT TARGET vecIntConverter)
-    add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
-endif()
 
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
@@ -46,8 +44,6 @@ target_link_libraries (
     boost_program_options
     boost_system
     boost_thread
-    # -- Own libraries
-    vecIntConverter
 )
 
 # Additional compiler flags
