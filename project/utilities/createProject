@@ -1,0 +1,23 @@
+#!/bin/bash
+# This script initalizese a project with a start.txt and .gitignore
+echo "This is the createProject script"
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $ ${0} <projectName>"
+    exit
+fi
+mkdir ${1}
+chmod 774 ${1}
+cd ${1}
+
+cat > .gitignore <<EOF
+${1}
+EOF
+
+cat > start.txt <<EOF
+====== ${1} ======
+
+Fill me with content!
+EOF
+
+chmod 664 *

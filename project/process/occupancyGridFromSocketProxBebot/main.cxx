@@ -80,7 +80,7 @@ struct sensor BeBot[BeBotNumSensor];
 // Prototypes
 void sendLocalMap(rsb::EventPtr event, rsb::Informer< OccupancyGrid2DInt >::Ptr informerOccMap);
 void createMap(boost::shared_ptr<OccupancyGrid2DInt> &map);
-void drawSensorInformation(shared_ptr<std::vector<int> > &messageIr, boost::shared_ptr<OccupancyGrid2DInt> &map);
+void drawSensorInformation(boost::shared_ptr<std::vector<int> > &messageIr, boost::shared_ptr<OccupancyGrid2DInt> &map);
 int BeBotIrValue2localMap(int value);
 void initBeBotSensorCoordinates();
 
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
   ///////////////////////////////////////////////////////////////////////////////
 
   // Register new converter for std::vector<int>
-  shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
   converterRepository<std::string>()->registerConverter(converterVecInt);
 
   // Register new converter for occupancy grid maps
@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
 void sendLocalMap(rsb::EventPtr event, rsb::Informer< OccupancyGrid2DInt >::Ptr informerOccMap) {
 
       // Get the message with the IR data
-      shared_ptr<std::vector<int> > messageIr = static_pointer_cast<std::vector<int> >(event->getData());
+      boost::shared_ptr<std::vector<int> > messageIr = static_pointer_cast<std::vector<int> >(event->getData());
 
       // Create a map
       boost::shared_ptr<OccupancyGrid2DInt> map = boost::shared_ptr<OccupancyGrid2DInt>(new OccupancyGrid2DInt);
@@ -226,7 +226,7 @@ int BeBotIrValue2localMap(int value) {
   return x / g_fMapLocalResolution_m;
 }
 
-void drawSensorInformation(shared_ptr<std::vector<int> > &messageIr, boost::shared_ptr<OccupancyGrid2DInt> &map) {
+void drawSensorInformation(boost::shared_ptr<std::vector<int> > &messageIr, boost::shared_ptr<OccupancyGrid2DInt> &map) {
 
   // Copy map to an image
   cv::Mat mapImage(map->height(), map->width(), CV_8UC1);
@@ -295,9 +295,9 @@ void drawSensorInformation(shared_ptr<std::vector<int> > &messageIr, boost::shar
 
   // Show the map
 #ifndef __arm__
-  cv::flip(mapImage,mapImage,0); // Flip the image, to display the correct coordinates bottom-left
-  cv::imshow("Map",mapImage);
-  cv::waitKey(1);
+//   cv::flip(mapImage,mapImage,0); // Flip the image, to display the correct coordinates bottom-left
+//   cv::imshow("Map",mapImage);
+//   cv::waitKey(1);
 #endif
 
   // Copy image back to the map

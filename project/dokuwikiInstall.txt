@@ -9,10 +9,18 @@ Add your user to the www-data group and vice versa
   # usermod -a -G www-data <yourUserName>
   # usermod -a -G <yourGroupName> www-data
 
-Link the html folder to the project folder
+Link the html folder to the repository folder ''murox_dev''
   $ sudo su
   # rm -rf /var/www/html
-  # ln -s <your/project/root> /var/www/html
+  # ln -s <your/repository/root> /var/www/html
+  
+Setting the rights right, if DokuWiki does not work properly:
+  $ cd <your/repository/root>/project
+  $ # Setting the rights of the files
+  $ chmod -R u+rw g+rw *
+  $ # Setting the rights of the folder correct
+  $ find <your/repository/root>/project -type d -exec chmod +x {} \;
+  
   
 ===== Make the Plugins Work =====
 

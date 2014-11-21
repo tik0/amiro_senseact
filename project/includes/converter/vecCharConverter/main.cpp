@@ -9,7 +9,7 @@ namespace muroxConverter {
 // Converter<string>("vector of TYPE_PAYLOAD_", RSB_TYPE_TAG())
 // to infer the "string" name of the data-type using RTTI.
 CLASS_NAME_::CLASS_NAME_() :
-    Converter<string> (TYPE_PAYLOAD_STRING_, INFO_PAYLOAD_STRING_, true) {
+    Converter<string> (rsc::runtime::typeName<vector<TYPE_PAYLOAD_> >(), INFO_PAYLOAD_STRING_, true) {
 }
 
 string CLASS_NAME_::serialize(const AnnotatedData& data, string& wire) {

@@ -1,0 +1,35 @@
+====== Occupancy Grid Map Simulation ======
+
+This is a demo shows some socket communication via RSB.
+It simulates proximity values of the BeBot.
+These values are send via socket transport to a process, which creates an ogm out of it.
+At last, the ogm is send via socket transport to a process, which just displays the ogm as an OpenCV image.
+{{ :demo:occupancyGridSimulation:localogm.png?300 |Local BeBot occupancy grid map}}
+
+===== Run the demo =====
+
+  - ''cmake .''
+  - ''make''
+  - ''./run.sh'' for running the demo
+  - ''./stop.sh'' for stopping the demo
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication.
+
+===== RSB Communication Graph =====
+
+<latex>
+
+\textcolor{white}{text}
+
+\tikzstyle{int}=[draw, fill=blue!20, minimum size=2em]
+\tikzstyle{init} = [pin edge={to-,thin,black}]
+
+\begin{tikzpicture}[node distance=4cm,auto,>=latex']
+    \node [int] (a) {sendRandomIntVector};
+    \node [int] (b) [below of=a] {occupancyGridFromSocketProxBebot};
+    \node [int] (c) [below of=b] {showOccupancyGrid};
+    \path[->] (a) edge node { } (b);
+    \draw[->] (b) edge node { } (c) ;
+\end{tikzpicture}
+\textcolor{white}{text}
+</latex>

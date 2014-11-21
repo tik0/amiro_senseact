@@ -17,7 +17,7 @@ pkg_check_modules(PROTO protobuf)
 pkg_check_modules(GSTR gstreamer-0.10)
 find_package( OpenCV REQUIRED )
 
-
+# Get the system includes
 execute_process(COMMAND echo COMMAND ${CMAKE_CXX_COMPILER} -Wp,-v -x c++ - -fsyntax-only ERROR_VARIABLE GXX_OUTPUT)
 set(ENV{GXX_OUTPUT} ${GXX_OUTPUT})
 execute_process(COMMAND echo ${GXX_OUTPUT} COMMAND grep "^\ " COMMAND sed "s#\ ##g" COMMAND tr "\n" "\\;" OUTPUT_VARIABLE GXX_INCLUDES) 
@@ -32,9 +32,6 @@ include_directories(
     "../../includes"                                                # Other includes like converters and stuff
     "$ENV{CVB}/include"                                               # Stemmer imaging
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-    "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
     "../ARToolKit/include"                                          # ARToolKit
     ${GXX_INCLUDES}
 )

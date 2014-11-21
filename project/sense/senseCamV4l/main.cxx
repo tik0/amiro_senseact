@@ -29,7 +29,46 @@ using namespace rsb;
 using namespace muroxConverter; // The namespace for the own converters
 using namespace rsb::converter;
 
-int main() {
+#define INFO_MSG_
+// #define DEBUG_MSG_
+// #define SUCCESS_MSG_
+// #define WARNING_MSG_
+#define ERROR_MSG_
+#include <MSG.h>
+
+// For program options
+#include <boost/program_options.hpp>
+
+static std::string g_sInScope = "/image";
+static std::string g_sDevice = "/dev/video0";
+
+int main(int argc, char **argv) {  
+
+    namespace po = boost::program_options;
+
+    po::options_description options("Allowed options");
+    options.add_options()("help,h", "Display a help message.")
+            ("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving compressed images")
+            ("device,d", po::value < std::string > (&g_sDevice),"Location of device");
+
+    // allow to give the value as a positional argument
+    po::positional_options_description p;
+    p.add("value", 1);
+
+    po::variables_map vm;
+    po::store(
+            po::command_line_parser(argc, argv).options(options).positional(p).run(),
+            vm);
+
+    // first, process the help option
+    if (vm.count("help")) {
+        std::cout << options << "\n";
+        exit(1);
+    }
+    // afterwards, let program options handle argument errors
+    po::notify(vm);
+    
+    INFO_MSG( "Scope: " << g_sInScope)
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Register our converter within the collection of converters for
@@ -41,19 +80,17 @@ int main() {
   rsb::Factory &factory = rsb::Factory::getInstance();
 
   // Create the informer
-  Informer<cv::Mat>::Ptr informer = getFactory().createInformer<cv::Mat> (Scope("/image"));
+  Informer<cv::Mat>::Ptr informer = getFactory().createInformer<cv::Mat> (Scope(g_sInScope));
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
         struct v4l2_format fmt;
         int rc, fd = -1;
         unsigned int i, length;
-        char *dev_name = "/dev/video";
+        const char *dev_name = g_sDevice.c_str();
         char out_name[256];
         FILE *fout;
         void *buffer;
-
-        
         
         fd = v4l2_open(dev_name, O_RDWR, 0);
         if (fd < 0) {

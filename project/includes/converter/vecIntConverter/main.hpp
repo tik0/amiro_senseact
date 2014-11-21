@@ -55,7 +55,7 @@
 #define SIZE_PAYLOAD_ sizeof(int)
 #define TYPE_PAYLOAD_ int
 #define TYPE_PAYLOAD_STRING_ "std::vector<int, std::allocator<int> >"
-#define INFO_PAYLOAD_STRING_ "vector of int"
+#define INFO_PAYLOAD_STRING_ "vector"
 #define CLASS_NAME_ vecIntConverter
 
 using namespace std;

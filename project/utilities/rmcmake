@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "Remove: CMakeFiles/ CMakeCache.txt cmake_install.cmake Makefile `basename "$PWD"` lib/"
+# Remove the temp. cmake files
+rm -rf CMakeFiles/ CMakeCache.txt cmake_install.cmake Makefile
+# delete the executable
+rm `basename "$PWD"`
+rm -rf lib

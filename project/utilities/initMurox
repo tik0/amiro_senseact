@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "Init the utilities for global usage in bash"
+echo '## murox' >> ~/.bashrc
+echo "export PATH=${PWD}:\$PATH" >> ~/.bashrc
+

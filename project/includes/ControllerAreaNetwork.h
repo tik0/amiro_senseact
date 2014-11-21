@@ -4,6 +4,8 @@
 // Description : Communication via CAN
 //============================================================================
 
+#ifndef AMIRO_CAN_H_
+#define AMIRO_CAN_H_
 
 // This defines as to be the same as in ControllerAreaNetwork.h for the
 // embedded processor designe
@@ -298,3 +300,5 @@ class ControllerAreaNetwork {
   struct can_frame frame;
   int s;
 };
+
+#endif /* AMIRO_CAN_H_ */

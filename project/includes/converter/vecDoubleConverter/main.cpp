@@ -9,7 +9,7 @@ namespace muroxConverter {
 // Converter<string>("vector of TYPE_PAYLOAD_", RSB_TYPE_TAG())
 // to infer the "string" name of the data-type using RTTI.
 CLASS_NAME_::CLASS_NAME_() :
-    Converter<string> (TYPE_PAYLOAD_STRING_, INFO_PAYLOAD_STRING_, true) {
+    Converter<string> (rsc::runtime::typeName<vector<TYPE_PAYLOAD_> >(), INFO_PAYLOAD_STRING_, true) {
 }
 
 string CLASS_NAME_::serialize(const AnnotatedData& data, string& wire) {
@@ -24,8 +24,6 @@ string CLASS_NAME_::serialize(const AnnotatedData& data, string& wire) {
             static_pointer_cast<const std::vector<TYPE_PAYLOAD_> > (data.second);
 
     // Prepare the sending data
-    //
-    // Get the information of the matrix and store it
 	    
     // Get number of values in the vector
     TYPE_UINT_ uiVecSize = (TYPE_UINT_) vector->size();
@@ -49,10 +47,6 @@ AnnotatedData CLASS_NAME_::deserialize(const string& wireSchema,
     // Ensure that WIRE uses the expected wire-schema.
 
     assert(wireSchema == getWireSchema()); // this->getWireSchema() == "vector of TYPE_PAYLOAD_"
-
-    // Allocate a new SimpleImage object and set its data members from
-    // the content of WIRE.
-    //
 
     // Get number of values in the vector
     const TYPE_UINT_ uiVecSize = *(TYPE_UINT_*)   &*wire.begin();

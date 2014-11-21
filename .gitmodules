@@ -1,0 +1,4 @@
+[submodule "project/includes/eigen"]
+	path = project/includes/eigen
+	url = https://github.com/vancegroup-mirrors/eigen.git
+	branch = hg/3.2
