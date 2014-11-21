@@ -61,6 +61,7 @@ target_link_libraries (
     "${PROJECT_NAME}"
     rsb0.11
     boost_system
+    boost_signals
     boost_program_options
     rsc0.11
     ${OpenCV_LIBS}
