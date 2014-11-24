@@ -1,29 +1,21 @@
 cmake_minimum_required (VERSION 2.6)
 
 # Set the project name to the name of the folder
-string (REGEX MATCH "[^/]+$" PROJECT_NAME "${CMAKE_CURRENT_BINARY_DIR}")
-message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
-project ("${PROJECT_NAME}")
+# Get the compiler specific includes and store them in GXX_INCLUDES
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Set the include pathe
 include_directories(
-    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-    "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
+    ${GXX_INCLUDES}
 )
+
+# Define the source
+SET (SOURCE main.cxx)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" main.cxx)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})
 
-# Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
-link_directories (
-    "$ENV{SDKTARGETSYSROOT}/usr/lib"
-)
-
-SET (
-    CMAKE_CXX_FLAGS
-    -Wno-deprecated-declarations
-)
+# Additional compiler flags
+ADD_DEFINITIONS (-std=c++0x -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings)
