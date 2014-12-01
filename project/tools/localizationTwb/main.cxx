@@ -128,6 +128,8 @@ rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informer;
 // Scope for sending the data
 std::string rsbOutScope = "/murox/roboterlocation";
 
+int counter = 0;
+
 
 /**
  * Prototypes
@@ -145,6 +147,45 @@ static void initARToolkit(int xsize, int ysize);
 static void cleanup(void);
 // Handle program options
 static void programOptions(int argc, char **argv);
+
+
+// Video writer
+
+cv::VideoWriter _writer;
+bool _isRecording = false;
+int frame_num_torecord = 0;
+int maxrecord = 9000;
+
+void initVideoRecorder(cv::Size frame_size)
+{
+	if(!_isRecording)
+	{
+		frame_num_torecord = 0;
+		std:: string file_name = "/home/nils/Videos/tracking_video.avi";
+		_writer = cv::VideoWriter(file_name, CV_FOURCC('D','I','V','X'), 30, frame_size);
+	}
+        _isRecording = true;
+}
+
+void recordVideo(cv::Mat frame)
+{
+	if(_isRecording)
+	{
+	//std::cout << "frame:" << frame_num_torecord << std::endl;
+	_writer.write(frame);
+	}
+}
+
+void stopRecordVideo()
+{
+	if(_isRecording && frame_num_torecord >= maxrecord)
+	{
+		_isRecording = false;
+		frame_num_torecord = 0;
+		_writer.release();
+		std::cout << "finish video recording!" << std::endl;
+	}
+}
 
 int main(int argc, char **argv) {
 
@@ -168,6 +209,12 @@ int main(int argc, char **argv) {
 
   char driverPath[DRIVERPATHSIZE] = { 0 };
 
+  cv::Size frame_size;
+  frame_size.width = 1000;
+  frame_size.height = 1000;
+
+  initVideoRecorder(frame_size);	
+	
   // Get Driver from arguments
   TranslateFileName("%CVB%/drivers/GenICam.vin", driverPath, DRIVERPATHSIZE);
   LoadImageFile(driverPath, hCamera);
@@ -281,10 +328,20 @@ static void cleanup(void) {
 }
 
 void tracking() {
+  
+  counter++;
 
   rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
 
+    //cv::Mat frame_torecord(image);
+  frame_num_torecord++;
+  recordVideo(frame);
+  stopRecordVideo();
+
+  if(counter >= 5)
+  {
   std::cout << "---ID\t x\t y\t f---" << std::endl;
+  }
 
   ARUint8 *dataPtr;
   ARMarkerInfo *marker_info;
@@ -373,6 +430,8 @@ void tracking() {
       object[idxObject].marker_pos[1] = object[idxObject].marker_pos[1] + 0.5;
       object[idxObject].marker_grad = object[idxObject].marker_grad + 0.5;
 
+     if(counter >=5)
+     {
       // Print out the found position
       std::cout
           << "   "
@@ -380,22 +439,25 @@ void tracking() {
           << "\t "
           << (int) object[idxObject].marker_pos[0]
           << "\t "
-          << (int) object[idxObject].marker_pos[1]
+          << 1000 - (int) object[idxObject].marker_pos[1]
           << "\t "
-          << (int) object[idxObject].marker_grad
+          << 360 - (int) object[idxObject].marker_grad
           << std::endl;
-
+      }
       // Add a new robot to the list
       twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
       pose2D->set_x(float(object[idxObject].marker_pos[0]));
-      pose2D->set_y(float(object[idxObject].marker_pos[1]));
-      pose2D->set_orientation(float(object[idxObject].marker_grad));
+      pose2D->set_y(float(1000 - object[idxObject].marker_pos[1]));
+      pose2D->set_orientation(float(360 - object[idxObject].marker_grad));
       pose2D->set_id(object[idxObject].id);
     }
 
-    // Send the data
-    informer->publish(pose2DList);
-
+	if(counter >= 5)
+	{
+    		// Send the data
+    		informer->publish(pose2DList);
+		counter = 0;
+	}
   }
 
   /*swap the graphics buffers*/
