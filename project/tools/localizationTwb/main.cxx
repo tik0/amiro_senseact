@@ -151,38 +151,42 @@ static void programOptions(int argc, char **argv);
 
 // Video writer
 
-cv::VideoWriter _writer;
-bool _isRecording = false;
-int frame_num_torecord = 0;
-int maxrecord = 9000;
+cv::VideoWriter recorder;
+bool doRecord = false;
+bool isRecording = false;
+std::size_t numFramesRecorded = 0;
+std::size_t numFrames = 0;
+std::string recordFilename = "video.avi";
+std::size_t fpsRecord = 30;
 
-void initVideoRecorder(cv::Size frame_size)
+void initVideoRecorder(cv::Size frameSize)
 {
-	if(!_isRecording)
+	if(!isRecording)
 	{
-		frame_num_torecord = 0;
-		std:: string file_name = "/home/nils/Videos/tracking_video.avi";
-		_writer = cv::VideoWriter(file_name, CV_FOURCC('D','I','V','X'), 30, frame_size);
+		numFramesRecorded = 0;
+		recorder = cv::VideoWriter(recordFilename, CV_FOURCC('D','I','V','X'), fpsRecord, frameSize);
 	}
-        _isRecording = true;
+
+	isRecording = true;
 }
 
 void recordVideo(cv::Mat frame)
 {
-	if(_isRecording)
+	if(isRecording)
 	{
-	//std::cout << "frame:" << frame_num_torecord << std::endl;
-	_writer.write(frame);
+		++numFramesRecorded;
+		//std::cout << "frame:" << numFramesRecorded << std::endl;
+		recorder.write(frame);
 	}
 }
 
 void stopRecordVideo()
 {
-	if(_isRecording && frame_num_torecord >= maxrecord)
+	if((isRecording && numFramesRecorded >= numFrames) && (numFrames != 0))
 	{
-		_isRecording = false;
-		frame_num_torecord = 0;
-		_writer.release();
+		isRecording = false;
+		numFramesRecorded = 0;
+		recorder.release();
 		std::cout << "finish video recording!" << std::endl;
 	}
 }
@@ -208,12 +212,6 @@ int main(int argc, char **argv) {
   glutInit(&argcGlut, argv);
 
   char driverPath[DRIVERPATHSIZE] = { 0 };
-
-  cv::Size frame_size;
-  frame_size.width = 1000;
-  frame_size.height = 1000;
-
-  initVideoRecorder(frame_size);	
 	
   // Get Driver from arguments
   TranslateFileName("%CVB%/drivers/GenICam.vin", driverPath, DRIVERPATHSIZE);
@@ -230,6 +228,10 @@ int main(int argc, char **argv) {
   // Height & Width of the camera image
   long IMGheight = ImageHeight(hCamera);
   long IMGwidth = ImageWidth(hCamera);
+
+  // Init the video recorder
+  cv::Size frameSize(IMGwidth, IMGheight);
+  initVideoRecorder(frameSize);
 
   // Allocation of the BGR framedata
   frame.create(IMGheight, IMGwidth, CV_8UC3);
@@ -266,7 +268,11 @@ static void programOptions(int argc, char **argv) {
   options.add_options()("help,h", "Display a help message.")
     ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending the robot localizations.")
     ("tresh,t", po::value < int > (&thresh), "Threshold value (between 0-255) of to be used to convert the input image into a binary image. Standard value: 100")
-    ("confidenceFactor,c", po::value < double > (&confidenceFactor), "Threshold value (between 0.0-1.0) of the confidence factor for the recognized patterns. Standard value: 0.7");
+    ("confidenceFactor,c", po::value < double > (&confidenceFactor), "Threshold value (between 0.0-1.0) of the confidence factor for the recognized patterns. Standard value: 0.7")
+    ("record,r", po::value < bool > (&doRecord), "Set value to 1 to record the video")
+    ("recordFilename,f", po::value < std::string > (&recordFilename), "Filename of the video. Standard value: video.avi")
+    ("numFrames,n", po::value < size_t > (&numFrames), "Numbers of frames to record (0 for no framenumber constraints). Standard value: 0")
+    ("fpsRecord", po::value < size_t > (&fpsRecord), "Frames per second for replay. Standard value: 30");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -334,7 +340,6 @@ void tracking() {
   rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
 
     //cv::Mat frame_torecord(image);
-  frame_num_torecord++;
   recordVideo(frame);
   stopRecordVideo();
 
