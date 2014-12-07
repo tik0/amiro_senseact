@@ -42,4 +42,4 @@ TARGET_LINK_LIBRARIES (
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings)
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)

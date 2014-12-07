@@ -7,37 +7,9 @@
 #ifndef AMIRO_CAN_H_
 #define AMIRO_CAN_H_
 
-// This defines as to be the same as in ControllerAreaNetwork.h for the
-// embedded processor designe
-
-#define UPDATE_PERIOD_MSEC              MS2ST(125)
-
-#define PERIODIC_TIMER_ID               1
-#define CAN_RECEIVED_ID                 2
-
-#define CAN_BOARD_ID_SHIFT              0x00u
-#define CAN_BOARD_ID_MASK               0x07u
-#define CAN_DEVICE_ID_SHIFT             0x03u
-#define CAN_DEVICE_ID_MASK              0xFFu
-#define CAN_INDEX_ID_SHIFT              0x03u
-#define CAN_INDEX_ID_MASK               0x07u
-
-#define CAN_LIGHT_RING_ID               1
-#define CAN_POWER_MANAGEMENT_ID         2
-#define CAN_DI_WHEEL_DRIVE_ID           3
-#define CAN_COGNITION                   4
-
-#define CAN_PROXIMITY_FLOOR_ID          0x51
-#define CAN_ODOMETRY_ID                 0x50
-#define CAN_BRIGHTNESS_ID               0x40
-#define CAN_COLOR_ID(index)             (0x38 | ((index) & 0x7))
-#define CAN_PROXIMITY_RING_ID(index)    (0x30 | ((index) & 0x7))
-#define CAN_ACTUAL_SPEED_ID             0x20
-#define CAN_SET_ODOMETRY_ID             0x11
-#define CAN_TARGET_SPEED_ID             0x10
-#define CAN_BROADCAST_SHUTDOWN          0x80u
-
-#define CAN_SHUTDOWN_MAGIC              0xAA55u
+// The CAN::* values are defined in the Constants.h, which
+// is copied from the amiro-os repository
+#include <Constants.h>
 
 #include <linux/can.h>
 #include <linux/can/raw.h>  // CAN_RAW_FILTER
@@ -95,7 +67,7 @@ class ControllerAreaNetwork {
   void setTargetSpeed(int v, int w) {
     /* first fill, then send the CAN frame */
     this->frame.can_id = 0;
-    this->encodeDeviceId(&this->frame, CAN_TARGET_SPEED_ID);
+    this->encodeDeviceId(&this->frame, CAN::TARGET_SPEED_ID);
     memcpy(&(this->frame.data[0]), &v, 4);
     memcpy(&(this->frame.data[4]), &w, 4);
     this->frame.can_dlc = 8;
@@ -114,7 +86,7 @@ class ControllerAreaNetwork {
     struct can_filter rfilter[1];
 
     /* Set the filter for the message */
-    rfilter[0].can_id   = ((CAN_ODOMETRY_ID & CAN_DEVICE_ID_MASK) << CAN_DEVICE_ID_SHIFT) | CAN_DI_WHEEL_DRIVE_ID;
+    rfilter[0].can_id   = ((CAN::ODOMETRY_ID & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::DI_WHEEL_DRIVE_ID;
 //    rfilter[0].can_id   = 0x383u;
     rfilter[0].can_mask = CAN_SFF_MASK;
 
@@ -141,7 +113,7 @@ class ControllerAreaNetwork {
     // NOTE: for robotPosition only values between [0, 2 * pi * 1e6] are allowed
 
     this->frame.can_id = 0;
-    this->encodeDeviceId(&frame, CAN_SET_ODOMETRY_ID);
+    this->encodeDeviceId(&frame, CAN::SET_ODOMETRY_ID);
     // Cut of the first byte, which precission is not needed
     int32_t x_mm = (robotPosition.x >> 8);
     int32_t y_mm = (robotPosition.y >> 8);
@@ -160,7 +132,7 @@ class ControllerAreaNetwork {
     struct can_filter rfilter[1];
 
     /* Set the filter for the message */
-    rfilter[0].can_id   = ((CAN_ACTUAL_SPEED_ID & CAN_DEVICE_ID_MASK) << CAN_DEVICE_ID_SHIFT) | CAN_DI_WHEEL_DRIVE_ID;
+    rfilter[0].can_id   = ((CAN::ACTUAL_SPEED_ID & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::DI_WHEEL_DRIVE_ID;
     rfilter[0].can_mask = CAN_SFF_MASK;
 
     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
@@ -188,7 +160,7 @@ class ControllerAreaNetwork {
     struct can_filter rfilter[1];
 
     /* Set the filter for the message */
-    rfilter[0].can_id   = getCanFilter(CAN_PROXIMITY_FLOOR_ID, CAN_DI_WHEEL_DRIVE_ID);
+    rfilter[0].can_id   = getCanFilter(CAN::PROXIMITY_FLOOR_ID, CAN::DI_WHEEL_DRIVE_ID);
     rfilter[0].can_mask = CAN_SFF_MASK;
 
     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
@@ -219,7 +191,7 @@ class ControllerAreaNetwork {
 
     /* Set the filter for the message */
     for (int idx = 0; idx < 8; ++idx ) {
-      rfilter[idx].can_id   = ((CAN_PROXIMITY_RING_ID(idx) & CAN_DEVICE_ID_MASK) << CAN_DEVICE_ID_SHIFT) | CAN_POWER_MANAGEMENT_ID;
+      rfilter[idx].can_id   = ((CAN::PROXIMITY_RING_ID(idx) & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::POWER_MANAGEMENT_ID;
       rfilter[idx].can_mask = CAN_SFF_MASK;
     }
 
@@ -243,17 +215,16 @@ class ControllerAreaNetwork {
 
   void broadcastShutdown() {
       this->frame.can_id = 0;
-      this->encodeDeviceId(&frame, CAN_BROADCAST_SHUTDOWN);
-      const uint16_t data = CAN_SHUTDOWN_MAGIC;
+      this->encodeDeviceId(&frame, CAN::BROADCAST_SHUTDOWN);
+      const uint16_t data = CAN::SHUTDOWN_MAGIC;
       memcpy(&(this->frame.data[0]),&data,2);
       this->frame.can_dlc = 2;
       this->transmitMessage(&frame);
-
   }
 
   void setLightBrightness(uint8_t brightness) {
     this->frame.can_id = 0;
-    this->encodeDeviceId(&frame, CAN_BRIGHTNESS_ID);
+    this->encodeDeviceId(&frame, CAN::BRIGHTNESS_ID);
     memcpy(&(this->frame.data[0]),&brightness,1);
     this->frame.can_dlc = 1;
     this->transmitMessage(&frame);
@@ -261,7 +232,7 @@ class ControllerAreaNetwork {
 
   void setLightColor(int index, Color color) {
     this->frame.can_id = 0;
-    this->encodeDeviceId(&frame, CAN_COLOR_ID(index));
+    this->encodeDeviceId(&frame, CAN::COLOR_ID(index));
     uint8_t redColor = color.getRed();
     uint8_t greenColor = color.getGreen();
     uint8_t blueColor = color.getBlue();
@@ -272,27 +243,41 @@ class ControllerAreaNetwork {
     this->transmitMessage(&frame);
   }
 
+  void calibrateRingProximitySensors(int index, Color color) {
+    this->frame.can_id = 0;
+    this->encodeDeviceId(&frame, CAN::CALIBRATE_PROXIMITY_RING);
+    this->frame.can_dlc = 0;
+    this->transmitMessage(&frame);
+  }
+
+  void calibrateFloorProximitySensors(int index, Color color) {
+    this->frame.can_id = 0;
+    this->encodeDeviceId(&frame, CAN::CALIBRATE_PROXIMITY_FLOOR);
+    this->frame.can_dlc = 0;
+    this->transmitMessage(&frame);
+  }
+
  private:
    
   int getCanFilter(int deviceID, int boardID) {
-    return ((deviceID & CAN_DEVICE_ID_MASK) << CAN_DEVICE_ID_SHIFT) | boardID;
+    return ((deviceID & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | boardID;
   }
   
   void encodeDeviceId(struct can_frame *frame, int device) {
-    frame->can_id |= (device & CAN_DEVICE_ID_MASK) << CAN_DEVICE_ID_SHIFT;
+    frame->can_id |= (device & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT;
   }
 
   int decodeDeviceId(struct can_frame *frame) {
-    return (frame->can_id >> CAN_DEVICE_ID_SHIFT) & CAN_DEVICE_ID_MASK;
+    return (frame->can_id >> CAN::DEVICE_ID_SHIFT) & CAN::DEVICE_ID_MASK;
   }
 
   ssize_t transmitMessage(struct can_frame *frame) {
-    this->encodeBoardId(frame, CAN_COGNITION);
+    this->encodeBoardId(frame, CAN::COGNITION);
     return write(this->s, &this->frame, sizeof(this->frame));
   }
 
   void encodeBoardId(struct can_frame *frame, int board) {
-    frame->can_id |= (board & CAN_BOARD_ID_MASK) << CAN_BOARD_ID_SHIFT;
+    frame->can_id |= (board & CAN::BOARD_ID_MASK) << CAN::BOARD_ID_SHIFT;
   }
 
   struct ifreq ifr;

@@ -40,7 +40,7 @@ static int g_blue = 0;
 void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   
   // Get the message
-  shared_ptr<std::vector<int> > message = static_pointer_cast<std::vector<int> >(event->getData());
+  boost::shared_ptr<std::vector<int> > message = boost::static_pointer_cast<std::vector<int> >(event->getData());
   
   // Set the colors
    for (int ledIdx = 0; ledIdx < 8 ; ++ledIdx) {
@@ -88,7 +88,7 @@ int main (int argc, const char **argv){
   rsb::Factory& factory = rsb::Factory::getInstance();
 
   // Register new converter for std::vector<int>
-  shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
   converterRepository<std::string>()->registerConverter(converterVecInt);
 
   // Prepare RSB reader

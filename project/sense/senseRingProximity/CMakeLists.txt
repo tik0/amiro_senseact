@@ -43,4 +43,4 @@ target_link_libraries (
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wno-deprecated-declarations -O2)
+ADD_DEFINITIONS (-Wno-deprecated-declarations -O2 -std=c++11)

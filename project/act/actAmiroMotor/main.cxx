@@ -1,3 +1,4 @@
+
 //============================================================================
 // Name        : main.cxx
 // Author      : tkorthals <tkorthals@cit-ec.uni-bielefeld.de>
@@ -36,7 +37,7 @@ using namespace muroxConverter;
 void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   
   // Get the message
-  shared_ptr<std::vector<int> > message = static_pointer_cast<std::vector<int> >(event->getData());
+  boost::shared_ptr<std::vector<int> > message = boost::static_pointer_cast<std::vector<int> >(event->getData());
   
   // Set the motor speed
   // Velocity send in µm/s
@@ -80,7 +81,7 @@ int main (int argc, const char **argv){
   rsb::Factory& factory = rsb::Factory::getInstance();
 
   // Register new converter for std::vector<int>
-  shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
   converterRepository<std::string>()->registerConverter(converterVecInt);
 
   // Prepare RSB reader

@@ -21,37 +21,78 @@
  */
 
 #include <math.h>
-#define M_PI 3.14159265358979323846
+
+/* CAN_* defines start */
+
+/** \brief Controller Area Network specific defines
+ *
+ * These CAN_* defines are used in ControllerAreaNetworkRx.h
+ * and ControllerAreaNetworkTx.h
+ */
+
+/* CAN_* defines end */
 
 namespace amiro {
+namespace CAN {
+  const uint32_t PERIODIC_TIMER_ID         = 1;
+  const uint32_t RECEIVED_ID               = 2;
+
+  const uint32_t BOARD_ID_SHIFT            = 0x00u;
+  const uint32_t BOARD_ID_MASK             = 0x07u;
+  const uint32_t DEVICE_ID_SHIFT           = 0x03u;
+  const uint32_t DEVICE_ID_MASK            = 0xFFu;
+  const uint32_t INDEX_ID_SHIFT            = 0x03u;
+  const uint32_t INDEX_ID_MASK             = 0x07u;
+
+  const uint32_t LIGHT_RING_ID             = 1;
+  const uint32_t POWER_MANAGEMENT_ID       = 2;
+  const uint32_t DI_WHEEL_DRIVE_ID         = 3;
+  const uint32_t COGNITION                 = 4;
+
+  const uint32_t PROXIMITY_FLOOR_ID        = 0x51;
+  const uint32_t ODOMETRY_ID               = 0x50;
+  const uint32_t BRIGHTNESS_ID             = 0x40;
+  inline constexpr uint32_t COLOR_ID(uint32_t index)             {return 0x38 | ((index) & 0x7);}
+  inline constexpr uint32_t PROXIMITY_RING_ID(uint32_t index)    {return 0x30 | ((index) & 0x7);}
+  const uint32_t ACTUAL_SPEED_ID           = 0x20;
+  const uint32_t SET_ODOMETRY_ID           = 0x11;
+  const uint32_t TARGET_SPEED_ID           = 0x10;
+  const uint32_t BROADCAST_SHUTDOWN        = 0x80u;
+
+  const uint32_t CALIBRATE_PROXIMITY_FLOOR = 0x81u;
+  const uint32_t CALIBRATE_PROXIMITY_RING  = 0x82u;
+
+  const uint32_t SHUTDOWN_MAGIC            = 0xAA55u;
+}
+
 namespace constants {
 
   /** \brief Amount of seconds per minute */
-  const uint32_t secondsPerMinute = 60;
+  const int32_t secondsPerMinute = 60;
   
   /** \brief Amount of minutes per hour */
-  const uint32_t minutesPerHour = 60;
+  const int32_t minutesPerHour = 60;
   
   /** \brief Amount of milliseconds per second */
-  const uint32_t millisecondsPerSecond = 1000;
+  const int32_t millisecondsPerSecond = 1000;
   
   /** \brief Distance between wheels in meter */
   const float wheelDistanceSI = 0.08f;
   
   /** \brief Distance between wheels in micrometer */
-  const uint32_t wheelDistance = wheelDistanceSI * 1e6;
+  const int32_t wheelDistance = wheelDistanceSI * 1e6;
   
   /** \brief Wheel diameter in meter */
   const float wheelDiameterSI = 0.05571f;
   
   /** \brief Wheel diameter */
-  const uint32_t wheelDiameter = wheelDiameterSI * 1e6;
+  const int32_t wheelDiameter = wheelDiameterSI * 1e6;
   
   /** \brief Wheel circumference in meter */
   const float wheelCircumferenceSI = M_PI * wheelDiameterSI;
   
   /** \brief Wheel circumference in micrometer */
-  const uint32_t wheelCircumference = wheelCircumferenceSI * 1e6;
+  const int32_t wheelCircumference = wheelCircumferenceSI * 1e6;
   
   /** \brief Wheel error in meter (topview left:0, right:1) */
   const float wheelErrorSI[2] = {0.1, 0.1};
