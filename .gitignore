@@ -1,3 +1,6 @@
+# Data system
+*.nfs*
+
 # Compiled Object files
 *.slo
 *.lo
