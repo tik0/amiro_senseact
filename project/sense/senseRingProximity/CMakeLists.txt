@@ -32,6 +32,11 @@ SET (SOURCE main.cxx)
 # Add sources to build
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecIntConverterSource.cmake")
 
+LINK_DIRECTORIES (
+    ${RSB_LIBRARY_DIRS}
+    ${RSC_LIBRARY_DIRS}
+)
+
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCE})
 

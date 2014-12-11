@@ -34,6 +34,14 @@ SET (SOURCE main.cxx)
 # Add sources to build
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
 
+LINK_DIRECTORIES (
+    ${RSB_LIBRARY_DIRS}
+    ${RSC_LIBRARY_DIRS}
+    ${OPENCV_LIBRARY_DIRS}
+)
+
+message(status OPENCV_LIBRARY_DIRS: ${OPENCV_LIBRARY_DIRS})
+
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCE})
 

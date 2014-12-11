@@ -31,6 +31,12 @@ include_directories(
 # Define the source
 SET (SOURCE main.cxx)
 
+LINK_DIRECTORIES (
+    ${RSB_LIBRARY_DIRS}
+    ${RSC_LIBRARY_DIRS}
+    ${OPENCV_LIBRARY_DIRS}
+)
+
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCE})
 
@@ -40,7 +46,6 @@ target_link_libraries (
     ${RSC_LIBRARIES}
     ${Boost_LIBRARIES}
     ${OPENCV_LIBRARIES}
-    jpeg
     pthread
 )
 
