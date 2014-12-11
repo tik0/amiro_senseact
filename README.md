@@ -22,13 +22,13 @@ Change rights for proper work
 Use the modules environment
 =
 * Use NX or SSH to log into the pool room or synthesis computers
-* To make the modules permanently in @bash@ available, edit @~/.bashrc@ (e.g. @$ nano ~/.bashrc@) and add the following lines
+* To make the modules permanently in bash available, edit ~/.bashrc (e.g. $ nano ~/.bashrc) and add the following lines
 ```
 if [ -f /vol/ks-softsync/etc/bashrc ]; then
   source /vol/ks-softsync/etc/bashrc
 fi
 ```
-* Optional for @Tcsh@ edit @~/.tcshrc@
+* Optional for Tcsh edit ~/.tcshrc
 ```
 if( -f /vol/ks-softsync/etc/cshrc ) then
   source /vol/ks-softsync/etc/cshrc
@@ -38,4 +38,8 @@ endif
 * Load the murox environment
 ```
 $ module load murox/env
+```
+* or load the poky cross compiler environment
+```
+$ module load poky/1.6.2
 ```
