@@ -4,8 +4,10 @@
 # SET (BOOST_COMPONENTS regex date_time program_options system thread)
 # include(findPackageBoost)
 
+set(Boost_ADDITIONAL_VERSIONS "1.55" "1.55.0")
+
 # First try to find boost via the normal FIND_PACKAGE command 
-FIND_PACKAGE(Boost QUIET COMPONENTS "${BOOST_COMPONENTS}")
+FIND_PACKAGE(Boost QUIET COMPONENTS "${BOOST_COMPONENTS}" PATH $ENV{BOOST_ROOT} $ENV{BOOST_INCLUDEDIR} $ENV{BOOST_LIBRARYDIR})
 
 # If this does not work, define it via the cross compiler environment
 IF (NOT Boost_FOUND)
