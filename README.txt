@@ -18,19 +18,19 @@ Change rights for proper work
 Use the modules environment
 * Use NX or SSH to log into the pool room or synthesis computers
 * To make the modules permanently in @bash@ available, edit @~/.bashrc@ (e.g. @$ nano ~/.bashrc@) and add the following lines
-<pre>
+```
 if [ -f /vol/ks-softsync/etc/bashrc ]; then
   source /vol/ks-softsync/etc/bashrc
 fi
-</pre>
+```
 * Optional for @Tcsh@ edit @~/.tcshrc@
-<pre>
+```
 if( -f /vol/ks-softsync/etc/cshrc ) then
   source /vol/ks-softsync/etc/cshrc
 endif
-</pre>
+```
 * Re-login or source the edited file
 * Load the murox environment
-<pre>
+```
 $ module load murox/env
-</pre>
+```
