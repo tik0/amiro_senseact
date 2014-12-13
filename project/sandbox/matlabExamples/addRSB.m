@@ -1,11 +1,10 @@
-function [ factory ] = addRSB()
+function [ factory ] = addRSB(PWD)
 %ADDRSX Add RSX libraries to Matlab
 %   Detailed explanation goes here
-rootpath = '/vol/cit/share/java';
-javaaddpath ([rootpath '/RSBJava-0.5.0.jar'])
-javaaddpath /opt/local/share/java/protobuf.jar
-javaaddpath ([rootpath '/rstsandbox.jar'])
-javaaddpath ([rootpath '/rst.jar'])
-javaaddpath /Users/swrede/Workspace/RSB.m/dist/lib/rsb.m-0.5.0.jar
+javaaddpath([PWD '/rsb-0.11-SNAPSHOT.jar'])
+javaaddpath([PWD '/rsb-matlab-0.11-SNAPSHOT.jar'])
+javaaddpath([PWD '/protobuf-java-2.5.0.jar'])
+javaaddpath([PWD '/rst-fleximon-0.11-SNAPSHOT.jar'])
+javaaddpath([PWD '/rst-sandbox-fleximon-0.11-SNAPSHOT.jar'])
 rsb.matlab.ConverterRegistration.register()
 end
