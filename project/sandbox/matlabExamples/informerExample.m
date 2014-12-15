@@ -4,7 +4,7 @@
 %              payload" to the scope "scope"
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear all; close all; clc
+clear all; close all; clc; clear java
 
 %% Add the java classes
 PWD = pwd;
