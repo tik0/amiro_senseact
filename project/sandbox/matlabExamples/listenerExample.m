@@ -15,8 +15,10 @@ javaaddpath([PWD '/rst-fleximon-0.11-SNAPSHOT.jar'])
 javaaddpath([PWD '/rst-sandbox-fleximon-0.11-SNAPSHOT.jar'])
 
 %% Do the RSB stuff
-factory = rsb.Factory.getInstance();
-listener = factory.createListener('/scope');
-listener.activate();
-% listener.addHandler();
-listener.deactivate();
+% factory = rsb.Factory.getInstance();
+% listener = factory.createListener('/scope');
+% listener.activate();
+% % listener.addHandler();
+% listener.deactivate();
+
+anglesPlotter('/')
