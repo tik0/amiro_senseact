@@ -4,15 +4,21 @@
 %              payload" to the scope "scope"
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear all; close all; clc
+clear all; close all; clc; clear java
 
 %% Add the java classes
 PWD = pwd;
-javaaddpath([PWD '/rsb-0.11-SNAPSHOT.jar'])
+javaaddpath([PWD '/protobuf-java-2.4.1.jar'])
+javaaddpath([PWD '/rsb-0.11.0.jar'])
 javaaddpath([PWD '/rsb-matlab-0.11-SNAPSHOT.jar'])
-javaaddpath([PWD '/protobuf-java-2.5.0.jar'])
 javaaddpath([PWD '/rst-fleximon-0.11-SNAPSHOT.jar'])
 javaaddpath([PWD '/rst-sandbox-fleximon-0.11-SNAPSHOT.jar'])
+
+%javaaddpath([PWD '/rsb-0.11-SNAPSHOT.jar'])
+%javaaddpath([PWD '/rsb-matlab-0.11-SNAPSHOT.jar'])
+%javaaddpath([PWD '/protobuf-java-2.5.0.jar'])
+%javaaddpath([PWD '/rst-fleximon-0.11-SNAPSHOT.jar'])
+%javaaddpath([PWD '/rst-sandbox-fleximon-0.11-SNAPSHOT.jar'])
 
 %% Do the RSB stuff
 factory = rsb.Factory.getInstance();
