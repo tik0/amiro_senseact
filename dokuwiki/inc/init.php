@@ -232,7 +232,7 @@ function init_paths(){
 
     $paths = array('datadir'   => '../../project',
             'olddir'    => 'attic',
-            'mediadir'  => 'media',
+            'mediadir'  => '../../project/media',
             'mediaolddir' => 'media_attic',
             'metadir'   => 'meta',
             'mediametadir' => 'media_meta',
