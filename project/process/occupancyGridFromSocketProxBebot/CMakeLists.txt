@@ -20,7 +20,10 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 
 # Get the compiler specific includes and store them in GXX_INCLUDES
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
-
+# get_cmake_property(_variableNames VARIABLES)
+# foreach (_variableName ${_variableNames})
+#     message(STATUS "${_variableName}=${${_variableName}}")
+# endforeach()
 # Set the include pathe
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
