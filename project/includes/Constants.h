@@ -21,6 +21,7 @@
  */
 
 #include <math.h>
+#include <stdint.h>
 
 /* CAN_* defines start */
 
