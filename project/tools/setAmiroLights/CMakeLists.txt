@@ -48,5 +48,5 @@ target_link_libraries (
 
 SET (
     CMAKE_CXX_FLAGS
-    -Wno-deprecated-declarations
+    "-Wno-deprecated-declarations -std=c++11"
 )
