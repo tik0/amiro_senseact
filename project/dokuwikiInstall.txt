@@ -1,6 +1,19 @@
 ====== DokuWiki Setup ======
 
-On a Linux system you need to install at least apache2 and php5:
+On a Linux system you need to install at least apache2 and php5.
+There are two ways.
+You can either install it via apt-get, or use local install script.
+
+===== Script =====
+
+Execute the install script with the install path and port number, where the Server is running:
+  $ project/utilities/installApache /tmp/apache2 1234
+
+This will take a while, because apache2 is build from source.
+Take a look on the coloerd comments, they should tell you what to do.
+
+===== apt-get =====
+
   $ sudo su
   # apt-get install apache2 libapache2-mod-php5
 
