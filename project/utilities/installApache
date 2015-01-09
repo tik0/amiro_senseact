@@ -19,7 +19,7 @@ PHP_SRC="http://de1.php.net/get/${PHP_VERSION}.tar.gz/from/this/mirror"
 LIBXML2_VERSION="libxml2-git-snapshot"
 LIBXML2_SRC="ftp://xmlsoft.org/libxml2/${LIBXML2_VERSION}.tar.gz"
 
-USE_PROXY=on
+USE_PROXY=off
 DO_CONFIGURE=true
 
 
@@ -83,7 +83,7 @@ cd $TMP_DIR
 tar -xzf ${PHP_VERSION}.tar.gz
 cd ${PHP_VERSION}
 if [ "${DO_CONFIGURE}" == true ]; then
-  ./configure --with-apxs2=${INSTALL_DIR}/bin/apxs --prefix=${INSTALL_DIR}/php --exec-prefix=${INSTALL_DIR}/php --with-config-file-path=${INSTALL_DIR}/php
+  ./configure --with-libxml-dir=${INSTALL_DIR} --with-apxs2=${INSTALL_DIR}/bin/apxs --prefix=${INSTALL_DIR}/php --exec-prefix=${INSTALL_DIR}/php --with-config-file-path=${INSTALL_DIR}/php
   #--disable-libxml --disable-dom --disable-simplexml --disable-xml --disable-xmlreader --disable-xmlwriter --without-pear
   #--without-mysql
 fi
