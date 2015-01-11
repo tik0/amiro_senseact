@@ -126,7 +126,30 @@ class ControllerAreaNetwork {
     this->transmitMessage(&frame);
   }
 
-  int getSpeedRpm(int32_t &leftWheelRpm, int32_t &rightWheelRpm) {
+  void setKinematicConstants(float Ed, float Eb) {
+
+    this->frame.can_id = 0;
+    this->encodeDeviceId(&frame, CAN::SET_KINEMATIC_CONST_ID);
+    // Copy the data structure
+    memcpy((uint8_t *)&(this->frame.data[0]), (uint8_t *)&Ed, 4);
+    memcpy((uint8_t *)&(this->frame.data[4]), (uint8_t *)&Eb, 4);
+    this->frame.can_dlc = 8;
+    this->transmitMessage(&frame);
+  }
+
+  void setTargetPosition(types::position robotPosition, uint32_t targetTime) {
+
+    this->frame.can_id = 0;
+    this->encodeDeviceId(&frame, CAN::SET_KINEMATIC_CONST_ID);
+    // Copy the data structure
+    memcpy((uint8_t *)&(this->frame.data[0]), (uint8_t *)&robotPosition.x, 4);
+    memcpy((uint8_t *)&(this->frame.data[4]), (uint8_t *)&robotPosition.f_z, 4);
+    memcpy((uint8_t *)&(this->frame.data[8]), (uint8_t *)&targetTime, 4);
+    this->frame.can_dlc = 12;
+    this->transmitMessage(&frame);
+  }
+
+  int getActualSpeed(int32_t &v, int32_t &w) {
 
     int returnValue = 0;
     struct can_filter rfilter[1];
@@ -141,8 +164,8 @@ class ControllerAreaNetwork {
     int nbytes = read(s, &frame, sizeof(frame));
     /* Process the data */
      if (nbytes != 8) {
-       memcpy(&leftWheelRpm, &(frame.data[0]), 4);
-       memcpy(&rightWheelRpm, &(frame.data[4]), 4);
+       memcpy(&v, &(frame.data[0]), 4);
+       memcpy(&w, &(frame.data[4]), 4);
      } else {
        returnValue = -1;
      }
