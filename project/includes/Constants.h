@@ -35,6 +35,8 @@
 
 namespace amiro {
 namespace CAN {
+  const uint32_t UPDATE_PERIOD_MSEC        = MS2ST(125);
+
   const uint32_t PERIODIC_TIMER_ID         = 1;
   const uint32_t RECEIVED_ID               = 2;
 
@@ -55,9 +57,13 @@ namespace CAN {
   const uint32_t BRIGHTNESS_ID             = 0x40;
   inline constexpr uint32_t COLOR_ID(uint32_t index)             {return 0x38 | ((index) & 0x7);}
   inline constexpr uint32_t PROXIMITY_RING_ID(uint32_t index)    {return 0x30 | ((index) & 0x7);}
+  const uint32_t SET_KINEMATIC_CONST_ID    = 0x22;
+  const uint32_t TARGET_POSITION_ID        = 0x21;
   const uint32_t ACTUAL_SPEED_ID           = 0x20;
-  const uint32_t SET_ODOMETRY_ID           = 0x11;
+  const uint32_t SET_ODOMETRY_ID           = 0x12;
+  const uint32_t TARGET_RPM_ID             = 0x11;
   const uint32_t TARGET_SPEED_ID           = 0x10;
+  const uint32_t POWER_STATUS_ID           = 0x60;
   const uint32_t BROADCAST_SHUTDOWN        = 0x80u;
 
   const uint32_t CALIBRATE_PROXIMITY_FLOOR = 0x81u;
@@ -78,10 +84,10 @@ namespace constants {
   const int32_t millisecondsPerSecond = 1000;
   
   /** \brief Distance between wheels in meter */
-  const float wheelDistanceSI = 0.08f;
+  const float wheelBaseDistanceSI = 0.08f;
   
   /** \brief Distance between wheels in micrometer */
-  const int32_t wheelDistance = wheelDistanceSI * 1e6;
+  const int32_t wheelBaseDistance = wheelBaseDistanceSI * 1e6;
   
   /** \brief Wheel diameter in meter */
   const float wheelDiameterSI = 0.05571f;
