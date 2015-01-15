@@ -10,10 +10,15 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
+find_package(RSB REQUIRED)
+find_package(RSC REQUIRED)
+find_package(RST REQUIRED)
+find_package(Protobuf REQUIRED)
 pkg_check_modules(GLIB glib-2.0)
-pkg_check_modules(PROTO protobuf)
+#pkg_check_modules(RSB rsb0.11)
+#pkg_check_modules(RSC rsc0.11)
+#pkg_check_modules(GLIB glib-2.0)
+#pkg_check_modules(PROTO protobuf)
 pkg_check_modules(GSTR gstreamer-0.10)
 find_package( OpenCV REQUIRED )
 
@@ -28,7 +33,7 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${GLIB_INCLUDE_DIRS}                                            # glib
     ${GSTR_INCLUDE_DIRS}                                            # gstreamer
-    ${PROTO_INCLUDE_DIRS}                                           # Protobuffer
+    ${PROTOBUF_INCLUDE_DIRS}                                           # Protobuffer
     "../../includes"                                                # Other includes like converters and stuff
     "$ENV{CVB}/include"                                               # Stemmer imaging
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
@@ -56,10 +61,12 @@ add_definitions (
 
 target_link_libraries (
     "${PROJECT_NAME}"
+    ${BOOST_LIBS}
     rsb0.11
-    boost_system
-    boost_signals
-    boost_program_options
+    ${Boost_LIBARIES}
+    # boost_system
+    # boost_signals
+    # boost_program_options
     rsc0.11
     ${OpenCV_LIBS}
     # -- stemmer imaging
@@ -82,7 +89,7 @@ target_link_libraries (
     # -- g-streamer
     ${GSTR_LIBRARIES}
     # -- Protobuffer
-    ${PROTO_LIBRARIES}
+    ${PROTOBUF_LIBRARIES}
 )
 
 message (STATUS  "${GLIB_LIBRARIES}")
