@@ -137,15 +137,18 @@ class ControllerAreaNetwork {
     this->transmitMessage(&frame);
   }
 
-  void setTargetPosition(types::position robotPosition, uint32_t targetTime) {
+  void setTargetPosition(types::position &robotPosition, uint16_t targetTimeMilliSeconds) {
 
     this->frame.can_id = 0;
-    this->encodeDeviceId(&frame, CAN::TARGET_POSITION_ID);
+    this->encodeDeviceId(&this->frame, CAN::TARGET_POSITION_ID);
+    // Cut of the first byte, which precission is not needed
+    int32_t x_mm = (robotPosition.x >> 8);
+    int32_t f_z_mrad = int32_t(robotPosition.f_z >> 8 );
     // Copy the data structure
-    memcpy((uint8_t *)&(this->frame.data[0]), (uint8_t *)&robotPosition.x, 4);
-    memcpy((uint8_t *)&(this->frame.data[4]), (uint8_t *)&robotPosition.f_z, 4);
-    memcpy((uint8_t *)&(this->frame.data[8]), (uint8_t *)&targetTime, 4);
-    this->frame.can_dlc = 12;
+    memcpy((uint8_t *)&(this->frame.data[0]), (uint8_t *)&x_mm, 3);
+    memcpy((uint8_t *)&(this->frame.data[3]), (uint8_t *)&f_z_mrad, 3);
+    memcpy((uint8_t *)&(this->frame.data[6]), (uint8_t *)&targetTimeMilliSeconds, 2);
+    this->frame.can_dlc = 8;
     this->transmitMessage(&frame);
   }
 
