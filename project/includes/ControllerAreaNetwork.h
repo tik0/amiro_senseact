@@ -140,7 +140,7 @@ class ControllerAreaNetwork {
   void setTargetPosition(types::position robotPosition, uint32_t targetTime) {
 
     this->frame.can_id = 0;
-    this->encodeDeviceId(&frame, CAN::SET_KINEMATIC_CONST_ID);
+    this->encodeDeviceId(&frame, CAN::TARGET_POSITION_ID);
     // Copy the data structure
     memcpy((uint8_t *)&(this->frame.data[0]), (uint8_t *)&robotPosition.x, 4);
     memcpy((uint8_t *)&(this->frame.data[4]), (uint8_t *)&robotPosition.f_z, 4);
