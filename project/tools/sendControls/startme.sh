@@ -1,1 +1,1 @@
-./send_controls -o /proc/steering/raw
+./sendControls -o /proc/steering/raw
