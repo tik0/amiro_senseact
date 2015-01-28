@@ -45,11 +45,14 @@ echo "export PATH=${PWD}:\$PATH" >> "$_tmp"
 echo -e "\e[42mSet environment variables with MUROX_ prefix\e[0m"
 # Go to folder murox_dev and set the environment variables
 cd ../..
-echo "export MUROX_ENV=${PWD}" >> "$_tmp"
-echo "export MUROX_DOKU=${PWD}/dokuwiki" >> "$_tmp"
-echo "export MUROX_PROJECT=${PWD}/project" >> "$_tmp"
-echo "export MUROX_INCLUDE_DIRS=${PWD}/project/includes" >> "$_tmp"
-echo "export MUROX_CMAKE_MODULES=${PWD}/project/utilities/cmake" >> "$_tmp"
+echo "export MUROX_ENV=${PWD}" | tee -a "$_tmp"
+echo "export MUROX_DOKU=${PWD}/dokuwiki" | tee -a "$_tmp"
+echo "export MUROX_PROJECT=${PWD}/project" | tee -a "$_tmp"
+echo "export MUROX_INCLUDE_DIRS=${PWD}/project/includes" | tee -a "$_tmp"
+echo "export MUROX_CMAKE_MODULES=${PWD}/project/utilities/cmake" | tee -a "$_tmp"
+echo -e "\e[42mSet environment variables with for GAZEBO\e[0m"
+echo "export GAZEBO_MODEL_PATH=${PWD}/project/simulation/models:${GAZEBO_MODEL_PATH}" | tee -a "$_tmp"
+echo "export GAZEBO_PLUGIN_PATH=${PWD}/simulation/gazebo_rsb_pkgs/gazebo_plugins/build:${GAZEBO_PLUGIN_PATH}" | tee -a "$_tmp"
 echo "${_end}" >> "$_tmp"
 
 # Replace and cleanup the old file

@@ -1,0 +1,28 @@
+<?xml version='1.0'?>
+<sdf version='1.4'>
+  <model name="AMiRo Kinect">
+    <static>false</static>
+
+    <include>
+        <uri>model://AMiRo</uri>
+        <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://kinect</uri>
+      <pose>.025 0 0.128 0 0 0</pose>
+    </include>
+    <joint name="kinect_joint" type="revolute">
+      <child>kinect::link</child>
+      <parent>AMiRo::chassis</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+  </model>
+</sdf>

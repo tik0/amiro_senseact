@@ -1,0 +1,29 @@
+<?xml version='1.0'?>
+<sdf version='1.4'>
+  <model name="AMiRo Hokuyo">
+    <static>false</static>
+
+    <include>
+        <uri>model://AMiRo</uri>
+        <pose>0 0 0 0 0 0</pose>
+    </include>
+
+
+    <include>
+      <uri>model://hokuyo</uri>
+      <pose>0 0 0.118 0 0 0</pose>
+    </include>
+    <joint name="hokuyo_joint" type="revolute">
+      <child>hokuyo::link</child>
+      <parent>AMiRo::chassis</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+  </model>
+</sdf>

@@ -1,0 +1,17 @@
+build
+CHANGELOG.rst
+CMakeLists.txt.backup
+Media
+scripts
+test2
+cfg
+package.xml
+setup.py
+test
+*ros*
+hokuyo_node.cpp
+vision_reconfigure*
+camera_synchronizer*
+MultiCameraPlugin*
+PubQueue.h
+*py
