@@ -49,6 +49,8 @@
 
 #include <gazebo_plugins/gazebo_rsb_laser.h>
 
+#define PLUGIN_NAME "gazebo_rsb_laser"
+
 namespace gazebo
 {
 bool GazeboRsbLaser::converterRegistered = false;
@@ -129,9 +131,16 @@ void GazeboRsbLaser::LoadThread()
 void GazeboRsbLaser::OnScan(ConstLaserScanStampedPtr &_msg)
 {
   // Set the topic name of the infomer
-    // Create an informer that is capable of sending events containing string data on the given scope.
-  std::string scope(rsbScopeFromGazeboFrame(_msg->scan().frame()));
-  rsb::Informer<rst::vision::LaserScan>::Ptr informer = factory.createInformer<rst::vision::LaserScan> (scope);
+  // Create an informer that is capable of sending events containing string data on the given scope.
+  
+  if (this->defineInfomerOnce == false) {
+    this->defineInfomerOnce = true;
+    std::string rsbScope(rsbScopeFromGazeboFrame(_msg->scan().frame()));
+//     rsbScope = "/" + getParentScope(rsbScope) + "/" + getSubScope(rsbScope);
+    PrintPluginInfoString ( getParentScope(rsbScope), PLUGIN_NAME, "RSB scope: " + rsbScope);
+    this->informer = factory.createInformer<rst::vision::LaserScan> (rsbScope);
+  }
+  
 
   rsb::Informer<rst::vision::LaserScan>::DataPtr laserScan(new rst::vision::LaserScan);
   
@@ -141,7 +150,7 @@ void GazeboRsbLaser::OnScan(ConstLaserScanStampedPtr &_msg)
 
   laserScan->set_scan_angle(_msg->scan().angle_max() - _msg->scan().angle_min());
   
-  informer->publish(laserScan);
+  this->informer->publish(laserScan);
 
 //   for (auto c : intensities)
 //     std::cout << c << ' ';
@@ -181,4 +190,6 @@ void GazeboRsbLaser::OnScan(ConstLaserScanStampedPtr &_msg)
 //             laser_msg.intensities.begin());
 //   this->pub_queue_->push(laser_msg, this->pub_);
 }
+
+
 }

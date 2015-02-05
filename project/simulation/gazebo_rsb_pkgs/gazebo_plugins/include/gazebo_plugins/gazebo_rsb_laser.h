@@ -93,6 +93,8 @@ namespace gazebo
 //     public: rsb::Informer<rst::vision::LaserScan>::DataPtr laserScan(new rst::vision::LaserScan);
   public: static void registerConverter();
   public: static bool converterRegistered;
+  public: rsb::Informer<rst::vision::LaserScan>::Ptr informer;
+  public: bool defineInfomerOnce = false;
   };
 }
 #endif

@@ -92,6 +92,34 @@ inline std::string GetRobotNamespace ( const sensors::SensorPtr &parent, const s
     return name_space;
 }
 
+inline void PrintPluginInfoString ( std::string modelName, std::string pluginName, std::string mesg)
+{
+  printf ( "%s: %s Plugin %s\n" , modelName.c_str(), pluginName.c_str(), mesg.c_str() );
+}
+
+inline std::string GetSdfElementValue ( const physics::ModelPtr &parent, const sdf::ElementPtr &sdf, std::string elementName, const char *pInfo = NULL )
+{
+    std::string name_space;
+    std::stringstream ss;
+    std::cout << std::flush;
+    if ( sdf->HasElement ( elementName ) ) {
+        name_space = sdf->Get<std::string> ( elementName );
+        if ( name_space.empty() ) {
+            ss << "the '"<< elementName << "' param was empty";
+        } else {
+            ss << "Using the '"<< elementName << "' param: '" <<  name_space << "'";
+        }
+    } else {
+        ss << "the '"<< elementName << "' param did not exit";
+    }
+    if ( pInfo != NULL ) {
+        PrintPluginInfoString(parent->GetName(), std::string(pInfo), std::string("( " + elementName + " = " + name_space + " ), Info: " + ss.str()));
+    }
+    return name_space;
+}
+
+
+
 inline void replace(std::string& str, const std::string& from, const std::string& to) {
   bool doReplace = true;
   while (true) {
@@ -102,12 +130,48 @@ inline void replace(std::string& str, const std::string& from, const std::string
   }
 }
 
+// Convert string to rsb scope:
+// my::scope::subscope -> /my/scope/subscope
 std::string rsbScopeFromGazeboFrame(std::string frame) {
   std::string scope("/" + frame);
   replace(scope, "::", "/");
   replace(scope, " ", "_");
   return scope;
 }
+
+// Split helper function
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+// Split function
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
+}
+
+// Gets an subscope from string:
+// my::scope::subscope -> subscope
+std::string getSubScope(std::string scope) {
+  const std::string subscope(rsbScopeFromGazeboFrame(scope));
+  std::vector<std::string> splitString = split(subscope, '/');
+  return splitString[splitString.size()-1];
+}
+
+// Gets the parent from string:
+// my::scope::subscope -> my
+std::string getParentScope(std::string scope) {
+  const std::string subscope(rsbScopeFromGazeboFrame(scope));
+  std::vector<std::string> splitString = split(subscope, '/');
+  return splitString[2];
+}
+
 // /**
 //  * Gazebo ros helper class
 //  * The class simplifies the parameter and rosnode handling
