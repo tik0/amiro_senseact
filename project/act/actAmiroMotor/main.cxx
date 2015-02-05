@@ -42,7 +42,7 @@ void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   // Set the motor speed
   // Velocity send in µm/s
   // Angular velocity send in µrad/s
-  CAN.setTargetSpeed(message->at(0), int(message->at(1)));
+  CAN.setTargetSpeed(int(message->at(0)), int(message->at(1)));
   DEBUG_MSG( "v: " << message->at(0) << "w: " << message->at(1))
 }
 
