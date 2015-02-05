@@ -84,26 +84,26 @@ int main(int argc, const char **argv){
             switch (KB_code)
             {
                 case KB_A:
-                  // Degree per second
-                  vecSteering->at(1) = vecSteering->at(1) + 10;
+                  // µDegree per second
+                  vecSteering->at(1) = vecSteering->at(1) + 100000;
                   informer_vec->publish(vecSteering);
                 break;
 
                 case KB_D:
-                  // Degree per second
-                  vecSteering->at(1) = vecSteering->at(1) - 10;
+                  // µDegree per second
+                  vecSteering->at(1) = vecSteering->at(1) - 100000;
                   informer_vec->publish(vecSteering);
                 break;
 
                 case KB_W:
-                  // Milimeter per second
-                  vecSteering->at(0) = vecSteering->at(0) + 10;
+                  // Micrometer per second
+                  vecSteering->at(0) = vecSteering->at(0) + 10000;
                   informer_vec->publish(vecSteering);
                 break;
 
                 case KB_S:
-                  // Milimeter per second
-                  vecSteering->at(0) = vecSteering->at(0) - 10;
+                  // Micrometer per second
+                  vecSteering->at(0) = vecSteering->at(0) - 10000;
                   informer_vec->publish(vecSteering);
                 break;
                 case KB_SPACE:
@@ -116,7 +116,7 @@ int main(int argc, const char **argv){
                 break;
 
             }        
-            INFO_MSG( "Vx  = " << vecSteering->at(0) << " m/s , Wz = " << vecSteering->at(1) << " rad/s" )
+            INFO_MSG( "Vx  = " << vecSteering->at(0) << " µm/s , Wz = " << vecSteering->at(1) << " µrad/s" )
       }
       // Sleep for a millisecond
       usleep(1000);
