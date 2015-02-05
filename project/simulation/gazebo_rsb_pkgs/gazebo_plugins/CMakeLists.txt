@@ -43,6 +43,9 @@ target_link_libraries(gazebo_rsb_laser ${GAZEBO_LIBRARIES} ${PROTOBUF_LIBRARIES}
 add_library(gazebo_rsb_wheel SHARED src/gazebo_rsb_wheel.cpp)
 target_link_libraries(gazebo_rsb_wheel ${GAZEBO_LIBRARIES} ${PROTOBUF_LIBRARIES} ${RST_LIBRARIES} ${RSB_LIBRARIES})
 
+add_library(gazebo_rsb_gps SHARED src/gazebo_rsb_gps.cpp)
+target_link_libraries(gazebo_rsb_gps ${GAZEBO_LIBRARIES} ${PROTOBUF_LIBRARIES} ${RST_LIBRARIES} ${RSB_LIBRARIES})
+
 ##
 ## Add your new plugin here
 ##
