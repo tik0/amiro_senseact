@@ -340,6 +340,26 @@
           <xyz>0 1 0</xyz>
         </axis>
       </joint>
-    <plugin name="model_push" filename="libgazebo_rsb_wheel.so"/>
+    <plugin name="model_push" filename="libgazebo_rsb_wheel.so">
+      <differentialKinematicSubscope>diffKin</differentialKinematicSubscope>
+      <baseWidth>0.06</baseWidth>
+      <wheelRadius>0.03</wheelRadius>
+      <rightWheelMaxForceN>1.0</rightWheelMaxForceN>
+      <leftWheelMaxForceN>1.0</leftWheelMaxForceN>
+    </plugin>
+    
+    <link name="gps">
+      <sensor name="positioning" type="gps">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>10</update_rate>
+        <visualize>true</visualize>
+      </sensor>
+    </link>
+    <plugin name="positioning" filename="libgazebo_rsb_gps.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>10.0</updateRate>
+      <gpsSubscope>gps</gpsSubscope>
+    </plugin>
   </model>
 </sdf>
