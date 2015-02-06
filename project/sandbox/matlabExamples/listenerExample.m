@@ -1,9 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Author: Timo Korthals <tkorthals@cit-ec.uni-bielefeld.de> 
 % Functionity: Creates an rsb listener which listens on the '/' scope and
-%              displays a 200x8 vector array in a plot
-% Demo: Run " $ bag-play WalkFourLegsCCA2.tide"
-%       and then this script with < r2012a
+%              displays a SickLdMRS400102 array in a plot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear all; close all; clc; clear java
@@ -13,30 +11,31 @@ PWD = pwd;
 javaaddpath([PWD '/rsb-0.11-SNAPSHOT.jar'])
 javaaddpath([PWD '/rsb-matlab-0.11-SNAPSHOT.jar'])
 javaaddpath([PWD '/protobuf-java-2.5.0.jar'])
-javaaddpath([PWD '/rst-fleximon-0.11-SNAPSHOT.jar'])
-javaaddpath([PWD '/rst-sandbox-fleximon-0.11-SNAPSHOT.jar'])
+javaaddpath([PWD '/rstsandbox-0.11.2_SICK.jar'])
+javaaddpath([PWD '/rsb-matlab-0.11.0_SICK.jar'])
 
 % Converter registration
-rsb.matlab.ConverterRegistration.register('rst.kinematics.JointAnglesType', 'JointAngles')
+rsb.matlab.ConverterRegistration.register('rst.claas.SickLdMRS400102Type', 'SickLdMRS400102')
 
 % Create the listener
 factory = rsb.Factory.getInstance();
 listener = factory.createListener('/');
 
 % Create the queue with an 100 element buffer
-angles = rsb.matlab.JointAnglesQueue(100,true);
+scanData = rsb.matlab.SickLdMRS400102Queue(100,true);
 listener.activate()
-listener.addHandler(angles, true)
+listener.addHandler(scanData, true)
 
-jointAngles = zeros(8,200);
 while(1)
-    jointAngles(1:end - 1) = jointAngles(2:end);
-    % Blocks 10 seconds if no data arives
-    data = angles.take(int32(10000));
-    jointAngles(:,end) = [data(1), data(2), data(3), data(4), data(5), data(6), data(7), data(8)]';
-    angles.getQueue.clear;
-    plot(jointAngles');
-    getframe;
+    % Blocks 1 seconds if no data arives
+    data = scanData.take(int32(1000));
+    datetime
+    if (~isempty(data))
+        pointsList = data.getMeasuredPointsList;
+        pointsArray = pointsList.toArray;
+        plot(cell2mat(cell(pointsArray)))
+        getframe;
+    end
 end
 
 listener.deactivate();
