@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#ifdef _MSC_VER
-   typedef __int64 int64_t;	// Define it from MSVC's internal type
-#else
-   #include <stdint.h>		// Use the C99 official header
-#endif
+#include <stdint.h>
 #include "CoreSLAM.h"
+
+double TS_MAP_SCALE;
 
 void 
 ts_map_init(ts_map_t *map)
@@ -19,6 +17,11 @@ ts_map_init(ts_map_t *map)
 	    *ptr = initval;
 	}
     }
+}
+
+void 
+ts_map_set_scale(double scale){
+    TS_MAP_SCALE = scale;
 }
 
 int

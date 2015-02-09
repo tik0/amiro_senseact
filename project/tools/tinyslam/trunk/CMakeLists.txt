@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(CoreSLAM)
 
-subdirs(test)
+#subdirs(test)
 
 # Packaging info
 SET(CPACK_PACKAGE_NAME "CoreSLAM")
