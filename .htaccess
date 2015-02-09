@@ -1,0 +1,4 @@
+AuthType Basic
+AuthName "PW"
+AuthUserFile /var/www/tik0/murox_dev/.htpasswd
+Require valid-user
