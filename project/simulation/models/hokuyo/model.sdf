@@ -3,9 +3,26 @@
   <model name="hokuyo">
     <pose>0 0 0.035 0 0 0</pose>
     <link name="link">
-      <inertial>
-        <mass>0.1</mass>
-      </inertial>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+          <!--
+          http://en.wikipedia.org/wiki/List_of_moment_of_inertia_tensors
+                    MATLAB:
+                    m=0.1; r=0.025; h=0.06; 
+                    ixx = 1/12*m*(3*r^2+h^2)
+                    iyy = ixx 
+                    izz = 1/2*m*r^2 
+                    
+          -->
+          <ixx>0.0000456</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0000456</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0000312</izz>
+          </inertia>
+        </inertial>
       <visual name="visual">
         <geometry>
           <mesh>
@@ -35,26 +52,26 @@
         <ray>
           <scan>
             <horizontal>
-              <samples>640</samples>
+              <samples>91</samples>
               <resolution>1</resolution>
-              <min_angle>-2.26889</min_angle>
-              <max_angle>2.268899</max_angle>
+              <min_angle>-1.5</min_angle>
+              <max_angle>1.5</max_angle>
+<!--              <min_angle>-2.26889</min_angle>
+              <max_angle>2.268899</max_angle>-->
             </horizontal>
           </scan>
           <range>
             <min>0.08</min>
-            <max>10</max>
+            <max>5</max>
             <resolution>0.01</resolution>
           </range>
         </ray>
 <!--         <plugin name="laser" filename="libRayPlugin.so" /> -->
         <plugin name="laser" filename="libgazebo_rsb_laser.so">
-          <robotNamespace>/MYROBOT</robotNamespace>
-          <frameName>test/</frameName>
-          <topicName>/lol</topicName>
+          <lidarSubscope>lidar</lidarSubscope>
         </plugin>
         <always_on>1</always_on>
-        <update_rate>30</update_rate>
+        <update_rate>10</update_rate>
         <visualize>true</visualize>
       </sensor>
     </link>

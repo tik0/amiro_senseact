@@ -4,23 +4,23 @@
     <static>false</static>
       <link name='chassis'>
         <inertial>
-          <mass>10.0</mass>
+          <mass>0.4</mass>
           <inertia>
           <!--
           http://en.wikipedia.org/wiki/List_of_moment_of_inertia_tensors
                     MATLAB:
-                    m=1; r=0.1; h=0.1; 
+                    m=0.4; r=0.1; h=0.07; 
                     ixx = 1/12*m*(3*r^2+h^2)
                     iyy = ixx 
                     izz = 1/2*m*r^2 
                     
           -->
-          <ixx>0.3333</ixx>
+          <ixx>0.0012</ixx>
           <ixy>0.0</ixy>
           <ixz>0.0</ixz>
-          <iyy>0.3333</iyy>
+          <iyy>0.0012</iyy>
           <iyz>0.0</iyz>
-          <izz>0.05</izz>
+          <izz>0.005</izz>
           </inertia>
         </inertial>
         <velocity_decay>
@@ -266,6 +266,26 @@
 
       <link name="left_wheel">
         <pose>0.0 0.035 0.030 0 1.5707 1.5707</pose>
+        <inertial>
+          <mass>0.02</mass>
+          <inertia>
+          <!--
+          http://en.wikipedia.org/wiki/List_of_moment_of_inertia_tensors
+                    MATLAB:
+                    m=0.02; r=0.0275; h=0.0062; 
+                    ixx = 1/12*m*(3*r^2+h^2)
+                    iyy = ixx 
+                    izz = 1/2*m*r^2 
+                    
+          -->
+          <ixx>0.0000068453</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0000068453</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0000075625</izz>
+          </inertia>
+        </inertial>
         <collision name="collision">
           <geometry>
             <cylinder>
@@ -296,6 +316,26 @@
 
       <link name="right_wheel">
         <pose>0.0 -0.035 0.03 0 1.5707 1.5707</pose>
+        <inertial>
+          <mass>0.02</mass>
+          <inertia>
+          <!--
+          http://en.wikipedia.org/wiki/List_of_moment_of_inertia_tensors
+                    MATLAB:
+                    m=0.02; r=0.0275; h=0.0062; 
+                    ixx = 1/12*m*(3*r^2+h^2)
+                    iyy = ixx 
+                    izz = 1/2*m*r^2 
+                    
+          -->
+          <ixx>0.0000068453</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0000068453</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0000075625</izz>
+          </inertia>
+        </inertial>
         <collision name="collision">
           <geometry>
             <cylinder>
@@ -344,8 +384,8 @@
       <differentialKinematicSubscope>diffKin</differentialKinematicSubscope>
       <baseWidth>0.06</baseWidth>
       <wheelRadius>0.03</wheelRadius>
-      <rightWheelMaxForceN>1.0</rightWheelMaxForceN>
-      <leftWheelMaxForceN>1.0</leftWheelMaxForceN>
+      <rightWheelMaxForceN>2.4</rightWheelMaxForceN>
+      <leftWheelMaxForceN>2.4</leftWheelMaxForceN>
     </plugin>
     
     <link name="gps">
