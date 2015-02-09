@@ -57,21 +57,16 @@ namespace gazebo
 
     // Pointer to the model
 //     GazeboRosPtr gazebo_ros_;
-    private: std::string world_name_;
-    private: physics::WorldPtr world_;
+    private: std::string world_name;
+    private: physics::WorldPtr world;
+    private: physics::ModelPtr model;
     /// \brief The parent sensor
-    private: sensors::RaySensorPtr parent_ray_sensor_;
+    private: sensors::RaySensorPtr parent_ray_sensor;
 
     /// \brief pointer to ros node
 //     private: ros::NodeHandle* rosnode_;
 //     private: ros::Publisher pub_;
 //     private: PubQueue<sensor_msgs::LaserScan>::Ptr pub_queue_;
-
-    /// \brief topic name
-    private: std::string topic_name_;
-
-    /// \brief for setting ROS name space
-    private: std::string robot_namespace_;
 
     // deferred load in case ros is blocking
     private: sdf::ElementPtr sdf;
@@ -90,11 +85,11 @@ namespace gazebo
     // RSB
 //     public: rsb::Informer<rst::vision::LaserScan>::Ptr informer;
     public: rsb::Factory& factory = rsb::getFactory();
-//     public: rsb::Informer<rst::vision::LaserScan>::DataPtr laserScan(new rst::vision::LaserScan);
-  public: static void registerConverter();
-  public: static bool converterRegistered;
-  public: rsb::Informer<rst::vision::LaserScan>::Ptr informer;
-  public: bool defineInfomerOnce = false;
+//    public: rsb::Informer<rst::vision::LaserScan>::DataPtr laserScan(new rst::vision::LaserScan);
+    public: static void registerConverter();
+    public: static bool converterRegistered;
+    public: rsb::Informer<rst::vision::LaserScan>::Ptr informer;
+    public: std::string rsbScope;
   };
 }
 #endif

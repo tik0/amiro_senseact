@@ -48,8 +48,7 @@ void GazeboRsbGps::Reset()
 // Destructor
 GazeboRsbGps::~GazeboRsbGps()
 {
-//   this->rosnode_->shutdown();
-//   delete this->rosnode_;
+
 }
 
 
@@ -61,7 +60,7 @@ void GazeboRsbGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->world = _model->GetWorld();
 
   // RSB
-  this->rsbScope =  rsbScopeFromGazeboFrame(this->model->GetName()) + "/" + GetSdfElementValue(this->model, _sdf, "gpsSubscope", PLUGIN_NAME);
+  this->rsbScope =  rsbScopeFromGazeboFrame(this->model->GetName()) + rsbScopeFromGazeboFrame(GetSdfElementValue(this->model->GetName(), _sdf, "gpsSubscope", PLUGIN_NAME));
   PrintPluginInfoString ( this->model->GetName(), PLUGIN_NAME, "RSB scope: " + this->rsbScope);
   this->informer = factory.createInformer<rst::geometry::Pose> (this->rsbScope);
 

@@ -48,17 +48,17 @@ namespace gazebo
       // registerConverter
       ModelPush::registerConverter();
       // Get a listener
-      this->rsbScope =  rsbScopeFromGazeboFrame(this->model->GetName()) + "/" + GetSdfElementValue(_parent, _sdf, "differentialKinematicSubscope", PLUGIN_NAME);
+      this->rsbScope =  rsbScopeFromGazeboFrame(this->model->GetName()) + "/" + GetSdfElementValue(this->model->GetName(), _sdf, "differentialKinematicSubscope", PLUGIN_NAME);
       PrintPluginInfoString ( this->model->GetName(), PLUGIN_NAME, "RSB scope: " + this->rsbScope);
       this->listener = this->factory.createListener(this->rsbScope);
       this->queueRemoteVelocities.reset(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::kinematics::Twist> >(1));
       this->listener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::kinematics::Twist>(this->queueRemoteVelocities)));
       
       // Get model paramter
-      this->baseWidth = std::stof(GetSdfElementValue(_parent, _sdf, "baseWidth", PLUGIN_NAME));
-      this->wheelRadius = std::stof(GetSdfElementValue(_parent, _sdf, "wheelRadius", PLUGIN_NAME));
-      this->leftWheelMaxForceN = std::stof(GetSdfElementValue(_parent, _sdf, "leftWheelMaxForceN", PLUGIN_NAME));
-      this->rightWheelMaxForceN = std::stof(GetSdfElementValue(_parent, _sdf, "rightWheelMaxForceN", PLUGIN_NAME));
+      this->baseWidth = std::stof(GetSdfElementValue(this->model->GetName(), _sdf, "baseWidth", PLUGIN_NAME));
+      this->wheelRadius = std::stof(GetSdfElementValue(this->model->GetName(), _sdf, "wheelRadius", PLUGIN_NAME));
+      this->leftWheelMaxForceN = std::stof(GetSdfElementValue(this->model->GetName(), _sdf, "leftWheelMaxForceN", PLUGIN_NAME));
+      this->rightWheelMaxForceN = std::stof(GetSdfElementValue(this->model->GetName(), _sdf, "rightWheelMaxForceN", PLUGIN_NAME));
 
       
       // Get all joints from the model

@@ -97,28 +97,6 @@ inline void PrintPluginInfoString ( std::string modelName, std::string pluginNam
   printf ( "%s: %s Plugin %s\n" , modelName.c_str(), pluginName.c_str(), mesg.c_str() );
 }
 
-inline std::string GetSdfElementValue ( const physics::ModelPtr &parent, const sdf::ElementPtr &sdf, std::string elementName, const char *pInfo = NULL )
-{
-    std::string name_space;
-    std::stringstream ss;
-    std::cout << std::flush;
-    if ( sdf->HasElement ( elementName ) ) {
-        name_space = sdf->Get<std::string> ( elementName );
-        if ( name_space.empty() ) {
-            ss << "the '"<< elementName << "' param was empty";
-        } else {
-            ss << "Using the '"<< elementName << "' param: '" <<  name_space << "'";
-        }
-    } else {
-        ss << "the '"<< elementName << "' param did not exit";
-    }
-    if ( pInfo != NULL ) {
-        PrintPluginInfoString(parent->GetName(), std::string(pInfo), std::string("( " + elementName + " = " + name_space + " ), Info: " + ss.str()));
-    }
-    return name_space;
-}
-
-
 
 inline void replace(std::string& str, const std::string& from, const std::string& to) {
   bool doReplace = true;
@@ -159,17 +137,49 @@ std::vector<std::string> split(const std::string &s, char delim) {
 // Gets an subscope from string:
 // my::scope::subscope -> subscope
 std::string getSubScope(std::string scope) {
-  const std::string subscope(rsbScopeFromGazeboFrame(scope));
-  std::vector<std::string> splitString = split(subscope, '/');
+  std::vector<std::string> splitString = split(scope, ':');
   return splitString[splitString.size()-1];
 }
 
 // Gets the parent from string:
 // my::scope::subscope -> my
 std::string getParentScope(std::string scope) {
-  const std::string subscope(rsbScopeFromGazeboFrame(scope));
-  std::vector<std::string> splitString = split(subscope, '/');
+  std::vector<std::string> splitString = split(scope, ':');
   return splitString[2];
+}
+
+inline std::string GetSdfElementValue ( const std::string modelName, const sdf::ElementPtr &sdf, std::string elementName, const char *pInfo = NULL )
+{
+    std::string name_space;
+    std::stringstream ss;
+    std::cout << std::flush;
+    if ( sdf->HasElement ( elementName ) ) {
+        // Get the subscope, because there might be some capsulation
+        name_space = getSubScope(sdf->Get<std::string> ( elementName ));
+        if ( name_space.empty() ) {
+            ss << "the '"<< elementName << "' param was empty";
+        } else {
+            ss << "Using the '"<< elementName << "' param: '" <<  name_space << "'";
+        }
+    } else {
+        ss << "the '"<< elementName << "' param did not exit";
+    }
+    if ( pInfo != NULL ) {
+        PrintPluginInfoString(modelName, std::string(pInfo), std::string("( " + elementName + " = " + name_space + " ), Info: " + ss.str()));
+    }
+    return name_space;
+}
+
+
+// Gets the myScope scope from string:
+// my::*myScope*::subscope -> *myScope*
+std::string getFirstScopeContains(std::string scope, std::string stringContains) {
+  std::vector<std::string> splitString = split(scope, ':');
+  for (size_t idx = 0; idx < splitString.size(); ++idx) {
+    if (splitString[idx].find_first_of(stringContains) !=  std::string::npos)
+      return splitString[idx];
+  }
+  return std::string("NoScopeContains" + stringContains);
 }
 
 // /**
