@@ -2,3 +2,6 @@
 	path = project/includes/eigen
 	url = https://github.com/vancegroup-mirrors/eigen.git
 	branch = hg/3.2
+[submodule "project/tools/HokuyoInterface"]
+	path = project/tools/HokuyoInterface
+	url = https://github.com/tik0/HokuyoInterface.git
