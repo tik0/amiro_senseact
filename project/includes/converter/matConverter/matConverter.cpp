@@ -17,7 +17,7 @@ namespace muroxConverter {
 // Converter<string>("matrix-image", RSB_TYPE_TAG(Mat))
 // to infer the "string" name of the data-type using RTTI.
 MatConverter::MatConverter() :
-    Converter<string> (rsc::runtime::typeName<vector<cv::Mat> >(), "matrix-image", true) {
+    Converter<string> (rsc::runtime::typeName< cv::Mat >(), "matrix-image", true) {
 }
 
 int MatConverter::getDepth(uchar p_ucDepth) {
