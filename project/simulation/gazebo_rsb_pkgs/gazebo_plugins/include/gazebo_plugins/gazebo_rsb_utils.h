@@ -39,7 +39,15 @@
 #include <gazebo/common/common.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/sensors/Sensor.hh>
-// #include <ros/ros.h>
+
+// Opencv
+#include <opencv2/opencv.hpp>
+#include <cvplot/cvplot.h>
+
+// RSB
+#include <rsb/Event.h>
+#include <rsb/Factory.h>
+#include <rsb/Handler.h>
 
 namespace gazebo
 {
@@ -62,6 +70,46 @@ inline std::string GetModelName ( const sensors::SensorPtr &parent )
         modelName = values[1];
     }
     return modelName;
+}
+
+// 2D Gauss function
+inline double draw2DGauss(cv::Mat x /*2x1 matrix*/, cv::Mat mu /*2x1 matrix*/, cv::Mat sigma /*2x2 matrix*/) {
+
+  cv::Mat sigmaInv(2, 2, CV_64FC1);
+  const double sigmaDet = determinant(sigma);
+  sigmaInv.at<double>(0,0) = sigma.at<double>(1,1) / sigmaDet;
+  sigmaInv.at<double>(1,0) = -sigma.at<double>(1,0) / sigmaDet;
+  sigmaInv.at<double>(0,1) = -sigma.at<double>(0,1) / sigmaDet;
+  sigmaInv.at<double>(1,1) = sigma.at<double>(0,0) / sigmaDet;
+
+  cv::Mat tmp = x - mu;
+  cv::Mat tmpT; cv::transpose(tmp, tmpT);
+  cv::Mat exponent =  tmpT * sigmaInv * tmp;  // Should result in a 1x1 matrix
+  return 1 / (2.0 * M_PI * sigmaDet) * exp(-0.5 * exponent.at<double>(0));
+}
+
+inline void sendImage (const rsb::Informer<std::string>::Ptr informer, cv::Mat img)
+{
+  std::vector<uchar> buf;
+  std::vector<int> compression_params;
+  compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+  compression_params.push_back(100);
+  cv::imencode(".jpg", img, buf, compression_params);
+
+  rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+  informer->publish(frameJpg);
+}
+
+template<typename T>
+inline void sendPlot (const std::string figure_name, const rsb::Informer<std::string>::Ptr informer, const T* p, int count, int step, int R, int G, int B)
+{
+  if(count == 0 || p == NULL || informer == NULL)
+    return;
+
+  IplImage * plot = CvPlot::plot(figure_name, p, count, step, R, G, B);
+  sendImage(informer, cv::Mat(plot));
+  CvPlot::clear(figure_name);
+  cvReleaseImage(&plot);
 }
 
 /**

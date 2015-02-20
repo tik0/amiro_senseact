@@ -8,3 +8,6 @@
 [submodule "project/includes/orocos_kinematics_dynamics"]
 	path = project/includes/orocos_kinematics_dynamics
 	url = https://github.com/orocos/orocos_kinematics_dynamics.git
+[submodule "project/includes/cvplot"]
+	path = project/includes/cvplot
+	url = https://code.google.com/p/cvplot/
