@@ -22,7 +22,8 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // Proto types
-#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
+//#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
+#include <types/LocatedLaserScan.pb.h>
 
 #include <gazebo_plugins/gazebo_rsb_laser.h>
 
@@ -30,7 +31,6 @@
 
 namespace gazebo
 {
-bool GazeboRsbLaser::converterRegistered = false;
 // Register this plugin with the simulator
 GZ_REGISTER_SENSOR_PLUGIN(GazeboRsbLaser)
 
@@ -45,11 +45,12 @@ GazeboRsbLaser::GazeboRsbLaser()
 }
 
 void GazeboRsbLaser::registerConverter() {
-    if (GazeboRsbLaser::converterRegistered == false) {
-      GazeboRsbLaser::converterRegistered = true;
-      boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan> >
-          converter(new rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan>());
-      rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+  try {
+    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan> >
+        converter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan>());
+    rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+  } catch (...) {
+
   }
 }
 
@@ -83,7 +84,7 @@ void GazeboRsbLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   std::string modelName(getFirstScopeContains(_parent->GetParentName(), std::string("AMiRo")));
   this->rsbScope = rsbScopeFromGazeboFrame(modelName) + rsbScopeFromGazeboFrame(GetSdfElementValue(modelName, _sdf, "lidarSubscope", PLUGIN_NAME));
   PrintPluginInfoString ( modelName, PLUGIN_NAME, "RSB scope: " + this->rsbScope);
-  this->informer = factory.createInformer<rst::vision::LaserScan> (this->rsbScope);
+  this->informer = factory.createInformer<rst::vision::LocatedLaserScan> (this->rsbScope);
 
   this->deferred_load_thread_ = boost::thread(
     boost::bind(&GazeboRsbLaser::LoadThread, this));
@@ -109,7 +110,7 @@ void GazeboRsbLaser::LoadThread()
 void GazeboRsbLaser::OnScan(ConstLaserScanStampedPtr &_msg)
 {
 
-  rsb::Informer<rst::vision::LaserScan>::DataPtr laserScan(new rst::vision::LaserScan);
+  rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScan(new rst::vision::LocatedLaserScan);
   
   for(size_t idx = 0; idx < _msg->scan().ranges_size(); ++idx) {
     laserScan->add_scan_values(static_cast<float>(_msg->scan().ranges(idx)));

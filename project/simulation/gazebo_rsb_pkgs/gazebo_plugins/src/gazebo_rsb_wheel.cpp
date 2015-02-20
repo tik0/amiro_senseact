@@ -127,16 +127,16 @@ namespace gazebo
 
     // Register RSB converter once
     public: static void registerConverter() {
-    if (ModelPush::converterRegistered == false) {
-      ModelPush::converterRegistered = true;
-      boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::kinematics::Twist> >
-          converter(new rsb::converter::ProtocolBufferConverter<rst::kinematics::Twist>());
-      rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+      try {
+        boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::kinematics::Twist> >
+            converter(new rsb::converter::ProtocolBufferConverter<rst::kinematics::Twist>());
+        rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+      } catch (...) {
+
       }
     }
 
     // RSB listener
-    public: static bool converterRegistered;
     public: rsb::Factory& factory = rsb::getFactory();
     public: boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::kinematics::Twist> > > queueRemoteVelocities;
     public: rsb::ListenerPtr listener;
@@ -165,7 +165,6 @@ namespace gazebo
     private: event::ConnectionPtr updateConnection;
   };
 
-  bool ModelPush::converterRegistered = false;
   // Register this plugin with the simulator
   GZ_REGISTER_MODEL_PLUGIN(ModelPush)
 }

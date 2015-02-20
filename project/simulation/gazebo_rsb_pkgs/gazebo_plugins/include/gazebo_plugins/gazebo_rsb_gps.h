@@ -43,12 +43,11 @@ namespace gazebo
   
   UpdateTimer updateTimer;
   event::ConnectionPtr updateConnection;
-  
+
     // RSB
     public: rsb::Factory& factory = rsb::getFactory();
     public: static void registerConverter();
-    public: static bool converterRegistered;
-    public: rsb::Informer<rst::geometry::Pose>::Ptr informer;
+    public: rsb::Informer<rst::geometry::Pose>::Ptr informerGT;
     private: std::string rsbScope;
   };
 }

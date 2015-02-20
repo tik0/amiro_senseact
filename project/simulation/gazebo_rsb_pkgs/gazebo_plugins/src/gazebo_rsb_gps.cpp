@@ -20,7 +20,6 @@
 
 namespace gazebo
 {
-bool GazeboRsbGps::converterRegistered = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -31,11 +30,12 @@ GazeboRsbGps::GazeboRsbGps()
 }
 
 void GazeboRsbGps::registerConverter() {
-    if (GazeboRsbGps::converterRegistered == false) {
-      GazeboRsbGps::converterRegistered = true;
-      boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose> >
-          converter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose>());
-      rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+  try {
+    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose> >
+        converter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose>());
+    rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+  } catch (...) {
+
   }
 }
 
@@ -62,7 +62,7 @@ void GazeboRsbGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // RSB
   this->rsbScope =  rsbScopeFromGazeboFrame(this->model->GetName()) + rsbScopeFromGazeboFrame(GetSdfElementValue(this->model->GetName(), _sdf, "gpsSubscope", PLUGIN_NAME));
   PrintPluginInfoString ( this->model->GetName(), PLUGIN_NAME, "RSB scope: " + this->rsbScope);
-  this->informer = factory.createInformer<rst::geometry::Pose> (this->rsbScope);
+  this->informerGT = factory.createInformer<rst::geometry::Pose> (this->rsbScope);
 
   // connect Update function
   updateTimer.setUpdateRate(4.0);
@@ -75,21 +75,22 @@ void GazeboRsbGps::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 void GazeboRsbGps::Update()
 {
 
+  // Get the ground truth data
   math::Pose pose = this->model->GetWorldPose();
 
   rsb::Informer<rst::geometry::Pose>::DataPtr gpsData(new rst::geometry::Pose);
 
-  rst::geometry::Translation *translation = gpsData->mutable_translation();
-  rst::geometry::Rotation *rotation = gpsData->mutable_rotation();
-  translation->set_x(pose.pos.x);
-  translation->set_y(pose.pos.y);
-  translation->set_z(pose.pos.z);
-  rotation->set_qw(pose.rot.w);
-  rotation->set_qx(pose.rot.x);
-  rotation->set_qy(pose.rot.y);
-  rotation->set_qz(pose.rot.z);
+  rst::geometry::Translation *gpstranslation = gpsData->mutable_translation();
+  rst::geometry::Rotation *gpsrotation = gpsData->mutable_rotation();
+  gpstranslation->set_x(pose.pos.x);
+  gpstranslation->set_y(pose.pos.y);
+  gpstranslation->set_z(pose.pos.z);
+  gpsrotation->set_qw(pose.rot.w);
+  gpsrotation->set_qx(pose.rot.x);
+  gpsrotation->set_qy(pose.rot.y);
+  gpsrotation->set_qz(pose.rot.z);
 
-  this->informer->publish(gpsData);
+  this->informerGT->publish(gpsData);
 }
 
 // Register this plugin with the simulator
