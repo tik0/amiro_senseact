@@ -49,6 +49,8 @@
 #include <rsb/Factory.h>
 #include <rsb/Handler.h>
 
+#include <math.h>
+
 namespace gazebo
 {
 
@@ -86,6 +88,13 @@ inline double draw2DGauss(cv::Mat x /*2x1 matrix*/, cv::Mat mu /*2x1 matrix*/, c
   cv::Mat tmpT; cv::transpose(tmp, tmpT);
   cv::Mat exponent =  tmpT * sigmaInv * tmp;  // Should result in a 1x1 matrix
   return 1 / (2.0 * M_PI * sigmaDet) * exp(-0.5 * exponent.at<double>(0));
+}
+
+// 1D Gauss function
+inline double draw1DGauss(double x, double mu, double sigma) {
+  double tmp = pow(x - mu, 2);
+  double exponent =  tmp / sigma;
+  return 1 / (sqrt(2.0 * M_PI) * sigma) * exp(-0.5 * exponent);
 }
 
 inline void sendImage (const rsb::Informer<std::string>::Ptr informer, cv::Mat img)

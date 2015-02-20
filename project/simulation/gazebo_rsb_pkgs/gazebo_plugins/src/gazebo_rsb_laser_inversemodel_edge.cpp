@@ -125,6 +125,7 @@ void GazeboRsbLaserInversemodelEdge::LoadThread()
 void GazeboRsbLaserInversemodelEdge::OnScan(ConstLaserScanStampedPtr &_msg)
 {
 
+  // Transformation to the focal lense ///////////////////////////////
   rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScan(new rst::vision::LocatedLaserScan);
   
   // Get the pitch of the sensor, to calculate the projected distance on the floor
@@ -138,77 +139,101 @@ void GazeboRsbLaserInversemodelEdge::OnScan(ConstLaserScanStampedPtr &_msg)
             * cos(_msg->scan().angle_max() - idx * _msg->scan().angle_step())/*projection on the focal axis*/);
   }
 
-  // Low pass
-//  for(size_t idx = _msg->scan().ranges_size() - 1; idx > 0; --idx) {
-//    laserScan->mutable_scan_values()->Set(idx, laserScan->scan_values(idx) + laserScan->scan_values(idx - 1));
-//  }
-  // edge detection
-  std::vector<float> temp(_msg->scan().ranges_size());
-  for(size_t idx = _msg->scan().ranges_size() - 1; idx > 1; --idx) {
-    temp[idx] =  - laserScan->scan_values(idx+1) + 2.0 * laserScan->scan_values(idx) - laserScan->scan_values(idx - 1);
-  }
+  ////////////////////////////////////////////////////////////////////
 
-  // Filter the edge
-  int maxId = 0; float maxValue = -9999;
-  for(size_t idx = 1 ; idx < _msg->scan().ranges_size() - 1; ++idx) {
-    if (temp[maxId] > temp[idx]) {
-      maxValue = temp[idx];maxId = idx;
+  // ML estimator for the different {Weed, Crop, Floor} features /////
+  double muWeed  = 0.0627; /*m*/
+  double muCrop  = 0.07277; /*m*/
+  double muFloor = 0.116286; /*m*/
+  double sigmaLidar = 0.02; /*m²:  s.t. noise of the lidar*/
+
+  // Init the presence of each feature as false
+  std::vector<uchar> isWeed(_msg->scan().ranges_size(), 0);
+  std::vector<uchar> isCrop(_msg->scan().ranges_size(), 0);
+  std::vector<uchar> isFloor(_msg->scan().ranges_size(), 0);
+
+  for(size_t idx = 0; idx < _msg->scan().ranges_size(); ++idx) {
+    double nWeed = draw1DGauss(laserScan->scan_values().Get(idx), muWeed, sigmaLidar);
+    double nCrop = draw1DGauss(laserScan->scan_values().Get(idx), muCrop, sigmaLidar);
+    double nFloor = draw1DGauss(laserScan->scan_values().Get(idx), muFloor, sigmaLidar);
+    if (nWeed > nCrop /* && nWeed > nFloor */){
+      isWeed[idx] = 1;
+    } else if (nWeed > nFloor) {
+      isCrop[idx] = 1;
+    } else /*nWeed < nFloor*/ {
+      isFloor[idx] = 1;
     }
   }
+  ////////////////////////////////////////////////////////////////////
 
-  // Declare the invert model
-  const int size = 1024;
+
+  // Filter the edges to the floor ///////////////////////////////////
+  std::vector<uchar> isEdge(_msg->scan().ranges_size(), 0);
+  std::vector<int> isEdgeAtIdx;
+  for(size_t idx = 1 ; idx < _msg->scan().ranges_size() - 2; ++idx) {
+    if ((isFloor[idx-1] && !isFloor[idx]) || (isFloor[idx+1] && !isFloor[idx])) {
+      isEdge[idx] = 1;
+      isEdgeAtIdx.push_back(idx);
+    }
+  }
+  ////////////////////////////////////////////////////////////////////
+
+  // Declare the invert model ////////////////////////////////////////
+  const int size = 1024; // Define the width of the invert model
+  const int depth = size / 4; // Define the depth of the invert model
   const float res = 0.001;
   const int holwWidth = static_cast<int>(0.1 /*m*/ / res);
-  cv::Mat invertEdgeModel(size, size, CV_32FC1, cv::Scalar(128));
+  cv::Mat invertEdgeModel(depth, size, CV_32FC1, cv::Scalar(128));
 
-  // Calculate the impact in the invert sensor model
-  float z_m = static_cast<float>(_msg->scan().ranges(maxId)) * cos(_msg->scan().angle_max() - maxId * _msg->scan().angle_step());
-  float y_m = sqrt(pow(static_cast<float>(_msg->scan().ranges(maxId)),2) - pow(z_m,2));
+  // Process every found edge
+  for (int edgeIdx = 0; edgeIdx < isEdgeAtIdx.size(); ++edgeIdx) {
 
-  // Get the angle of incedence
-  const float angleOfIncedence = -( _msg->scan().angle_max() - maxId * _msg->scan().angle_step());
-  if (angleOfIncedence >= 0)
-    y_m = -y_m;
+    // Calculate the impact in the invert sensor model
+    float z_m = static_cast<float>(_msg->scan().ranges(isEdgeAtIdx[edgeIdx])) * cos(_msg->scan().angle_max() - isEdgeAtIdx[edgeIdx] * _msg->scan().angle_step());
+    float y_m = sqrt(pow(static_cast<float>(_msg->scan().ranges(isEdgeAtIdx[edgeIdx])),2) - pow(z_m,2));
 
-//  std::cout << "ym: " << y_m << ", zm: " << z_m << std::endl << std::flush;
+    // Get the angle of incedence
+    const float angleOfIncedence = -( _msg->scan().angle_max() - isEdgeAtIdx[edgeIdx] * _msg->scan().angle_step());
 
-  int zIdx = static_cast<int>(z_m / res);
-  int yIdx = static_cast<int>(y_m / res);
-  if(abs(yIdx) + holwWidth / 2 >= size / 2 || abs(zIdx) + holwWidth / 2 >= size / 2) {
-    std::cout << "Index to greate" << std::endl << std::flush;
-    return;
-  }
+    // Look if the edge is on the right or left side of the focal axis
+    if (angleOfIncedence >= 0)
+      y_m = -y_m;
 
-  cv::Mat sigma(2, 2, CV_64FC1, 0.0);
-  sigma.at<double>(0,0) = (1 + 3 * abs(angleOfIncedence)) * holwWidth;   // sigma_zz
-  sigma.at<double>(1,1) = (1 + 1 * abs(angleOfIncedence)) * holwWidth;   // sigma_yy
+    // Get the index of the impact
+    int zIdx = static_cast<int>(z_m / res);
+    int yIdx = static_cast<int>(y_m / res);
 
-  cv::Mat mu(2, 1, CV_64FC1);
-//  zIdx = size / 2;
-//  yIdx = 0;
-  mu.at<double>(0,0) = zIdx;
-  mu.at<double>(1,0) = size / 2 + yIdx;
+    // Define the properties of the gaussian distribution
+    cv::Mat sigma(2, 2, CV_64FC1, 0.0);
+    sigma.at<double>(0,0) = (1 + 3 * abs(angleOfIncedence)) /*f(\theta)*/ * holwWidth;   // sigma_zz
+    sigma.at<double>(1,1) = (1 + 1 * abs(angleOfIncedence)) /*g(\theta)*/ * holwWidth;   // sigma_yy
 
-  // Get the 2x2 rotation of the uncertainty
-  cv::Mat rotMat = getRotationMatrix2D(cv::Point2f(0,0), static_cast<double>(angleOfIncedence * 180.0 / M_PI), 1.0);
-  rotMat = rotMat * cv::Mat::eye(3, 2, rotMat.type());  // Gets the 2x2 rotation matrix
+    cv::Mat mu(2, 1, CV_64FC1);
+    mu.at<double>(0,0) = zIdx;
+    mu.at<double>(1,0) = size / 2 + yIdx;
 
-  // Get the normation value
-  double normConst = draw2DGauss(cv::Mat(2, 1, CV_64FC1, cv::Scalar(0.0)), cv::Mat(2, 1, CV_64FC1, cv::Scalar(0.0)), sigma);
-  normConst = normConst / 128;  // Get white value
+    // Get the 2x2 rotation of the uncertainty
+    cv::Mat rotMat = getRotationMatrix2D(cv::Point2f(0,0), static_cast<double>(angleOfIncedence * 180.0 / M_PI), 1.0);
+    rotMat = rotMat * cv::Mat::eye(3, 2, rotMat.type());  // Gets the 2x2 rotation matrix
 
-//  int holeIdxZ = zIdx;
-  for (int holeIdxY = size / 2 + yIdx -sigma.at<double>(0,0) / 2; holeIdxY <= size / 2 + yIdx + sigma.at<double>(0,0) / 2; holeIdxY++) {
-    for (int holeIdxZ = zIdx - sigma.at<double>(1,1) / 2; holeIdxZ <= zIdx + sigma.at<double>(1,1) / 2; holeIdxZ++) {
+    // Get the normation value
+    double normConst = draw2DGauss(cv::Mat(2, 1, CV_64FC1, cv::Scalar(0.0)), cv::Mat(2, 1, CV_64FC1, cv::Scalar(0.0)), sigma);
+    normConst = normConst / 128;  // Get white value
 
-    // Define the current position
-    cv::Mat x(2, 1, CV_64FC1); x.at<double>(0,0) = static_cast<double>(holeIdxZ); x.at<double>(1,0) = static_cast<double>(holeIdxY);
-    //
-//    std::cout << holeIdxY << "," << holeIdxZ << ": "  <<  draw2DGauss(x, mu, sigma) / normConst << std::endl << std::flush;
-      invertEdgeModel.at<float>(holeIdxZ, holeIdxY) = 128 + draw2DGauss(x, mu, rotMat * sigma) / normConst;
+    // Draw the gaussian distribution into the model
+    for (int holeIdxY = size / 2 + yIdx -sqrt(sigma.at<double>(0,0)) * 4; holeIdxY <= size / 2 + yIdx + sqrt(sigma.at<double>(0,0)) * 4; holeIdxY++) {
+      for (int holeIdxZ = zIdx - sqrt(sigma.at<double>(1,1)) * 4; holeIdxZ <= zIdx + sqrt(sigma.at<double>(1,1)) * 4; holeIdxZ++) {
+        // Define the current position x
+        cv::Mat x(2, 1, CV_64FC1); x.at<double>(0,0) = static_cast<double>(holeIdxZ); x.at<double>(1,0) = static_cast<double>(holeIdxY);
+        // Calculate the value
+        float n = 128.0 + draw2DGauss(x, mu, rotMat * sigma) / normConst;
+        // Draw the value at x only, if it is bigger, to not overwrite already drawn in impacts
+        if (n > invertEdgeModel.at<float>(holeIdxZ, holeIdxY))
+          invertEdgeModel.at<float>(holeIdxZ, holeIdxY) = n;
+      }
     }
   }
+  ////////////////////////////////////////////////////////////////////
 
 
   cv::Mat flipImg(invertEdgeModel.rows, invertEdgeModel.cols, invertEdgeModel.type()); flip(invertEdgeModel, flipImg, 0); // Flipping the map around the y axis, so that it shows up correct
@@ -222,8 +247,27 @@ void GazeboRsbLaserInversemodelEdge::OnScan(ConstLaserScanStampedPtr &_msg)
   // Delete first and last value
 //  temp[0] = temp[1];
 //  temp[temp.size()-1] = temp[temp.size()-2];
-
 //  sendPlot("Plot", this->imageInformer, temp.data(), laserScan->scan_values().size(), 1, 255, 0, 0);
+//  sendPlot("Plot", this->imageInformer, laserScan->scan_values().data(), laserScan->scan_values().size(), 1, 255, 0, 0);
+//  sendPlot("Plot", this->imageInformer, isEdge.data(), laserScan->scan_values().size(), 1, 255, 0, 0);
+
+//  {
+//  int maxId = 0; float maxValue = -9999;
+//  for(size_t idx = 1 ; idx < _msg->scan().ranges_size() - 1; ++idx) {
+//    if (laserScan->scan_values().Get(maxId) < laserScan->scan_values().Get(idx)) {
+//      maxValue = laserScan->scan_values().Get(idx);maxId = idx;
+//    }
+//  }
+//  std::cout << "maxOut " << maxValue << std::endl;
+//
+//  int minId = 0; float minValue = 9999;
+//    for(size_t idx = 1 ; idx < _msg->scan().ranges_size() - 1; ++idx) {
+//      if (laserScan->scan_values().Get(minId) > laserScan->scan_values().Get(idx)) {
+//        minValue = laserScan->scan_values().Get(idx);minId = idx;
+//      }
+//    }
+//  std::cout << "minOut " << minValue << std::endl;
+//  }
 
 
   laserScan->set_scan_angle(_msg->scan().angle_max() - _msg->scan().angle_min());
