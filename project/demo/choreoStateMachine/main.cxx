@@ -12,12 +12,16 @@ using namespace std;
 
 
 // boost
+#include <boost/foreach.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
 #include <boost/chrono/chrono_io.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 namespace po = boost::program_options;
 using namespace boost::chrono;
 
@@ -42,9 +46,36 @@ using namespace rsb;
 // load a choreography from a file
 Choreo loadChoreo(std::string choreoName) {
 	Choreo choreo;
-#ifndef SIMULATION
-	// TODO call code to load the choreo here
-#else
+//#ifndef SIMULATION
+	using boost::property_tree::ptree;
+  	ptree pt;
+  	read_xml(choreoName, pt);
+  	BOOST_FOREACH( ptree::value_type const&tree, pt.get_child("choreo")) {
+	if(tree.first == "choreoStep")
+		{
+		ChoreoStep choreoStep;
+		choreoStep.v = tree.second.get<int>("v");
+		choreoStep.w = tree.second.get<int>("w");
+		choreoStep.brightness = tree.second.get<int>("brightness");
+		light_t lights;
+			 //tree.second.get<std::string>("l1");
+
+		for (int i = 0; i < 8; ++i) {
+			std::vector<std::string> splitstring;
+			std:string field = "l" + boost::lexical_cast<std::string>(i+1);
+			std::string l = tree.second.get<std::string>(field);
+			splitstring.clear();
+			boost::split(splitstring, l , boost::is_any_of(","));
+			lights[i][0] = boost::lexical_cast<int>(splitstring[2]);
+			lights[i][1] = boost::lexical_cast<int>(splitstring[1]);
+			lights[i][2] = boost::lexical_cast<int>(splitstring[0]);	
+		}
+		choreoStep.lights = lights;
+		choreoStep.time = tree.second.get<int>("time");
+      		choreo.push_back(choreoStep);
+    		}
+  	}
+/*#else
 	// generate a choreo for the simulation
 	ChoreoStep choreoStep;
 	choreoStep.v = 0;
@@ -88,7 +119,7 @@ Choreo loadChoreo(std::string choreoName) {
 	choreo.push_back(choreoStep);
 
 #endif
-
+*/
 	return choreo;
 }
 

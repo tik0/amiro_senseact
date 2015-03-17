@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 	// scopenames for rsb
 	std::string choreoOutscope = "/choreo";
 
-	std::string choreoName = "testChoreo";
+	std::string choreoName = "testChoreo.xml";
 	int delay = 2000;
 
 	// Handle program options
