@@ -51,30 +51,51 @@ Choreo loadChoreo(std::string choreoName) {
   	ptree pt;
   	read_xml(choreoName, pt);
   	BOOST_FOREACH( ptree::value_type const&tree, pt.get_child("choreo")) {
-	if(tree.first == "choreoStep")
-		{
+	if(tree.first == "choreoStep"){
 		ChoreoStep choreoStep;
 		choreoStep.v = tree.second.get<int>("v");
 		choreoStep.w = tree.second.get<int>("w");
 		choreoStep.brightness = tree.second.get<int>("brightness");
 		light_t lights;
-			 //tree.second.get<std::string>("l1");
-
 		for (int i = 0; i < 8; ++i) {
 			std::vector<std::string> splitstring;
-			std:string field = "l" + boost::lexical_cast<std::string>(i+1);
+			std:string field = "light" + boost::lexical_cast<std::string>(i);
 			std::string l = tree.second.get<std::string>(field);
 			splitstring.clear();
 			boost::split(splitstring, l , boost::is_any_of(","));
 			lights[i][0] = boost::lexical_cast<int>(splitstring[2]);
 			lights[i][1] = boost::lexical_cast<int>(splitstring[1]);
-			lights[i][2] = boost::lexical_cast<int>(splitstring[0]);	
-		}
+			lights[i][2] = boost::lexical_cast<int>(splitstring[0]);}
 		choreoStep.lights = lights;
 		choreoStep.time = tree.second.get<int>("time");
-      		choreo.push_back(choreoStep);
-    		}
+      		choreo.push_back(choreoStep);}
+	if(tree.first == "choreoinclude"){
+			std::string newfile = tree.second.get<std::string>("choreopart");
+  			ptree pt2;
+  			read_xml(newfile, pt2);
+			BOOST_FOREACH( ptree::value_type const&tree, pt2.get_child("choreo")) {
+			if(tree.first == "choreoStep"){
+				ChoreoStep choreoStep1;
+				choreoStep1.v = tree.second.get<int>("v");
+				choreoStep1.w = tree.second.get<int>("w");
+				choreoStep1.brightness = tree.second.get<int>("brightness");
+				light_t lights1;
+				for (int i = 0; i < 8; ++i) {
+					std::vector<std::string> splitstring;
+					std::string field = "light" + boost::lexical_cast<std::string>(i);
+					std::string l = tree.second.get<std::string>(field);
+					splitstring.clear();
+					boost::split(splitstring, l , boost::is_any_of(","));
+					lights1[i][0] = boost::lexical_cast<int>(splitstring[2]);
+					lights1[i][1] = boost::lexical_cast<int>(splitstring[1]);
+					lights1[i][2] = boost::lexical_cast<int>(splitstring[0]);}
+				choreoStep1.lights = lights1;
+				choreoStep1.time = tree.second.get<int>("time");
+      				choreo.push_back(choreoStep1);}
+			}		
+		}
   	}
+	
 /*#else
 	// generate a choreo for the simulation
 	ChoreoStep choreoStep;

@@ -1,0 +1,47 @@
+<choreo> 
+  <choreoStep>
+    <v>100</v>
+    <w>10000</w>
+    <time>300</time>
+    <brightness>100</brightness>
+<!-- blue,green,red -->
+    <light0>11,21,31</light0>
+    <light1>11,21,31</light1>
+    <light2>41,51,61</light2>
+    <light3>71,81,91</light3>
+    <light4>101,111,121</light4>
+    <light5>131,141,151</light5>
+    <light6>161,171,181</light6>
+    <light7>1,1,1</light7>
+  </choreoStep>
+  <choreoStep>
+    <v>10</v>
+    <w>10000</w>
+    <time>300</time>
+    <brightness>100</brightness>
+<!-- blue,green,red -->
+    <light0>11,21,31</light0>
+    <light1>11,21,31</light1>
+    <light2>41,51,61</light2>
+    <light3>71,81,91</light3>
+    <light4>101,111,121</light4>
+    <light5>131,141,151</light5>
+    <light6>161,171,181</light6>
+    <light7>1,1,1</light7>
+  </choreoStep>
+  <choreoStep>
+    <v>1000</v>
+    <w>10000</w>
+    <time>300</time>
+    <brightness>100</brightness>
+<!-- blue,green,red -->
+    <light0>11,21,31</light0>
+    <light1>11,21,31</light1>
+    <light2>41,51,61</light2>
+    <light3>71,81,91</light3>
+    <light4>101,111,121</light4>
+    <light5>131,141,151</light5>
+    <light6>161,171,181</light6>
+    <light7>1,1,1</light7>
+  </choreoStep>
+</choreo>
