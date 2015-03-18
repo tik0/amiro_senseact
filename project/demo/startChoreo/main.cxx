@@ -29,13 +29,11 @@ int main(int argc, char **argv) {
 	std::string choreoOutscope = "/choreo";
 
 	std::string choreoName = "testChoreo.xml";
-	int delay = 2000;
 
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 		("name,n",po::value<std::string>(&choreoName),"Name of the choreography.")
-		("delay,d",po::value<int>(&delay),"Delay until the choreo should start.")
 			("choreoOut", po::value<std::string>(&choreoOutscope),"Choreography outscope.");
 
 	// allow to give the value as a positional argument
@@ -58,13 +56,8 @@ int main(int argc, char **argv) {
 	// prepare RSB informer for choreos
 	Informer<string>::Ptr choreoInformer = factory.createInformer<string>(choreoOutscope);
 
-	// get the starting time
-	system_clock::time_point startTime = system_clock::now() + milliseconds(delay);
-	stringstream ss;
-	ss << startTime;
-
 	// publish the data
-	Informer<string>::DataPtr message(new string(choreoName + "\t" + ss.str()));
+	Informer<string>::DataPtr message(new string(choreoName));
 	choreoInformer->publish(message);
 
 	return EXIT_SUCCESS;

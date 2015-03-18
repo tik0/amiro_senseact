@@ -4,6 +4,7 @@
 // Description : Statemachine to perform a choreography.
 //============================================================================
 
+// undefine this to run on the AMiRo
 #define SIMULATION
 
 // std includes
@@ -28,7 +29,8 @@ using namespace boost::chrono;
 // rsb
 #include <rsb/Factory.h>
 #include <rsb/Handler.h>
-#include <rsb/util/QueuePushHandler.h>
+#include <rsb/util/EventQueuePushHandler.h>
+#include <rsb/MetaData.h>
 using namespace rsb;
 
 
@@ -128,11 +130,15 @@ int main(int argc, char **argv) {
 	// scopenames for rsb
 	std::string choreoInscope = "/choreo";
 
+	// delay to start the choreo after the rsb-event was created in ms
+	int delay = 2000;
+
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 		("verbose,v","Print values of the choreography.")
-			("choreoIn", po::value<std::string>(&choreoInscope),"Choreography inscope.");
+			("choreoIn", po::value<std::string>(&choreoInscope),"Choreography inscope.")
+			("delay",po::value<int>(&delay),"Dealy between creating the rsb event and starting the choreography in ms.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -153,8 +159,8 @@ int main(int argc, char **argv) {
 
 	// prepare RSB listener for choreos
 	rsb::ListenerPtr choreoListener = factory.createListener(choreoInscope);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>choreoQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
-	choreoListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(choreoQueue)));
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<EventPtr>>choreoQueue(new rsc::threading::SynchronizedQueue<EventPtr>(1));
+	choreoListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(choreoQueue)));
 
 #ifndef SIMULATION
 	// initialize CAN
@@ -172,20 +178,13 @@ int main(int argc, char **argv) {
 
 	while (true) {
 		// wait for a rsb message
-		std::string message = *(choreoQueue->pop(0).get());
-		std::vector<std::string> content;
+		EventPtr event = choreoQueue->pop(0);
 
-		boost::split(content, message, boost::is_any_of("\t"));
+		// parse the choreography name
+		std::string choreoName = *static_pointer_cast<std::string>(event->getData());
 
-
-		// parse the name
-		std::string choreoName = content[0];
-
-		// parse the timestep
-		system_clock::time_point nextStepTime;
-		stringstream ss;
-		ss << content[1];
-		ss >> nextStepTime;
+		// get the starting time
+		system_clock::time_point nextStepTime(microseconds(event->getMetaData().getCreateTime()) + milliseconds(delay));
 
 		// load choreo from file
 		Choreo choreo = loadChoreo(choreoName);
