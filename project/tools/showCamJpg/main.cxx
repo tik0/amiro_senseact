@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     // Exit the program if any key was pressed
     if ( cv::waitKey(1) >= 0 )
       break;
-    cv::imshow("input", image);
+    cv::imshow(g_sInScope, image);
   }
 
   return 0;
