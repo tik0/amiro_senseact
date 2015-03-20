@@ -1,0 +1,7 @@
+websocketServerMongoose
+*~
+lib
+RPM
+CMakeFiles
+*.cmake
+Makefile
