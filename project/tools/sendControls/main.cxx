@@ -33,7 +33,7 @@ using namespace rsb::converter;
 
 
 int main(int argc, const char **argv){
-  
+  INFO_MSG("Start")
   // Handle program options
   namespace po = boost::program_options;
   
