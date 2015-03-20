@@ -85,7 +85,7 @@ std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
 static rst::geometry::Rotation odomRot;
 
-void convertDataToScan(rsb::EventPtr event, rst::vision::LocatedLaserScan &rsbScan) {
+void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
   
   laser_count_++;
   if ((laser_count_ % throttle_scans_) != 0)
@@ -93,11 +93,28 @@ void convertDataToScan(rsb::EventPtr event, rst::vision::LocatedLaserScan &rsbSc
 
 //  DEBUG_MSG( "Scan rec.")
   // Get the message
-  boost::shared_ptr< rst::vision::LocatedLaserScan > data = boost::static_pointer_cast< rst::vision::LocatedLaserScan >(event->getData());
+//   boost::shared_ptr< rst::vision::LocatedLaserScan > data = boost::static_pointer_cast< rst::vision::LocatedLaserScan >(event->getData());
 
   // Copy the whole scan
   rsbScan = *data;
 
+  // Shifting the rays
+  DEBUG_MSG("Startscan: " << rsbScan.scan_angle_start() * 180.0 / M_PI)
+  DEBUG_MSG("Endscan: " << rsbScan.scan_angle_end() * 180.0 / M_PI)
+  DEBUG_MSG("Angle: " << rsbScan.scan_angle() * 180.0 / M_PI)
+  DEBUG_MSG("Size: " << rsbScan.scan_values_size())
+  DEBUG_MSG("Inc: " << rsbScan.scan_angle_increment() * 180.0 / M_PI)
+//  rsbScan.set_scan_angle_increment(-rsbScan.scan_angle_increment);
+
+
+//  rsbScan.set_scan_angle_start(rsbScan.scan_angle_start() + M_PI / 2.0f);
+//  rsbScan.set_scan_angle_end(rsbScan.scan_angle_end() + M_PI / 2.0f);
+//
+//  rsbScan.set_scan_angle_start(0);
+//  rsbScan.set_scan_angle_end(240.0f / 180.0f * M_PI);
+//  rsbScan.set_scan_angle_start(120.0f / 180.0f * M_PI);
+//    rsbScan.set_scan_angle_end(-120.0f / 180.0f * M_PI);
+  
   // Check if two adjiacent rays stand almost perpendiculat on the surface
   // and set the first one to an invalid measurement if the angle is to big
   for (int idx = 0; idx < rsbScan.scan_values_size()-1; idx++) {
@@ -154,7 +171,12 @@ getOdomPose(ts_position_t& ts_pose)
   ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
   ts_pose.theta = (f_z * 180/M_PI);
 #endif
-  
+  // convert to mm and shift it in the middle of the map (0,0)
+//  ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
+//  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
+//  ts_pose.theta = (rotation.qz() * 180/M_PI);  // HACK  Ugly workaround for AMiRo TODO real quaternions
+
+  DEBUG_MSG( "Odom: x: " <<  translation.x() << "m   y: " << translation.y() << "m     theta: " << rotation.qz() << "°" )
   DEBUG_MSG("ODOM POSE: " << ts_pose.x << " " << ts_pose.y << " " << ts_pose.theta)
 
   return true;
@@ -188,13 +210,14 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
 
 void convertToScan(const rst::vision::LocatedLaserScan &scan , ts_scan_t &ranges) {
   ranges.nb_points = 0;
-  const float delta_angle = scan.scan_angle() / scan.scan_values_size();
+  const float delta_angle = scan.scan_angle_increment();
 
     for(int i=0; i < lparams_.scan_size; i++) {
       // Must filter out short readings, because the mapper won't
       if(scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < scan.scan_values_max()){
-        ranges.x[ranges.nb_points] = cos(lparams_.angle_min * M_PI/180.0f + i*delta_angle ) * (scan.scan_values(i)*METERS_TO_MM);
-        ranges.y[ranges.nb_points] = sin(lparams_.angle_min * M_PI/180.0f + i*delta_angle) * (scan.scan_values(i)*METERS_TO_MM);
+        // HACK "+ 120" is a workaround, and works only for startStep 44 and enStep 725!!!!
+        ranges.x[ranges.nb_points] = cos((lparams_.angle_min + 120 )* M_PI/180.0f + i*delta_angle ) * (scan.scan_values(i)*METERS_TO_MM);
+        ranges.y[ranges.nb_points] = sin((lparams_.angle_min + 120) * M_PI/180.0f + i*delta_angle) * (scan.scan_values(i)*METERS_TO_MM);
         ranges.value[ranges.nb_points] = TS_OBSTACLE;
         ranges.nb_points++;
       }
@@ -218,15 +241,9 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
   ts_position_t prev = state_.position;
 
-  // update params -- mainly for PML
-  lparams_.scan_size = scan.scan_values_size();
-  lparams_.angle_min = scan.scan_angle_start()  * 180/M_PI;
-  lparams_.angle_max = scan.scan_angle_end()  * 180/M_PI;
-
-  ts_scan_t ranges;
-  convertToScan(scan , ranges);
-
   // Do marcov localization on the map (this is done already in ts_iterative_map_building, but we can already do here for debugging)
+//  ts_scan_t ranges;
+//  convertToScan(scan , ranges);
 //  INFO_MSG( "Pose1st " << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
 //  ts_monte_carlo_search(&state_.randomizer, &ranges, &ts_map_, &state_.position, state_.sigma_xy, state_.sigma_theta, -10000, NULL);
 //  INFO_MSG( "Pose2st " << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
@@ -235,8 +252,11 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   // Mapping
   if(laser_count_ < 10){
     // not much of a map, let's bootstrap for now
-    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
-    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
+    // TODO need to be fixed for arbitrary angels
+//    ts_scan_t ranges;
+//    convertToScan(scan , ranges);
+//    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
+//    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
   }else{
 
     ts_sensor_data_t data;
@@ -336,8 +356,10 @@ int main(int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
 
 
-  // Prepare RSB reader for incomming lidar scans
-  rsb::ReaderPtr reader = factory.createReader(lidarInScope);
+  // Prepare RSB listener for incomming lidar scans
+  rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>(1));
+  lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LocatedLaserScan>(lidarQueue)));
   // Prepare RSB async listener for odometry messages
   rsb::ListenerPtr listener = factory.createListener(odomInScope);
   listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
@@ -352,7 +374,7 @@ int main(int argc, const char **argv){
   rst::vision::LocatedLaserScan scan;
   while( true ){
     // Fetch a new scan and store it to scan
-    convertDataToScan(reader->read(), scan);
+    convertDataToScan(lidarQueue->pop(), scan);
     ts_position_t pose;
     ts_position_t odom_pose;
     getOdomPose(odom_pose);
@@ -395,8 +417,8 @@ int main(int argc, const char **argv){
       imencode(".jpg", dstColor, buf, compression_params);
 
       // Send the data.
-      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
-      informer->publish(frameJpg);
+//      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+//      informer->publish(frameJpg);
     }
   }
 
