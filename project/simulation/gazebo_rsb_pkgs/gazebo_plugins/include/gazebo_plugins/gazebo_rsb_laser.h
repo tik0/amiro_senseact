@@ -60,6 +60,8 @@ namespace gazebo
     private: std::string world_name;
     private: physics::WorldPtr world;
     private: physics::ModelPtr model;
+    private: sensors::SensorPtr parent;
+    private: physics::EntityPtr parent_link;
     /// \brief The parent sensor
     private: sensors::RaySensorPtr parent_ray_sensor;
 
