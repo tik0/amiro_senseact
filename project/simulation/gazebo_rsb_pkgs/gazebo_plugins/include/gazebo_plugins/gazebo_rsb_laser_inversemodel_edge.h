@@ -87,6 +87,10 @@ namespace gazebo
     public: static void registerConverter();
     public: rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informer;
     public: rsb::Informer<std::string>::Ptr imageInformer;
+    public: rsb::Informer<std::string>::Ptr imageInformerEdge;
+    public: rsb::Informer<std::string>::Ptr imageInformerCrop;
+    public: rsb::Informer<std::string>::Ptr imageInformerWeed;
+    public: rsb::Informer<std::string>::Ptr imageInformerCoiler;
     public: std::string rsbScope;
   };
 }
