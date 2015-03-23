@@ -81,7 +81,7 @@ static int send_html(struct mg_connection *conn) {
 
 static int ev_handler(struct mg_connection *conn, enum mg_event ev) {
 
-//  std::cout << "test " << ev << std::endl;
+ std::cout << "test " << ev << std::endl;
 	//if a new CLient connects count up	
 	if(ev== MG_WS_HANDSHAKE){
 	}
@@ -98,7 +98,9 @@ static int ev_handler(struct mg_connection *conn, enum mg_event ev) {
 	if (ev == MG_POLL && conn->is_websocket) {
 	  mg_websocket_write(conn, 2, (const char*) &buf[0], buf.size());
 	  return MG_FALSE;
+// 		return MG_TRUE;
 	}
+	return MG_FALSE;
 }
 
 int main(int argc, char **argv) {
