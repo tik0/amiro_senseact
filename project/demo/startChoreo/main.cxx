@@ -126,10 +126,11 @@ int main(int argc, char **argv) {
 			break;   
 		}  
 
-		// Publish the data
-		Informer<string>::DataPtr message(new string(choreoName));
-		choreoInformer->publish(message);
 	}
 
-	return EXIT_SUCCESS;
+	// Publish the data
+	Informer<string>::DataPtr message(new string(choreoName));
+	choreoInformer->publish(message);
+	
+    return EXIT_SUCCESS;
 }
