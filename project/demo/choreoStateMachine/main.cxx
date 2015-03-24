@@ -5,7 +5,7 @@
 //============================================================================
 
 // undefine this to run on the AMiRo
-#define SIMULATION
+//#define SIMULATION
 
 // std includes
 #include <iostream>
