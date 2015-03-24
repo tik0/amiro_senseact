@@ -14,6 +14,7 @@ find_package(RSB REQUIRED)
 find_package(RSC REQUIRED)
 find_package(RST REQUIRED)
 find_package(Boost 1.55.0 COMPONENTS system chrono thread regex filesystem) 
+find_package(OpenCV REQUIRED)
 #pkg_check_modules(OPENCV OpenCV)
 #pkg_check_modules(RSB rsb0.11)
 #pkg_check_modules(RSC rsc0.11)
@@ -62,6 +63,8 @@ target_link_libraries (
     ${RSB_LIBRARIES}
     # Boost
     ${Boost_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${ZBAR_LIBRARIES} zbar
     #    boost_regex
     #    boost_date_time
     #    boost_program_options
