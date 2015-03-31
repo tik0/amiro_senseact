@@ -5,6 +5,7 @@
     <w>100000</w>
     <time>200</time>
     <brightness>100</brightness>
+<<<<<<< HEAD
 <!-- blue,green,red -->
     <light0>1,2,3</light0>
     <light1>1,2,3</light1>

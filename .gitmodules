@@ -11,3 +11,6 @@
 [submodule "project/includes/cvplot"]
 	path = project/includes/cvplot
 	url = https://code.google.com/p/cvplot/
+[submodule "project/tools/mongoose"]
+	path = project/tools/mongoose
+	url = https://github.com/cesanta/mongoose.git

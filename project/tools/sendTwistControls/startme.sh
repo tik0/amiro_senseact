@@ -1,1 +1,1 @@
-./sendTwistControls -o /test
+./sendTwistControls -o /AMiRo_Hokuyo/diffKin

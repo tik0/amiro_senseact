@@ -401,5 +401,13 @@
       <updateRate>10.0</updateRate>
       <gpsSubscope>gps</gpsSubscope>
     </plugin>
+    <plugin name="odometry" filename="libgazebo_rsb_odom_amiro.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>10.0</updateRate>
+      <odomSubscope>odom</odomSubscope>
+      <baseWidth>0.055</baseWidth>
+      <kl>0.01</kl>
+      <kr>0.01</kr>
+    </plugin>
   </model>
 </sdf>

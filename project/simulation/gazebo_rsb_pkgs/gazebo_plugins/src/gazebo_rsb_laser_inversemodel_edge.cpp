@@ -100,6 +100,10 @@ void GazeboRsbLaserInversemodelEdge::Load(sensors::SensorPtr _parent, sdf::Eleme
   PrintPluginInfoString ( modelName, PLUGIN_NAME, "RSB scope: " + this->rsbScope);
   this->informer = factory.createInformer<rst::vision::LocatedLaserScan> (this->rsbScope);
   this->imageInformer = factory.createInformer<std::string> ("/lidarPlot");
+  this->imageInformerEdge = factory.createInformer<std::string> ("/invModelEdge");
+  this->imageInformerCrop = factory.createInformer<std::string> ("/invModelCrop");
+  this->imageInformerWeed = factory.createInformer<std::string> ("/invModelWeed");
+  this->imageInformerCoiler = factory.createInformer<std::string> ("/invModelCoiler");
 
   this->deferred_load_thread_ = boost::thread(
     boost::bind(&GazeboRsbLaserInversemodelEdge::LoadThread, this));
@@ -124,121 +128,42 @@ void GazeboRsbLaserInversemodelEdge::LoadThread()
 // Convert new Gazebo message to RSB message and publish it
 void GazeboRsbLaserInversemodelEdge::OnScan(ConstLaserScanStampedPtr &_msg)
 {
+  std::cout << "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" << std::endl << std::flush;
 
-  // Transformation to the focal lense ///////////////////////////////
-  rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScan(new rst::vision::LocatedLaserScan);
-  
-  // Get the pitch of the sensor, to calculate the projected distance on the floor
-  physics::EntityPtr parent = world->GetEntity(this->parent_ray_sensor->GetParentName());
-  double pitch = sin(parent->GetWorldPose().rot.GetAsEuler().y);
-
-  // Sensor is reading from the right to the left
-  for(size_t idx = 0; idx < _msg->scan().ranges_size(); ++idx) {
-    laserScan->add_scan_values(static_cast<float>(_msg->scan().ranges(idx))
-            * sin(pitch) /*Projection on the floor*/
-            * cos(_msg->scan().angle_max() - idx * _msg->scan().angle_step())/*projection on the focal axis*/);
-  }
-
-  ////////////////////////////////////////////////////////////////////
-
-  // ML estimator for the different {Weed, Crop, Floor} features /////
-  double muWeed  = 0.0627; /*m*/
-  double muCrop  = 0.07277; /*m*/
-  double muFloor = 0.116286; /*m*/
-  double sigmaLidar = 0.02; /*m²:  s.t. noise of the lidar*/
-
-  // Init the presence of each feature as false
-  std::vector<uchar> isWeed(_msg->scan().ranges_size(), 0);
-  std::vector<uchar> isCrop(_msg->scan().ranges_size(), 0);
-  std::vector<uchar> isFloor(_msg->scan().ranges_size(), 0);
-
-  for(size_t idx = 0; idx < _msg->scan().ranges_size(); ++idx) {
-    double nWeed = draw1DGauss(laserScan->scan_values().Get(idx), muWeed, sigmaLidar);
-    double nCrop = draw1DGauss(laserScan->scan_values().Get(idx), muCrop, sigmaLidar);
-    double nFloor = draw1DGauss(laserScan->scan_values().Get(idx), muFloor, sigmaLidar);
-    if (nWeed > nCrop /* && nWeed > nFloor */){
-      isWeed[idx] = 1;
-    } else if (nWeed > nFloor) {
-      isCrop[idx] = 1;
-    } else /*nWeed < nFloor*/ {
-      isFloor[idx] = 1;
-    }
-  }
-  ////////////////////////////////////////////////////////////////////
-
-
-  // Filter the edges to the floor ///////////////////////////////////
-  std::vector<uchar> isEdge(_msg->scan().ranges_size(), 0);
-  std::vector<int> isEdgeAtIdx;
-  for(size_t idx = 1 ; idx < _msg->scan().ranges_size() - 2; ++idx) {
-    if ((isFloor[idx-1] && !isFloor[idx]) || (isFloor[idx+1] && !isFloor[idx])) {
-      isEdge[idx] = 1;
-      isEdgeAtIdx.push_back(idx);
-    }
-  }
-  ////////////////////////////////////////////////////////////////////
-
-  // Declare the invert model ////////////////////////////////////////
+  // Declare the invert model for edges //////////////////////////////
   const int size = 1024; // Define the width of the invert model
   const int depth = size / 4; // Define the depth of the invert model
   const float res = 0.001;
   const int holwWidth = static_cast<int>(0.1 /*m*/ / res);
   cv::Mat invertEdgeModel(depth, size, CV_32FC1, cv::Scalar(128));
 
-  // Process every found edge
-  for (int edgeIdx = 0; edgeIdx < isEdgeAtIdx.size(); ++edgeIdx) {
+  // Declare the invert model for coiler //////////////////////////////
+//  const int size = 1024; // Define the width of the invert model
+//  const int depth = size / 4; // Define the depth of the invert model
+//  const float res = 0.001;
+//  const int holwWidth = static_cast<int>(0.1 /*m*/ / res);
+  cv::Mat invertCoilerModel(depth, size, CV_32FC1, cv::Scalar(128));
+  const int coilerWidth = 0.5 /*m*/ / res;
 
-    // Calculate the impact in the invert sensor model
-    float z_m = static_cast<float>(_msg->scan().ranges(isEdgeAtIdx[edgeIdx])) * cos(_msg->scan().angle_max() - isEdgeAtIdx[edgeIdx] * _msg->scan().angle_step());
-    float y_m = sqrt(pow(static_cast<float>(_msg->scan().ranges(isEdgeAtIdx[edgeIdx])),2) - pow(z_m,2));
+  // Process the with of the coiler
 
-    // Get the angle of incedence
-    const float angleOfIncedence = -( _msg->scan().angle_max() - isEdgeAtIdx[edgeIdx] * _msg->scan().angle_step());
-
-    // Look if the edge is on the right or left side of the focal axis
-    if (angleOfIncedence >= 0)
-      y_m = -y_m;
-
-    // Get the index of the impact
-    int zIdx = static_cast<int>(z_m / res);
-    int yIdx = static_cast<int>(y_m / res);
-
-    // Define the properties of the gaussian distribution
-    cv::Mat sigma(2, 2, CV_64FC1, 0.0);
-    sigma.at<double>(0,0) = (1 + 3 * abs(angleOfIncedence)) /*f(\theta)*/ * holwWidth;   // sigma_zz
-    sigma.at<double>(1,1) = (1 + 1 * abs(angleOfIncedence)) /*g(\theta)*/ * holwWidth;   // sigma_yy
-
-    cv::Mat mu(2, 1, CV_64FC1);
-    mu.at<double>(0,0) = zIdx;
-    mu.at<double>(1,0) = size / 2 + yIdx;
-
-    // Get the 2x2 rotation of the uncertainty
-    cv::Mat rotMat = getRotationMatrix2D(cv::Point2f(0,0), static_cast<double>(angleOfIncedence * 180.0 / M_PI), 1.0);
-    rotMat = rotMat * cv::Mat::eye(3, 2, rotMat.type());  // Gets the 2x2 rotation matrix
-
-    // Get the normation value
-    double normConst = draw2DGauss(cv::Mat(2, 1, CV_64FC1, cv::Scalar(0.0)), cv::Mat(2, 1, CV_64FC1, cv::Scalar(0.0)), sigma);
-    normConst = normConst / 128;  // Get white value
-
-    // Draw the gaussian distribution into the model
-    for (int holeIdxY = size / 2 + yIdx -sqrt(sigma.at<double>(0,0)) * 4; holeIdxY <= size / 2 + yIdx + sqrt(sigma.at<double>(0,0)) * 4; holeIdxY++) {
-      for (int holeIdxZ = zIdx - sqrt(sigma.at<double>(1,1)) * 4; holeIdxZ <= zIdx + sqrt(sigma.at<double>(1,1)) * 4; holeIdxZ++) {
-        // Define the current position x
-        cv::Mat x(2, 1, CV_64FC1); x.at<double>(0,0) = static_cast<double>(holeIdxZ); x.at<double>(1,0) = static_cast<double>(holeIdxY);
-        // Calculate the value
-        float n = 128.0 + draw2DGauss(x, mu, rotMat * sigma) / normConst;
-        // Draw the value at x only, if it is bigger, to not overwrite already drawn in impacts
-        if (n > invertEdgeModel.at<float>(holeIdxZ, holeIdxY))
-          invertEdgeModel.at<float>(holeIdxZ, holeIdxY) = n;
-      }
-    }
+  cv::Point up( size / 2 + coilerWidth / 2, depth / 2 + 10 );
+  cv::Point dp( size / 2 - coilerWidth / 2, depth / 2 - 10 );
+  rectangle(invertCoilerModel, dp, up, cv::Scalar( 0, 0, 0) , -1, 8, 0 );
+  for ( int i = 1; i < 10 /*MAX_KERNEL_LENGTH*/; i = i + 2 ) {
+    GaussianBlur( invertCoilerModel, invertCoilerModel, cv::Size( i, i ), 0, 0 );
   }
   ////////////////////////////////////////////////////////////////////
 
-
-  cv::Mat flipImg(invertEdgeModel.rows, invertEdgeModel.cols, invertEdgeModel.type()); flip(invertEdgeModel, flipImg, 0); // Flipping the map around the y axis, so that it shows up correct
-  sendImage (this->imageInformer, flipImg);
-
+  cv::Mat flipImg(invertEdgeModel.rows, invertEdgeModel.cols, invertEdgeModel.type());
+//  flip(invertEdgeModel, flipImg, 0); // Flipping the map around the y axis, so that it shows up correct
+//  sendImage (this->imageInformerEdge, flipImg);
+//  flip(invertCropModel, flipImg, 0); // Flipping the map around the y axis, so that it shows up correct
+//  sendImage (this->imageInformerCrop, flipImg);
+//  flip(invertWeedModel, flipImg, 0); // Flipping the map around the y axis, so that it shows up correct
+//  sendImage (this->imageInformerWeed, flipImg);
+  flip(invertCoilerModel, flipImg, 0); // Flipping the map around the y axis, so that it shows up correct
+  sendImage (this->imageInformerCoiler, flipImg);
 
 
 
@@ -270,12 +195,12 @@ void GazeboRsbLaserInversemodelEdge::OnScan(ConstLaserScanStampedPtr &_msg)
 //  }
 
 
-  laserScan->set_scan_angle(_msg->scan().angle_max() - _msg->scan().angle_min());
-  laserScan->set_scan_angle_start(_msg->scan().angle_min());
-  laserScan->set_scan_angle_end(_msg->scan().angle_max());
-  laserScan->set_scan_values_min(_msg->scan().range_min());
-  laserScan->set_scan_values_max(_msg->scan().range_max());
-  laserScan->set_scan_angle_increment(_msg->scan().angle_step());
+//  laserScan->set_scan_angle(_msg->scan().angle_max() - _msg->scan().angle_min());
+//  laserScan->set_scan_angle_start(_msg->scan().angle_min());
+//  laserScan->set_scan_angle_end(_msg->scan().angle_max());
+//  laserScan->set_scan_values_min(_msg->scan().range_min());
+//  laserScan->set_scan_values_max(_msg->scan().range_max());
+//  laserScan->set_scan_angle_increment(_msg->scan().angle_step());
   
 //  this->informer->publish(laserScan);
 

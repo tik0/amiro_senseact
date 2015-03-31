@@ -72,9 +72,11 @@ void GazeboRsbLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   // Get the world name
   std::string worldName = _parent->GetWorldName();
   // save pointers
+  this->parent = _parent;
   this->world = physics::get_world(worldName);
   this->sdf = _sdf;
   this->parent_ray_sensor = boost::dynamic_pointer_cast<sensors::RaySensor>(_parent);
+  this->parent_link = world->GetEntity(this->parent_ray_sensor->GetParentName());
 
   if (!this->parent_ray_sensor)
     gzthrow("GazeboRsbLaser controller requires a Ray Sensor as its parent\n");
@@ -121,7 +123,30 @@ void GazeboRsbLaser::OnScan(ConstLaserScanStampedPtr &_msg)
   laserScan->set_scan_values_min(_msg->scan().range_min());
   laserScan->set_scan_values_max(_msg->scan().range_max());
   laserScan->set_scan_angle_increment(_msg->scan().angle_step());
-  
+
+  // HACK TODO Set the angles from the original pose
+  math::Pose poseHack;
+  math::Vector3 positionHack(0,0,0);
+  math::Vector3 rotationHack(0,0.707,0);
+  poseHack.Set(positionHack, rotationHack);
+  laserScan->mutable_pose()->mutable_rotation()->set_qw(poseHack.rot.w);
+  laserScan->mutable_pose()->mutable_rotation()->set_qx(poseHack.rot.x);
+  laserScan->mutable_pose()->mutable_rotation()->set_qy(poseHack.rot.y);
+  laserScan->mutable_pose()->mutable_rotation()->set_qz(poseHack.rot.z);
+//  laserScan->mutable_pose()->mutable_rotation()->set_qw(this->parent_link->GetWorldPose().rot.w);
+//  laserScan->mutable_pose()->mutable_rotation()->set_qx(this->parent_link->GetWorldPose().rot.x);
+//  laserScan->mutable_pose()->mutable_rotation()->set_qy(this->parent_link->GetWorldPose().rot.y);
+//  laserScan->mutable_pose()->mutable_rotation()->set_qz(this->parent_link->GetWorldPose().rot.z);
+  laserScan->mutable_pose()->mutable_translation()->set_x(this->parent_link->GetWorldPose().pos.x);
+  laserScan->mutable_pose()->mutable_translation()->set_y(this->parent_link->GetWorldPose().pos.y);
+  laserScan->mutable_pose()->mutable_translation()->set_z(this->parent_link->GetWorldPose().pos.z);
+//  std::cout << this->parent_link->GetWorldPose().rot.w << this->parent_link->GetWorldPose().rot.x<< this->parent_link->GetWorldPose().rot.y<< this->parent_link->GetWorldPose().rot.z << std::endl;
+
+  std::cout << laserScan->pose().rotation().qw() << laserScan->pose().rotation().qx()<< laserScan->pose().rotation().qy()<< laserScan->pose().rotation().qz() << std::endl;
+  std::cout <<   this->parent_link->GetWorldPose().rot.GetAsEuler().y << std::endl;
+
+//  std::cout << parent_link->GetWorldPose().rot.GetAsEuler().y << std::endl;
+
   this->informer->publish(laserScan);
 
 //   for (auto c : intensities)

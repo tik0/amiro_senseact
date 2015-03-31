@@ -86,7 +86,7 @@ long ts_random_int(ts_randomizer_t *d, long min, long max)
     return r;
 }
 
-ts_position_t ts_monte_carlo_search(ts_randomizer_t *randomizer, ts_scan_t *scan, ts_map_t *map, ts_position_t *start_pos, double sigma_xy, double sigma_theta, int stop, int *bd)
+ts_position_t ts_monte_carlo_search(ts_randomizer_t *randomizer /* from state */, ts_scan_t *scan, ts_map_t *map, ts_position_t *start_pos, double sigma_xy, double sigma_theta, int stop /* number of iterations */, int *bd /* measured scan distance regarding the best position*/)
 {
     ts_position_t currentpos, bestpos, lastbestpos;
     int currentdist;
@@ -97,26 +97,32 @@ ts_position_t ts_monte_carlo_search(ts_randomizer_t *randomizer, ts_scan_t *scan
         debug = 1;
         stop = -stop;
     }
+    // Set all positions equal, because this is our best guess
     currentpos = bestpos = lastbestpos = *start_pos;
+    // Get a distance measurement from the current position
     currentdist = ts_distance_scan_to_map(scan, map, &currentpos);
     bestdist = lastbestdist = currentdist;
 
     do {
-	currentpos = lastbestpos;
-	currentpos.x = ts_random_normal(randomizer, currentpos.x, sigma_xy);
-	currentpos.y = ts_random_normal(randomizer, currentpos.y, sigma_xy);
-	currentpos.theta = ts_random_normal(randomizer, currentpos.theta, sigma_theta);
+        // Sample around the last best position position
+        currentpos = lastbestpos;
+        currentpos.x = ts_random_normal(randomizer, currentpos.x, sigma_xy);
+        currentpos.y = ts_random_normal(randomizer, currentpos.y, sigma_xy);
+        currentpos.theta = ts_random_normal(randomizer, currentpos.theta, sigma_theta);
 
-	currentdist = ts_distance_scan_to_map(scan, map, &currentpos);
-	
-	if (currentdist < bestdist) {
-	    bestdist = currentdist;
-	    bestpos = currentpos;
+        // Get a scan from the new sampled position
+        currentdist = ts_distance_scan_to_map(scan, map, &currentpos);
+
+        // If the new position is better, then keep it
+        if (currentdist < bestdist) {
+            bestdist = currentdist;
+            bestpos = currentpos;
             if (debug) printf("Monte carlo ! %lg %lg %lg %d (count = %d)\n", bestpos.x, bestpos.y, bestpos.theta, bestdist, counter);
-	} else {
-	    counter++;
-	}
+        } else {
+            counter++;
+        }
         if (counter > stop / 3) {
+            // If we are getting better, then narrow the uncertainty to come closer to the optimum
             if (bestdist < lastbestdist) {
                 lastbestpos = bestpos;
                 lastbestdist = bestdist;
