@@ -46,7 +46,6 @@ include_directories(
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
     ${PROTO_INCLUDE_DIRS}
     "../../includes"                                                # Other includes like converters and stuff
-    "../extspread"						    # Programatik spread
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes

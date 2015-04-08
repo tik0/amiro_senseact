@@ -61,7 +61,7 @@ Choreo loadChoreo(std::string choreoName) {
 		light_t lights;
 		for (int i = 0; i < 8; ++i) {
 			std::vector<std::string> splitstring;
-			std:string field = "light" + boost::lexical_cast<std::string>(i);
+			std:string field = "l" + boost::lexical_cast<std::string>(i);
 			std::string l = tree.second.get<std::string>(field);
 			splitstring.clear();
 			boost::split(splitstring, l , boost::is_any_of(","));
@@ -84,7 +84,7 @@ Choreo loadChoreo(std::string choreoName) {
 				light_t lights1;
 				for (int i = 0; i < 8; ++i) {
 					std::vector<std::string> splitstring;
-					std::string field = "light" + boost::lexical_cast<std::string>(i);
+					std::string field = "l" + boost::lexical_cast<std::string>(i);
 					std::string l = tree.second.get<std::string>(field);
 					splitstring.clear();
 					boost::split(splitstring, l , boost::is_any_of(","));
