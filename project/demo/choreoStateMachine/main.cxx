@@ -151,6 +151,9 @@ int main(int argc, char **argv) {
 	// scopenames for rsb
 	std::string choreoInscope = "/choreo";
 
+	// position (0=left, 1=middle left, 2=middle, 3=middle right, 4=right)
+	int pos = 2;
+
 	// delay to start the choreo after the rsb-event was created in ms
 	int delay = 2000;
 
@@ -159,7 +162,8 @@ int main(int argc, char **argv) {
 	options.add_options()("help,h", "Display a help message.")
 		("verbose,v","Print values of the choreography.")
 			("choreoIn", po::value<std::string>(&choreoInscope),"Choreography inscope.")
-			("delay",po::value<int>(&delay),"Dealy between creating the rsb event and starting the choreography in ms.");
+			("delay",po::value<int>(&delay),"Dealy between creating the rsb event and starting the choreography in ms.")
+			("pos",po::value<int>(&pos),"Position in the formation (from the front: 0=left, 1=middle left, 2=middle, 3=middle right, 4=right)");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -202,13 +206,15 @@ int main(int argc, char **argv) {
 		EventPtr event = choreoQueue->pop(0);
 
 		// parse the choreography name
-		std::string choreoName = *static_pointer_cast<std::string>(event->getData());
+		std::string songName = *static_pointer_cast<std::string>(event->getData());
 
 		// get the starting time
 		system_clock::time_point nextStepTime(microseconds(event->getMetaData().getCreateTime()) + milliseconds(delay));
 
 		// load choreo from file
-		Choreo choreo = loadChoreo(choreoName);
+		std::stringstream fileNameStream;
+		fileNameStream << songName << pos << ".xml";
+		Choreo choreo = loadChoreo(fileNameStream.str());
 
 		// wait for choreo to begin
 		boost::this_thread::sleep_until(nextStepTime);
