@@ -62,22 +62,6 @@ static bool doTest = false;
 int setup(HokuyoReader &hokuyoReader);
 int test(HokuyoReader &hokuyoReader);
 
-static double transX, transY, transZ;
-static double rotX, rotY, rotZ;
-
-inline Eigen::Quaterniond
-euler2Quaternion( const double roll,
-                  const double pitch,
-                  const double yaw )
-{
-    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
-
-    const Eigen::Quaterniond q = yawAngle * pitchAngle * rollAngle;
-    return q;
-}
-
 int main(int argc, char **argv) {
 
    namespace po = boost::program_options;
@@ -85,12 +69,6 @@ int main(int argc, char **argv) {
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
             ("outscope,o", po::value < std::string > (&outScope),"Scope for sending scans")
-            ("transX", po::value < double > (&transX),"Translation in x [m]")
-            ("transY", po::value < double > (&transY),"Translation in y [m]")
-            ("transZ", po::value < double > (&transZ),"Translation in z [m]")
-            ("rotX", po::value < double > (&rotX),"Rotation around x (roll) [rad]")
-            ("rotY", po::value < double > (&rotY),"Rotation around y (pitch) [rad]")
-            ("rotZ", po::value < double > (&rotZ),"Rotation around z (yaw) [rad]")
             ("device,d", po::value < std::string > (&hokuyoDevice),"Device name (e.g. /dev/ttyACM0)")
             ("baudrate,b", po::value < int > (&baud),"Communication baud rate (does not matter for USB connection)")
             ("scanName,n", po::value < std::string > (&scanName),"[range | top_urg_range+intensity | range+intensity1+AGC1]")
@@ -167,17 +145,6 @@ transfer rates over standard serial port");
   laserScan->set_scan_values_min(0.02); // From Hokuyo URG04 manual
   laserScan->set_scan_values_max(4.0); // From Hokuyo URG04 manual
   laserScan->set_scan_angle_increment(radPerSkipStep);
-
-  Eigen::Quaterniond quat(euler2Quaternion(rotX, rotY, rotZ));
-  laserScan->mutable_pose()->mutable_rotation()->set_qx(quat.x());
-  laserScan->mutable_pose()->mutable_rotation()->set_qy(quat.y());
-  laserScan->mutable_pose()->mutable_rotation()->set_qz(quat.z());
-  laserScan->mutable_pose()->mutable_rotation()->set_qw(quat.w());
-  laserScan->mutable_pose()->mutable_translation()->set_x(transX);
-  laserScan->mutable_pose()->mutable_translation()->set_y(transY);
-  laserScan->mutable_pose()->mutable_translation()->set_z(transZ);
-
-
 
 //  const ::google::protobuf::RepeatedField< float > *rf =
 //  ::google::protobuf::RepeatedField< float > scan_values = laserScan->scan_values();
