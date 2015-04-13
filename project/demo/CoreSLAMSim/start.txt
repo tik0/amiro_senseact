@@ -1,0 +1,24 @@
+====== Running a Simulator Demo with CoreSLAM ======
+
+This is a demo shows a working simulator with one AMiRo and a CoreSLAM implementation.
+It only consists of three applications.
+One, the simulator itself, which offers all interfaces to a simulated AMiRo and its lidar.
+Two, a programm "sendTwistControls", which allows by wasd controll to steer the robot.
+At last, the CoreSLAM implementation, which reads the lidar scans and the odometry to do the mapping and localisation.
+
+
+{{ :demo:CoreSLAMSim:CoreSLAM.png?300 |}}
+
+{{ :demo:CoreSLAMSim:gazebo.png.png?300 |}}
+
+===== Run the demo =====
+
+  - Make shure that the gazebo plugins are compiled: ''cd ./murox_dev/project/simulation/gazebo_rsb_pkgs/gazebo_plugins && cmake . && make all''
+  - Now build the CoreSLAMSIM project (Note: Maybe you have to use ''ninja'' instead of ''make'' to resolve all the dependecies)
+  - ''cmake .''
+  - ''make''
+  - ''./run.sh'' for running the demo
+  - Hit the wasd buttons for steering or space to stop
+  - ''./stop.sh'' for stopping the demo
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
