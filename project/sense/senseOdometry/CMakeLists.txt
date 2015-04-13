@@ -10,6 +10,7 @@ pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(RST rstsandbox0.11)
+pkg_check_modules(EIGEN eigen2)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)
@@ -28,6 +29,7 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
     ${GXX_INCLUDES}
     ${Boost_INCLUDE_DIR}
+    ${EIGEN_INCLUDE_DIRS}
 )
 
 # Define the source

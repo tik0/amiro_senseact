@@ -16,6 +16,8 @@
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <Eigen/Geometry>
+
 // RSB
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
@@ -34,6 +36,19 @@
 #include <ControllerAreaNetwork.h>
 
 using namespace std;
+
+inline Eigen::Quaterniond
+euler2Quaternion( const double roll,
+                  const double pitch,
+                  const double yaw )
+{
+    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
+
+    const Eigen::Quaterniond q = yawAngle * pitchAngle * rollAngle;
+    return q;
+}
 
 int main(int argc, char **argv) {
   INFO_MSG("")
@@ -79,6 +94,8 @@ int main(int argc, char **argv) {
   // Datastructure for the CAN messages
   rsb::Informer<rst::geometry::Pose>::DataPtr odomData(new rst::geometry::Pose);
 
+  Eigen::Quaterniond quat;
+
 
   types::position robotPosition;
   for(;;) {
@@ -89,15 +106,16 @@ int main(int argc, char **argv) {
     odomData->mutable_translation()->set_x(static_cast<double>(robotPosition.x) * 1e-6);
     odomData->mutable_translation()->set_y(static_cast<double>(robotPosition.y) * 1e-6);
     odomData->mutable_translation()->set_z(0.0f);
-    odomData->mutable_rotation()->set_qx(0.0);
-    odomData->mutable_rotation()->set_qy(0.0);
-    odomData->mutable_rotation()->set_qz(static_cast<double>(robotPosition.f_z) * 1e-6);
-    odomData->mutable_rotation()->set_qw(0.0);
+    quat = euler2Quaternion(0.0, 0.0, static_cast<double>(robotPosition.f_z) * 1e-6);
+    odomData->mutable_rotation()->set_qx(quat.x());
+    odomData->mutable_rotation()->set_qy(quat.y());
+    odomData->mutable_rotation()->set_qz(quat.z());
+    odomData->mutable_rotation()->set_qw(quat.w());
 
     informer->publish(odomData);
-      
-      // Sleep for a while
-      boost::this_thread::sleep( boost::posix_time::milliseconds(rsbPeriod) );
+
+    // Sleep for a while
+    boost::this_thread::sleep( boost::posix_time::milliseconds(rsbPeriod) );
   }
 
   return EXIT_SUCCESS;
