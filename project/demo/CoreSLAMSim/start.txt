@@ -9,7 +9,7 @@ At last, the CoreSLAM implementation, which reads the lidar scans and the odomet
 
 {{ :demo:CoreSLAMSim:CoreSLAM.png?300 |}}
 
-{{ :demo:CoreSLAMSim:gazebo.png.png?300 |}}
+{{ :demo:CoreSLAMSim:gazebo.png?300 |}}
 
 ===== Run the demo =====
 
