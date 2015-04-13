@@ -83,7 +83,7 @@ namespace constants {
   const int32_t millisecondsPerSecond = 1000;
   
   /** \brief Distance between wheels in meter */
-  const float wheelBaseDistanceSI = 0.08f;
+  const float wheelBaseDistanceSI = 0.069f;
   
   /** \brief Distance between wheels in micrometer */
   const int32_t wheelBaseDistance = wheelBaseDistanceSI * 1e6;
