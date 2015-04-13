@@ -133,6 +133,7 @@ void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data ,
   if (rsbScan.scan_values(rsbScan.scan_values_size() -2) > rsbScan.scan_values_max())
     rsbScan.mutable_scan_values()->Set(rsbScan.scan_values_size() - 1, rsbScan.scan_values_max() + 42.0f);
 
+
 }
 
 void storeOdomData(boost::shared_ptr<rst::geometry::Pose> event) {
@@ -295,7 +296,7 @@ int main(int argc, const char **argv){
     ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
     ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
-    ("delta", po::value < double > (&delta_), "Width of impacting rays [m/pixel]")
+    ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
     ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image");
 
