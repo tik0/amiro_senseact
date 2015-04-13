@@ -17,7 +17,7 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
-#include <CoreSLAM.h>
+#include "CoreSLAM.h"
 #ifdef __cplusplus
 }
 #endif
@@ -45,6 +45,25 @@ static int throttle_scans_ = 1;
 // Every deviation above that angle results in a pruning of the ray c
 static float rayPruningAngleDegree = 60; /* [0 .. 90] */
 float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
+
+// Converting helpers
+#include <Eigen/Geometry>
+
+static double transX, transY, transZ;
+static double rotX, rotY, rotZ;
+
+inline Eigen::Quaterniond
+euler2Quaternion( const double roll,
+                  const double pitch,
+                  const double yaw )
+{
+    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
+
+    const Eigen::Quaterniond q = yawAngle * pitchAngle * rollAngle;
+    return q;
+}
 
 // Convinience
 static bool sendMapAsCompressedImage = false;
@@ -92,8 +111,10 @@ void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data ,
     return;
 
 //  DEBUG_MSG( "Scan rec.")
-  // Get the message
-//   boost::shared_ptr< rst::vision::LocatedLaserScan > data = boost::static_pointer_cast< rst::vision::LocatedLaserScan >(event->getData());
+//  Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
+//  Eigen::AngleAxisd lidar_angle(lidar_quat);
+//  Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
+//  const double yaw = rpy(2);
 
   // Copy the whole scan
   rsbScan = *data;
@@ -153,29 +174,15 @@ getOdomPose(ts_position_t& ts_pose)
     rotation = odomRot;
   mtxOdom.unlock();
   
-#ifdef __arm__
-  ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
-  ts_pose.theta = (rotation.qz() * 180/M_PI);  // HACK  Ugly workaround TODO real quaternions
-#else
-  const double a = rotation.qw();
-  const double b = rotation.qx();
-  const double c = rotation.qy();
-  const double d = rotation.qz();
-
-  // Calculate the rotation in [-pi .. pi]
-//  const double f_x = atan2(2*((a*b) + (c*d)) , (pow(a,2) - pow(b,2) - pow(c,2) + pow(d,2)));
-//  const double f_y = - asin(2*((b*d) + (a*c)));
-  const double f_z = atan2(2*((a*d) + (b*c)) , (pow(a,2) + pow(b,2) - pow(c,2) - pow(d,2)));
+  // Convert from quaternion to euler
+  Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
+  Eigen::AngleAxisd lidar_angle(lidar_quat);
+  Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
+  const double yaw = rpy(2);
 
   ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
-  ts_pose.theta = (f_z * 180/M_PI);
-#endif
-  // convert to mm and shift it in the middle of the map (0,0)
-//  ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
-//  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
-//  ts_pose.theta = (rotation.qz() * 180/M_PI);  // HACK  Ugly workaround for AMiRo TODO real quaternions
+  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.theta = (yaw * 180/M_PI);
 
   DEBUG_MSG( "Odom: x: " <<  translation.x() << "m   y: " << translation.y() << "m     theta: " << rotation.qz() << "°" )
   DEBUG_MSG("ODOM POSE: " << ts_pose.x << " " << ts_pose.y << " " << ts_pose.theta)
@@ -231,7 +238,7 @@ void convertToScan(const rst::vision::LocatedLaserScan &scan , ts_scan_t &ranges
 
 bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 {
-  // update odometry#
+  // update odometry
   ts_position_t odom_pose;
   if(!getOdomPose(odom_pose))
      return false;
@@ -298,7 +305,13 @@ int main(int argc, const char **argv){
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
     ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
-    ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image");
+    ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
+    ("transX", po::value < double > (&transX),"Translation of the lidar in x [m]")
+    ("transY", po::value < double > (&transY),"Translation of the lidar in y [m]")
+    ("transZ", po::value < double > (&transZ),"Translation of the lidar in z [m]")
+    ("rotX", po::value < double > (&rotX),"Rotation of the lidar around x (roll) [rad]")
+    ("rotY", po::value < double > (&rotY),"Rotation of the lidar around y (pitch) [rad]")
+    ("rotZ", po::value < double > (&rotZ),"Rotation of the lidar around z (yaw) [rad]");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

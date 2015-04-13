@@ -17,6 +17,7 @@ pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(RST rstsandbox0.11)
 pkg_check_modules(OpenCV opencv)
+pkg_check_modules(EIGEN eigen2)
 # FIND_PACKAGE(OpenCV REQUIRED)
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
@@ -30,6 +31,7 @@ include_directories(include
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
     ${GXX_INCLUDES}
+    ${EIGEN_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR}
 )
 
@@ -37,7 +39,7 @@ include_directories(include
 SET (SOURCE main.cxx)
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h ../../includes/types/LocatedLaserScan.pb.cc)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} $ENV{MUROX_PROJECT}/tools/tinyslam/build)
 
