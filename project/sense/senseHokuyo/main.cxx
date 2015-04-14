@@ -28,6 +28,8 @@
 #define ERROR_MSG_
 #include <MSG.h>
 
+#include <Eigen/Geometry>
+
 using namespace boost;
 using namespace std;
 //using namespace cv;
@@ -42,10 +44,10 @@ static std::string hokuyoDevice = "/dev/ttyACM0";
 static std::string scanName = "range"; // ["top_urg_range+intensity" | "range+intensity1+AGC1"]
 static unsigned int data[HOKUYO_MAX_NUM_POINTS] = {};
 static int n_data;          //number of returned points
-const static int scanStartMin=44;      //Min start of the scan
+const int scanStartMin=44;      //Min start of the scan
 static int scanStart=44;      // Start of the scan
 static int scanEnd=725;      // End of the scan
-const static int scanEndMax=725;      //Max end of the scan
+const  int scanEndMax=725;      //Max end of the scan
 static int scanSkip=1;       //this is so-called "cluster count", however special values
 static int encoding=HOKUYO_3DIGITS; //HOKUYO_2DIGITS
 static int baud=115200;            //communication baud rate (does not matter for USB connection)
@@ -143,7 +145,6 @@ transfer rates over standard serial port");
   laserScan->set_scan_values_min(0.02); // From Hokuyo URG04 manual
   laserScan->set_scan_values_max(4.0); // From Hokuyo URG04 manual
   laserScan->set_scan_angle_increment(radPerSkipStep);
-
 
 //  const ::google::protobuf::RepeatedField< float > *rf =
 //  ::google::protobuf::RepeatedField< float > scan_values = laserScan->scan_values();

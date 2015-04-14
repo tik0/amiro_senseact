@@ -25,6 +25,7 @@ pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(RST rstsandbox0.11)
+pkg_check_modules(EIGEN eigen2)
 
 # Set the include pathe
 include_directories(BEFORE SYSTEM ${RST_INCLUDE_DIRS})
@@ -38,6 +39,7 @@ include_directories(include
     ${GXX_INCLUDES}
     ${Boost_INCLUDE_DIR}
     "$ENV{MUROX_PROJECT}/tools/HokuyoInterface"
+    ${EIGEN_INCLUDE_DIRS}
 )
 
 # Define the source

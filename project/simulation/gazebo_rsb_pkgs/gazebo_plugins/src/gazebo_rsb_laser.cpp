@@ -66,7 +66,6 @@ GazeboRsbLaser::~GazeboRsbLaser()
 // Load the controller
 void GazeboRsbLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 {
-
   // load plugin
   RayPlugin::Load(_parent, this->sdf);
   // Get the world name
@@ -80,7 +79,6 @@ void GazeboRsbLaser::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
 
   if (!this->parent_ray_sensor)
     gzthrow("GazeboRsbLaser controller requires a Ray Sensor as its parent\n");
-
 
   // RSB
   std::string modelName(getFirstScopeContains(_parent->GetParentName(), std::string("AMiRo")));
@@ -129,63 +127,22 @@ void GazeboRsbLaser::OnScan(ConstLaserScanStampedPtr &_msg)
   math::Vector3 positionHack(0,0,0);
   math::Vector3 rotationHack(0,0.707,0);
   poseHack.Set(positionHack, rotationHack);
-  laserScan->mutable_pose()->mutable_rotation()->set_qw(poseHack.rot.w);
-  laserScan->mutable_pose()->mutable_rotation()->set_qx(poseHack.rot.x);
-  laserScan->mutable_pose()->mutable_rotation()->set_qy(poseHack.rot.y);
-  laserScan->mutable_pose()->mutable_rotation()->set_qz(poseHack.rot.z);
-//  laserScan->mutable_pose()->mutable_rotation()->set_qw(this->parent_link->GetWorldPose().rot.w);
-//  laserScan->mutable_pose()->mutable_rotation()->set_qx(this->parent_link->GetWorldPose().rot.x);
-//  laserScan->mutable_pose()->mutable_rotation()->set_qy(this->parent_link->GetWorldPose().rot.y);
-//  laserScan->mutable_pose()->mutable_rotation()->set_qz(this->parent_link->GetWorldPose().rot.z);
-  laserScan->mutable_pose()->mutable_translation()->set_x(this->parent_link->GetWorldPose().pos.x);
-  laserScan->mutable_pose()->mutable_translation()->set_y(this->parent_link->GetWorldPose().pos.y);
-  laserScan->mutable_pose()->mutable_translation()->set_z(this->parent_link->GetWorldPose().pos.z);
+  laserScan->mutable_pose()->mutable_rotation()->set_qw(this->parent_ray_sensor->GetPose().rot.w);
+  laserScan->mutable_pose()->mutable_rotation()->set_qx(this->parent_ray_sensor->GetPose().rot.x);
+  laserScan->mutable_pose()->mutable_rotation()->set_qy(this->parent_ray_sensor->GetPose().rot.y);
+  laserScan->mutable_pose()->mutable_rotation()->set_qz(this->parent_ray_sensor->GetPose().rot.z);
+  laserScan->mutable_pose()->mutable_translation()->set_x(this->parent_ray_sensor->GetPose().pos.x);
+  laserScan->mutable_pose()->mutable_translation()->set_y(this->parent_ray_sensor->GetPose().pos.y);
+  laserScan->mutable_pose()->mutable_translation()->set_z(this->parent_ray_sensor->GetPose().pos.z);
 //  std::cout << this->parent_link->GetWorldPose().rot.w << this->parent_link->GetWorldPose().rot.x<< this->parent_link->GetWorldPose().rot.y<< this->parent_link->GetWorldPose().rot.z << std::endl;
 
-  std::cout << laserScan->pose().rotation().qw() << laserScan->pose().rotation().qx()<< laserScan->pose().rotation().qy()<< laserScan->pose().rotation().qz() << std::endl;
-  std::cout <<   this->parent_link->GetWorldPose().rot.GetAsEuler().y << std::endl;
+//  std::cout << laserScan->pose().rotation().qw() << laserScan->pose().rotation().qx()<< laserScan->pose().rotation().qy()<< laserScan->pose().rotation().qz() << std::endl;
+//  std::cout <<   this->parent_link->GetWorldPose().rot.GetAsEuler().y << std::endl;
 
 //  std::cout << parent_link->GetWorldPose().rot.GetAsEuler().y << std::endl;
 
   this->informer->publish(laserScan);
 
-//   for (auto c : intensities)
-//     std::cout << c << ' ';
-// 
-//   std::vector<double> intensities;
-//   
-//   intensities.resize(_msg->scan().ranges_size());
-//   std::copy(_msg->scan().intensities().begin(),
-//             _msg->scan().intensities().end(),
-//             intensities.begin());
-//   std::cout << intensities[0] << ' ' << std::endl;
-//   std::cout << _msg->scan().frame() << std::endl;
-//   std::cout << _msg->scan().ranges(0) << std::endl;
-//   std::cout << "++++++++++++" << std::endl;
-//   std::cout << "rMin" << _msg->scan().range_min() << " rMax" << _msg->scan().range_max() << std::endl;
-//   for (auto c : intensities)
-//     std::cout << c << ' ';
-  // We got a new message from the Gazebo sensor.  Stuff a
-  // corresponding RSB message and publish it.
-//   sensor_msgs::LaserScan laser_msg;
-//   laser_msg.header.stamp = ros::Time(_msg->time().sec(), _msg->time().nsec());
-//   laser_msg.header.frame_id = this->frame_name_;
-//   laser_msg.angle_min = _msg->scan().angle_min();
-//   laser_msg.angle_max = _msg->scan().angle_max();
-//   laser_msg.angle_increment = _msg->scan().angle_step();
-//   laser_msg.time_increment = 0;  // instantaneous simulator scan
-//   laser_msg.scan_time = 0;  // not sure whether this is correct
-//   laser_msg.range_min = _msg->scan().range_min();
-//   laser_msg.range_max = _msg->scan().range_max();
-//   laser_msg.ranges.resize(_msg->scan().ranges_size());
-//   std::copy(_msg->scan().ranges().begin(),
-//             _msg->scan().ranges().end(),
-//             laser_msg.ranges.begin());
-//   laser_msg.intensities.resize(_msg->scan().intensities_size());
-//   std::copy(_msg->scan().intensities().begin(),
-//             _msg->scan().intensities().end(),
-//             laser_msg.intensities.begin());
-//   this->pub_queue_->push(laser_msg, this->pub_);
 }
 
 
