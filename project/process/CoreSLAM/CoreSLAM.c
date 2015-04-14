@@ -148,6 +148,8 @@ ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quality, i
     y1 = (int)floor(pos->y * TS_MAP_SCALE + 0.5);
     // Translate and rotate scan to robot position
     for (i = 0; i != scan->nb_points; i++) {
+    	//TODO tilted lidar: VALUE determines hole_width
+
         x2p = c * scan->x[i] - s * scan->y[i];
         y2p = s * scan->x[i] + c * scan->y[i];
         xp = (int)floor((pos->x + x2p) * TS_MAP_SCALE + 0.5);
