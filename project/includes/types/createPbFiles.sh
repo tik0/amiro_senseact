@@ -4,5 +4,5 @@ echo "Running protoc for every *.proto file to create the *pb.cc and *pb.h files
 for list in `ls *.proto`
 do
   echo "protoc ${list} --cpp_out=."
-  protoc ${list} --cpp_out=. --proto_path=. --proto_path=/usr/local/share/rst0.11/proto/stable/ --proto_path=/usr/local/share/rst0.11/proto/sandbox/
+  protoc ${list} --cpp_out=. --proto_path=. --proto_path=`pkg-config --variable=prefix rst0.11`/share/rst0.11/proto/sandbox/ --proto_path=`pkg-config --variable=prefix rst0.11`/share/rst0.11/proto/stable/
 done
