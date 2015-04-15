@@ -42,7 +42,7 @@
 
 // Opencv
 #include <opencv2/opencv.hpp>
-#include <cvplot/cvplot.h>
+// #include <cvplot/cvplot.h>
 
 // RSB
 #include <rsb/Event.h>
@@ -109,17 +109,17 @@ inline void sendImage (const rsb::Informer<std::string>::Ptr informer, cv::Mat i
   informer->publish(frameJpg);
 }
 
-template<typename T>
-inline void sendPlot (const std::string figure_name, const rsb::Informer<std::string>::Ptr informer, const T* p, int count, int step, int R, int G, int B)
-{
-  if(count == 0 || p == NULL || informer == NULL)
-    return;
-
-  IplImage * plot = CvPlot::plot(figure_name, p, count, step, R, G, B);
-  sendImage(informer, cv::Mat(plot));
-  CvPlot::clear(figure_name);
-  cvReleaseImage(&plot);
-}
+// template<typename T>
+// inline void sendPlot (const std::string figure_name, const rsb::Informer<std::string>::Ptr informer, const T* p, int count, int step, int R, int G, int B)
+// {
+//   if(count == 0 || p == NULL || informer == NULL)
+//     return;
+// 
+//   IplImage * plot = CvPlot::plot(figure_name, p, count, step, R, G, B);
+//   sendImage(informer, cv::Mat(plot));
+//   CvPlot::clear(figure_name);
+//   cvReleaseImage(&plot);
+// }
 
 /**
 * @brief Reads the name space tag of a sensor plugin
