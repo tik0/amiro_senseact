@@ -12,13 +12,16 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
+# pkg_check_modules(RSB rsb0.11)
+# pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.11)
+# pkg_check_modules(RST rstsandbox0.11)
 pkg_check_modules(OpenCV opencv)
 pkg_check_modules(EIGEN eigen2)
-# FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(RSB REQUIRED)
+FIND_PACKAGE(RSC REQUIRED)
+FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
 # Set the include pathe
@@ -41,9 +44,7 @@ SET (SOURCE main.cxx)
 # add the executable
 ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 
-set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} $ENV{MUROX_PROJECT}/tools/tinyslam/build)
-
-LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
+MESSAGE(INFO ${Boost_LIBRARIES})
 
 TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"
