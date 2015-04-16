@@ -10,6 +10,7 @@
 //#define TS_MAP_SCALE 0.02
 #define TS_NO_OBSTACLE 65500
 #define TS_OBSTACLE 0
+#define TS_TABLE 42
 
 extern double TS_MAP_SCALE;
 
@@ -81,6 +82,10 @@ typedef struct {
     int scan_size;  // number of points per scan
     int angle_min;  // start angle for scan
     int angle_max;  // end angle for scan
+    double tilt_angle; // tilt angle of the laser
+    double depth; // height of the lasercenter over the ground
+    double depth_max;
+    double depth_min;
     int detection_margin; // first scan element to consider
     double distance_no_detection; // default value when the laser returns 0
 } ts_laser_parameters_t;

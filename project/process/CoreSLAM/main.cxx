@@ -206,6 +206,10 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
   lparams_.angle_max = scan.scan_angle_end()  * 180/M_PI;
   lparams_.detection_margin = 0;
   lparams_.distance_no_detection = scan.scan_values_max() * METERS_TO_MM;
+  lparams_.depth = 0.1;
+  lparams_.depth_max = lparams_.depth + 0.02;
+  lparams_.depth_min = lparams_.depth - 0.01;
+  lparams_.tilt_angle =  30 * M_PI / 180;
 
   // new coreslam instance
   ts_map_init(&ts_map_);
