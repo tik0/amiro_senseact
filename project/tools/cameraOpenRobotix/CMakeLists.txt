@@ -10,21 +10,11 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(RSB rsb0.9)
-pkg_check_modules(RSC rsc0.9)
 pkg_check_modules(OPENCV opencv)
 pkg_check_modules(LIBV4l2 libv4l2)
 
-# Not needed. The libraries will be set manualy
-# link_directories(
-#     ${RSB_LIBRARY_DIRS}
-#     ${OPENCV_LIBRARY_DIRS}
-#     ${LIBV4l2_LIBRARY_DIRS}
-# )
-
 # Set the include pathe
 include_directories(
-    ${RSB_INCLUDE_DIRS}                                             # RSB
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     "../../includes"                                                # Other includes like converters and stuff
@@ -60,12 +50,10 @@ link_directories (
 
 target_link_libraries (
     "${PROJECT_NAME}"
-    rsb
     boost_regex-mt
     boost_date_time-mt
     boost_program_options-mt
     boost_system-mt
-    rsc0.9
     opencv_core
     opencv_highgui
     v4l2
