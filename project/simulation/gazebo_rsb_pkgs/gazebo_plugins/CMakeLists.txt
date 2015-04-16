@@ -43,8 +43,8 @@ add_definitions("-fPIC -std=c++11 -O2")
 add_library(gazebo_rsb_laser SHARED src/gazebo_rsb_laser.cpp $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 target_link_libraries(gazebo_rsb_laser ${GAZEBO_LIBRARIES} ${PROTOBUF_LIBRARIES} ${RST_LIBRARIES} ${RSB_LIBRARIES} RayPlugin)
 
-add_library(gazebo_rsb_laser_inversemodel_edge SHARED src/gazebo_rsb_laser_inversemodel_edge.cpp $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc  $ENV{MUROX_INCLUDE_DIRS}/cvplot/cvplot.cpp)
-target_link_libraries(gazebo_rsb_laser_inversemodel_edge ${GAZEBO_LIBRARIES} ${PROTOBUF_LIBRARIES} ${RST_LIBRARIES} ${RSB_LIBRARIES} RayPlugin ${OpenCV_LIBS})
+# add_library(gazebo_rsb_laser_inversemodel_edge SHARED src/gazebo_rsb_laser_inversemodel_edge.cpp $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc  $ENV{MUROX_INCLUDE_DIRS}/cvplot/cvplot.cpp)
+# target_link_libraries(gazebo_rsb_laser_inversemodel_edge ${GAZEBO_LIBRARIES} ${PROTOBUF_LIBRARIES} ${RST_LIBRARIES} ${RSB_LIBRARIES} RayPlugin ${OpenCV_LIBS})
 
 # add_library(ClaasCan_CombineHarvester SHARED $ENV{MUROX_INCLUDE_DIRS}/types/ClaasCan_CombineHarvester.pb.cc)
 # target_link_libraries(ClaasCan_CombineHarvester ${PROTOBUF_LIBRARIES})
