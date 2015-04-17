@@ -22,7 +22,7 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // Proto types
-//#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
+//#include <rst/vision/LaserScan.pb.h>
 #include <types/LocatedLaserScan.pb.h>
 
 #include <gazebo_plugins/gazebo_rsb_laser.h>

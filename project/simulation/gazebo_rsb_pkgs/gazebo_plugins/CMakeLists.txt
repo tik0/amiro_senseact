@@ -15,7 +15,7 @@ find_package(Boost REQUIRED COMPONENTS thread)
 # RSB environment
 find_package(RSB REQUIRED)
 find_package(RSC REQUIRED)
-find_package(RST 0.11 REQUIRED COMPONENTS sandbox)
+find_package(RST REQUIRED COMPONENTS sandbox)
 find_package(Protobuf REQUIRED)
 find_package( OpenCV REQUIRED )
 

@@ -31,7 +31,7 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // Proto types
-#include <rst0.11/sandbox/rst/kinematics/Twist.pb.h>
+#include <rst/kinematics/Twist.pb.h>
 
 #define PLUGIN_NAME "gazebo_rsb_wheel"
 namespace gazebo

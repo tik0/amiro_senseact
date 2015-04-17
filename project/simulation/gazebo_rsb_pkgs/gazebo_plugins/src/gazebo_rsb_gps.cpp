@@ -12,7 +12,7 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // Proto types
-#include <rst0.11/stable/rst/geometry/Pose.pb.h>
+#include <rst/geometry/Pose.pb.h>
 
 #include <gazebo_plugins/gazebo_rsb_gps.h>
 

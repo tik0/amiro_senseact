@@ -27,8 +27,8 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // Proto types
-//#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
-#include <rst0.11/stable/rst/navigation/OccupancyGrid2DInt.pb.h>
+//#include <rst/vision/LaserScan.pb.h>
+#include <rst/navigation/OccupancyGrid2DInt.pb.h>
 #include <types/LocatedLaserScan.pb.h>
 
 #include <gazebo_plugins/gazebo_rsb_laser_inversemodel_edge.h>
