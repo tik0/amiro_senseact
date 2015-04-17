@@ -12,7 +12,7 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 find_package(RSB REQUIRED)
 find_package(RSC REQUIRED)
-find_package(RST 0.11 REQUIRED COMPONENTS sandbox)
+find_package(RST REQUIRED COMPONENTS sandbox)
 find_package(Protobuf REQUIRED)
 
 # Set the include pathe
