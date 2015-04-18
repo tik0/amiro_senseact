@@ -50,7 +50,7 @@ float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 #include <Eigen/Geometry>
 
 static double transX, transY, transZ;
-static double rotX, rotY, rotZ;
+static double rotX, rotY = 0, rotZ;
 
 inline Eigen::Quaterniond
 euler2Quaternion( const double roll,
@@ -191,7 +191,7 @@ getOdomPose(ts_position_t& ts_pose)
 }
 
 bool
-initMapper(const rst::vision::LocatedLaserScan& scan)
+initMapper(const rst::vision::LocatedLaserScan& scan, const double rotY)
 {
 
   // configure previous_odom
@@ -209,7 +209,7 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
   lparams_.depth = 0.1;
   lparams_.depth_max = lparams_.depth + 0.02;
   lparams_.depth_min = lparams_.depth - 0.01;
-  lparams_.tilt_angle =  30 * M_PI / 180;
+  lparams_.tilt_angle =  rotY * M_PI / 180;
 
   // new coreslam instance
   ts_map_init(&ts_map_);
@@ -399,7 +399,7 @@ int main(int argc, const char **argv){
     // We can't initialize CoreSLAM until we've got the first scan
     if(!got_first_scan_)
     {
-      if(!initMapper(scan))
+      if(!initMapper(scan,rotY))
         continue;
       got_first_scan_ = true;
     } else {
