@@ -11,7 +11,7 @@
 
     <include>
       <uri>model://hokuyo</uri>
-      <pose>0 0 0.118 0 0.5234 0</pose>
+      <pose>0 0 0.125 0 0.5234 0</pose>
     </include>
     <joint name="hokuyo_joint" type="revolute">
       <child>hokuyo::link</child>
