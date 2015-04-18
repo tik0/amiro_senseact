@@ -151,8 +151,6 @@ void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quali
 	y1 = (int) floor(pos->y * TS_MAP_SCALE + 0.5);
 	// Translate and rotate scan to robot position
 	for (i = 0; i != scan->nb_points; i++) {
-		//TODO tilted lidar: VALUE determines hole_width
-
 		int hole_width_ray = hole_width;
 
 		if (scan->value[i] == TS_NO_OBSTACLE) {

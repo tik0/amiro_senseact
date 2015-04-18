@@ -38,6 +38,9 @@ static bool got_first_scan_ = false;
 //static bool got_map_ = false;
 static int laser_count_ = 0;
 static int throttle_scans_ = 1;
+static double height_amiro = 94;
+static double height_lidar_measurement = 59;
+static double radius_lidar = 25;
 // Check "http://de.wikipedia.org/wiki/Sinussatz"!
 // c ist the first ray, b the second. If beta is 90°, it means that c is hitting a surface very perpendiular.
 // Every deviation of the 90° is an incident, which means that the surface is not perpendicular to the ray.
@@ -206,10 +209,10 @@ initMapper(const rst::vision::LocatedLaserScan& scan, const double rotY)
   lparams_.angle_max = scan.scan_angle_end()  * 180/M_PI;
   lparams_.detection_margin = 0;
   lparams_.distance_no_detection = scan.scan_values_max() * METERS_TO_MM;
-  lparams_.depth = 0.1;
-  lparams_.depth_max = lparams_.depth + 0.02;
-  lparams_.depth_min = lparams_.depth - 0.01;
   lparams_.tilt_angle =  rotY * M_PI / 180;
+  lparams_.depth = sin(lparams_.tilt_angle+atan(height_lidar_measurement/radius_lidar)) + height_amiro;
+  lparams_.depth_max = lparams_.depth + 20;
+  lparams_.depth_min = lparams_.depth - 10;
 
   // new coreslam instance
   ts_map_init(&ts_map_);

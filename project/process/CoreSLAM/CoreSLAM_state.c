@@ -2,6 +2,7 @@
 #include <math.h>
 #include "CoreSLAM.h"
 
+
 void ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/
 		ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta,
 		int hole_width, int direction) {
@@ -53,11 +54,11 @@ void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int
 					if (depth_measured < state->laser_params.depth_max) {
 						// ray hit an obstacle or the ground
 						sd->d[i] = cos(tilt_angle_ray) * sd->d[i];
-						if (depth_measured > state->laser_params.depth_min) {
+						//if (depth_measured > state->laser_params.depth_min) {
 							// ray hit the table
 							//set value -> hole_width = 0
-							scan->value[scan->nb_points] = TS_TABLE;
-						}
+							//scan->value[scan->nb_points] = TS_TABLE;
+						//}
 					} else {
 						// ray didnt hit the table -> edge
 						sd->d[i] = state->laser_params.depth / tan(tilt_angle_ray);
