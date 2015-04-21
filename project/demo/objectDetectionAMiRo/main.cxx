@@ -222,7 +222,7 @@ void sortObjects() {
   
     for (int obj=0; obj < imageId; obj++) {
       int shootId = -1;
-      for (int shoot=0; shoot < imageId; shoot++) {
+      for (int shoot=0; shoot < compareId; shoot++) {
         if (orderedObjects[shoot][levelChoose] == obj && shootId < 0) {
           shootId = shoot;
         } else if (orderedObjects[shoot][levelChoose] == obj) {
@@ -239,15 +239,15 @@ void sortObjects() {
       }
     }
 
-    allOrdered = true;
+    int orderedCount = 0;
     for (int i=0; i<imageId; i++) {
-      if (!ordered[i]) {
-        allOrdered = false;
-        break;
+      if (ordered[i]) {
+        orderedCount++;
       }
     }
+    allOrdered = orderedCount == compareId;
 
-  while (!allOrdered) {
+  while (!allOrdered && levelChoose != imageId) {
 
     printf("Sort at level %i:\n", levelChoose+1);
   
@@ -255,7 +255,7 @@ void sortObjects() {
       if (!ordered[obj]) {
         int shootIds[imageId];
         int count = 0;
-        for (int shoot=0; shoot < imageId; shoot++) {
+        for (int shoot=0; shoot < compareId; shoot++) {
           if (orderedObjects[shoot][levelChoose] == obj && order[shoot] < 0) {
             shootIds[count] = shoot;
             count++;
@@ -299,18 +299,18 @@ void sortObjects() {
 
     levelChoose++;
 
-    allOrdered = true;
-    for (int i=0; i<imageId; i++) {
-      if (!ordered[i]) {
-        allOrdered = false;
-        break;
+    int orderedCount = 0;
+    for (int i=0; i<compareId; i++) {
+      if (ordered[i]) {
+        orderedCount++;
       }
     }
+    allOrdered = orderedCount == compareId;
 
   }
 
   printf("Final order: ");
-  for (int i=0; i<imageId; i++) {
+  for (int i=0; i<compareId; i++) {
     printf("%i ", order[i]+1);
   }
   printf("\n");
