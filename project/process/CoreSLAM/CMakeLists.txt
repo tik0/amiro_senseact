@@ -12,16 +12,28 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-# pkg_check_modules(RSB rsb0.11)
-# pkg_check_modules(RSC rsc0.11)
+
+if ("$ENV{ARCH}" MATCHES arm)
+
+pkg_check_modules(OPENCV OpenCV)
+pkg_check_modules(RSB rsb0.11)
+pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(RST rst0.11)
 pkg_check_modules(PROTOBUF protobuf)
-# pkg_check_modules(RST rstsandbox0.11)
-pkg_check_modules(OpenCV opencv)
-pkg_check_modules(EIGEN eigen2)
+pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+pkg_check_modules(EIGEN eigen3)
+
+else("$ENV{ARCH}" MATCHES arm)
+
+find_package(RSB REQUIRED)
+find_package(RSC REQUIRED)
+find_package(RST REQUIRED COMPONENTS sandbox)
 FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(RSB REQUIRED)
-FIND_PACKAGE(RSC REQUIRED)
-FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
+find_package(Boost 1.55.0 COMPONENTS system chrono thread regex filesystem) 
+pkg_check_modules(EIGEN eigen3)
+
+endif("$ENV{ARCH}" MATCHES arm)
+
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
 # Set the include pathe
@@ -46,7 +58,30 @@ ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c C
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 
-TARGET_LINK_LIBRARIES (
+if ("$ENV{ARCH}" MATCHES arm)
+
+target_link_libraries (
+    "${PROJECT_NAME}"
+    ${RSB_LIBRARIES}
+    ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${RSTSANDBOX_LIBRARIES}
+    ${PROTO_LIBRARIES}
+    ${OPENCV_LIBRARIES}
+    # Boost
+    boost_regex
+    boost_date_time
+    boost_program_options
+    boost_system
+    boost_thread
+    boost_chrono
+    opencv_core
+    opencv_highgui
+    opencv_imgproc
+)
+
+else("$ENV{ARCH}" MATCHES arm)
+target_link_libraries (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
@@ -55,6 +90,7 @@ TARGET_LINK_LIBRARIES (
     ${Boost_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )
+endif("$ENV{ARCH}" MATCHES arm)
 
 # Additional compiler flags
 ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11)
