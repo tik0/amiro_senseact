@@ -242,7 +242,7 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 
 	std::vector<Point2i> qs = { robotCell };
 	dist.at<float>(robotCell) = 0.0;
-	Point2f direction(cos(theta), sin(theta));
+	Point2f direction(-cos(theta), -sin(theta));
 
 	path.clear();
 
@@ -250,7 +250,7 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 	auto cmp = [&dist](const Point2i& p, const Point2i& q) {return dist.at<float>(p) < dist.at<float>(q);};
 
 	// initialize goal with value out of the map
-	Point2i goal(-1, -1);
+	std::vector<Point2i> goals;
 
 	// try to find a route until there are no free cells left
 	while (!qs.empty()) {
@@ -265,10 +265,15 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 		}
 
 		// check if an unknown cell was found
-		if (om.at<uchar>(u) == 255/2 && cv::norm(u - robotCell) > 8) {
-			goal = u;
-			qs.clear();
-			break;
+		if (om.at<uchar>(u) == 255/2 && cv::norm(u - robotCell) > 15) {
+			goals.push_back( u);
+
+			if (goals.size() > 0) {
+		//		qs.clear();
+				break;
+			}else {
+				continue;
+			}
 		}
 
 		// iterate over connected cells
@@ -305,16 +310,32 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 			}
 		}
 	}
+	qs.clear();
 
-	int ignore = 7;//5;
+	int ignore = 9;//5;
 
 	// check if a frontier was found
-	if (goal == Point2i(-1, -1)) {
+	if (goals.empty()) {
 		cout << "--------------------------no free cell found -------------------------------" << endl;
 	} else {
+		float maxval = std::numeric_limits<float>::min();
+		cv::Point2i goal = goals[0];
+		for (cv::Point2i g : goals) {
+				float val = direction.dot(g-robotCell);
+				if (val < maxval) {
+					maxval = val;
+					goal = g;
+					cout << "g: " << goal << endl;
+				}
+		}
+
+
+		cout << "--------------- frontier found ------------------------" <<  goal<< endl;
 		cv::Point2i diff(0, 0), next;
 		// backtracking to get the route to the start cell
 		while (goal != robotCell) {
+
+
 			std::vector<Point2i> bs = connectedPoints(goal);
 			next = *std::min_element(bs.begin(), bs.end(), cmp);
 

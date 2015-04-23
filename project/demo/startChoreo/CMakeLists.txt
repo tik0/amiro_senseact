@@ -64,7 +64,6 @@ target_link_libraries (
     # Boost
     ${Boost_LIBRARIES}
     ${OpenCV_LIBS}
-    ${ZBAR_LIBRARIES} zbar
     #    boost_regex
     #    boost_date_time
     #    boost_program_options

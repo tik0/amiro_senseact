@@ -153,13 +153,13 @@ void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quali
 	for (i = 0; i != scan->nb_points; i++) {
 
 		if (scan->value[i] == TS_NO_OBSTACLE) {
-//			q = quality / 8;
-		    q = round(quality * 1.0 / pow(laser_params->depth_min, 2) * pow(scan->depth_measured[i] - laser_params->depth_min, 2));
+			q = quality / 8;
+		//    q = round(quality * 1.0 / pow(laser_params->depth_min, 2) * pow(scan->depth_measured[i] - laser_params->depth_min, 2));
 			value = TS_NO_OBSTACLE;
 		} else {
 			value = TS_OBSTACLE;
-//			q = quality*2;
-			q = round(quality * 3.0 / pow(laser_params->depth_min, 2) * pow(scan->depth_measured[i] - laser_params->depth_min, 2));
+			q = quality*2;
+			//q = round(quality * 3.0 / pow(laser_params->depth_min, 2) * pow(scan->depth_measured[i] - laser_params->depth_min, 2));
 		}
 
 		x2p = c * scan->x[i] - s * scan->y[i];

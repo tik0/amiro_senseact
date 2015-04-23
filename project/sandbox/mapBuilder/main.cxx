@@ -596,7 +596,7 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
     boost::shared_ptr<twbTracking::proto::Pose2D> pos(new twbTracking::proto::Pose2D());
     robotPose.x = pose.x    *MM_TO_METERS ;
     robotPose.y = pose.y    *MM_TO_METERS ;
-    robotPose.z = pose.theta;
+    robotPose.z = pose.theta * M_PI / 180.0;
     pos->set_x(robotPose.x);
     pos->set_y(robotPose.y);
     pos->set_orientation(robotPose.z);
@@ -604,7 +604,10 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
 
 
     cv::Mat gridmap0 = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
+    cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw odometry
     gridmap0.convertTo(gridmap,CV_8U, 0.00390625);
+    cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);
+    cv::circle( gridmap, cv::Point(robotPose.x/0.01,robotPose.y/0.01), 5, Scalar(255),-1);
     if (sendMapAsCompressedImage) {
     	cv::Mat omap;
       //cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
@@ -613,10 +616,10 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
       cv::flip(dst, dst, 0);  // horizontal flip
       //dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
-      cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw MCMC position
-      cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
-      cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw odometry
-      cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
+        // Draw MCMC position
+      cv::circle( dstColor, robotPosition, 5, cv::Scalar( 0, 0, pow(2,8)-1));
+
+      cv::circle( dstColor, robotOdomPosition, 5, cv::Scalar( 0, pow(2,8)-1) );
       DEBUG_MSG( "Pose " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
       #ifndef __arm__
       cv::imshow("input", dstColor);
