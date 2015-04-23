@@ -162,7 +162,7 @@ Choreo loadChoreo(std::string choreoName) {
 
 #endif
 */
-  	} catch (boost::property_tree::xml_parser_error &e) {
+  	} catch (...) {
   		}
 	return choreo;
 }
@@ -289,6 +289,7 @@ int main(int argc, char **argv) {
     light_t lights;
 
 	while (true) {
+		cout << "Waiting for songname" << endl;
 		// wait for a rsb message
 		EventPtr event = choreoQueue->pop(0);
 
