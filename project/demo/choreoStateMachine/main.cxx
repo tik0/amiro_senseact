@@ -306,7 +306,7 @@ int main(int argc, char **argv) {
 		std::string songName = *static_pointer_cast<std::string>(event->getData());
 
 		// get the starting time
-		system_clock::time_point nextStepTime(microseconds(event->getMetaData().getCreateTime()) + milliseconds(delay));
+		system_clock::time_point nextStepTime(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delay));
 
 		// load choreo from file
 		std::stringstream fileNameStream;
