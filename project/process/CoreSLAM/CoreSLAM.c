@@ -139,7 +139,7 @@ void ts_map_laser_ray(ts_map_t *map, int x1, int y1, int x2, int y2, int xp, int
 	}
 }
 
-void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quality, int hole_width) {
+void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quality, int hole_width, ts_laser_parameters_t *laser_params) {
 	double c, s;
 	double x2p, y2p;
 	int i, x1, y1, x2, y2, xp, yp, value, q;
@@ -151,17 +151,15 @@ void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quali
 	y1 = (int) floor(pos->y * TS_MAP_SCALE + 0.5);
 	// Translate and rotate scan to robot position
 	for (i = 0; i != scan->nb_points; i++) {
-		int hole_width_ray = hole_width;
-
+		q = quality;
 		if (scan->value[i] == TS_NO_OBSTACLE) {
-			q = quality / 4;
+//			q = quality / 8;
+//		    q = round(quality * 1.0 / pow(laser_params->depth_min, 2) * pow(scan->depth_measured[i] - laser_params->depth_min, 2));
 			value = TS_NO_OBSTACLE;
 		} else {
-			if (scan->value[i] == TS_TABLE) {
-				hole_width_ray = 0;
-			}
-			q = quality;
 			value = TS_OBSTACLE;
+//			q = quality*2;
+//			q = round(quality * 3.0 / pow(laser_params->depth_min, 2) * pow(scan->depth_measured[i] - laser_params->depth_min, 2));
 		}
 
 		x2p = c * scan->x[i] - s * scan->y[i];
@@ -169,7 +167,7 @@ void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quali
 		xp = (int) floor((pos->x + x2p) * TS_MAP_SCALE + 0.5);
 		yp = (int) floor((pos->y + y2p) * TS_MAP_SCALE + 0.5);
 		dist = sqrt(x2p * x2p + y2p * y2p);
-		add = hole_width_ray / 2 / dist;
+		add = hole_width / 2 / dist;
 		x2p *= TS_MAP_SCALE * (1 + add);
 		y2p *= TS_MAP_SCALE * (1 + add);
 		x2 = (int) floor(pos->x * TS_MAP_SCALE + x2p + 0.5);

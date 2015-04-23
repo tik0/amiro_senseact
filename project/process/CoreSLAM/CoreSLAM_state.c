@@ -38,7 +38,9 @@ void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int
 
 			angle_rad = angle_deg * M_PI / 180;
 			if (i > state->laser_params.detection_margin
-					&& i < state->laser_params.scan_size - state->laser_params.detection_margin) {
+					&& i < state->laser_params.scan_size - state->laser_params.detection_margin
+					&& angle_deg < state->laser_params.angle_cap_max && angle_deg > state->laser_params.angle_cap_min
+					) {
 				/*if (sd->d[i] == 0) {
 				 scan->x[scan->nb_points] = state->laser_params.distance_no_detection * cos(angle_rad);
 				 //scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
@@ -46,19 +48,19 @@ void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int
 				 scan->value[scan->nb_points] = TS_NO_OBSTACLE;
 				 scan->nb_points++;
 				 }*/
-				if (sd->d[i] > state->hole_width /*/ 2*/&& sd->d[i] < state->laser_params.distance_no_detection) {
+				if (sd->d[i] > state->hole_width / 2 && ((angle_deg > -45 && angle_deg < 45) || sd->d[i] < state->laser_params.distance_no_detection)) {
 					double tilt_angle_ray = asin(sin(state->laser_params.tilt_angle) * cos(angle_rad));
-					double depth_measured = sin(tilt_angle_ray) * sd->d[i];
+					scan->depth_measured[i] = sin(tilt_angle_ray) * sd->d[i];
 					// compare measured_height to min_height/ max_height;
 					scan->value[scan->nb_points] = TS_OBSTACLE;
-					if (depth_measured < state->laser_params.depth_max) {
+					if (scan->depth_measured[i] < state->laser_params.depth_max) {
 						// ray hit an obstacle or the ground
 						sd->d[i] = cos(tilt_angle_ray) * sd->d[i];
-						//if (depth_measured > state->laser_params.depth_min) {
+						if (scan->depth_measured[i] > state->laser_params.depth_min) {
 							// ray hit the table
 							//set value -> hole_width = 0
-							//scan->value[scan->nb_points] = TS_TABLE;
-						//}
+							scan->value[scan->nb_points] = TS_NO_OBSTACLE;
+						}
 					} else {
 						// ray didnt hit the table -> edge
 						sd->d[i] = state->laser_params.depth / tan(tilt_angle_ray);
@@ -105,7 +107,7 @@ void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state) {
 	 sd->psidot = state->psidot;
 	 sd->v = state->v;
 	 }*/
-	ts_build_scan(sd, &scan2map, state, 3);
+	ts_build_scan(sd, &scan2map, state, 1);
 	ts_build_scan(sd, &state->scan, state, 1);
 
 	// Monte Carlo search
@@ -123,7 +125,7 @@ void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state) {
 	state->distance += d;
 
 	// Map update
-	ts_map_update(&scan2map, state->map, &position, 50, state->hole_width);
+	ts_map_update(&scan2map, state->map, &position, 50, state->hole_width, &(state->laser_params));
 
 	// Prepare next step
 	state->position = sd->position[state->direction];
