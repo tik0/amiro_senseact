@@ -73,6 +73,10 @@ Choreo loadChoreo(std::string choreoName) {
 //#ifndef SIMULATION
 	using boost::property_tree::ptree;
   	ptree pt;
+
+  	try {
+
+
   	read_xml(choreoName, pt);
   	BOOST_FOREACH( ptree::value_type const&tree, pt.get_child("choreo")) {
 	if(tree.first == "choreoStep"){
@@ -167,6 +171,8 @@ Choreo loadChoreo(std::string choreoName) {
 
 #endif
 */
+  	} catch (...) {
+  		}
 	return choreo;
 }
 
@@ -292,6 +298,7 @@ int main(int argc, char **argv) {
     light_t lights;
 
 	while (true) {
+		cout << "Waiting for songname" << endl;
 		// wait for a rsb message
 		EventPtr event = choreoQueue->pop(0);
 
@@ -306,6 +313,12 @@ int main(int argc, char **argv) {
 		fileNameStream << songName << pos << ".xml";
 		cout << "Filename: " << fileNameStream.str() << endl;
                 Choreo choreo = loadChoreo(fileNameStream.str());
+
+
+        if (choreo.empty()) {
+        	cout << "Choreo unknown!" << endl;
+        	continue;
+        }
 
 		// wait for choreo to begin
 		boost::this_thread::sleep_until(nextStepTime);
