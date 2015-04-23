@@ -1,6 +1,9 @@
 #include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/nonfree/nonfree.hpp>
 
 #include <boost/shared_ptr.hpp>
 #include <rsb/Factory.h>
@@ -18,10 +21,9 @@
 // protocol defines
 std::string COMMAND_QUIT = "ESC";
 std::string COMMAND_COMPARE = "COMP";
-std::string COMMAND_ENDOFCOMPARE = "END_COMP";
 
 #define maxObjects 10
-#define maxObjectSites 4
+#define maxObjectSites 6
 
 
 using namespace boost;
@@ -45,275 +47,260 @@ using namespace cv;
 
 #include <jpeglib.h>
 
-static std::string g_sOutScope = "/image";
-static std::string g_sInScope = "/command";
+static std::string g_sImageScope = "/objectDetection/image";
+static std::string g_sOutScope = "/objectDetection/detected";
+static std::string g_sInScope = "/objectDetection/command";
 static int g_iDevice = 0;
 static unsigned int g_uiQuality = 85;
 
-
 std::string directory = "objectPics/";
+std::string siftDirectory = "siftResults/";
 std::string savingDir = "object_";
 std::string fileend = ".jpg";
 
-// init values for saving and comparing
-int imageId = 0;
-int compareId = 0;
-int siteId = 0;
-Mat objects[maxObjects][maxObjectSites][4];
-int siteCount[maxObjectSites];
-int orderedObjects[maxObjects][maxObjects];
-float weightedObjects[maxObjects][maxObjects];
+// init case values
 bool sendingPic = false;
-bool saving = true;
-bool newObject = true;
+bool reversedSearchOrder = false;
+bool debugging = false;
+bool checkAllObjects = false;
 
-Mat frame, b_hist, g_hist, r_hist, gray_hist;
+// init values for loading and comparing
+int objectCount = 0;
+int siteId = 0;
+int comparisonCount = 0;
+Mat objectPics[maxObjects][maxObjectSites];
+std::vector<KeyPoint> objectKeyPoints[maxObjects][maxObjectSites];
+Mat objectDescriptors[maxObjects][maxObjectSites];
 
-
-
-// calculates histograms
-void calcHistograms() {
-  cv::Mat gray_image;
-  cv::cvtColor(frame, gray_image, CV_BGR2GRAY);
-
-  /// Separate the image in 3 places ( B, G and R )
-  vector<Mat> bgr_planes;
-  split(frame, bgr_planes);
-
-  /// Establish the number of bins
-  int histSize = 256;
-
-  /// Set the ranges ( for B,G,R) )
-  float range[] = { 0, 255 } ;
-  const float* histRange = { range };
-
-  bool uniform = true; bool accumulate = false;
-
-  //Mat b_hist, g_hist, r_hist, gray_hist;
-
-  /// Compute the histograms:
-  calcHist( &bgr_planes[0], 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
-  calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
-  calcHist( &bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
-  calcHist( &gray_image, 1, 0, Mat(), gray_hist, 1, &histSize, &histRange, uniform, accumulate );
-
-  // Draw the histograms for B, G and R
-  int hist_w = 512; int hist_h = 400;
-  int bin_w = cvRound( (double) hist_w/histSize );
-
-  Mat histImage( hist_h, hist_w, CV_8UC3, Scalar( 0,0,0) );
-  Mat histImageGray( hist_h, hist_w, CV_8UC3, Scalar( 0,0,0) );
-
-  /// Normalize the result to [ 0, histImage.rows ]
-  normalize(b_hist, b_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
-  normalize(g_hist, g_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
-  normalize(r_hist, r_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
-  normalize(gray_hist, gray_hist, 0, histImageGray.rows, NORM_MINMAX, -1, Mat() );
-}
+// init SURF class
+int minHessian = 1000;
+SurfFeatureDetector detector(minHessian);
+SurfDescriptorExtractor extractor;
 
 
 
 // saving objects procedure
-void savingObject(Mat blue, Mat green, Mat red, Mat gray, bool saveImg) {
+void savingObject(Mat img_object, int objectNum, int objectSite) {
   // Save histogramms
-  Mat blue_s, green_s, red_s, gray_s;
-  blue.copyTo(blue_s);
-  green.copyTo(green_s);
-  red.copyTo(red_s);
-  gray.copyTo(gray_s);
-  objects[imageId][siteId][0] = blue_s;
-  objects[imageId][siteId][1] = green_s;
-  objects[imageId][siteId][2] = red_s;
-  objects[imageId][siteId][3] = gray_s;
-  siteCount[imageId] = siteId+1;
+  img_object.copyTo(objectPics[objectNum][objectSite]);
+  detector.detect(img_object, objectKeyPoints[objectNum][objectSite]);
+  extractor.compute(img_object, objectKeyPoints[objectNum][objectSite], objectDescriptors[objectNum][objectSite]);
 }
 
 
 // load objects
 void loadObjects() {
-  for (imageId=0; imageId<maxObjects; imageId++) {
+  for (objectCount=0; objectCount<maxObjects; objectCount++) {
+    printf("Try to load %i. object\n", objectCount+1);
+    int siteId;
     for (siteId=0; siteId<maxObjectSites; siteId++) {
-      string filename = directory + savingDir + to_string(imageId) + "_" + to_string(siteId) + fileend;
-      frame = imread(filename, 1);
+      string filename = directory + savingDir + to_string(objectCount) + "_" + to_string(siteId) + fileend;
+      Mat frame = imread(filename, 1);
       if (frame.rows > 0 && frame.cols > 0) {
-        calcHistograms();
-        savingObject(b_hist, g_hist, r_hist, gray_hist, false);
+        savingObject(frame, objectCount, siteId);
       } else {
-        //printf("Couldn't load at object %i site %i.\n", imageId+1, siteId+1);
+        //printf("Couldn't load at object %i site %i.\n", objectCount+1, siteId+1);
         break;
       }
     }
     if (siteId == 0) {
       break;
-    } else {
-      siteCount[imageId] = siteId;
     }
   }
-  if (imageId > 0) {
-    printf("%i objects loaded:\n", imageId);
-    for (int i=0; i<imageId; i++) {
-      printf(" - %i: %i sites\n", i+1, siteCount[i]);
-    }
+  if (objectCount > 0) {
+    printf("%i objects loaded.\n", objectCount);
   } else {
     std::cout << "No objects could be loaded in relative directory '" << directory << "' with filename type '" << savingDir << "x_x" << fileend << "'!\n";
   }
 }
 
 
-// comparing saved objects to one snapshot
-void comparing(Mat blue, Mat green, Mat red, Mat gray) {
-  Mat nullMat = Mat::eye(1,1,CV_64F);
-  for (int obj=0; obj < imageId; obj++) {
-    float compShot = 0;
-    for (int site=0; site < siteCount[obj]; site++) {
-      float comp_b = (compareHist(blue, objects[obj][site][0], 0)+1)/2.0;
-      float comp_g = (compareHist(green, objects[obj][site][1], 0)+1)/2.0;
-      float comp_r = (compareHist(red, objects[obj][site][2], 0)+1)/2.0;
-      float comp_gray = (compareHist(gray, objects[obj][site][3], 0)+1)/2.0;
-      float comp_color = comp_b*comp_g*comp_r;
-      float comp_x = comp_color * comp_gray;
-      printf("Comparison with %i. object site %i: b=%f g=%f r=%f color=%f gray=%f x=%f\n", obj+1, site+1, comp_b, comp_g, comp_r, comp_color, comp_gray, comp_x);
-      if (comp_x > compShot) {
-        compShot = comp_x;
-      }
-    }
+int searchObjectsInScene(Mat img_scene) {
+  clock_t tStart, tFV, tEnd, tObjStart, tObjEnd;
+  tStart = clock();
 
-    orderedObjects[compareId][obj] = obj;
-    weightedObjects[compareId][obj] = compShot;
+  // create feature vector of scene
+  printf("Create feature vector of scene.\n");
+  std::vector<KeyPoint> keypoints_scene;
+  Mat descriptors_scene;
+  detector.detect(img_scene, keypoints_scene);
+  extractor.compute(img_scene, keypoints_scene, descriptors_scene);
+
+  tFV = clock();
+  if (debugging) {
+    printf("Time for creating feature vector: %i us\n", int(tFV-tStart));
   }
 
-  for (int run=1; run < imageId; run++) {
-    for (int comp=imageId-1; comp >= run; comp--) {
-      float compWeight = weightedObjects[compareId][comp];
-      int compId = orderedObjects[compareId][comp];
-      if (weightedObjects[compareId][comp-1] < compWeight) {
-        weightedObjects[compareId][comp] = weightedObjects[compareId][comp-1];
-        orderedObjects[compareId][comp] = orderedObjects[compareId][comp-1];
-        weightedObjects[compareId][comp-1] = compWeight;
-        orderedObjects[compareId][comp-1] = compId;
-      }
-    }
-  }
+  bool finalDetection = false;
 
-  printf("Order for object %i: ", compareId+1);
-  for (int idx=0; idx<imageId; idx++) {
-    if (idx < imageId-1) {
-      printf("%i (%f), ", orderedObjects[compareId][idx]+1, weightedObjects[compareId][idx]);
+  // compare scene features with all object features
+  int objId, detectObjId;
+  for (int objIdFor=0; objIdFor<objectCount; objIdFor++) {
+    if (reversedSearchOrder) {
+      objId = objectCount-1-objIdFor;
     } else {
-      printf("%i (%f)", orderedObjects[compareId][idx]+1, weightedObjects[compareId][idx]);
+      objId = objIdFor;
     }
-  }
-  printf("\n");
-}
+    for (int siteId=0; siteId<maxObjectSites; siteId++) {
+      tObjStart = clock();
 
+      // load object keypoints and descriptor
+      Mat img_object;
+      objectPics[objId][siteId].copyTo(img_object);
+      std::vector<KeyPoint> keypoints_object = objectKeyPoints[objId][siteId];
+      Mat descriptors_object = objectDescriptors[objId][siteId];
 
-// sort compared objects
-void sortObjects() {
-  int order[imageId];
-  bool ordered[imageId];
-  bool allOrdered = false;
-  for (int i=0; i<imageId; i++) {
-    order[i] = -1;
-    ordered[i] = false;
-  }
-  int levelChoose = 0;
+      //-- Step 3: Matching descriptor vectors using FLANN matcher
+      FlannBasedMatcher matcher;
+      std::vector< DMatch > matches;
+      matcher.match(descriptors_object, descriptors_scene, matches);
 
-    printf("First sort:\n");
-  
-    for (int obj=0; obj < imageId; obj++) {
-      int shootId = -1;
-      for (int shoot=0; shoot < compareId; shoot++) {
-        if (orderedObjects[shoot][levelChoose] == obj && shootId < 0) {
-          shootId = shoot;
-        } else if (orderedObjects[shoot][levelChoose] == obj) {
-          shootId = -1;
-          break;
+      double max_dist = 0; double min_dist = 100;
+
+      //-- Quick calculation of max and min distances between keypoints
+      for (int i = 0; i < descriptors_object.rows; i++) {
+        double dist = matches[i].distance;
+        if (dist < min_dist) min_dist = dist;
+        if (dist > max_dist) max_dist = dist;
+      }
+
+      //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
+      std::vector< DMatch > good_matches;
+
+      for (int i = 0; i < descriptors_object.rows; i++) {
+        if (matches[i].distance < 3*min_dist) {
+          good_matches.push_back(matches[i]);
         }
       }
-      if (shootId >= 0) {
-        order[shootId] = obj;
-        ordered[obj] = true;
-        printf(" - Object %i belongs to pic %i.\n", obj+1, shootId+1);
+
+      
+      Mat img_matches;
+      if (debugging) {
+        drawMatches( img_object, keypoints_object, img_scene, keypoints_scene,
+               good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+               vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+      }
+
+      //-- Localize the object
+      std::vector<Point2f> obj;
+      std::vector<Point2f> scene;
+
+      for( int i = 0; i < good_matches.size(); i++ )
+      {
+        //-- Get the keypoints from the good matches
+        obj.push_back( keypoints_object[ good_matches[i].queryIdx ].pt );
+        scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
+      }
+
+      bool detectedFeatures = obj.size() >= 4 && scene.size() >= 4;
+      bool detectedDist = true;
+      bool detectedPos = true;
+      std::vector<float> finalEdges(4);
+      std::vector<Point2f> obj_corners(4);
+      std::vector<Point2f> scene_corners(4);
+      if (detectedFeatures) { 
+
+        Mat H = findHomography( obj, scene, CV_RANSAC );
+
+        //-- Get the corners from the image_1 ( the object to be "detected" )
+        obj_corners[0] = cvPoint(0,0); obj_corners[1] = cvPoint( img_scene.cols, 0 );
+        obj_corners[2] = cvPoint( img_scene.cols, img_scene.rows ); obj_corners[3] = cvPoint( 0, img_scene.rows );
+
+        perspectiveTransform( obj_corners, scene_corners, H);
+
+        for (int i=0; i<4; i++) {
+          int j=i+1;
+          if (j == 4) j=0;
+          Point2f diff = scene_corners[i] - scene_corners[j];
+          float dist = sqrt(diff.x*diff.x + diff.y*diff.y);
+          finalEdges[i] = dist;
+          if (dist < 100) {
+            detectedDist = false;
+          }
+          switch (i) {
+            case 0: if (scene_corners[j].x - scene_corners[i].x <= 0) detectedPos=false; break;
+            case 1: if (scene_corners[j].y - scene_corners[i].y <= 0) detectedPos=false; break;
+            case 2: if (scene_corners[i].x - scene_corners[j].x <= 0) detectedPos=false; break;
+            default: if (scene_corners[i].y - scene_corners[j].y <= 0) detectedPos=false; break;
+          }
+        }
+
+        if (debugging) {
+          Scalar color;
+          if (detectedDist && detectedPos) {
+            color = Scalar(0, 255, 0);
+          } else {
+            color = Scalar(255, 0, 0);
+          }
+
+          //-- Draw lines between the corners (the mapped object in the scene - image_2 )
+          line( img_matches, scene_corners[0] + Point2f( img_object.cols, 0), scene_corners[1] + Point2f( img_object.cols, 0), color, 4 );
+          line( img_matches, scene_corners[1] + Point2f( img_object.cols, 0), scene_corners[2] + Point2f( img_object.cols, 0), color, 4 );
+          line( img_matches, scene_corners[2] + Point2f( img_object.cols, 0), scene_corners[3] + Point2f( img_object.cols, 0), color, 4 );
+          line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), color, 4 );
+        }
+      }
+
+      tObjEnd = clock();
+
+      bool detected = detectedFeatures && detectedDist && detectedPos;
+      if (detected) {
+        detectObjId = objId;
+      }
+
+      printf("Object %i site %i ", objId+1, siteId+1);
+      if (detected) {
+        printf("detected");
       } else {
-        printf(" - No clear selection for object %i.\n", obj+1);
-      }
-    }
-
-    int orderedCount = 0;
-    for (int i=0; i<imageId; i++) {
-      if (ordered[i]) {
-        orderedCount++;
-      }
-    }
-    allOrdered = orderedCount == compareId;
-
-  while (!allOrdered && levelChoose != imageId) {
-
-    printf("Sort at level %i:\n", levelChoose+1);
-  
-    for (int obj=0; obj < imageId; obj++) {
-      if (!ordered[obj]) {
-        int shootIds[imageId];
-        int count = 0;
-        for (int shoot=0; shoot < compareId; shoot++) {
-          if (orderedObjects[shoot][levelChoose] == obj && order[shoot] < 0) {
-            shootIds[count] = shoot;
-            count++;
-          }
-        }
-        if (count == 1) {
-          order[shootIds[0]] = obj;
-          ordered[obj] = true;
-          printf(" - Object %i belongs to pic %i.\n", obj+1, shootIds[0]+1);
-        } else if (count > 1) {
-          printf(" - Object %i found in pics ", obj+1);
-          int idx = -1;
-          float dist = 0;
-          for (int shoot=0; shoot<count; shoot++) {
-            printf("%i ", shootIds[shoot]+1);
-            for (int comp=levelChoose+1; comp<imageId; comp++) {
-              if (!ordered[orderedObjects[shootIds[shoot]][comp]]) {
-                float newDist = weightedObjects[shootIds[shoot]][levelChoose]/weightedObjects[shootIds[shoot]][comp];
-                if (shoot < count-1) {
-                  printf("(%i, %f/%f=%f), ", weightedObjects[shootIds[shoot]][levelChoose], weightedObjects[shootIds[shoot]][comp], orderedObjects[shootIds[shoot]][comp]+1, newDist);
-                } else {
-                  printf("(%i, %f/%f=%f)", weightedObjects[shootIds[shoot]][levelChoose], weightedObjects[shootIds[shoot]][comp], orderedObjects[shootIds[shoot]][comp]+1, newDist);
-                }
-            
-                if (newDist > dist) {
-                  idx = shootIds[shoot];
-                  dist = newDist;
-                }
-                break;
-              }
-            }
-          }
-          order[idx] = obj;
-          ordered[obj] = true;
-          printf(" - selected for pic %i (%f).\n", idx+1, dist); 
+        printf("could not be detected by");
+        if (!detectedFeatures) {
+          printf(" missing features");
+        } else if (!detectedDist && !detectedPos) {
+          printf(" square");
+        } else if (!detectedDist) {
+          printf(" too small square");
         } else {
-          printf(" - Object %i not found.\n", obj+1);
+          printf(" too ugly square");
         }
       }
-    }
+      printf("\n");
 
-    levelChoose++;
+      if (debugging) {
+        string filename = siftDirectory + savingDir + to_string(comparisonCount) + "_" + to_string(objId) + "_" + to_string(siteId) + fileend;
+        bool ok = imwrite(filename, img_matches);
+        if (!ok) {
+          printf("[Couldn't save comparison!]\n");
+        }
+      }
 
-    int orderedCount = 0;
-    for (int i=0; i<compareId; i++) {
-      if (ordered[i]) {
-        orderedCount++;
+      if (!finalDetection) {
+        finalDetection = detected;
+      }
+
+      if (detected && !checkAllObjects) {
+        break;
       }
     }
-    allOrdered = orderedCount == compareId;
 
+    if (finalDetection && !checkAllObjects) {
+      break;
+    }
   }
 
-  printf("Final order: ");
-  for (int i=0; i<compareId; i++) {
-    printf("%i ", order[i]+1);
+  tEnd = clock();
+  if (debugging) {
+    printf("Time for whole objectDetection: %i us\n", int(tEnd-tStart));
   }
-  printf("\n");
+
+  comparisonCount++;
+
+  if (finalDetection) {
+    printf("\nObject %i detected!\n\n", detectObjId+1);
+    return detectObjId+1;
+  } else {
+    printf("\nNo object detected. Are you sure that there was a known object in view sight?\n\n");
+    return 0;
+  }
 }
 
 
@@ -331,6 +318,9 @@ int main(int argc, char **argv) {
             ("device,d", po::value < int > (&g_iDevice),"Number of device")
             ("quality,q", po::value < unsigned int > (&g_uiQuality),"Quality of JPEG compression [0 .. 100]")
             ("sending,s", "Sends the taken snapshot over RSB.")
+            ("reverseSearch,r", "Reverses search order of objects.")
+            ("debug", "Activates debugging which includes generated pictures and additional console information.")
+            ("checkAll", "All objects will be checked.")
             ("printPic", "Prints a notice if a new picture has been taken.");
 
   // allow to give the value as a positional argument
@@ -349,20 +339,27 @@ int main(int argc, char **argv) {
   }
 
   sendingPic = vm.count("sending");
+  reversedSearchOrder = vm.count("reverseSearch");
+  debugging = vm.count("debug");
+  checkAllObjects = vm.count("checkAll");
     
   // afterwards, let program options handle argument errors
   po::notify(vm);
     
-  INFO_MSG( "Scope: " << g_sOutScope)
-  INFO_MSG( "Commands: " << g_sInScope)
-  INFO_MSG( "Device: " << g_iDevice)
-  INFO_MSG( "JPEG Quality: " << g_uiQuality)
+  INFO_MSG("Output scope: " << g_sOutScope);
+  INFO_MSG("Command scope: " << g_sInScope);
+  if (sendingPic) {
+    INFO_MSG("Picture scope: " << g_sImageScope);
+  }
+  INFO_MSG("Device: " << g_iDevice);
+  INFO_MSG("JPEG Quality: " << g_uiQuality);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   rsb::Factory &factory = rsb::Factory::getInstance();
 
   // Create the informer
-  Informer<std::string>::Ptr informer = getFactory().createInformer<std::string> (Scope(g_sOutScope));
+  Informer<std::string>::Ptr imageInformer = getFactory().createInformer<std::string> (Scope(g_sImageScope));
+  Informer<std::string>::Ptr detectedInformer = getFactory().createInformer<std::string> (Scope(g_sOutScope));
 
   // Create and start the command listener
   rsb::ListenerPtr listener = factory.createListener(g_sInScope);
@@ -377,13 +374,10 @@ int main(int argc, char **argv) {
   cv::VideoCapture cam;
   // Open the device /dev/video<g_iDevice>
   if ( cam.open(g_iDevice) ) {
-    // Buffer to store the compressed image
 
     loadObjects();
-    if (imageId <= 0) {
-      return -1;
-    }
-    
+    Mat frame;
+
     // Process the cam forever
     for (; ;) {
 
@@ -404,10 +398,8 @@ int main(int argc, char **argv) {
 
         // Send the data.
         shared_ptr<std::string> frameJpg(new std::string(buf.begin(), buf.end()));
-        informer->publish(frameJpg);
+        imageInformer->publish(frameJpg);
       }
-
-      calcHistograms();
 
       // Get command
       if (!commandQueue->empty()) {
@@ -416,33 +408,25 @@ int main(int argc, char **argv) {
         if (command == COMMAND_QUIT) {
           INFO_MSG("Quit application.");
           break;
-        // check for compare command
+        // check for compare commandCOMMAND_STORE
         } else if (command == COMMAND_COMPARE) {
-          if (!newObject) {
-            printf("Please create a new object first to finalize learning.\n");
-          } else if (saving && imageId > 0) {
-            saving = false;
-            printf("Try to compare.\n");
-          } else if (imageId > 0) {
-            printf("Compare %i. object of %i:\n", compareId+1, imageId);
-            comparing(b_hist, g_hist, r_hist, gray_hist);
-            compareId++;
-            if (compareId == imageId) {
-              sortObjects();
-              compareId = 0;
-              saving = true;
-              printf("Comparing finished.\n");
+          if (objectCount > 0 && siteId == 0) {
+            printf("Comparing:\n");
+            int detObj = searchObjectsInScene(frame);
+
+            std::string output;
+            if (detObj > 0) {
+              output = to_string(detObj);
+            } else {
+              output = "null";
             }
+            shared_ptr<std::string> StringPtr(new std::string(output));
+            detectedInformer->publish(StringPtr);
+
+          } else if (siteId != 0) {
+            printf("Please save the rest %i sites for object %i to continue with comparing.\n", maxObjectSites-siteId, objectCount+1);
           } else {
             printf("No objects saved for comparison.\n");
-          }
-        // check for compare end command
-        } else if (command == COMMAND_ENDOFCOMPARE) {
-          if (compareId > 0) {
-            sortObjects();
-            compareId = 0;
-            saving = true;
-            printf("Comparing finished.\n");
           }
         // otherwise it is an unknown command
         } else {
