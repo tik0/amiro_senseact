@@ -196,7 +196,7 @@ void moveToTargetPosition(types::position position, int16_t timeMS) {
 		usleep(250000);
 		myCAN.getActualSpeed(v, w);
 		if (v==0 && w==0) {
-			usleep(500000);
+			sleep(1);
 			myCAN.getActualSpeed(v, w);
 		}
 	} while (v != 0 || w != 0);
@@ -230,7 +230,7 @@ void homing() {
 
 	// reset position struct
 	homingPosition.y = 0;
-
+/*
 	// turn towards origin
 	homingPosition.x = 0;
 	homingPosition.f_z = diffAngle;
@@ -243,6 +243,35 @@ void homing() {
 	homingPosition.x = 0;
 	homingPosition.f_z = backAngle;
 	moveToTargetPosition(homingPosition, 1);
+*/
+        int speed;
+	// turn towards origin
+	if (diffAngle < 0) {
+		speed = -1e6;
+	} else {
+		speed = 1e6;
+	}
+	myCAN.setTargetSpeed(0,speed);
+        usleep(abs(int(0.99f*diffAngle)));
+        myCAN.setTargetSpeed(0,0);
+	// drive to origin
+	if (diffDist < 0) {
+		speed = -100e3;
+	} else {
+		speed = 100e3;
+	}
+	myCAN.setTargetSpeed(speed,0);
+        usleep(abs(diffDist*11));
+        myCAN.setTargetSpeed(0,0);
+        // turn towards origin orientation
+	if (backAngle < 0) {
+		speed = -1e6;
+	} else {
+		speed = 1e6;
+	}
+	myCAN.setTargetSpeed(0,speed);
+        usleep(abs(int(0.99f*backAngle)));
+        myCAN.setTargetSpeed(0,0);
 }
 
 
@@ -330,6 +359,10 @@ int main(int argc, char **argv) {
 			homingPosition.f_z = 0;
 			myCAN.setOdometry(homingPosition);
 		}
+		// set lights
+		for (int l = 0; l < 8; ++l) {
+			myCAN.setLightColor(l,amiro::Color(255,255,255));
+		}
 
 		// perform the choreo
 		for (ChoreoStep cs : choreo) {
@@ -370,6 +403,16 @@ int main(int argc, char **argv) {
 			nextStepTime += milliseconds(cs.time);
 			boost::this_thread::sleep_until(nextStepTime);
 		}
+
+		// stop Robot
+                myCAN.setTargetSpeed(0,0);
+
+		// reset lights
+		for (int l = 0; l < 8; ++l) {
+			myCAN.setLightColor(l,amiro::Color(255,255,255));
+		}
+
+		sleep(1);
 
 		// do final homing
 		if (doHoming) {
