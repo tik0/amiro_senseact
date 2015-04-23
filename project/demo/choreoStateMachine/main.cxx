@@ -59,6 +59,13 @@ using namespace rsb;
 bool doHoming = false;
 types::position homingPosition;
 
+int getForwardVel(float distance, float duration) {
+	return round(distance * 10000 / duration);
+}
+
+int getAngularVel(float angle, float duration) {
+	return round(angle / 180.0f * M_PI * 1000000 / duration);
+}
 
 // load a choreography from a file
 Choreo loadChoreo(std::string choreoName) {
@@ -70,8 +77,9 @@ Choreo loadChoreo(std::string choreoName) {
   	BOOST_FOREACH( ptree::value_type const&tree, pt.get_child("choreo")) {
 	if(tree.first == "choreoStep"){
 		ChoreoStep choreoStep;
-		choreoStep.v = tree.second.get<int>("v");
-		choreoStep.w = tree.second.get<int>("w");
+		float duration = tree.second.get<float>("time");
+		choreoStep.v = getForwardVel(tree.second.get<float>("v"), duration);
+		choreoStep.w = getAngularVel(tree.second.get<float>("w"), duration);
 		choreoStep.brightness = tree.second.get<int>("brightness");
 		light_t lights;
 		for (int i = 0; i < 8; ++i) {
@@ -84,7 +92,7 @@ Choreo loadChoreo(std::string choreoName) {
 			lights[i][1] = boost::lexical_cast<int>(splitstring[1]);
 			lights[i][2] = boost::lexical_cast<int>(splitstring[0]);}
 		choreoStep.lights = lights;
-		choreoStep.time = tree.second.get<int>("time");
+		choreoStep.time = round(duration * 1000);
       		choreo.push_back(choreoStep);}
 	if(tree.first == "choreoinclude"){
 			std::string newfile = tree.second.get<std::string>("choreopart");
@@ -93,8 +101,9 @@ Choreo loadChoreo(std::string choreoName) {
 			BOOST_FOREACH( ptree::value_type const&tree, pt2.get_child("choreo")) {
 			if(tree.first == "choreoStep"){
 				ChoreoStep choreoStep1;
-				choreoStep1.v = tree.second.get<int>("v");
-				choreoStep1.w = tree.second.get<int>("w");
+				float duration1 = tree.second.get<float>("time");
+				choreoStep1.v = getForwardVel(tree.second.get<float>("v"), duration1);
+				choreoStep1.w = getAngularVel(tree.second.get<float>("w"), duration1);
 				choreoStep1.brightness = tree.second.get<int>("brightness");
 				light_t lights1;
 				for (int i = 0; i < 8; ++i) {
@@ -107,7 +116,7 @@ Choreo loadChoreo(std::string choreoName) {
 					lights1[i][1] = boost::lexical_cast<int>(splitstring[1]);
 					lights1[i][2] = boost::lexical_cast<int>(splitstring[0]);}
 				choreoStep1.lights = lights1;
-				choreoStep1.time = tree.second.get<int>("time");
+				choreoStep1.time = round(duration1 * 1000);
       				choreo.push_back(choreoStep1);}
 			}		
 		}
