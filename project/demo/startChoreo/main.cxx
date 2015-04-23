@@ -8,13 +8,11 @@
 
 #include <iostream>
 #include <string>
-#include <zbar.h>
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 using namespace cv;
 using namespace std;
-using namespace zbar;
 
 // boost
 #include <boost/shared_ptr.hpp>
@@ -71,62 +69,8 @@ int main(int argc, char **argv) {
 	}
 
 	// Create window for camera stream
-	namedWindow("Videostream",CV_WINDOW_AUTOSIZE);
 
-	Mat img, augmented;
 
-	// Create zbar image scanner
-	ImageScanner scanner;
-	scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
-
-	bool codeFound = false;
-
-	// Endlessly read image from camera
-	while(!codeFound)
-	{
-		if (!cap.read(img)) //if not success, break loop
-		{  
-			cout << "Cannot read frame from camera. Exiting..." << endl;
-			break;  
-		}
-
-		// Wrap image data
-		augmented = img.clone(); // clone before converting
-		cvtColor(img,img,CV_BGR2GRAY);
-		uchar *raw = (uchar *)img.data;
-		int width = img.cols;
-		int height = img.rows;
-		Image image(width, height, "Y800", raw, width * height);
-
-		// Scan the image for codes
-		scanner.scan(image);
-
-		// Extract results
-		for(Image::SymbolIterator symbol = image.symbol_begin(); symbol != image.symbol_end(); ++symbol)
-		{   
-			choreoName = symbol->get_data();
-			cout << "Decoded " << symbol->get_type_name() << " symbol \"" << symbol->get_data() << '"' <<" "<< endl;
-			codeFound = true;
-
-			// Draw rectangle around QR code
-			vector<Point> vp;
-			int n = symbol->get_location_size();
-			for(int i = 0; i < n; i++) vp.push_back(Point(symbol->get_location_x(i),symbol->get_location_y(i)));
-			RotatedRect r = minAreaRect(vp);
-			Point2f pts[4];   
-			r.points(pts);   
-			for(int i=0;i<4;i++) line(augmented,pts[i],pts[(i+1)%4],Scalar(255,0,0),3);
-		}    
-
-		imshow("Videostream",augmented);
-
-		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop  
-		{
-			cout << "esc key is pressed by user. Exiting..." << endl;
-			break;   
-		}  
-
-	}
 
 	// Publish the data
 	Informer<string>::DataPtr message(new string(choreoName));

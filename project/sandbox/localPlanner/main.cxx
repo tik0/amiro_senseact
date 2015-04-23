@@ -40,7 +40,7 @@ using namespace muroxConverter;
 
 // search the pose-list received from tracking for the robots id and get the corresponding pose.
 cv::Point3f convertPose(boost::shared_ptr<twbTracking::proto::Pose2D> data) {
-	return cv::Point3f(data->x(), data->y(), data->orientation() * M_PI / 180.0);
+	return cv::Point3f(data->x(), data->y(), data->orientation() );
 }
 
 int main(int argc, char **argv) {
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 	cv::Point3f lastRobotPose = robotPose;
 
 	// object to drive exploration paths
-	LocalPlanner localPlanner(steeringInformer,true);//vm.count("help")>0);
+	LocalPlanner localPlanner(steeringInformer,vm.count("simulate")>0);
 
 	bool firstPose = true;
 	bool pathInProgress = true;
@@ -151,11 +151,12 @@ int main(int argc, char **argv) {
 		// to start the exploration drive 5 cm forwards
 		if (firstPose) {
             std::cout << "SET PATH -----------------------------------------------" << std::endl;
-			localPlanner.setPath(
+			/*localPlanner.setPath(
 					{ cv::Point2f(robotPose.x +  0.05, robotPose.y +  0.05),
 					cv::Point2f(robotPose.x + 0.05, robotPose.y -  0.05),
 					cv::Point2f(robotPose.x -  0.05, robotPose.y -  0.05),
-					cv::Point2f(robotPose.x -  0.05, robotPose.y +  0.05)});
+					cv::Point2f(robotPose.x -  0.05, robotPose.y +  0.05)});*/
+            localPlanner.setPath({cv::Point2f(robotPose.x , robotPose.y )});
 			cout <<"GOAL" << cv::Point2f(robotPose.x , robotPose.y ) << endl;
 			firstPose = false;
 		}

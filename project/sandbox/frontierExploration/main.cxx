@@ -36,7 +36,7 @@ using namespace muroxConverter;
 
 // search the pose-list received from tracking for the robots id and get the corresponding pose.
 cv::Point3f convertPose(boost::shared_ptr<twbTracking::proto::Pose2D> data) {
-	return cv::Point3f(data->x(), data->y(), data->orientation() * M_PI / 180.0);
+	return cv::Point3f(data->x(), data->y(), data->orientation());
 }
 
 int main(int argc, char **argv) {
@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 	while (running) {
 
 		float goaldistance = cv::norm(cv::Point2f(pathEnd.x - robotPose.x, pathEnd.y - robotPose.y));
-		if ((!pathResponseQueue->empty() || goaldistance < 0.15)) {
+		if ((!pathResponseQueue->empty() || goaldistance < 0.00)) {
 			if (!pathResponseQueue->empty()) {
 				cout << "Frontierexplo: Path finished, new path ---------------" << endl;
 				pathResponseQueue->pop();
