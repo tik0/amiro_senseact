@@ -19,7 +19,6 @@ std::string COMMAND_NEW = "NEW";
 std::string COMMAND_DELETE = "DEL";
 std::string COMMAND_COMPARE = "COMP";
 std::string COMMAND_ENDOFCOMPARE = "END_COMP";
-std::string COMMAND_STORE = "STORE";
 std::string COMMAND_LOAD = "LOAD";
 
 using namespace boost;
@@ -38,8 +37,11 @@ using namespace rsb::converter;
 // For program options
 #include <boost/program_options.hpp>
 
-static std::string g_sInScope = "/image";
-static std::string g_sOutScope = "/command";
+static std::string g_sImageScope = "/objectDetection/image";
+static std::string g_sInScope = "/objectDetection/detected";
+static std::string g_sOutScope = "/objectDetection/command";
+
+static std::string NOTHING_DETECTED = "null";
 
 int main(int argc, char **argv) {  
 
@@ -66,8 +68,9 @@ int main(int argc, char **argv) {
   // afterwards, let program options handle argument errors
   po::notify(vm);
     
-  INFO_MSG( "Scope: " << g_sInScope);
-  INFO_MSG( "Command: " << g_sOutScope);
+  INFO_MSG( "Output scope: " << g_sOutScope);
+  INFO_MSG( "Input scope: " << g_sInScope);
+  INFO_MSG( "Image scope: " << g_sImageScope);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   rsb::Factory &factory = rsb::Factory::getInstance();
@@ -75,12 +78,19 @@ int main(int argc, char **argv) {
   // Create the command informer
   Informer<std::string>::Ptr informer = getFactory().createInformer<std::string> (Scope(g_sOutScope));
 
-  // Create and start the listener
-  rsb::ListenerPtr listener = factory.createListener(g_sInScope);
+  // Create and start the listener for pictures
+  rsb::ListenerPtr imageListener = factory.createListener(g_sImageScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > imageQueue(
                       new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-  listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(imageQueue)));
+  imageListener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(imageQueue)));
+
+  // Create and start the listener for detections
+  rsb::ListenerPtr detectListener = factory.createListener(g_sInScope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > detectQueue(
+                      new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+
+  detectListener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(detectQueue)));
 
   // Pop the images and show them
   while (true) {
@@ -92,6 +102,22 @@ int main(int argc, char **argv) {
     // Decode the image
     cv::Mat image = cv::imdecode(data, CV_LOAD_IMAGE_COLOR);
     cv::imshow(g_sInScope, image);
+
+    // Get detection
+    if (!detectQueue->empty()) {
+      std::string detection = *detectQueue->pop().get();
+      // check for detection
+      if (detection == NOTHING_DETECTED) {
+        printf("No object detected.\n");
+      } else {
+        int obj = atoi(detection.c_str());
+        if (obj > 0) {
+          printf("Object %i detected.\n", obj);
+        } else {
+          printf("WARNING: Unknown input!\n");
+        }
+      }
+    }
 
     char key = cv::waitKey(10);
     if (char(key) >= 0) {
