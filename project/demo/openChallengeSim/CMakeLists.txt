@@ -8,3 +8,11 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 add_subdirectory (../../sandbox/mapBuilder mapBuilder)
 add_subdirectory (../../sandbox/frontierExploration frontierExploration)
 add_subdirectory (../../sandbox/localPlanner localPlanner)
+
+
+if ("$ENV{ARCH}" MATCHES arm)
+
+    #add_subdirectory (../../sense/senseOdometry senseOdometry)
+#add_subdirectory (../../sense/senseHokuyo senseHokuyo)
+endif ("$ENV{ARCH}" MATCHES arm)
+

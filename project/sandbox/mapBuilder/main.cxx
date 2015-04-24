@@ -634,7 +634,7 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
     cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * mapSize.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * mapSize.height / TS_MAP_SIZE);
     //cout << robotPosition << endl;
     cv::circle( gridmap, cv::Point(robotPose.x/delta_,robotPose.y/delta_), 5, Scalar(255),-1);
-
+if (simulation){
     if (sendMapAsCompressedImage) {
     	cv::Mat omap;
       //cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
@@ -666,7 +666,7 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
 //      informer->publish(frameJpg);
     }
     }
-  }
+  }}
 
   return 0;
 }

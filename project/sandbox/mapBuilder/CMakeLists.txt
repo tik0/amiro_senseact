@@ -10,6 +10,28 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 # Get the compiler specific includes and store them in GXX_INCLUDES
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
+if ("$ENV{ARCH}" MATCHES arm)
+
+# Read the pkg-config modules
+FIND_PACKAGE(PkgConfig)
+# pkg_check_modules(RSB rsb0.11)
+# pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(PROTOBUF protobuf)
+# pkg_check_modules(RST rstsandbox0.11)
+pkg_check_modules(OpenCV opencv)
+pkg_check_modules(EIGEN eigen3)
+#FIND_PACKAGE(OpenCV REQUIRED)
+#FIND_PACKAGE(RSB REQUIRED)
+#FIND_PACKAGE(RSC REQUIRED)
+#FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
+#    pkg_check_modules(OPENCV OpenCV)
+pkg_check_modules(RSB rsb0.11)
+pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(RST rst0.11)
+pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+
+else("$ENV{ARCH}" MATCHES arm)
+
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
 # pkg_check_modules(RSB rsb0.11)
@@ -22,10 +44,14 @@ FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(RSB REQUIRED)
 FIND_PACKAGE(RSC REQUIRED)
 FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
+endif("$ENV{ARCH}" MATCHES arm)
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
 # Set the include pathe
 include_directories(BEFORE SYSTEM ${RST_INCLUDE_DIRS})
+
+
+
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
@@ -46,6 +72,29 @@ ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c C
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 
+if ("$ENV{ARCH}" MATCHES arm)
+
+target_link_libraries (
+    "${PROJECT_NAME}"
+    ${RSB_LIBRARIES}
+    ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${RSTSANDBOX_LIBRARIES}
+    ${PROTO_LIBRARIES}
+    ${OPENCV_LIBRARIES}
+    # Boost
+    boost_regex
+    boost_date_time
+    boost_program_options
+    boost_system
+    boost_thread
+    boost_chrono
+    opencv_core
+    opencv_highgui
+    opencv_imgproc
+)
+
+else("$ENV{ARCH}" MATCHES arm)
 TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
@@ -56,6 +105,7 @@ TARGET_LINK_LIBRARIES (
     ${OpenCV_LIBRARIES}
 )
 
+endif("$ENV{ARCH}" MATCHES arm)
 # Additional compiler flags
 ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11)
 # Special flags for RST

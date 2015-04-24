@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 	bool pathInProgress = true;
 
 	while (true) {
-        std::cout << "Waiting for pose ----------------------------------------" << std::endl;
+       // std::cout << "Waiting for pose ----------------------------------------" << std::endl;
 		try {
 			// get the position from tracking
 			robotPose = convertPose(boost::static_pointer_cast<twbTracking::proto::Pose2D>(poseQueue->pop(1000)));
@@ -146,18 +146,18 @@ int main(int argc, char **argv) {
 			localPlanner.stopRobot();
 			continue;
 		}
-		cout <<robotPose<< endl;
+		//cout <<robotPose<< endl;
 
 		// to start the exploration drive 5 cm forwards
 		if (firstPose) {
-            std::cout << "SET PATH -----------------------------------------------" << std::endl;
+            //std::cout << "SET PATH -----------------------------------------------" << std::endl;
 			/*localPlanner.setPath(
 					{ cv::Point2f(robotPose.x +  0.05, robotPose.y +  0.05),
 					cv::Point2f(robotPose.x + 0.05, robotPose.y -  0.05),
 					cv::Point2f(robotPose.x -  0.05, robotPose.y -  0.05),
 					cv::Point2f(robotPose.x -  0.05, robotPose.y +  0.05)});*/
             localPlanner.setPath({cv::Point2f(robotPose.x , robotPose.y )});
-			cout <<"GOAL" << cv::Point2f(robotPose.x , robotPose.y ) << endl;
+			//cout <<"GOAL" << cv::Point2f(robotPose.x , robotPose.y ) << endl;
 			firstPose = false;
 		}
 
@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
 				boost::shared_ptr<bool> pathResponse(new bool(true));
 				pathResponseInformer->publish(pathResponse);
 				pathInProgress = false;
-                std::cout << "PATH FINISHED ............................................." << std::endl;
+            //    std::cout << "PATH FINISHED ............................................." << std::endl;
 			}
 				break;
 			case PATH_ERROR: {
