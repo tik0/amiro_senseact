@@ -181,6 +181,7 @@ class frontierPathCallback: public LocalServer::Callback<void, twbTracking::prot
 		Mat obstacleMap;
 		mapGenerator.generateObstacleMap(gridmap, obstacleMap);
 
+
 		// calculate a path
 		std::vector<cv::Point2f> path = pathPlanner.getPathToFrontier(obstacleMap, robotPose);
 
@@ -266,7 +267,7 @@ class pushingPathCallback: public LocalServer::Callback<twbTracking::proto::Pose
 
 
 void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
-  
+
   laser_count_++;
   if ((laser_count_ % throttle_scans_) != 0)
     return;
@@ -296,7 +297,7 @@ void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data ,
 //  rsbScan.set_scan_angle_end(240.0f / 180.0f * M_PI);
 //  rsbScan.set_scan_angle_start(120.0f / 180.0f * M_PI);
 //    rsbScan.set_scan_angle_end(-120.0f / 180.0f * M_PI);
-  
+
   // Check if two adjiacent rays stand almost perpendiculat on the surface
   // and set the first one to an invalid measurement if the angle is to big
 //  for (int idx = 0; idx < rsbScan.scan_values_size()-1; idx++) {
@@ -334,15 +335,15 @@ getOdomPose(ts_position_t& ts_pose)
     translation = odomTrans;
     rotation = odomRot;
   mtxOdom.unlock();
-  
+
   // Convert from quaternion to euler
   Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
   Eigen::AngleAxisd lidar_angle(lidar_quat);
   Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
   const double yaw = rpy(2);
 
-  ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.x = translation.x()*METERS_TO_MM + ((-10)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.y = translation.y()*METERS_TO_MM + ((-9)*delta_*METERS_TO_MM); // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
 
   DEBUG_MSG( "Odom: x: " <<  translation.x() << "m   y: " << translation.y() << "m     theta: " << rotation.qz() << "°" )
@@ -403,7 +404,7 @@ void convertToScan(const rst::vision::LocatedLaserScan &scan , ts_scan_t &ranges
 
 
 
-bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
+bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose, bool enable)
 {
   // update odometry
   ts_position_t odom_pose;
@@ -445,7 +446,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
         data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
     }
     // Monte carlo localization is done inside
-    ts_iterative_map_building(&data, &state_);
+    ts_iterative_map_building(&data, &state_,(enable ? 1 : 0));
     DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
     DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
   }
@@ -459,7 +460,7 @@ int main(int argc, const char **argv){
 
   // Handle program options
   namespace po = boost::program_options;
-  
+
   std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
   std::string odomInScope = "/AMiRo_Hokuyo/gps";
   int id = 0;
@@ -504,8 +505,8 @@ int main(int argc, const char **argv){
 
   // Get the RSB factory
   rsb::Factory& factory = rsb::Factory::getInstance();
-  
-  // Register 
+
+  // Register
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
@@ -532,7 +533,7 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
   // scopenames for rsb
   	std::string poseOutscope = "/amiro"+lexical_cast<std::string>(id)+"/pose";
   	std::string serverScope = "/amiro"+lexical_cast<std::string>(id)+ "/mapGenerator";
-
+  	std::string stateInscope = "/explorationState";
 
 
 
@@ -552,7 +553,11 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
   	server->registerMethod("getPath", LocalServer::CallbackPtr(new pathCallback()));
   	server->registerMethod("getPushingPath", LocalServer::CallbackPtr(new pushingPathCallback()));
 
-
+  	// state for disable signals
+	rsb::ListenerPtr stateListener = factory.createListener(stateInscope);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>stateQueue(
+			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+	stateListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(stateQueue)));
 
   // Prepare RSB listener for incomming lidar scans
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -565,17 +570,27 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
   rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> ("/image");
 
   // Show the map as a cv Image
-  cv::Size size(TS_MAP_SIZE / 2,TS_MAP_SIZE / 2);
+  cv::Size size(160,65);
   cv::Mat dst(size, CV_16S); // destination image for scaling
   cv::Mat dstColor(size, CV_8UC3); // Color image
 
+  bool enable = true;
+
   rst::vision::LocatedLaserScan scan;
   while( true ){
+	  if (!stateQueue->empty()) {
+		  enable = false;
+		  stateQueue->pop();
+	  }
+
+
     // Fetch a new scan and store it to scan
     convertDataToScan(lidarQueue->pop(), scan);
+
     ts_position_t pose;
     ts_position_t odom_pose;
     getOdomPose(odom_pose);
+
     // We can't initialize CoreSLAM until we've got the first scan
     if(!got_first_scan_)
     {
@@ -585,7 +600,7 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
     } else {
 
       ///////////////////////////////////////////////
-      if(addScan(scan, pose))
+      if(addScan(scan, pose,enable))
       {
         DEBUG_MSG("scan processed");
         DEBUG_MSG("Updated the map");
@@ -602,39 +617,48 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
     pos->set_orientation(robotPose.z);
     poseInformer->publish(pos);
 
+    if (enable){
 
+    //cout << robotPose.x / delta_ << " " << robotPose.y / delta_ << endl;
     cv::Mat gridmap0 = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
     cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw odometry
-    gridmap0.convertTo(gridmap,CV_8U, 0.00390625);
+    gridmap0(Rect(0,0,160,65)).convertTo(gridmap,CV_8U, 0.00390625);
+
+
     cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);
+    //cout << robotPosition << endl;
     cv::circle( gridmap, cv::Point(robotPose.x/0.01,robotPose.y/0.01), 5, Scalar(255),-1);
+
     if (sendMapAsCompressedImage) {
     	cv::Mat omap;
       //cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
     	mapGenerator.generateObstacleMap(gridmap,omap);
-      cv::resize(omap,dst,size);//resize image
-      cv::flip(dst, dst, 0);  // horizontal flip
+
+      dst = omap;//cv::resize(omap,dst,size);//resize image
+
+     // cv::flip(dst, dst, 0);  // horizontal flip
       //dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
         // Draw MCMC position
-      cv::circle( dstColor, robotPosition, 5, cv::Scalar( 0, 0, pow(2,8)-1));
-
-      cv::circle( dstColor, robotOdomPosition, 5, cv::Scalar( 0, pow(2,8)-1) );
+        cv::circle( dstColor, cv::Point(robotPose.x/0.01,robotPose.y/0.01), 5, cv::Scalar( 0, 0, pow(2,8)-1));
+        cv::flip(dstColor,dstColor,0);
+      //cv::circle( dstColor, robotOdomPosition, 5, cv::Scalar( 0, pow(2,8)-1) );
       DEBUG_MSG( "Pose " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
       #ifndef __arm__
       cv::imshow("input", dstColor);
       cv::waitKey(1);
       #endif
-      // Send the map as image
+ /*     // Send the map as image
       std::vector<uchar> buf;
       std::vector<int> compression_params;
       compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-      compression_params.push_back(85/*g_uiQuality [ 0 .. 100]*/);
+      compression_params.push_back(85g_uiQuality [ 0 .. 100]);
       imencode(".jpg", dstColor, buf, compression_params);
-
+*/
       // Send the data.
 //      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
 //      informer->publish(frameJpg);
+    }
     }
   }
 

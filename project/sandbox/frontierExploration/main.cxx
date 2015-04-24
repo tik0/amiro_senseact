@@ -44,6 +44,8 @@ int main(int argc, char **argv) {
 	// id of the tracking marker
 	int id = 0;
 
+
+
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")("id", po::value<int>(&id),
@@ -68,7 +70,8 @@ int main(int argc, char **argv) {
 	std::string pathOutScope = "/amiro"+lexical_cast<std::string>(id)+"/path";
 	std::string mapServerScope = "/amiro"+lexical_cast<std::string>(id)+"/mapGenerator";
 	std::string poseInscope = "/amiro"+lexical_cast<std::string>(id)+"/pose";
-
+	std::string commandInscope = "/exploration";
+	std::string stateOutscope = "/explorationState";
 
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
@@ -99,11 +102,20 @@ int main(int argc, char **argv) {
 			new rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>(1));
 	pathResponseListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<bool>(pathResponseQueue)));
 
+	// prepare RSB listener for commands
+	rsb::ListenerPtr commandListener = factory.createListener(commandInscope);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>commandQueue(
+			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(commandQueue)));
+
 	// ---------------- Informer ---------------------
 
 	// create rsb informer to publish the robots path
 	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer = factory.createInformer<
 			twbTracking::proto::Pose2DList>(pathOutScope);
+
+	// create rsb informer to publish states
+	rsb::Informer<std::string>::Ptr stateInformer = factory.createInformer<std::string>(stateOutscope);
 
 	// mapGenertor server
 	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
@@ -117,12 +129,14 @@ int main(int argc, char **argv) {
 //	for (int led = 0; led < 8; led++)
 //		myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
 
+	commandQueue->pop();
+
 	while (running) {
 
 		float goaldistance = cv::norm(cv::Point2f(pathEnd.x - robotPose.x, pathEnd.y - robotPose.y));
 		if ((!pathResponseQueue->empty() || goaldistance < 0.00)) {
 			if (!pathResponseQueue->empty()) {
-				cout << "Frontierexplo: Path finished, new path ---------------" << endl;
+				//cout << "Frontierexplo: Path finished, new path ---------------" << endl;
 				pathResponseQueue->pop();
 			}
 			try {
@@ -137,10 +151,12 @@ int main(int argc, char **argv) {
 					pathInformer->publish(path);
 				} else {
 					cout << "Exploration finished" << endl;
+					stateInformer->publish(Informer<string>::DataPtr(new string("finish")));
 					running = false;
 				}
 			} catch (const rsc::threading::FutureTimeoutException & e) {
 				cerr << "MapGenerator not responding! FrontierExploration shutting down." << endl;
+				stateInformer->publish(Informer<string>::DataPtr(new string("fail")));
 				running = false;
 			}
 		}

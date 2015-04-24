@@ -6,7 +6,7 @@
 #endif
 
 #define TS_SCAN_SIZE 8192
-#define TS_MAP_SIZE 1024
+#define TS_MAP_SIZE 160
 //#define TS_MAP_SCALE 0.02
 #define TS_NO_OBSTACLE 65500
 #define TS_OBSTACLE 0
@@ -116,7 +116,7 @@ typedef struct {
 
 void ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta, int hole_width, int direction);
 void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span);
-void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state);
+void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state,int enable);
 void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *position, int quality, int hole_width, ts_laser_parameters_t *laser_params);
 
 // Loop closing

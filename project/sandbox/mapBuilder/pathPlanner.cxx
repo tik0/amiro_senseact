@@ -76,6 +76,7 @@ std::vector<cv::Point2f> PathPlanner::getPathToFrontier(cv::Mat& map, cv::Point3
 		convertPath(cellPath, path);
 	}
 
+
 	return path;
 }
 
@@ -137,7 +138,7 @@ void PathPlanner::dijstraToTarget(cv::Point2i robotCell, cv::Point2i targetCell,
 
 	// sanity check
 	if (!rect.contains(robotCell)) {
-		cerr << "PathPlanner: Robot pose unknown or not in the map!" << endl;
+		cerr << "PathPlanner: Robot pose unknown or not in the map! " << rect << " " << robotCell<< endl;
 		return;
 	}
 	if (!rect.contains(targetCell)) {
@@ -231,12 +232,12 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 	// macro for quick point access
 #define connectedPoints(p) {Point2i(p.x+1,p.y+1), Point2i(p.x+1,p.y-1), Point2i(p.x-1,p.y+1), Point2i(p.x-1,p.y-1), Point2i(p.x+1,p.y), Point2i(p.x-1,p.y), Point2i(p.x,p.y+1), Point2i(p.x,p.y-1)}
 	// initialize
-	Mat dist(om.cols, om.rows, CV_32FC1, Scalar(std::numeric_limits<float>::max()));
+	Mat dist(om.rows, om.cols, CV_32FC1, Scalar(std::numeric_limits<float>::max()));
 	cv::Rect rect(cv::Point(0,0), dist.size());
 
 	// sanity check
 	if (!rect.contains(robotCell)) {
-		cerr << "PathPlanner: Robot pose unknown or not in the map!" << endl;
+		cerr << "PathPlanner: Robot pose unknown or not in the map! " << rect << " " << robotCell<< endl;
 		return;
 	}
 
@@ -247,11 +248,11 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 	path.clear();
 
 	// comparator for vertices
-	auto cmp = [&dist](const Point2i& p, const Point2i& q) {return dist.at<float>(p) < dist.at<float>(q);};
+	auto cmp = [&dist,&rect](const Point2i& p, const Point2i& q) {return rect.contains(p)&&(!rect.contains(q) || dist.at<float>(p) < dist.at<float>(q));};
 
 	// initialize goal with value out of the map
-	std::vector<Point2i> goals;
-
+	/*std::vector<Point2i> goals;*/
+	Point2i goal(-1,-1);
 	// try to find a route until there are no free cells left
 	while (!qs.empty()) {
 
@@ -266,14 +267,10 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 
 		// check if an unknown cell was found
 		if (om.at<uchar>(u) == 255/2 && cv::norm(u - robotCell) > 15) {
-			goals.push_back( u);
-
-			if (goals.size() > 0) {
-		//		qs.clear();
-				break;
-			}else {
-				continue;
-			}
+			//goals.push_back( u);
+			goal = u;
+			qs.clear();
+			break;
 		}
 
 		// iterate over connected cells
@@ -301,7 +298,7 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 			float distance = (float) cv::norm(difference);
 			cv::Point2f currentDirection = cv::Point2f(difference.x / distance, difference.y / distance);
 			dist.at<float>(v) = min(
-					dist.at<float>(u) + distance + (float) (cv::norm(direction - currentDirection) / 4.0)
+					dist.at<float>(u) + distance/* + (float) (cv::norm(direction - currentDirection) / 4.0) */
 							+ (float) ((om.at<uchar>(v) < 255/2) ? om.cols + om.rows : 0)/* + repell*/, prev);
 
 			// add connected cell to list of unvisited cells
@@ -315,11 +312,11 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 	int ignore = 9;//5;
 
 	// check if a frontier was found
-	if (goals.empty()) {
+	if (goal == Point2i(-1, -1)) {
 		cout << "--------------------------no free cell found -------------------------------" << endl;
 	} else {
-		float maxval = std::numeric_limits<float>::min();
-		cv::Point2i goal = goals[0];
+		//float maxval = std::numeric_limits<float>::min();
+	/*	cv::Point2i goal = goals[0];
 		for (cv::Point2i g : goals) {
 				float val = direction.dot(g-robotCell);
 				if (val < maxval) {
@@ -327,11 +324,12 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 					goal = g;
 					cout << "g: " << goal << endl;
 				}
-		}
+		}*/
 
 
 		cout << "--------------- frontier found ------------------------" <<  goal<< endl;
 		cv::Point2i diff(0, 0), next;
+
 		// backtracking to get the route to the start cell
 		while (goal != robotCell) {
 
@@ -342,6 +340,7 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 			// skip the last cells on the path
 			if (ignore > 0) {
 				goal = next;
+
 				ignore--;
 				continue;
 			}
@@ -352,9 +351,11 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, cv::Mat &om, std::
 			diff = next - goal;
 
 			goal = next;
+
 		}
 		path.push_back(robotCell);
 	}
+
 
 	// reverse to get route to the goal cell
 //	std::reverse(path.begin(),path.end());

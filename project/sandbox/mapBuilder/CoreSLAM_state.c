@@ -76,7 +76,7 @@ void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int
 	}
 }
 
-void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state) {
+void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int enable) {
 	double d; //psidot, v, d;
 	ts_scan_t scan2map;
 	double m, thetarad;
@@ -123,10 +123,10 @@ void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state) {
 					+ (state->position.y - sd->position[state->direction].y)
 							* (state->position.y - sd->position[state->direction].y));
 	state->distance += d;
-
+	if (enable) {
 	// Map update
 	ts_map_update(&scan2map, state->map, &position, 50, state->hole_width, &(state->laser_params));
-
+	}
 	// Prepare next step
 	state->position = sd->position[state->direction];
 	//state->psidot = psidot;
