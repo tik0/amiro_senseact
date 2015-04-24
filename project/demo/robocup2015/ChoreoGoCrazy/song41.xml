@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<choreo>
+  <choreoinclude>
+    <choreopart>blink_white_lila_white_lila_white.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>wait_6s_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>backward_10cm_1s_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>forward_15cm_1_5s_blue.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>backward_20cm_2s_blue.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>wait_1s_blue.xml</choreopart>
+  </choreoinclude>
+  <!--<choreoinclude>
+  <choreopart>turn_m30deg_green.xml</choreopart>
+  </choreoinclude
+  <choreoinclude>
+    <choreopart>forward_8_66cm_blue.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>turn_p30deg_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>backward_17_5cm_blue.xml</choreopart>
+  </choreoinclude>-->
+</choreo>
