@@ -1,7 +1,7 @@
 <choreo>
   <choreoStep>
 	<v>0</v>
-    <w>0</w>
+    <w>-90</w>
     <time>2</time>
     <brightness>200</brightness>
     <l1>0,255,0</l1>

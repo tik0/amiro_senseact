@@ -25,7 +25,7 @@
     <choreopart>turn_p45deg_2s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>wait_1sec_green.xml</choreopart>
+    <choreopart>wait_1s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
     <choreopart>forward_17_5cm_2s_red.xml</choreopart>
@@ -34,7 +34,7 @@
     <choreopart>turn_p45deg_2s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>wait_1sec_green.xml</choreopart>
+    <choreopart>wait_1s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
     <choreopart>forward_10cm_2s_blue.xml</choreopart>

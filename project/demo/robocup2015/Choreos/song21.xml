@@ -43,7 +43,7 @@
     <choreopart>turn_p90deg_3s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>wait_1sec_green.xml</choreopart>
+    <choreopart>wait_1s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
     <choreopart>forward_17_5cm_2s_red.xml</choreopart>

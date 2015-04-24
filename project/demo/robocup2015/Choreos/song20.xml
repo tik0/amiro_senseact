@@ -37,7 +37,7 @@
     <choreopart>forward_5cm_1s_yellow.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>wait_1sec_yellow.xml</choreopart>
+    <choreopart>wait_1s_yellow.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
     <choreopart>backward_17_5cm_2s_red.xml</choreopart>

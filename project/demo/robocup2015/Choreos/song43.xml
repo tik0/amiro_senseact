@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<choreo>
+  <choreoinclude>
+    <choreopart>blink_white_lila_white_lila_white.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>turn_p90deg_2s_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>forward_20cm_2s_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>turn_p90deg_2s_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>forward_10cm_1s_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>forward_15cm_1_5s_blue.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>backward_30cm_3s_blue.xml</choreopart>
+  </choreoinclude>
+  <!--<choreoinclude>
+    <choreopart>turn_m60deg_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>forward_15cm_blue.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>turn_p60deg_green.xml</choreopart>
+  </choreoinclude>
+  <choreoinclude>
+    <choreopart>backward_17_5cm_blue.xml</choreopart>
+  </choreoinclude>-->
+</choreo>
