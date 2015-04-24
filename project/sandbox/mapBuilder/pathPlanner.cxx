@@ -133,7 +133,7 @@ void PathPlanner::dijstraToTarget(cv::Point2i robotCell, cv::Point2i targetCell,
 	// macro for quick point access
 #define connectedPoints(p) {Point2i(p.x+1,p.y+1), Point2i(p.x+1,p.y-1), Point2i(p.x-1,p.y+1), Point2i(p.x-1,p.y-1), Point2i(p.x+1,p.y), Point2i(p.x-1,p.y), Point2i(p.x,p.y+1), Point2i(p.x,p.y-1)}
 	// initialize
-	Mat dist(om.cols, om.rows, CV_32FC1, Scalar(std::numeric_limits<float>::max()));
+	Mat dist(om.rows, om.cols, CV_32FC1, Scalar(std::numeric_limits<float>::max()));
 	cv::Rect rect(cv::Point(0,0), dist.size());
 
 	// sanity check
@@ -148,13 +148,11 @@ void PathPlanner::dijstraToTarget(cv::Point2i robotCell, cv::Point2i targetCell,
 	std::vector<Point2i> qs = { robotCell };
 	dist.at<float>(robotCell) = 0.0;
 	Point2f direction(0,0);
-	if (theta != 0 ) {
-		direction = Point2f(cos(theta), sin(theta));
-	}
+
 
 	path.clear();
 	// comparator for vertices
-	auto cmp = [&dist](const Point2i& p, const Point2i& q) {return dist.at<float>(p) < dist.at<float>(q);};
+	auto cmp = [&dist,&rect](const Point2i& p, const Point2i& q) {return rect.contains(p)&&(!rect.contains(q) || dist.at<float>(p) < dist.at<float>(q));};
 
 	// initialize goal with value out of the map
 	Point2i goal(-1, -1);
@@ -190,7 +188,7 @@ void PathPlanner::dijstraToTarget(cv::Point2i robotCell, cv::Point2i targetCell,
 			// update the distance to the connected cell
 			Point2i difference = v - u;
 			float distance = (float) cv::norm(difference);
-			cv::Point2f currentDirection = cv::Point2f(difference.x / distance, difference.y / distance);
+
 			dist.at<float>(v) = min(
 					dist.at<float>(u) + distance + (float) ((om.at<uchar>(v) < 255/2) ? om.cols + om.rows : 0),
 					dist.at<float>(v));
@@ -204,7 +202,7 @@ void PathPlanner::dijstraToTarget(cv::Point2i robotCell, cv::Point2i targetCell,
 
 	// check if a frontier was found
 	if (goal == Point2i(-1, -1)) {
-		//cout << "No Frontier found" << endl;
+		cout << "No path found" << endl;
 	} else {
 		cv::Point2i diff(0, 0), next;
 		// backtracking to get the route to the start cell
