@@ -69,6 +69,9 @@ float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 static double transX, transY, transZ;
 static double rotX, rotY = 0, rotZ;
 
+cv::Size mapSize(160,65);
+bool simulation = false;
+
 inline Eigen::Quaterniond
 euler2Quaternion( const double roll,
                   const double pitch,
@@ -135,9 +138,7 @@ static rst::geometry::Rotation odomRot;
 
 
 
-// cellSize
-const float cellSize = 0.01;
-
+float cellSize = 0.01;
 
 // obect used to update the map from sensorvalues
 MapGenerator mapGenerator(cellSize);
@@ -341,9 +342,13 @@ getOdomPose(ts_position_t& ts_pose)
   Eigen::AngleAxisd lidar_angle(lidar_quat);
   Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
   const double yaw = rpy(2);
-
-  ts_pose.x = translation.x()*METERS_TO_MM + ((-10)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((-9)*delta_*METERS_TO_MM); // convert to mm
+  if (simulation) {
+	  ts_pose.x = translation.x()*METERS_TO_MM + ((-10)*delta_*METERS_TO_MM); // convert to mm
+	  ts_pose.y = translation.y()*METERS_TO_MM + ((-9)*delta_*METERS_TO_MM); // convert to mm
+  } else {
+	  ts_pose.x = translation.x()*METERS_TO_MM + ((mapSize.width/2)*delta_*METERS_TO_MM); // convert to mm
+	  ts_pose.y = translation.y()*METERS_TO_MM + ((1)*delta_*METERS_TO_MM); // convert to mm
+  }
   ts_pose.theta = (yaw * 180/M_PI);
 
   DEBUG_MSG( "Odom: x: " <<  translation.x() << "m   y: " << translation.y() << "m     theta: " << rotation.qz() << "°" )
@@ -481,7 +486,8 @@ int main(int argc, const char **argv){
     ("rotX", po::value < double > (&rotX),"Rotation of the lidar around x (roll) [rad]")
     ("rotY", po::value < double > (&rotY),"Rotation of the lidar around y (pitch) [rad]")
     ("rotZ", po::value < double > (&rotZ),"Rotation of the lidar around z (yaw) [rad]")
-	("id",po::value<int>(&id),"Id");
+	("id",po::value<int>(&id),"Id")
+	("simulation,s",po::value<bool>(&simulation),"Enables simulation");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -570,9 +576,9 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
   rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> ("/image");
 
   // Show the map as a cv Image
-  cv::Size size(160,65);
-  cv::Mat dst(size, CV_16S); // destination image for scaling
-  cv::Mat dstColor(size, CV_8UC3); // Color image
+  //cv::Size size(160,65);
+  cv::Mat dst(mapSize, CV_16S); // destination image for scaling
+  cv::Mat dstColor(mapSize, CV_8UC3); // Color image
 
   bool enable = true;
 
@@ -621,13 +627,13 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
 
     //cout << robotPose.x / delta_ << " " << robotPose.y / delta_ << endl;
     cv::Mat gridmap0 = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
-    cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw odometry
+    cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * mapSize.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * mapSize.height / TS_MAP_SIZE);  // Draw odometry
     gridmap0(Rect(0,0,160,65)).convertTo(gridmap,CV_8U, 0.00390625);
 
 
-    cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);
+    cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * mapSize.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * mapSize.height / TS_MAP_SIZE);
     //cout << robotPosition << endl;
-    cv::circle( gridmap, cv::Point(robotPose.x/0.01,robotPose.y/0.01), 5, Scalar(255),-1);
+    cv::circle( gridmap, cv::Point(robotPose.x/delta_,robotPose.y/delta_), 5, Scalar(255),-1);
 
     if (sendMapAsCompressedImage) {
     	cv::Mat omap;
@@ -640,7 +646,7 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
       //dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
         // Draw MCMC position
-        cv::circle( dstColor, cv::Point(robotPose.x/0.01,robotPose.y/0.01), 5, cv::Scalar( 0, 0, pow(2,8)-1));
+        cv::circle( dstColor, cv::Point(robotPose.x/delta_,robotPose.y/delta_), 5, cv::Scalar( 0, 0, pow(2,8)-1));
         cv::flip(dstColor,dstColor,0);
       //cv::circle( dstColor, robotOdomPosition, 5, cv::Scalar( 0, pow(2,8)-1) );
       DEBUG_MSG( "Pose " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
