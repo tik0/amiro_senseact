@@ -35,7 +35,6 @@ using namespace muroxConverter;
 
 // types
 #include <types/twbTracking.pb.h>
-#include <extspread.hpp>
 #include <ControllerAreaNetwork.h>
 
 // camera parameter
@@ -144,13 +143,12 @@ int main(int argc, char **argv) {
 //	std::string pathResponseInscope = "/pathResponse";
 	std::string pathOutScope = "/path";
 	std::string edgeOutscope = "/edge";
-	std::string steeringOutScope = "/motor/04";
+
 	std::string mapServerScope = "/mapGenerator";
 	std::string pathResponseInScope = "/pathResponse";
-	std::string rsbMotoOutScope = "/motor/03";
+	std::string commandInscope = "/";
+	std::string stateOutscope = "";
 
-	std::string spreadhost = "127.0.0.1";
-	std::string spreadport = "4803";
 
 	// id of the tracking marker
 	int trackingMarkerID = 0;
@@ -162,9 +160,7 @@ int main(int argc, char **argv) {
 			"Outscope for edge found signals")("pathRe", po::value<std::string>(&pathOutScope),
 			"Inscope for path responses.")("pathOut", po::value<std::string>(&pathOutScope),
 			"Outscope for the robots path.")("mapServer", po::value<std::string>(&mapServerScope),
-			"Scope for the mapGenerator server")("host",
-			po::value<std::string>(&spreadhost), "Host for Programatik Spread.")("port",
-			po::value<std::string>(&spreadport), "Port for Programatik Spread.")("meterPerPixel,mpp",po::value<float>(&meterPerPixel), "Camera parameter: Meter per Pixel");
+			"Scope for the mapGenerator server")("meterPerPixel,mpp",po::value<float>(&meterPerPixel), "Camera parameter: Meter per Pixel");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -182,8 +178,7 @@ int main(int argc, char **argv) {
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
 
-	// Generate the programatik Spreadconfig for extern communication
-	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
+
 
 	// ------------ Converters ----------------------
 
@@ -207,6 +202,11 @@ int main(int argc, char **argv) {
 
 	// ---------- Listener ---------------
 
+	// prepare RSB for commands from the state machine
+	rsb::ListenerPtr commandListener = factory.createListener(commandInscope);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>(1));
+	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(commandQueue)));
+
 	// prepare RSB listener for the floor prox data
 	rsb::ListenerPtr floorListener = factory.createListener(floorInscope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >floorQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
 	proxListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(proxQueue)));
 
 	// prepare rsb listener for tracking data
-	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, extspreadconfig);
+	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
 	trackingListener->addHandler(
 			rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
@@ -235,11 +235,11 @@ int main(int argc, char **argv) {
 
 	// ---------------- Informer ---------------------
 
-	// create rsb informer to publish the robots path
+	// create rsb informer to publish states
 	pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
-	// Prepare RSB informer
-	motorCmdInformer = factory.createInformer< std::vector<int> > (rsbMotoOutScope);
+	// create rsb informer to publish the robots path
+	rsb::Informer<std::string>::Ptr pathInformer = factory.createInformer<std::string>(stateOutscope);
 
 	// mapGenertor server
 	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
@@ -322,6 +322,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
+
+
 	if (numObjects > idx) {
 		cout << numObjects << " Objects found. Closest one calculated. Retrieving pushing path." << endl;
 //		cv::drawContours(help1, contours, idx, cv::Scalar(255,191,0),-1);
@@ -395,6 +397,18 @@ int main(int argc, char **argv) {
 	cout << "Waiting for path event..." << endl;
 	while(pathIdx > 0) {
 		usleep(250000);
+	}
+
+
+	while(true) {
+		boost<shared_ptr<string>> command = commandQueue->pop();
+		switch (*command) {
+			case "init":
+				// call init method
+				break;
+			default:
+				break;
+		}
 	}
 
 	return EXIT_SUCCESS;
