@@ -4,48 +4,42 @@
     <choreopart>blink_white_blue_white_blue_white.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turn_p90deg_green.xml</choreopart>
+    <choreopart>forward_10cm_2s_blue.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>forward_blue.xml</choreopart>
+    <choreopart>backward_10cm_2s_blue.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turn_m180deg_green.xml</choreopart>
+    <choreopart>turn_p90deg_3s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>forward_blue.xml</choreopart>
+    <choreopart>forward_17_5cm_2s_red.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turn_p90deg_green.xml</choreopart>
+    <choreopart>backward_17_5cm_2s_red.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>forward_red.xml</choreopart>
+    <choreopart>turn_m90deg_3s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turn_p180deg_green.xml</choreopart>
+    <choreopart>forward_10cm_2s_blue.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>forward_red.xml</choreopart>
+    <choreopart>backward_10cm_2s_blue.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turn_m90deg_green.xml</choreopart>
+    <choreopart>turn_p90deg_3s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>forward_blue.xml</choreopart>
+    <choreopart>forward_17_5cm_2s_red.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turn_m180deg_green.xml</choreopart>
+    <choreopart>backward_17_5cm_2s_red.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>forward_blue.xml</choreopart>
+    <choreopart>turn_m45deg_2s_green.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turn_p90deg_green.xml</choreopart>
-  </choreoinclude>
-  <choreoinclude>
-    <choreopart>forward_red.xml</choreopart>
-  </choreoinclude>
-  <choreoinclude>
-    <choreopart>turn_p180deg_green.xml</choreopart>
+    <choreopart>forward_17_5cm_2s_red.xml</choreopart>
   </choreoinclude>
 </choreo>
