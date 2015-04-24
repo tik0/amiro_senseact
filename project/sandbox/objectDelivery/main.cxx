@@ -8,7 +8,6 @@
 #include <iostream>
 using namespace std;
 
-
 // opencv
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -40,24 +39,6 @@ using namespace muroxConverter;
 // camera parameter
 float meterPerPixel = 1.0 / 400.0;
 const float cellSize = 0.01;
-
-// Constants
-enum SENSOR_POS {
-	MIDDLE_RIGHT = 0, RIGHT = 1, LEFT = 2, MIDDLE_LEFT = 3
-};
-enum EDGE_SIDE {
-	UNKNOWN, LEFTSIDE, RIGHTSIDE
-};
-
-// Datastructure for the CAN messages
-
-int floorProxMinValues[4] = { 3200, 3100, 3300, 4900 };
-int floorProxMaxValues[4] = { 31000, 22200, 28200, 34200 };
-bool lineBelow[4] = { false, false, false, false };
-const boost::shared_ptr<std::vector<int>> vecSteering(new std::vector<int>(3));
-
-rsb::Informer<std::vector<int>>::Ptr steeringInformer;
-float floorProxValuesNormalized[4];
 
 // search the pose-list received from tracking for the robots id and get the corresponding pose.
 cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
