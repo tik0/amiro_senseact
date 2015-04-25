@@ -43,14 +43,6 @@ ControllerAreaNetwork myCAN;
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/QueuePushHandler.h>
 
-// RST
-#include <rsb/converter/Repository.h>
-#include <rsb/converter/ProtocolBufferConverter.h>
-
-// RST Proto types
-#include <types/LocatedLaserScan.pb.h>
-#include <rst/geometry/Pose.pb.h>
-
 
 
 using namespace boost;
@@ -90,103 +82,8 @@ const std::string sDeliveryCmdScope("/objectDelivery");
 // TODO
 const std::string sDeliveryAnswerScope("/objectDeliveryState");
 
-void objectDeliveryCtrl(double distance, double angular) {
-
-}
-
-void objectExploration(double &distance, double &angular) {
-  // Get angular and ditance of closest object
-
-}
-
-void objectHomingCtrl(double distance, double angular) {
-
-  // get odometry data
-  types::position homingPosition;
-  homingPosition.x = int(distance * cos(angular) * 1e6);
-  homingPosition.y = int(distance * sin(angular)  * 1e6);
-  homingPosition.f_z = int(angular  * 1e6);
-//  homingPosition = myCAN.getOdometry();
-
-  // calculate angle from robot position (without respect to orientation) to origin (in rad)
-  double angleOdo = atan2((double)homingPosition.y, (double)homingPosition.x) + angular;
-  if (angleOdo > 2*M_PI) {
-    angleOdo -= 2*M_PI;
-  }
-
-  // calculate difference angle (in urad) to turn towards origin
-  int diffAngle = (int)(angleOdo*1e6)-homingPosition.f_z;
-
-  // calculate angle (in urad) to turn to origin orientation after reaching origin
-  int backAngle = -homingPosition.f_z-diffAngle;
-  while (backAngle < 0) {
-    backAngle += 2*M_PI*1e6;
-  }
-  while (backAngle > M_PI*1e6) {
-    backAngle -= 2*M_PI*1e6;
-  }
-
-  // calculate distance between origin and robot position (in um)
-  int diffDist = (int) sqrt((double)homingPosition.y*(double)homingPosition.y + (double)homingPosition.x*(double)homingPosition.x);
-
-  // reset position struct
-  homingPosition.y = 0;
-/*
-  // turn towards origin
-  homingPosition.x = 0;
-  homingPosition.f_z = diffAngle;
-  moveToTargetPosition(homingPosition, 1);
-  // drive to origin
-  homingPosition.x = diffDist;
-  homingPosition.f_z = 0;
-  moveToTargetPosition(homingPosition, 1);
-        // turn towards origin orientation
-  homingPosition.x = 0;
-  homingPosition.f_z = backAngle;
-  moveToTargetPosition(homingPosition, 1);
-*/
-        int speed;
-  // turn towards origin
-  if (diffAngle < 0) {
-    speed = -1e6;
-  } else {
-    speed = 1e6;
-  }
-  myCAN.setTargetSpeed(0,speed);
-        usleep(abs(int(0.99f*diffAngle)));
-        myCAN.setTargetSpeed(0,0);
-  // drive to origin
-  if (diffDist < 0) {
-    speed = -100e3;
-  } else {
-    speed = 100e3;
-  }
-  myCAN.setTargetSpeed(speed,0);
-        usleep(abs(diffDist*11));
-        myCAN.setTargetSpeed(0,0);
-        // turn towards origin orientation
-//  if (backAngle < 0) {
-//    speed = -1e6;
-//  } else {
-//    speed = 1e6;
-//  }
-//  myCAN.setTargetSpeed(0,speed);
-//        usleep(abs(int(0.99f*backAngle)));
-//        myCAN.setTargetSpeed(0,0);
-}
-
 
 int processSM(void);
-
-//std::string g_sInScope_Stream = "/image";
-//std::string g_sInScope_HeadingStop = "/heading/stop";
-//std::string g_sOutScope_Steering = "/proc/steering/raw";
-//std::string g_sOutScope_RemoteHoming = "/TableTop/BB/homing";
-//std::string g_sOutScope_RemoteHomingFinish = "/TableTop/BB/homingFinish";
-//std::string g_sOutScope_RemoteFinish = "/TableTop/BB/finish";
-//std::string g_sInScope_RemoteStandby = "/TableTop/BB/standby";
-//std::string g_sInScope_RemoteStart = "/TableTop/BB/start";
-//std::string g_sInScope_RemoteCleanup = "/tabletop/cleanup";
 
 std::string g_sInScopeTobi = "/tobiamiroNUMBER";
 std::string g_sOutScopeStateTobi = "/amiroNUMBERtobi";
@@ -199,9 +96,6 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-//    ("outscopeSteering,os", po::value < std::string > (&g_sOutScope_Steering), "Scope for sending steering commands.")
-//    ("inscopeHeadingStop,ih", po::value < std::string > (&g_sInScope_HeadingStop), "Scope for receiving a Heading-Stop.")
-//    ("inscopeStream,is", po::value < std::string > (&g_sInScope_Stream), "Scope for receiving input images.")
     ("spread,s", po::value < std::string > (&g_sRemoteServer), "IP of remote spread server.")
     ("spreadPort", po::value < std::string > (&g_sRemoteServerPort), "Port of remote spread server.")
     ("outscopeStateTobi", po::value < std::string > (&g_sOutScopeStateTobi), "Scope for sending the current state to tobi.")
@@ -234,76 +128,6 @@ int processSM(void) {
 
     // Create the factory
   rsb::Factory &factory = rsb::getFactory();
-  // Register
-  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
-  rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
-  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
-  rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
-  // Prepare RSB listener for incomming lidar scans
-    rsb::ListenerPtr lidarListener = factory.createListener("/lidar"/*lidarInScope*/);
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>(1));
-    lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LocatedLaserScan>(lidarQueue)));
-    // Prepare RSB async listener for odometry messages
-    rsb::ListenerPtr listener = factory.createListener("/odom"/*odomInScope*/);
-//    listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
-
-    double minimalAngle = 0;
-    double minimalValue = 99999;
-    for (int lidarIdx = 0; lidarIdx < 10; lidarIdx++) {
-    // while(true) {
-      minimalValue = 99999;
-      minimalAngle = 0;
-      boost::shared_ptr< rst::vision::LocatedLaserScan > data = lidarQueue->pop();
-      int minimalIdx = 0;
-      for (int idx = 0; idx < data->scan_values_size()-1; idx++) {
-          double a = data->scan_values(idx);
-
-          if (minimalValue > a && a > data->scan_values_min()) {
-            WARNING_MSG(" " << a)
-            minimalValue = a;
-            minimalIdx = idx;
-          }
-
-        }
-      minimalAngle = - double(data->scan_angle_start()) - double(data->scan_angle_end() - data->scan_angle_start()) / double((data->scan_values_size() - 1)) * double(minimalIdx);
-
-      ERROR_MSG("start " << data->scan_angle_start() << " ; data->scan_angle_end() " << data->scan_angle_end() << " ; idx " << minimalIdx << " ; size " << data->scan_values_size() - 1)
-      ERROR_MSG("v " << minimalValue << " ; a " << minimalAngle)
-
-    }
-
-    minimalValue = minimalValue - 0.16;  // Stop 16 cm before the object
-    types::position homingPosition;
-    homingPosition.x = int(minimalValue * cos(minimalAngle) * 1e6);
-    homingPosition.y = int(minimalValue * sin(minimalAngle)  * 1e6);
-    homingPosition.f_z = int(minimalAngle  * 1e6);
-
-    ERROR_MSG("x " << homingPosition.x << " ; y " << homingPosition.y << " ; fz " << homingPosition.f_z )
-
-
-    // myCAN.setTargetPosition(homingPosition, 5000/*ms*/);
-    objectHomingCtrl(minimalValue, minimalAngle);
-
-    // Pushing
-    // myCAN.setTargetPosition(homingPosition, 5000/*ms*/);
-
-    double tableDepth = 0.7; // cm
-    double startPosition = 0.10; /*cm start position*/
-    double endPosition = 0.20;
-
-    double distanceToDeliver = (tableDepth - startPosition - endPosition ) / cos(minimalAngle) - minimalValue;
-    objectHomingCtrl(distanceToDeliver, 0);
-
-    // Drive back
-//    objectHomingCtrl(-0.1,  minimalAngle);
-
-    myCAN.setTargetSpeed(- 200 * 1e3, 0);
-    sleep(1);
-    myCAN.setTargetSpeed(0, 0);
-    myCAN.setTargetSpeed(0, 0);
-
-    return 0;
-
 
     //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -449,7 +273,7 @@ int processSM(void) {
 
       // Check if the content was an object request
       for (int idx = 0; idx < NUM_OBJECTS; ++idx) {
-        if ( sStateFromTobi.compare(objectsString[idx]) != 0) {
+        if ( sStateFromTobi.compare(objectsString[idx]) == 0) {
           for (int detectedObjIdx = 0; detectedObjIdx < objectsDetected.size(); ++detectedObjIdx) {
             if (idx == objectsDetected.at(detectedObjIdx)) {
               objectDelivery = idx;
@@ -557,9 +381,6 @@ int processSM(void) {
         amiroState = exploration;
         break;
       case exploration:
-
-        objectExploration(objDistance, objAngular);
-        bGotExplorationFinish = true;
         if (bGotExplorationFinish) {
           amiroState = explorationFinish;
         }
@@ -573,16 +394,9 @@ int processSM(void) {
         amiroState = objectSeperationPending;
         break;
       case objectSeperationPending:
-        // HACK
-        bGotNumberOfSeperatedObjects = true;
-        numSeperatedObjects = 1;
-        objectDetectionCounter = 1;
-//        objectHomingCtrl(/*distance*/, /*angle*/);
-        amiroState = objectDetection;
-//        if (bGotNumberOfSeperatedObjects) {
-//          amiroState = objectHoming;
-//        }
-        // HACK FINISH
+        if (bGotNumberOfSeperatedObjects) {
+          amiroState = objectHoming;
+        }
         break;
       case objectHoming:
         ++objectDetectionCounter;
@@ -621,11 +435,6 @@ int processSM(void) {
         amiroState = objectDeliveryPushing;
         break;
       case objectDeliveryPushing:
-        // HACK
-//        objectDeliveryCtrl(/*dist*/, /*angle*/);
-        amiroState = objectDeliveryFinish;
-        break;
-        // HACKFinish
         if (bGotDeliveryFinish) {
           amiroState = objectDeliveryFinish;
         } else if (bGotDeliveryFail) {
