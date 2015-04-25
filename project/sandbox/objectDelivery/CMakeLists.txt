@@ -10,11 +10,22 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
+if ("$ENV{ARCH}" MATCHES arm)
+
 pkg_check_modules(OPENCV OpenCV)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(RST rst0.11)
 pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+
+else("$ENV{ARCH}" MATCHES arm)
+
+find_package(OpenCV REQUIRED)
+find_package(RSB REQUIRED)
+find_package(RSC REQUIRED)
+find_package(RST REQUIRED COMPONENTS sandbox)
+
+endif("$ENV{ARCH}" MATCHES arm)
 
 # Need to add, because rst manual said so:
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
@@ -67,6 +78,9 @@ add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} ../../includes/Color.cpp
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
+
+if ("$ENV{ARCH}" MATCHES arm)
+
 target_link_libraries (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
@@ -103,6 +117,24 @@ target_link_libraries (
     ${PROTO_LIBRARIES}
 
 )
+
+else("$ENV{ARCH}" MATCHES arm)
+target_link_libraries (
+    "${PROJECT_NAME}"
+    ${RSB_LIBRARIES}
+    ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${RSTSANDBOX_LIBRARIES}
+    ${PROTO_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+    # Boost
+    ${Boost_LIBRARIES}
+    # -- Own libraries
+    vecIntConverter
+    matConverter
+
+)
+endif("$ENV{ARCH}" MATCHES arm)
 
 # Get rid of depricated warnings
 
