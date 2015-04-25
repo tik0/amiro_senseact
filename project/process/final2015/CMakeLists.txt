@@ -11,19 +11,17 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
-find_package(PkgConfig)
 
-ifeq ($(ARCH), arm)
+if ("$ENV{ARCH}" MATCHES arm)
+  find_package(PkgConfig)
   pkg_check_modules(RSB rsb0.11)
   pkg_check_modules(RSC rsc0.11)
   pkg_check_modules(PROTOBUF protobuf)
-  pkg_check_modules(RST rstsandbox0.11)
-else
+else ()
   find_package(RSB)
   find_package(RSC)
   find_package(PROTOBUF)
-  find_package(RST)
-endif
+endif ()
 
 
 
@@ -45,7 +43,7 @@ include_directories(include
 )
 
 # add the executable
-add_executable ("${PROJECT_NAME}" main.cxx $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
+add_executable ("${PROJECT_NAME}" main.cxx)
 TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
