@@ -10,7 +10,7 @@ pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(RST rstsandbox0.11)
-pkg_check_modules(EIGEN eigen2)
+pkg_check_modules(EIGEN eigen3)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)

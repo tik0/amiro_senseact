@@ -6,9 +6,10 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
+find_package(OpenCV REQUIRED)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(OPENCV opencv)
+#pkg_check_modules(OPENCV opencv)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system)
@@ -21,7 +22,7 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
-    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
+    ${OpenCV_INCLUDE_DIRS}                                          # OpenCV
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     ${GXX_INCLUDES}
@@ -34,7 +35,7 @@ SET (SOURCE main.cxx)
 LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}
     ${RSC_LIBRARY_DIRS}
-    ${OPENCV_LIBRARY_DIRS}
+    ${OpenCV_LIBRARY_DIRS}
 )
 
 # add the executable
@@ -45,7 +46,7 @@ target_link_libraries (
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${OPENCV_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     jpeg
 )
 
