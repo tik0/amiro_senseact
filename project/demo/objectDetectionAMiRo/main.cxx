@@ -416,7 +416,7 @@ int main(int argc, char **argv) {
 
             std::string output;
             if (detObj > 0) {
-              output = to_string(detObj);
+              output = to_string(detObj+2);
             } else {
               output = "null";
             }
