@@ -113,6 +113,7 @@ int main(int argc, const char **argv) {
 				enabled = true;
 				// initialize scan
 				initscan_raw = *lidarQueue->pop();
+				initscan = initscan_raw;
 				for (int i = 0; i < initscan_raw.scan_values_size(); ++i) {
 					if (initscan_raw.scan_values(i) < initscan_raw.scan_values_min()) {
 						initscan_raw.set_scan_values(i,10000);
@@ -141,8 +142,9 @@ int main(int argc, const char **argv) {
 		// check if the waypoint is triggered
 		bool triggered_new = false;
 		for (int i = 1; i < scan.scan_values_size()-1; ++i) {
-			if (scan.scan_values(i) > scan.scan_values_min() && initscan.scan_values(i) > initscan.scan_values_min() && scan.scan_values(i) < range
-					&& initscan.scan_values(i) - scan.scan_values(i)> diffThreshold) {
+			if ((scan.scan_values(i) > scan.scan_values_min() && initscan.scan_values(i) > initscan.scan_values_min() && scan.scan_values(i) < range
+					&& initscan.scan_values(i) - scan.scan_values(i)> diffThreshold)
+					|| (initscan.scan_values(i) < initscan.scan_values_min() && scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < range)) {
 				//DEBUG_MSG(abs(scan.scan_values(i) - initscan.scan_values(i)));
 				triggered_new = true;
 				break;
