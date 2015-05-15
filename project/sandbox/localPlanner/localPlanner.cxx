@@ -76,11 +76,11 @@ void LocalPlanner::driveToPoint(cv::Point3f currentPose, cv::Point2f nextPose) {
 	int v = 0;
 
 	// calculate the robots angular velocity
-	int w = min(max(-maxW, (int) (angleDiff * maxW / 2 * M_PI)), maxW) * 5;
+	int w = min(max(-maxW, (int) (angleDiff * maxW / 2 * M_PI)), maxW) * 2;
 	// if the robot is oriented towards the cell, drive forward
 	if (abs(angleDiff) < M_PI / 6.0) {
 		float dist = sqrt(diffX * diffX + diffY * diffY);
-		v = min(6000 + (int) (dist * 20 * 24000), maxV) * 5;
+		v = min(6000 + (int) (dist * 20 * 24000), maxV) * 2;
 	}
 
 	// send the steering command

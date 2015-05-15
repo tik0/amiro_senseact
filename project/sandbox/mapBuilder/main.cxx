@@ -8,7 +8,7 @@ using namespace std;
 // types
 #include <types/twbTracking.pb.h>
 
-
+#include <ControllerAreaNetwork.h>
 // project includes
 #include "mapGenerator.hpp"
 #include "pathPlanner.hpp"
@@ -40,7 +40,7 @@ static double sigma_xy_ = 0.01;  // m
 static double sigma_theta_ = 0.35;  // rad
 // parameters for coreslam
 static double hole_width_ = 0.1;  // m
-static double delta_ = 0.02;  // Meter per pixel
+static double delta_ = 0.01;  // Meter per pixel
 static ts_map_t ts_map_;
 static ts_state_t state_;
 static ts_position_t position_;
@@ -52,9 +52,9 @@ static bool got_first_scan_ = false;
 //static bool got_map_ = false;
 static int laser_count_ = 0;
 static int throttle_scans_ = 1;
-static double height_amiro = 94;
-static double height_lidar_measurement = 57.25;
-static double radius_lidar = 25;
+//static double height_amiro = 94;
+//static double height_lidar_measurement = 57.25;
+//static double radius_lidar = 25;
 // Check "http://de.wikipedia.org/wiki/Sinussatz"!
 // c ist the first ray, b the second. If beta is 90°, it means that c is hitting a surface very perpendiular.
 // Every deviation of the 90° is an incident, which means that the surface is not perpendicular to the ray.
@@ -347,9 +347,16 @@ getOdomPose(ts_position_t& ts_pose)
 	  ts_pose.y = translation.y()*METERS_TO_MM + ((-9)*delta_*METERS_TO_MM); // convert to mm
   } else {
 	  ts_pose.x = translation.x()*METERS_TO_MM + ((mapSize.width/2)*delta_*METERS_TO_MM); // convert to mm
-	  ts_pose.y = translation.y()*METERS_TO_MM + ((1)*delta_*METERS_TO_MM); // convert to mm
+	  ts_pose.y = translation.y()*METERS_TO_MM + ((5)*delta_*METERS_TO_MM); // convert to mm
   }
   ts_pose.theta = (yaw * 180/M_PI);
+
+  if (ts_pose.theta > 180) {
+	  ts_pose.theta -= 2.0 * 180;
+  	} else if (ts_pose.theta < -180) {
+  		ts_pose.theta += 2.0 * 180;
+  	}
+
 
   DEBUG_MSG( "Odom: x: " <<  translation.x() << "m   y: " << translation.y() << "m     theta: " << rotation.qz() << "°" )
   DEBUG_MSG("ODOM POSE: " << ts_pose.x << " " << ts_pose.y << " " << ts_pose.theta)
@@ -372,13 +379,7 @@ initMapper(const rst::vision::LocatedLaserScan& scan, const double rotY)
   lparams_.angle_min = scan.scan_angle_start()  * 180/M_PI;
   lparams_.angle_max = scan.scan_angle_end()  * 180/M_PI;
   lparams_.detection_margin = 0;
-  lparams_.distance_no_detection = 500 ;// scan.scan_values_max() * METERS_TO_MM;
-  lparams_.tilt_angle =  rotY * M_PI / 180;
-  lparams_.depth = sin(lparams_.tilt_angle+atan(height_lidar_measurement/radius_lidar)) * sqrt(pow(height_lidar_measurement,2)+pow(radius_lidar,2)) + height_amiro;
-  lparams_.depth_max = lparams_.depth + 50;
-  lparams_.depth_min = lparams_.depth - 15;
-  lparams_.angle_cap_min = -90;
-  lparams_.angle_cap_max = 90;
+  lparams_.distance_no_detection = 1000;//scan.scan_values_max() * METERS_TO_MM;
 
   // new coreslam instance
   ts_map_init(&ts_map_);
@@ -395,7 +396,7 @@ void convertToScan(const rst::vision::LocatedLaserScan &scan , ts_scan_t &ranges
 
     for(int i=0; i < lparams_.scan_size; i++) {
       // Must filter out short readings, because the mapper won't
-      if(scan.scan_values(i) > scan.scan_values_min()&& scan.scan_values(i) < scan.scan_values_max()){
+      if(scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < scan.scan_values_max()){
         // HACK "+ 120" is a workaround, and works only for startStep 44 and enStep 725!!!!
         ranges.x[ranges.nb_points] = cos((lparams_.angle_min + 120 )* M_PI/180.0f + i*delta_angle ) * (scan.scan_values(i)*METERS_TO_MM);
         ranges.y[ranges.nb_points] = sin((lparams_.angle_min + 120) * M_PI/180.0f + i*delta_angle) * (scan.scan_values(i)*METERS_TO_MM);
@@ -463,6 +464,15 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose, boo
 
 int main(int argc, const char **argv){
 
+	ControllerAreaNetwork CAN;
+	types::position opos;
+	opos.x =0;
+	opos.y =0;
+	opos.z=0;
+	opos.f_x =0;
+	opos.f_y =0;
+	opos.f_z =0;
+	CAN.setOdometry(opos);
   // Handle program options
   namespace po = boost::program_options;
 
@@ -533,7 +543,7 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
 
 
 
-
+ int	count  = 0;
 
 
   // scopenames for rsb
@@ -623,6 +633,8 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
     pos->set_orientation(robotPose.z);
     poseInformer->publish(pos);
 
+    //cout << robotPose << endl;
+
     if (enable){
 
     //cout << robotPose.x / delta_ << " " << robotPose.y / delta_ << endl;
@@ -634,8 +646,10 @@ rsb::converter::converterRepository<std::string>()->registerConverter(pose2DList
     cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * mapSize.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * mapSize.height / TS_MAP_SIZE);
     //cout << robotPosition << endl;
     cv::circle( gridmap, cv::Point(robotPose.x/delta_,robotPose.y/delta_), 5, Scalar(255),-1);
-if (simulation){
-    if (sendMapAsCompressedImage) {
+
+    count++;
+    if (sendMapAsCompressedImage && count  > 5) {
+    	count = 0;
     	cv::Mat omap;
       //cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
     	mapGenerator.generateObstacleMap(gridmap,omap);
@@ -654,18 +668,18 @@ if (simulation){
       cv::imshow("input", dstColor);
       cv::waitKey(1);
       #endif
- /*     // Send the map as image
+      // Send the map as image
       std::vector<uchar> buf;
       std::vector<int> compression_params;
       compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-      compression_params.push_back(85g_uiQuality [ 0 .. 100]);
+      //compression_params.push_back(85g_uiQuality [ 0 .. 100]);
       imencode(".jpg", dstColor, buf, compression_params);
-*/
+
       // Send the data.
-//      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
-//      informer->publish(frameJpg);
+     rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+      informer->publish(frameJpg);
     }
-    }
+
   }}
 
   return 0;

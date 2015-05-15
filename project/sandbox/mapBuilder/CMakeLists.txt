@@ -107,6 +107,6 @@ TARGET_LINK_LIBRARIES (
 
 endif("$ENV{ARCH}" MATCHES arm)
 # Additional compiler flags
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11)
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O3 -g -Wno-write-strings -std=c++11)
 # Special flags for RST
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})

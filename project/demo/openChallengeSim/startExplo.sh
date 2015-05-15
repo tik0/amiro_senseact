@@ -6,7 +6,7 @@
 # Start the SLAM program
 ./senseHokuyo -o /scan&
 ./senseOdometry -o /odometry &
-./mapBuilder --odominscope /odometry --lidarinscope /scan --senImage 0 --delta 0.01 --rotY 30  &
+./mapBuilder --odominscope /odometry --lidarinscope /scan --senImage 1 --delta 0.01 --rotY 30  &
 ./localPlanner    &
 ./frontierExploration &
 sleep 3

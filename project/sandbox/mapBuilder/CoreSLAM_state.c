@@ -23,59 +23,58 @@ void ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *pa
 	state->hole_width = hole_width;
 }
 
-void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span) {
-	int i, j;
-	double angle_rad, angle_deg;
+void
+ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span)
+{
+    int i, j;
+    double angle_rad, angle_deg;
 
-	scan->nb_points = 0;
-	// Span the laser scans to better cosd->ver the space
-	for (i = 0; i < state->laser_params.scan_size; i++) {
-		for (j = 0; j != span; j++) {
-			angle_deg = state->laser_params.angle_min
-					+ ((double) (i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min)
-							/ (state->laser_params.scan_size * span - 1);
-			//angle_deg += sd->psidot / 3600.0 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1);
+    scan->nb_points = 0;
+    // Span the laser scans to better cosd->ver the space
+    for (i = 0; i < state->laser_params.scan_size; i++) {
+        for (j = 0; j != span; j++) {
+            angle_deg = state->laser_params.angle_min + ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1);
+            //angle_deg += sd->psidot / 3600.0 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1);
 
-			angle_rad = angle_deg * M_PI / 180;
-			if (i > state->laser_params.detection_margin
-					&& i < state->laser_params.scan_size - state->laser_params.detection_margin
-					&& angle_deg < state->laser_params.angle_cap_max && angle_deg > state->laser_params.angle_cap_min
-					) {
-				/*if (sd->d[i] == 0) {
-				 scan->x[scan->nb_points] = state->laser_params.distance_no_detection * cos(angle_rad);
-				 //scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
-				 scan->y[scan->nb_points] = state->laser_params.distance_no_detection * sin(angle_rad);
-				 scan->value[scan->nb_points] = TS_NO_OBSTACLE;
-				 scan->nb_points++;
-				 }*/
-				if (sd->d[i] > state->hole_width / 2 && ((angle_deg > -45 && angle_deg < 45) || sd->d[i] < state->laser_params.distance_no_detection)) {
-					double tilt_angle_ray = asin(sin(state->laser_params.tilt_angle) * cos(angle_rad));
-					scan->depth_measured[i] = sin(tilt_angle_ray) * sd->d[i];
-					// compare measured_height to min_height/ max_height;
-					scan->value[scan->nb_points] = TS_OBSTACLE;
-					if (scan->depth_measured[i] < state->laser_params.depth_max) {
-						// ray hit an obstacle or the ground
-						sd->d[i] = cos(tilt_angle_ray) * sd->d[i];
-						if (scan->depth_measured[i] > state->laser_params.depth_min) {
-							// ray hit the table
-							//set value -> hole_width = 0
-							scan->value[scan->nb_points] = TS_NO_OBSTACLE;
-						}
-					} else {
-						// ray didnt hit the table -> edge
-						sd->d[i] = state->laser_params.depth / tan(tilt_angle_ray);
-					}
+            angle_rad = angle_deg * M_PI / 180;
+            if (i > state->laser_params.detection_margin && i < state->laser_params.scan_size - state->laser_params.detection_margin) {
+                /*if (sd->d[i] == 0) {
+                    scan->x[scan->nb_points] = state->laser_params.distance_no_detection * cos(angle_rad);
+                    //scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
+                    scan->y[scan->nb_points] = state->laser_params.distance_no_detection * sin(angle_rad);
+                    scan->value[scan->nb_points] = TS_NO_OBSTACLE;
+                    scan->nb_points++;
+                }*/
+                if (sd->d[i] > state->hole_width /*/ 2*/ ) {
+                	//TODO tilted lidar
+                	/*  double gamma = asin(sin(alpha)*cos(beta));
+						measured_height = sin(gamma)*d;
+                	    compare measured_height to min_height/ max_height
+                	    if measured_height < max_height:
+                	         // ray hit an obstacle or the ground
+                	         d' = cos(gamma)*d
+                	         if measured_height > min_height:
+                	         	 // ray hit the ground
+                	        	 set value -> hole_width = 0
+                	         else
+                	             // ray didnt hit the floor
+                	             d' = expected_height / tan(gamma)
+                	*/
 
-					scan->x[scan->nb_points] = sd->d[i] * cos(angle_rad);
-					//scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
-					scan->y[scan->nb_points] = sd->d[i] * sin(angle_rad);
-					scan->nb_points++;
-				}
-			}
-		}
-	}
+                    scan->x[scan->nb_points] = sd->d[i] * cos(angle_rad);
+                    //scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
+                    scan->y[scan->nb_points] = sd->d[i] * sin(angle_rad);
+                    if (sd->d[i] < state->laser_params.distance_no_detection) {
+                    	scan->value[scan->nb_points] = TS_OBSTACLE;
+                    } else {
+                    	scan->value[scan->nb_points] = TS_NO_OBSTACLE;
+                    }
+                    scan->nb_points++;
+                }
+            }
+        }
+    }
 }
-
 void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int enable) {
 	double d; //psidot, v, d;
 	ts_scan_t scan2map;
@@ -114,7 +113,7 @@ void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int enab
 	position.x += state->laser_params.offset * cos(thetarad);
 	position.y += state->laser_params.offset * sin(thetarad);
 	sd->position[state->direction] = position = ts_monte_carlo_search(&state->randomizer, &state->scan, state->map,
-			&position, state->sigma_xy, state->sigma_theta, 1000, NULL);
+			&position, state->sigma_xy, state->sigma_theta, 200, NULL);
 	sd->position[state->direction].x -= state->laser_params.offset * cos(position.theta * M_PI / 180);
 	sd->position[state->direction].y -= state->laser_params.offset * sin(position.theta * M_PI / 180);
 	d = sqrt(
@@ -125,7 +124,7 @@ void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int enab
 	state->distance += d;
 	if (enable) {
 	// Map update
-	ts_map_update(&scan2map, state->map, &position, 50, state->hole_width, &(state->laser_params));
+	ts_map_update(&scan2map, state->map, &position, 50, state->hole_width);
 	}
 	// Prepare next step
 	state->position = sd->position[state->direction];
