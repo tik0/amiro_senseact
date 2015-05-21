@@ -1,6 +1,6 @@
 Checkout this repository
 =
-* $ git clone https://projects.cit-ec.uni-bielefeld.de/git/muox_dev
+* $ git clone https://github.com/tik0/murox_dev.git
 
 Explanation of folder structure
 =
