@@ -8,7 +8,7 @@
 //============================================================================
 
 // #define INFO_MSG_
-// #define DEBUG_MSG_
+#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
 // #define ERROR_MSG_
@@ -46,13 +46,12 @@ void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   DEBUG_MSG( "v: " << message->at(0) << "w: " << message->at(1))
 }
 
+static std::string rsbInScope = "/motor";
 
 int main (int argc, const char **argv){
  
   // Handle program options
   namespace po = boost::program_options;
-  
-  std::string rsbInScope = "/motor";
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")

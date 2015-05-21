@@ -23,7 +23,6 @@
 
 using namespace boost;
 using namespace std;
-//using namespace cv;
 using namespace rsb;
 using namespace muroxConverter;
 using namespace rsb::converter;
@@ -71,13 +70,20 @@ int main(int argc, const char **argv){
 
   // Calculate the new steering (two elements with 0 initialized)
   boost::shared_ptr< std::vector<int> > vecSteering(new std::vector<int> (2,0));
+  
+  // Translation in µm/s: vecSteering->at(0)
+  // Rotation in µrad/s: vecSteering->at(1)
+  // Sending the steering vector: informer_vec->publish(vecSteering);
 
    int KB_code=0;
 
+   // Process as long as ESC is not pressed
    while(KB_code != KB_ESCAPE )
-   { 
+   {
+     // Enter this condition if a button was pressed
      if (kbhit())
       {
+            // Get the character
             KB_code = getchar();
             INFO_MSG( "KB_code = " << KB_code )
 
@@ -114,14 +120,11 @@ int main(int argc, const char **argv){
                 case KB_ENTER:
                   informer_vec->publish(vecSteering);
                 break;
-
             }        
             INFO_MSG( "Vx  = " << vecSteering->at(0) << " µm/s , Wz = " << vecSteering->at(1) << " µrad/s" )
       }
       // Sleep for a millisecond
       usleep(1000);
   }
-
   return 0;
-
 }

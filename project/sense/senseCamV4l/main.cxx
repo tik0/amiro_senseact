@@ -100,8 +100,8 @@ int main(int argc, char **argv) {
 
         memset(&fmt, 0, sizeof(fmt));
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        fmt.fmt.pix.width       = 320;  // Maximum width
-        fmt.fmt.pix.height      = 240;  // Maximum hight
+        fmt.fmt.pix.width       = 640;  // Maximum width
+        fmt.fmt.pix.height      = 420;  // Maximum hight
         fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
         fmt.fmt.pix.field       = V4L2_FIELD_ANY;
         rc = v4l2_ioctl(fd, VIDIOC_S_FMT, &fmt);
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
                         fprintf(stderr, "Error: %d, %s\n", errno, strerror(errno));
                         exit(EXIT_FAILURE);
                 }
-        informer->publish(frame);
+        //informer->publish(frame);
      
 
   }
