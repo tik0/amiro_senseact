@@ -1,0 +1,10 @@
+====== GigEVision2RSB ======
+
+tbd
+
+===== Installation =====
+
+  - Install the Stemmer Imaging API from [[tools:stemmerImagingGrabberExample:start|this]] example
+  - Install [[https://help.ubuntu.com/community/OpenCV|OpenCV]]
+  - Run cmake ''cmake .'' and make ''make''
+  - Inspect the possible program options with the ''-h'' parameter
