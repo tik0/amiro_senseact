@@ -46,7 +46,7 @@ int main (int argc, const char **argv){
   options.add_options()("help,h", "Display a help message.")
     ("outscope,o", po::value < std::string > (&g_sOutScope_IR), "Scope for sending the IR data")
     ("vecAmount,a", po::value < int > (&g_vecAmount), "Amount of vector entries")
-    ("vecMax,v", po::value < int > (&g_vecMax), "Maximal value of randomnes");
+    ("vecMax,v", po::value < int > (&g_vecMax), "Maximal value of randomnes (0 .. vecMax)");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

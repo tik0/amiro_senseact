@@ -1,3 +1,10 @@
 ====== Teleoperation ======
 
 This is a teleoperation for steering the AMiRo via a website
+
+===== RSB Scopes =====
+
+std::string g_sInScopeImage = "/IMAGES";
+std::string g_sOutScopeImage = "/IMAGES";
+std::string g_sInScopeIr = "/IR";
+std::string g_sOutScopeSteering = "/STEERING";

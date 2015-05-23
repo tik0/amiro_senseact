@@ -98,8 +98,8 @@ static volatile int force_exit = 0;
 static struct libwebsocket_context *context;
 
 using namespace std;
-string textStringToSend;
-string lightMessage;
+static string textStringToSend;
+static string lightMessage;
 
 // Buffer for the camera picture. Is used during the whole time and only 
 // freed when the server is closed. Used in Camera-Protocoll.
@@ -136,8 +136,8 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // Scopes
-std::string g_sInScopeImage = "/images";
-std::string g_sOutScopeImage = "/images";
+std::string g_sInScopeImage = "/IMAGES";
+std::string g_sOutScopeImage = "/IMAGES";
 std::string g_sInScopeIr = "/IR";
 std::string g_sOutScopeSteering = "/STEERING";
 
@@ -345,6 +345,10 @@ void * informerCamera(void * argument) {
 // the received data of the IR information
 void receiveIrData(rsb::EventPtr event) {
   vecIrData = static_pointer_cast<std::vector<int> >(event->getData());
+  // We assume AMiRo proximity values 0x0 .. 0xFFFF
+  for (unsigned int idx = 0; idx < vecIrData->size(); ++idx) {
+    vecIrData->at(idx) = vecIrData->at(idx) / 655; // we assume 65535 but we need values from 0..100
+  }
 }
 
 ////////////////////////////////////////////////
@@ -616,12 +620,12 @@ struct per_session_data__camera {
 static int callback_camera(struct libwebsocket_context *context,
     struct libwebsocket *wsi, enum libwebsocket_callback_reasons reason,
     void *user, void *in, size_t len) {
-  int n, speed = 50;
+  // Velocity for steering
+  int speed;
 
-
-  cv::Mat frame;
-  std::vector<unsigned char> outbuff;
-  std::vector<int> compression_params;
+//   cv::Mat frame;
+//   std::vector<unsigned char> outbuff;
+//   std::vector<int> compression_params;
 
   lwsl_info("V4l callback \n");
 
@@ -650,16 +654,14 @@ static int callback_camera(struct libwebsocket_context *context,
     // Copy the image to the sendbuffer
     memcpy(buffpic, &receivedFrame[0], len);
     // sending the picture via websockets
-    n = libwebsocket_write(wsi, buffpic, len, LWS_WRITE_BINARY);
-
-    if (n < 0) {
+    if (libwebsocket_write(wsi, buffpic, len, LWS_WRITE_BINARY) < 0) {
       lwsl_notice("Video write to client failed \n");
     }
     break;
   case LWS_CALLBACK_RECEIVE:
-
-    //receiving steering comands from client
-    //SpeedSignal 
+//======================================================================COMPUTE STEERING====================
+    // Receiving steering comands from client
+    // SpeedSignal in mm/s
     speed = atoi((const char*) in);
     if (speed <= 100) {
       speed_for_robot = speed;
@@ -681,65 +683,74 @@ static int callback_camera(struct libwebsocket_context *context,
       //INFO_MSG("Geschwindigkeit erhalten für Y: " << speed_for_robot_Y)
 
     }
+    // Convert to µm/s
+    speed = speed * 1000;
     //for Steering with camera_canvas
     if (speed < 1000 && speed >= 200) {
       vecSteering->at(0) = speed_for_robot_X;
       vecSteering->at(1) = speed_for_robot_Y;
     }
-    //forward left --> drehung links
-    if (strcmp((const char *) in, "1001") == 0) {
+    //forward left
+    else if (strcmp((const char *) in, "1001") == 0) {
       INFO_MSG("forward left")
       vecSteering->at(0) = speed_for_robot;
       vecSteering->at(1) = speed_for_robot;
     }
     //forward 
-    if (strcmp((const char *) in, "1002") == 0) {
+    else if (strcmp((const char *) in, "1002") == 0) {
       INFO_MSG("forward")
       vecSteering->at(0) = speed_for_robot;
       vecSteering->at(1) = 0;
     }
     //forward right
-    if (strcmp((const char *) in, "1003") == 0) {  
+    else if (strcmp((const char *) in, "1003") == 0) {  
       INFO_MSG("forward right")
       vecSteering->at(0) = speed_for_robot;
       vecSteering->at(1) = -speed_for_robot;
     }
     //left turn
-    if (strcmp((const char *) in, "1004") == 0) {  
+    else if (strcmp((const char *) in, "1004") == 0) {  
       INFO_MSG("left turn")
       vecSteering->at(0) = 0;
       vecSteering->at(1) = speed_for_robot;
     }
     //right turn
-    if (strcmp((const char *) in, "1005") == 0) {  
+    else if (strcmp((const char *) in, "1005") == 0) {  
       INFO_MSG("right turn")
       vecSteering->at(0) = 0;
       vecSteering->at(1) = -speed_for_robot;
     }
     //backward left
-    if (strcmp((const char *) in, "1006") == 0) {    
+    else if (strcmp((const char *) in, "1006") == 0) {    
       INFO_MSG("backward left")
       vecSteering->at(0) = -speed_for_robot;
       vecSteering->at(1) = -speed_for_robot;
     }
     //backward
-    if (strcmp((const char *) in, "1007") == 0) {  
+    else if (strcmp((const char *) in, "1007") == 0) {  
       INFO_MSG("backward")
       vecSteering->at(0) = -speed_for_robot;
       vecSteering->at(1) = 0;
     }
     //backward right
-    if (strcmp((const char *) in, "1008") == 0) {
+    else if (strcmp((const char *) in, "1008") == 0) {
       INFO_MSG("backward right")
       vecSteering->at(0) = -speed_for_robot;
       vecSteering->at(1) = speed_for_robot;
     }
     //Stop Signal
-    if (strcmp((const char *) in, "1099") == 0) {
+    else if (strcmp((const char *) in, "1099") == 0) {
       INFO_MSG("stop")
       vecSteering->at(0) = 0;
       vecSteering->at(1) = 0;
     }
+    // Backup
+    else {
+      INFO_MSG("stop")
+      vecSteering->at(0) = 0;
+      vecSteering->at(1) = 0;
+    }
+//======================================================================END STEERING============================================
 //======================================================================COMPUTE LIGHTSIGNALS====================
     //whitelight Signal
     if (strcmp((const char *) in, "1101") == 0) {

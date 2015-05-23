@@ -27,21 +27,21 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
-    "../../includes"                                                # Other includes like converters and stuff
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
-    "../../tools/libwebsockets/lib"                                 # libwebsockets
+    "$ENV{MUROX_PROJECT}/tools/libwebsockets/lib"                   # libwebsockets
 )
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
-add_subdirectory (../../tools/libwebsockets lib/websockets)
-add_subdirectory (../../includes/converter/matConverter lib/matConverter)
+add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+add_subdirectory ($ENV{MUROX_PROJECT}/tools/libwebsockets lib/websockets)
+add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" main.cxx ../../includes/Color.cpp)
+add_executable ("${PROJECT_NAME}" main.cxx $ENV{MUROX_INCLUDE_DIRS}/Color.cpp)
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
