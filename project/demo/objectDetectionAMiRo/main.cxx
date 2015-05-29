@@ -435,6 +435,8 @@ int main(int argc, char **argv) {
       }
 
     }
+  } else {
+    WARNING_MSG("Couldn't open camera!");
   }
 
   // Free the cam
