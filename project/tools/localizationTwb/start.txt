@@ -22,5 +22,6 @@ They are stored in a list as follow:
   - Compile ARToolKit from [[tools:ARToolKit:README|this]] source
     - Install missing packages ''sudo apt-get install build-essential freeglut3 freeglut3-dbg freeglut3-dev libxmu-dev libxi-dev libxext-dev libgstreamer0.10-dev'' 
     - Congfigure and make
+  - Create the [[includes:types:start|ProtoBuf headers]]
   - Run cmake ''cmake .'' and make ''make''
   - Inspect the possible program options with the ''-h'' parameter
