@@ -3,9 +3,8 @@
 # Start the spread communication deamon
 spread  &
 sleep 5
-# Start the SLAM program
-./senseHokuyo -o /scan&
-./waypoint --lidarinscope /scan &
+./senseHokuyo -o /scan &
+./waypoint -s --lidarinscope /scan &
 sleep 3
-rsb-sendcpp0.11 /waypoint/command init.txt
+#rsb-sendcpp0.11 /waypoint/command init.txt
 echo "Init waypoint"

@@ -58,6 +58,7 @@ int main(int argc, const char **argv) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("lidarinscope",po::value<std::string>(&lidarInScope),"Scope for receiving lidar data")
+			("startNow,s","Initializes the waypoint immediatly without waiting for inscope.")
 			("stateoutscope",po::value<std::string>(&stateOutScope), "Scope for sending states")
 			("commandinscope", po::value<std::string>(&commandInscope),"Scope for receiving commands")
 			("range,r",po::value<float>(&range), "Range of detection in m")
@@ -107,8 +108,13 @@ int main(int argc, const char **argv) {
 	while (true) {
 		// check if the checkpoint is enabled/disabled by the stateMachine
 		if (!enabled) {
-			std::string command(*commandQueue->pop());
-			if (command.compare("init") == 0) {
+                        bool initNow = vm.count("startNow");
+                        if (!initNow) {
+				std::string command(*commandQueue->pop());
+                                initNow = command.compare("init") == 0;
+                        }
+
+			if (initNow) {
 				DEBUG_MSG("init")
 				enabled = true;
 				// initialize scan
@@ -163,6 +169,8 @@ int main(int argc, const char **argv) {
 			}
 			triggered = !triggered;
 		}
+
+                usleep(100000);
 	}
 
 	return 0;
