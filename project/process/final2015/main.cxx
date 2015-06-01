@@ -310,9 +310,9 @@ int processSM(void) {
 		switch (amiroState) {
 		case idle:
 			setAMiRoColor(255,255,255);
-			if(bGotFromTobi_init) {
+//			if(bGotFromTobi_init) {
 				set_state_init();
-			}
+//			}
 			break;
 		case init:
 			setAMiRoColor(255,255,255);
@@ -374,7 +374,7 @@ turnDegree(turn_degree);
 			}
 			break;
 		default:
-			WARNING_MSG("Unknown state of AMiRo's state machine.")
+			WARNING_MSG("Unknown state of AMiRo's state machine.");
 		}
 
 		*signal_state = statesString[amiroState];
