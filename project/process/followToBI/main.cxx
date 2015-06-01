@@ -269,6 +269,10 @@ int main(int argc, const char **argv){
       std::cout << options << "\n";
       exit(1);
   }
+  
+
+  // afterwards, let program options handle argument errors
+  po::notify(vm);
 
   bool followNow = vm.count("startNow");
   bool debugging = vm.count("debug");
@@ -278,10 +282,6 @@ int main(int argc, const char **argv){
   if (!followNow && debugging) {
     INFO_MSG("Waiting for init command.");
   }
-  
-
-  // afterwards, let program options handle argument errors
-  po::notify(vm);
 
   // Get the RSB factory
   rsb::Factory& factory = rsb::Factory::getInstance();
@@ -349,6 +349,7 @@ int main(int argc, const char **argv){
       }
     }
     if (followNow) {
+      INFO_MSG("Next Meas");
       // Fetch a new scan and store it to scan
       convertDataToScan(lidarQueue->pop(), laser);
       // We can't initialize CoreSLAM until we've got the first scan
