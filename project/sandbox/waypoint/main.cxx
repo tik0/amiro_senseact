@@ -157,20 +157,18 @@ int main(int argc, const char **argv) {
 			}
 		}
 		// send update state
-		if (triggered != triggered_new) {
+//		if (triggered != triggered_new) {
 			if (triggered_new) {
-				stateInformer->publish(
-						Informer<string>::DataPtr(new string("entered")));
+				stateInformer->publish(Informer<string>::DataPtr(new string("entered")));
 				DEBUG_MSG("entered");
 			} else {
-				stateInformer->publish(
-						Informer<string>::DataPtr(new string("left")));
+				stateInformer->publish(Informer<string>::DataPtr(new string("left")));
 				DEBUG_MSG("left");
 			}
-			triggered = !triggered;
-		}
+//			triggered = !triggered;
+//		}
 
-                usleep(100000);
+                usleep(200000);
 	}
 
 	return 0;
