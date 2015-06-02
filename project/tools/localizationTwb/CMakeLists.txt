@@ -97,5 +97,5 @@ message (STATUS  "${GLIB_LIBRARIES}")
 # Get rid of depricated warnings
 SET (
     CMAKE_CXX_FLAGS
-    "-Wno-deprecated-declarations -Wno-write-strings -O2"
+    "-Wno-deprecated-declarations -Wno-write-strings -O2 -std=c++11"
 )

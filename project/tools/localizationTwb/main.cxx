@@ -151,44 +151,103 @@ static void programOptions(int argc, char **argv);
 
 // Video writer
 
-cv::VideoWriter recorder;
-bool doRecord = false;
-bool isRecording = false;
-std::size_t numFramesRecorded = 0;
-std::size_t numFrames = 0;
-std::string recordFilename = "video.avi";
-std::size_t fpsRecord = 30;
+static cv::VideoWriter recorder;
+static bool doRecord = false;
+static bool isRecording = false;
+static std::size_t numFramesRecorded = 0;
+static std::size_t numFrames = 0;
+static std::string recordFilename = "video.avi";
+static std::size_t fpsRecord = 0;
+
+// Camera parameter
+static double camGainAbs = 12.0f;
+static cvbint64_t camExposureTimeRaw = 16000;
+static cvbbool_t camReverseX = false;
+static cvbbool_t camNoiseCorrection = false;
+static cvbbool_t camDefectCorrection = false;
+static cvbbool_t camNegativeImage = false;
+static cvbint64_t camAcquisitionFrameRateAbs = 15;
 
 void initVideoRecorder(cv::Size frameSize)
 {
-	if(!isRecording)
-	{
-		numFramesRecorded = 0;
-		recorder = cv::VideoWriter(recordFilename, CV_FOURCC('D','I','V','X'), fpsRecord, frameSize);
-	}
+    if(!isRecording)
+    {
+        numFramesRecorded = 0;
+        recorder = cv::VideoWriter(recordFilename, CV_FOURCC('D','I','V','X'), fpsRecord, frameSize);
+    }
 
-	isRecording = true;
+    isRecording = true;
 }
 
 void recordVideo(cv::Mat frame)
 {
-	if(isRecording)
-	{
-		++numFramesRecorded;
-		//std::cout << "frame:" << numFramesRecorded << std::endl;
-		recorder.write(frame);
-	}
+    if(isRecording)
+    {
+        ++numFramesRecorded;
+        //std::cout << "frame:" << numFramesRecorded << std::endl;
+        recorder.write(frame);
+    }
 }
 
 void stopRecordVideo()
 {
-	if((isRecording && numFramesRecorded >= numFrames) && (numFrames != 0))
-	{
-		isRecording = false;
-		numFramesRecorded = 0;
-		recorder.release();
-		std::cout << "finish video recording!" << std::endl;
-	}
+    if((isRecording && numFramesRecorded >= numFrames) && (numFrames != 0))
+    {
+        isRecording = false;
+        numFramesRecorded = 0;
+        recorder.release();
+        std::cout << "finish video recording!" << std::endl;
+    }
+}
+
+
+// access a feature via CVGenApi
+template<typename T>
+void genicam_access(const std::string nodeName, const T value)
+{
+  cout << "Set "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+      if(std::is_same<T,double>::value)
+        result = NSetAsFloat(hNode, value);
+      else if(std::is_same<T,cvbbool_t>::value)
+        result = NSetAsBoolean(hNode, value);
+      else if(std::is_same<T,cvbint64_t>::value)
+        result = NSetAsInteger(hNode, value);
+//       else if(std::is_same<T,string>::value)
+//         result = NSetAsString(hNode, const_cast<std::string>(value).c_str());
+      else
+        result = -1;
+
+      if(result >= 0)
+      {
+        cout << "Node value set" << endl;
+      }
+      else
+      {
+        cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
+      }
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
 }
 
 int main(int argc, char **argv) {
@@ -212,7 +271,7 @@ int main(int argc, char **argv) {
   glutInit(&argcGlut, argv);
 
   char driverPath[DRIVERPATHSIZE] = { 0 };
-	
+
   // Get Driver from arguments
   TranslateFileName("%CVB%/drivers/GenICam.vin", driverPath, DRIVERPATHSIZE);
   LoadImageFile(driverPath, hCamera);
@@ -230,8 +289,10 @@ int main(int argc, char **argv) {
   long IMGwidth = ImageWidth(hCamera);
 
   // Init the video recorder
-  cv::Size frameSize(IMGwidth, IMGheight);
-  initVideoRecorder(frameSize);
+  if (doRecord) {
+    cv::Size frameSize(IMGwidth, IMGheight);
+    initVideoRecorder(frameSize);
+  }
 
   // Allocation of the BGR framedata
   frame.create(IMGheight, IMGwidth, CV_8UC3);
@@ -243,6 +304,18 @@ int main(int argc, char **argv) {
 
   // Start grab with ring buffer
   cvbres_t result = G2Grab(hCamera);
+  
+    // access camera config
+  if(CanNodeMapHandle(hCamera))
+  {
+    genicam_access(std::string("GainAbs"), camGainAbs);  // double
+    genicam_access(std::string("ReverseX"), camReverseX);  // bool
+    genicam_access(std::string("ExposureTimeRaw"), camExposureTimeRaw);  // int
+    genicam_access(std::string("NoiseCorrection"), camNoiseCorrection);  // bool
+    genicam_access(std::string("DefectCorrection"), camDefectCorrection);  // bool
+    genicam_access(std::string("NegativeImage"), camNegativeImage);  // bool
+    genicam_access(std::string("AcquisitionFrameRateAbs"), camAcquisitionFrameRateAbs);  // int
+  }
 
   // Start with the tracking
   argMainLoop( NULL, NULL, processEverything);
@@ -272,8 +345,15 @@ static void programOptions(int argc, char **argv) {
     ("record,r", po::value < bool > (&doRecord), "Set value to 1 to record the video")
     ("recordFilename,f", po::value < std::string > (&recordFilename), "Filename of the video. Standard value: video.avi")
     ("numFrames,n", po::value < size_t > (&numFrames), "Numbers of frames to record (0 for no framenumber constraints). Standard value: 0")
-    ("fpsRecord", po::value < size_t > (&fpsRecord), "Frames per second for replay. Standard value: 30");
-
+    ("fpsRecord", po::value < size_t > (&fpsRecord), "Frames per second for replay. Standard value: camAcquisitionFrameRateAbs")
+    ("camGainAbs", po::value < double > (&camGainAbs), "Camera gain. Standard value: 12")
+    ("camReverseX", po::value < cvbbool_t > (&camReverseX), "Reverse the x axis. Standard value: false")
+    ("camExposureTimeRaw", po::value < cvbint64_t > (&camExposureTimeRaw), "Exposure time in µs. Standard value: 16000")
+    ("camNoiseCorrection", po::value < cvbbool_t > (&camNoiseCorrection), "Noise correction feature. Standard value: false")
+    ("camDefectCorrection", po::value < cvbbool_t > (&camDefectCorrection), "Defect correction feature. Standard value: false")
+    ("camNegativeImage", po::value < cvbbool_t > (&camNegativeImage), "Invert the image. Standard value: false")
+    ("camAcquisitionFrameRateAbs", po::value < cvbint64_t > (&camAcquisitionFrameRateAbs), "Frames per second. Standard value: 15");
+    
   // allow to give the value as a positional argument
   po::positional_options_description p;
   p.add("value", 1);
@@ -291,6 +371,9 @@ static void programOptions(int argc, char **argv) {
 
   // afterwards, let program options handle argument errors
   po::notify(vm);
+
+  if (fpsRecord == 0)
+    fpsRecord = size_t(camAcquisitionFrameRateAbs);
 }
 
 static void initARToolkit(int xsize, int ysize) {
@@ -320,7 +403,7 @@ static void processEverything(void) {
   if (result < 0) {
     std::cout << " Error with G2Wait";
   } else {
-    // Grab the imagea and copy it to the variable frame
+    // Grab the image and copy it to the variable frame
     process();
     // Do the tracking on the variable frame and send the locations via RSB
     tracking();
@@ -457,12 +540,12 @@ void tracking() {
       pose2D->set_id(object[idxObject].id);
     }
 
-	if(counter >= 5)
-	{
-    		// Send the data
-    		informer->publish(pose2DList);
-		counter = 0;
-	}
+    if(counter >= 5)
+    {
+            // Send the data
+            informer->publish(pose2DList);
+        counter = 0;
+    }
   }
 
   /*swap the graphics buffers*/
@@ -493,3 +576,46 @@ void process() {
     //throw "baseAddress is ZERO";
   }
 }
+
+
+
+// // access a feature via CVGenApi
+// void genicam_access(IMG hCamera)
+// {
+//   cout << "Read camera image width: ";
+// 
+//   NODEMAP hNodeMap = NULL;
+//   cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+//   if(result >= 0)
+//   {
+//     // get width feature node
+//     NODE hWidth = NULL;
+//     result = NMGetNode(hNodeMap, "Width", hWidth);
+//     if(result >= 0)
+//     {
+//       // value camera dependent
+//       cvbint64_t widthValue = 0;
+//       result = NGetAsInteger(hWidth, widthValue);
+//       // set values via NSetAsInteger(hWidht, widthValue);
+//       if(result >= 0)
+//       {
+//         cout << widthValue << endl;
+//       }
+//       else
+//       {
+//         cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
+//       }
+// 
+//       ReleaseObject(hWidth);
+//     }
+//     else
+//     {
+//       cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+//     }
+//     ReleaseObject(hNodeMap);
+//   }
+//   else
+//   {
+//     cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+//   }
+// }
