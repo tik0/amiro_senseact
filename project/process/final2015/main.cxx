@@ -56,6 +56,8 @@ enum states                          { idle , init , following , waypoint, stopp
 std::string statesString[NUM_STATES] {"idle","init","following","waypoint","stopped"};
 states amiroState;
 
+bool personEntered = false;
+
 // Following of the leader
 // We send a command "start" string  for start of the following
 const std::string sFollowingCmdScope("/following");
@@ -70,8 +72,10 @@ void set_state_idle();
 void set_state_init();
 void set_state_following();
 void set_state_waypoint();
+void set_state_waypoint_entered();
 void set_state_stopped();
-void turnDegree(float deg);
+void stopWaypoint();
+void motorActionMilli(int speed, int turn);
 
 std::string g_sInScopeTobi = "/tobiamiro";
 std::string g_sOutScopeStateTobi = "/amiro";
@@ -210,8 +214,8 @@ int processSM(void) {
 	bool bGotFromTobi_stopfollowing = false;
 	bool bGotFromTobi_initwaypoint = false;
 	bool bGotFromTobi_stopwaypoint = false;
-	bool bGotFromWaypoint_entered = false; // True if something entered the waypoint's area
-	bool bGotFromWaypoint_left = false; // True if something left the waypoint's area
+//	bool bGotFromWaypoint_entered = false; // True if something entered the waypoint's area
+//	bool bGotFromWaypoint_left = false; // True if something left the waypoint's area
 
 //	// Variables for the keypress
 //	// Check for keypress in window
@@ -227,6 +231,9 @@ int processSM(void) {
 
 	// Process the behavior
 	while (true) {
+
+		bool bGotFromWaypoint_entered = false; // True if something entered the waypoint's area
+		bool bGotFromWaypoint_left = false; // True if something left the waypoint's area
 
 		// --- Check for incoming messaturn_degreeges/triggers/signals ---
 
@@ -337,7 +344,6 @@ int processSM(void) {
 			if (bGotFromTobi_stopfollowing) {
 				informerFollowing->publish(signal_stop);
 				set_state_stopped();
-turnDegree(turn_degree);
 			} else if(bGotFromTobi_initwaypoint) {
 				informerFollowing->publish(signal_stop);
 				informerWaypoint->publish(signal_init);
@@ -346,19 +352,24 @@ turnDegree(turn_degree);
 			break;
 
 		case waypoint:
+			DEBUG_MSG("Entered=" << bGotFromWaypoint_entered << ", Left=" << bGotFromWaypoint_left << ", personEntered=" << personEntered);
 			if(bGotFromTobi_stopwaypoint) {
 				informerWaypoint->publish(signal_stop);
+				stopWaypoint();
 				set_state_stopped();
-			} else if(bGotFromWaypoint_entered) {
-				setAMiRoColor(0,255,0);
+			} else if(bGotFromWaypoint_entered && !personEntered) {
+				DEBUG_MSG("Switched to entered in waypoint!");
+				set_state_waypoint_entered();
 				boost::shared_ptr<std::string> tmp(new std::string("entered"));
 				//informerRemoteState[amiroState]->publish(tmp);
-			} else if(bGotFromWaypoint_left) {
+			} else if(bGotFromWaypoint_left && personEntered) {
+				DEBUG_MSG("Switched to left in waypoint!");
 				set_state_waypoint();
 				boost::shared_ptr<std::string> tmp(new std::string("left"));
 				informerRemoteState[amiroState]->publish(tmp);
 			} else if(bGotFromTobi_initfollowing) {
 				informerWaypoint->publish(signal_stop);
+				stopWaypoint();
 				informerFollowing->publish(signal_init);
 				set_state_following();
 			}
@@ -410,8 +421,15 @@ void set_state_following() {
 }
 
 void set_state_waypoint() {
+	personEntered = false;
 	amiroState = waypoint;
 	setAMiRoColor(255,0,127);
+}
+
+void set_state_waypoint_entered() {
+	personEntered = true;
+	amiroState = waypoint;
+	setAMiRoColor(0,255,0);
 }
 
 void set_state_stopped() {
@@ -419,8 +437,12 @@ void set_state_stopped() {
 	setAMiRoColor(255,255,255);
 }
 
-void turnDegree(float deg) {
-	myCAN.setTargetSpeed(0,deg/180 * M_PI * 1000000);
-	usleep(1000000);
-	myCAN.setTargetSpeed(0,0);
+void stopWaypoint() {
+	motorActionMilli(0,-M_PI/4*1000);
+	sleep(2);
+	motorActionMilli(0,0);
+}
+
+void motorActionMilli(int speed, int turn) {
+	myCAN.setTargetSpeed(speed*1000, turn*1000);
 }
