@@ -303,18 +303,17 @@ int main(int argc, char **argv) {
     INFO_MSG(" - Transport ans:   " << sTransportAnswerScope);
 
     // use camera stream for testing
-    return 0;
-//    return processSM();
+    return processSM();
 }
 
-/*
+
 int processSM(void) {
 
     // Create the factory
     rsb::Factory &factory = rsb::getFactory();
 
     // Register
-    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+/*    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
     rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
     boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
     rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
@@ -326,7 +325,7 @@ int processSM(void) {
 
     // Prepare RSB async listener for odometry messages
     rsb::ListenerPtr listener = factory.createListener(sInScopeOdometry);
-//    listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
+//    listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));*/
 
 
     //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
@@ -353,15 +352,15 @@ int processSM(void) {
                 tmpPropSpread["enabled"] = boost::any(enabled);
 
                 // the port of the server
-                tmpPropSpread["port"] = boost::any(g_sRemoteServerPort);
+                tmpPropSpread["port"] = boost::any(sRemoteServerPort);
 
                 // Change the server
-                tmpPropSpread["host"] = boost::any(g_sRemoteServer);
+                tmpPropSpread["host"] = boost::any(sRemoteServer);
 
                 // Write the tranport properties back to the participant config
                 tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
 
-                std:: cout << tmpPropSpread << std::endl;
+                INFO_MSG("Remote Spread Configuration done: " << tmpPropSpread);
               }
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -384,6 +383,14 @@ int processSM(void) {
 
     rsb::Informer< std::string >::Ptr informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
 
+    // Blob detection: Listener and Informer
+    rsb::ListenerPtr listenerBlobScope = factory.createListener(sBlobAnswerScope);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueBlobAnswerScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+    listenerBlobScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueBlobAnswerScope)));
+
+    rsb::Informer< std::string >::Ptr informerBlobScope = factory.createInformer< std::string > (sBlobCmdScope);
+
     // Object seperation and delivery: Listener and Informer
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueDeliveryAnswerScope(
@@ -391,6 +398,14 @@ int processSM(void) {
     listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerDeliveryScope = factory.createInformer< std::string > (sDeliveryCmdScope);
+
+    // Object transport: Listener and Informer
+    rsb::ListenerPtr listenerTransportScope = factory.createListener(sTransportAnswerScope);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueTransportAnswerScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+    listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueTransportAnswerScope)));
+
+    rsb::Informer< std::string >::Ptr informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
 
     /////////////////// REMOTE SCOPES///////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -404,7 +419,7 @@ int processSM(void) {
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueRemoteTobiState(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-
+/*
     try {
       for (int idx = 0; idx < NUM_STATES; ++idx) {
         std::string sOutScopeStateTobiTmp(sOutScopeTobi);
@@ -741,6 +756,8 @@ int processSM(void) {
     boost::this_thread::sleep(boost::posix_time::seconds(1));
 
   }
+*/
+
   return 0;
 }
-*/
+
