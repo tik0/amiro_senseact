@@ -113,6 +113,13 @@ int thresh = 100;
 // signed as recognized, otherwise not. (DO NOT CHANGE THIS VALUE. ONLY BY PROGRAM OPTIONS)
 double confidenceFactor = 0.7;
 
+// Publishing of tracking frames
+static size_t publishCounter = 1;
+
+// Only publish the marker list, if a marker has been detected
+// otherwise, even emtpy lists will be published
+static bool onlyPublishIfMarkerDetected = false;
+
 // Camera parameter file
 char *cparam_name = "Data/camera_parafinal.dat";
 ARParam cparam;
@@ -150,7 +157,6 @@ static void programOptions(int argc, char **argv);
 
 
 // Video writer
-
 static cv::VideoWriter recorder;
 static bool doRecord = false;
 static bool isRecording = false;
@@ -346,6 +352,8 @@ static void programOptions(int argc, char **argv) {
     ("recordFilename,f", po::value < std::string > (&recordFilename), "Filename of the video. Standard value: video.avi")
     ("numFrames,n", po::value < size_t > (&numFrames), "Numbers of frames to record (0 for no framenumber constraints). Standard value: 0")
     ("fpsRecord", po::value < size_t > (&fpsRecord), "Frames per second for replay. Standard value: camAcquisitionFrameRateAbs")
+    ("publishCounter", po::value < size_t > (&publishCounter), "Publish the tracking result ever n'th frame. Standard value: 1")
+    ("onlyPublishIfMarkerDetected", po::value < bool > (&onlyPublishIfMarkerDetected), "Publish only if marker has been detected. Standard value: 0")
     ("camGainAbs", po::value < double > (&camGainAbs), "Camera gain. Standard value: 12")
     ("camReverseX", po::value < cvbbool_t > (&camReverseX), "Reverse the x axis. Standard value: false")
     ("camExposureTimeRaw", po::value < cvbint64_t > (&camExposureTimeRaw), "Exposure time in µs. Standard value: 16000")
@@ -418,17 +426,16 @@ static void cleanup(void) {
 
 void tracking() {
   
-  counter++;
+  ++counter;
 
   rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
 
-    //cv::Mat frame_torecord(image);
+  // Record the frame
   recordVideo(frame);
   stopRecordVideo();
 
-  if(counter >= 5)
-  {
-  std::cout << "---ID\t x\t y\t f---" << std::endl;
+  if(counter >= publishCounter) {
+    std::cout << "---ID\t x\t y\t f---" << std::endl;
   }
 
   ARUint8 *dataPtr;
@@ -441,6 +448,7 @@ void tracking() {
   double zt;
   double grad;
   double cosa, sina, atana;
+  bool markerDetected = false;
   std::string robotCoordinates = "";
 
   // Grab a video frame
@@ -480,6 +488,8 @@ void tracking() {
       if (marker_info[idxMarker2Object].cf < confidenceFactor) {
         object[idxObject].visible = 0;
         continue;
+      } else {
+        markerDetected = true;
       }
 
       // If the confidence factor is high enough, the square around the object
@@ -518,7 +528,7 @@ void tracking() {
       object[idxObject].marker_pos[1] = object[idxObject].marker_pos[1] + 0.5;
       object[idxObject].marker_grad = object[idxObject].marker_grad + 0.5;
 
-     if(counter >=5)
+     if(counter >= publishCounter)
      {
       // Print out the found position
       std::cout
@@ -531,21 +541,21 @@ void tracking() {
           << "\t "
           << 360 - (int) object[idxObject].marker_grad
           << std::endl;
-      }
-      // Add a new robot to the list
-      twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
-      pose2D->set_x(float(object[idxObject].marker_pos[0]));
-      pose2D->set_y(float(1000 - object[idxObject].marker_pos[1]));
-      pose2D->set_orientation(float(360 - object[idxObject].marker_grad));
-      pose2D->set_id(object[idxObject].id);
-    }
 
-    if(counter >= 5)
-    {
-            // Send the data
-            informer->publish(pose2DList);
-        counter = 0;
+        // Add a new robot to the list
+        twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
+        pose2D->set_x(float(object[idxObject].marker_pos[0]));
+        pose2D->set_y(float(1000 - object[idxObject].marker_pos[1]));
+        pose2D->set_orientation(float(360 - object[idxObject].marker_grad));
+        pose2D->set_id(object[idxObject].id);
+      }
     }
+  }
+
+  if((!onlyPublishIfMarkerDetected || markerDetected) && counter >= publishCounter) {
+    // Send the data
+    informer->publish(pose2DList);
+    counter = 0;
   }
 
   /*swap the graphics buffers*/
@@ -576,46 +586,3 @@ void process() {
     //throw "baseAddress is ZERO";
   }
 }
-
-
-
-// // access a feature via CVGenApi
-// void genicam_access(IMG hCamera)
-// {
-//   cout << "Read camera image width: ";
-// 
-//   NODEMAP hNodeMap = NULL;
-//   cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
-//   if(result >= 0)
-//   {
-//     // get width feature node
-//     NODE hWidth = NULL;
-//     result = NMGetNode(hNodeMap, "Width", hWidth);
-//     if(result >= 0)
-//     {
-//       // value camera dependent
-//       cvbint64_t widthValue = 0;
-//       result = NGetAsInteger(hWidth, widthValue);
-//       // set values via NSetAsInteger(hWidht, widthValue);
-//       if(result >= 0)
-//       {
-//         cout << widthValue << endl;
-//       }
-//       else
-//       {
-//         cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
-//       }
-// 
-//       ReleaseObject(hWidth);
-//     }
-//     else
-//     {
-//       cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
-//     }
-//     ReleaseObject(hNodeMap);
-//   }
-//   else
-//   {
-//     cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
-//   }
-// }
