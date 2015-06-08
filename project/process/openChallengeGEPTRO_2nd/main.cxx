@@ -63,7 +63,7 @@ using namespace rsb::converter;
 
 // State machine states
 #define NUM_STATES 14
-enum statesMain {
+enum states {
 	idle,
 	init,
 	exploration,
@@ -79,6 +79,8 @@ enum statesMain {
 	objectTransport,
 	objectTransportFinish
 };
+
+states amiroState = idle;
 
 std::string statesString[NUM_STATES] {
 	"idle",
@@ -146,6 +148,34 @@ std::string sOutScopeState = "/amiroState";
 // Sensor scopes
 std::string sInScopeLidar = "/lidar";
 std::string sInScopeOdometry = "/odo";
+
+
+// RSB content
+std::string outputRSBOutsideInitDone = "initdone";
+std::string inputRSBOutsideInit = "init";
+std::string inputRSBOutsideDelivery = "deliver";
+std::string inputRSBOutsideTransport = "transport";
+std::string outputRSBExploration = "start";
+std::string inputRSBExploration = "finish";
+std::string outputRSBBlobDetection = "start";
+std::string inputRSBBlobDetection = "finish";
+std::string outputRSBObjectDetection = "start";
+std::string inputRSBObjectDetection = "finish";
+std::string outputRSBDelivery = "start";
+std::string inputRSBDelivery = "finish";
+std::string outputRSBTransport = "start";
+std::string inputRSBTransport = "finish";
+
+// RSB input recognizer
+bool rsbInputOutsideInit = false;
+bool rsbInputOutsideDeliver = false;
+bool rsbInputOutsideTransport = false;
+bool rsbInputExploration = false;
+bool rsbInputBlobDetection = false;
+bool rsbInputObjectDetection = false;
+bool rsbInputDelivery = false;
+bool rsbInputTransport = false;
+
 
 
 /*
@@ -373,7 +403,7 @@ int processSM(void) {
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
 
-    rsb::Informer< std::string >::Ptr informerObjectDetCmdScope = factory.createInformer< std::string > (sObjectDetCmdScope);
+    rsb::Informer< std::string >::Ptr informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
 
     // Exploration: Listener and Informer
     rsb::ListenerPtr listenerExplorationScope = factory.createListener(sExplorationAnswerScope);
@@ -409,6 +439,8 @@ int processSM(void) {
 
     /////////////////// REMOTE SCOPES///////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
+
+/*
     // Prepare RSB informer and listener
     rsb::Informer< std::string >::Ptr informerRemoteState[NUM_STATES];
     rsb::Informer< std::string >::Ptr informerRemoteObject[NUM_OBJECTS];
@@ -418,6 +450,26 @@ int processSM(void) {
     rsb::ListenerPtr listenerRemoteTobiState;
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueRemoteTobiState(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+*/
+
+    rsb::ListenerPtr listenerOutsideScope;
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueOutsideScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+    rsb::Informer< std::string >::Ptr informerOutsideScope;
+
+    try {
+        listenerOutsideScope = factory.createListener(sInScopeTobi, tmpPartConf);
+        listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
+
+        informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi);
+    }
+    catch(std::exception& e) {
+        ERROR_MSG("Remote connection not established");
+        return -1;
+    }
+
+    INFO_MSG("All RSB connections built. Starting statemachine now.");
+
 
 /*
     try {
@@ -442,8 +494,174 @@ int processSM(void) {
     }
 
     // When we reached this point, everything should be fine
+*/
+
+    boost::shared_ptr<std::string> stringPublisher(new std::string);
+
+    // run through statemachine
+    bool runningStatemachine = true;
+    while(runningStatemachine) {
+
+        // Check RSB input first
+        std::string sRSBInput = "";
+        rsbInputOutsideInit = false;
+        rsbInputOutsideDeliver = false;
+        rsbInputOutsideTransport = false;
+        rsbInputExploration = false;
+        rsbInputBlobDetection = false;
+        rsbInputObjectDetection = false;
+        rsbInputDelivery = false;
+        rsbInputTransport = false;
+
+        // Check input from outside
+        if (!queueOutsideScope->empty()) {
+            INFO_MSG("Wasn't empty");
+            sRSBInput = *queueOutsideScope->pop();
+            INFO_MSG(" -> " << sRSBInput);
+            if (sRSBInput.compare(inputRSBOutsideInit) == 0) {
+                rsbInputOutsideInit = true;
+            } else if (sRSBInput.compare(inputRSBOutsideDelivery) == 0) {
+                rsbInputOutsideDeliver = true;
+            } else if (sRSBInput.compare(inputRSBOutsideTransport) == 0) {
+                rsbInputOutsideTransport = true;
+            }   
+        } else {
+            INFO_MSG("Empty!");
+        }
+        if (!queueExplorationAnswerScope->empty()) {
+            sRSBInput = *queueExplorationAnswerScope->pop();
+            if (sRSBInput.compare(inputRSBExploration) == 0) {
+                rsbInputExploration = true;
+            }
+        }
+        if (!queueObjectDetAnswerScope->empty()) {
+            sRSBInput = *queueObjectDetAnswerScope->pop();
+            if (sRSBInput.compare(inputRSBObjectDetection) == 0) {
+                rsbInputObjectDetection = true;
+            }
+        }
+        if (!queueBlobAnswerScope->empty()) {
+            sRSBInput = *queueBlobAnswerScope->pop();
+            if (sRSBInput.compare(inputRSBBlobDetection) == 0) {
+                rsbInputBlobDetection = true;
+            }
+        }
+        if (!queueDeliveryAnswerScope->empty()) {
+            sRSBInput = *queueDeliveryAnswerScope->pop();
+            if (sRSBInput.compare(inputRSBDelivery) == 0) {
+                rsbInputDelivery = true;
+            }
+        }
+        if (!queueTransportAnswerScope->empty()) {
+            sRSBInput = *queueTransportAnswerScope->pop();
+            if (sRSBInput.compare(inputRSBTransport) == 0) {
+                rsbInputTransport = true;
+            }
+        }
+
+        INFO_MSG("STATE: " << statesString[amiroState]);
+/*        INFO_MSG(" - OutsideInit = " << rsbInputOutsideInit);
+        INFO_MSG(" - OutsideDeliver = " << rsbInputOutsideDeliver);
+        INFO_MSG(" - OutsideTransport = " << rsbInputOutsideTransport);
+        INFO_MSG(" - Exploration = " << rsbInputExploration);
+        INFO_MSG(" - Blobbing = " << rsbInputBlobDetection);
+        INFO_MSG(" - Detection = " << rsbInputObjectDetection);
+        INFO_MSG(" - Delivery = " << rsbInputDelivery);
+        INFO_MSG(" - Transporting = " << rsbInputTransport);*/
+        switch (amiroState) {
+            case idle:
+                if (rsbInputOutsideInit) {
+                    amiroState = init;
+                }
+                break;
+            case init:
+                // TODO initalization parts
+                amiroState = exploration;
+                break;
+            case exploration:
+                *stringPublisher = outputRSBExploration;
+                informerExplorationScope->publish(stringPublisher);
+                amiroState = explorationFinish;
+                break;
+            case explorationFinish:
+                if (rsbInputExploration) {
+                    //informerOutsideScope->publish(???);
+                    amiroState = blobDetection;
+                }
+                break;
+            case blobDetection:
+                *stringPublisher = outputRSBBlobDetection;
+                informerBlobScope->publish(stringPublisher);
+                amiroState = blobDetectionFinish;
+                break;
+            case blobDetectionFinish:
+                if (rsbInputBlobDetection) {
+                    //informerOutsideScope->publish(???);
+                    amiroState = objectDetection;
+                }
+                break;
+            case objectDetection:
+                *stringPublisher = outputRSBObjectDetection;
+                informerObjectDetScope->publish(stringPublisher);
+                amiroState = objectDetectionFinish;
+                break;
+            case objectDetectionFinish:
+                if (rsbInputObjectDetection) {
+                    //informerOutsideScope->publish(???);
+                    amiroState = initDone;
+                }
+                break;
+            case initDone:
+                *stringPublisher = outputRSBOutsideInitDone;
+                informerOutsideScope->publish(stringPublisher);
+                amiroState = waiting;
+                break;
+            case waiting:
+                if (rsbInputOutsideDeliver) {
+                    amiroState = objectDelivery;
+                } else if (rsbInputOutsideTransport) {
+                    amiroState = objectTransport;
+                }
+                break;
+            case objectDelivery:
+                *stringPublisher = outputRSBDelivery;
+                informerDeliveryScope->publish(stringPublisher);
+                amiroState = objectDeliveryFinish;
+                break;
+            case objectDeliveryFinish:
+                if (rsbInputDelivery) {
+                    //informerOutsideScope->publish(???);
+                    amiroState = waiting;
+                }
+                break;
+            case objectTransport:
+                *stringPublisher = outputRSBTransport;
+                informerTransportScope->publish(stringPublisher);
+                amiroState = objectTransportFinish;
+                break;
+            case objectTransportFinish:
+                if (rsbInputTransport) {
+                    //informerOutsideScope->publish(???);
+                    amiroState = waiting;
+                }
+                break;
+            default:
+                ERROR_MSG("Unknown state in statemachine!");
+                return -1;
+        }
+
+        usleep(500000);
+
+    }
+
+    INFO_MSG("Statemachine has been closed.");
+
+    return 0;
+}
 
 
+
+/*
   // Just a void for sending nothing
   boost::shared_ptr< void > publishVoid(new int(0));
 
@@ -757,7 +975,4 @@ int processSM(void) {
 
   }
 */
-
-  return 0;
-}
 

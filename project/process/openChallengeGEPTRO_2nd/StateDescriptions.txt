@@ -1,15 +1,15 @@
-Input			Main Statemachine		Ext Prog
+Outside			Main Statemachine		Ext Prog
 
 		-?->	idle
 "init"		->	init
 "exploStart"	<-	exploration		->	start exploration task
-			...			<-?-	do exploration
+			explorationFinish		<-?-	do exploration
 "exploFin"	<-	explorationFinish	<-	exploration finished
 "blobStart"	<-	blobDetection		->	start searching blobs
-			...			<-?-	do searching
+			blobDetectionFinish	<-?-	do searching
 "blobFin"	<-	blobDetectionFinish	<-	searching blobs finished
 "detectStart"	<-	objectDetection		->	start object detection
-			...			<-?-	do detection
+			objectDetectionFinish	<-?-	do detection
 "detectFin"	<-	objectDetectionFinish	<-	object detection finished
 "initDone"	<-	initDone
 		-?->	waiting
@@ -17,14 +17,14 @@ Input			Main Statemachine		Ext Prog
 
 		-?->	waiting
 "deliver"	->	objectDelivery		->	start object delivery
-			...			<-?-	do delivery
+			objectDeliveryFinish	<-?-	do delivery
 "delivered"	<-	objectDeliveryFinish	<-	object delivery finished
 		-?->	waiting
 
 
 		-?->	waiting
 "transport"	->	objectTransport		->	start object transport
-			...			<-?-	transporting
+			objectTransportFinish	<-?-	transporting
 "transported"	<-	objectTransportFinish	<-	object transport finished
 		-?->	waiting
 
