@@ -94,6 +94,20 @@ std::size_t numFrames = 0;
 std::string recordFilename = "video.avi";
 std::size_t fpsRecord = 30;
 
+// Camera parameter
+static cvbint64_t camStreamBytesPerSecond = 12400000;
+static cvbint64_t camPixelFormat = 0;
+static cvbint64_t camWidth = 2048;
+static cvbint64_t camHeight = 1088;
+static cvbint64_t camOffsetX = 0;
+static cvbint64_t camOffsetY = 0;
+static cvbint64_t camExposureTimeAbs = 16000;
+static cvbbool_t camExposureAuto = false;
+static double camGain = 0.00;
+static cvbbool_t camGainAuto = false;
+static double camBlackLevel = 4.00;
+static double camGamma = 1.00;
+
 void initVideoRecorder(cv::Size frameSize)
 {
   if(!isRecording)
@@ -126,6 +140,60 @@ void stopRecordVideo()
   }
 }
 
+
+// access a feature via CVGenApi
+template<typename T>
+void genicam_access(const std::string nodeName, const T value)
+{
+  cout << "Set "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+      if(typeid(value) == typeid(double))
+        result = NSetAsFloat(hNode, value);
+      else if(typeid(value) == typeid(cvbbool_t))
+        result = NSetAsBoolean(hNode, value);
+      else if(typeid(value) == typeid(cvbint64_t))
+        result = NSetAsInteger(hNode, value);
+       else if(typeid(value) == typeid(string)) { //String is not working because compiler think its double ? run time issue
+           void* temp =  (void*)&value;
+           string tempstr = *(string*)temp;
+           result = NSetAsString(hNode, tempstr.c_str());
+       } else
+        result = -1;
+
+      if(result >= 0)
+      {
+        cout << "Node value set" << endl;
+      }
+      else
+      {
+        cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
+      }
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+
+
+
 int main(int argc, char **argv) {
 
   programOptions(argc, argv);
@@ -135,7 +203,7 @@ int main(int argc, char **argv) {
   rsb::Factory& factory = rsb::getFactory();
 
   // Register new converter for the image
-  shared_ptr<IplImageConverter> converter(new IplImageConverter());
+  boost::shared_ptr<IplImageConverter> converter(new IplImageConverter());
   converterRepository<std::string>()->registerConverter(converter);
 
   // Create an informer that is capable of sending events containing string data on the given scope.
@@ -171,6 +239,26 @@ int main(int argc, char **argv) {
   // Start grab with ring buffer
   cvbres_t result = G2Grab(hCamera);
 
+ 
+      // access camera config
+  if(CanNodeMapHandle(hCamera))
+  {
+    genicam_access(std::string("StreamBytesPerSecond"), camStreamBytesPerSecond);
+    genicam_access(std::string("PixelFormat"), camPixelFormat);
+    genicam_access(std::string("Width"),camWidth);
+    genicam_access(std::string("Height"), camHeight);
+    genicam_access(std::string("OffsetX"), camOffsetX);
+    genicam_access(std::string("OffsetY"), camOffsetY);
+    genicam_access(std::string("ExposureTimeAbs"), camExposureTimeAbs);
+    genicam_access(std::string("ExposureAuto"), camExposureAuto);
+    genicam_access(std::string("Gain"), camGain);
+    genicam_access(std::string("GainAuto"), camGainAuto);
+    genicam_access(std::string("BlackLevel"), camBlackLevel);
+    genicam_access(std::string("Gamma"), camGamma);
+  }
+
+  
+  
   // Start with the grabbing
   for (;;) {
     processEverything();
@@ -192,12 +280,26 @@ static void programOptions(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-    ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending the images.")
+    ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending the robot localizations.")
     ("record,r", po::value < bool > (&doRecord), "Set value to 1 to record the video")
     ("recordFilename,f", po::value < std::string > (&recordFilename), "Filename of the video. Standard value: video.avi")
     ("numFrames,n", po::value < size_t > (&numFrames), "Numbers of frames to record (0 for no framenumber constraints). Standard value: 0")
-    ("fpsRecord", po::value < size_t > (&fpsRecord), "Frames per second for replay. Standard value: 30");
+    ("fpsRecord", po::value < size_t > (&fpsRecord), "Frames per second for replay. Standard value: camAcquisitionFrameRateAbs")
+    ("camStreamBytesPerSecond", po::value < cvbint64_t> (&camStreamBytesPerSecond), "Camera option.")
+    ("camPixelFormat", po::value < cvbint64_t > (&camPixelFormat), "Camera option.")
+    ("camWidth", po::value < cvbint64_t> (&camWidth), "Camera option.")
+    ("camHeight", po::value <cvbint64_t > (&camHeight), "Camera option.")
+    ("camOffsetX", po::value < cvbint64_t> (&camOffsetX), "Camera option.")
+    ("camOffsetY", po::value < cvbint64_t> (&camOffsetY), "Camera option.")
+    ("camExposureTimeAbs", po::value <cvbint64_t > (&camExposureTimeAbs), "Camera option.")
+    ("camExposureAuto", po::value < cvbbool_t> (&camExposureAuto), "Camera option.")
+    ("camGain", po::value <double > (&camGain), "Camera option.")
+    ("camGainAuto", po::value < cvbbool_t> (&camGainAuto), "Camera option.")
+    ("camBlackLevel", po::value < double> (&camBlackLevel), "Camera option.")
+    ("camGamma", po::value < double> (&camGamma), "Camera option.");
 
+  
+  
   // allow to give the value as a positional argument
   po::positional_options_description p;
   p.add("value", 1);
@@ -233,7 +335,7 @@ static void processEverything(void) {
     stopRecordVideo();
 
     // Send the data
-    shared_ptr<IplImage> iplImage(new IplImage(frame));
+    boost::shared_ptr<IplImage> iplImage(new IplImage(frame));
     informer->publish(iplImage);
   }
 }
