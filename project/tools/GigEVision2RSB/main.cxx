@@ -96,15 +96,15 @@ std::size_t fpsRecord = 30;
 
 // Camera parameter
 static cvbint64_t camStreamBytesPerSecond = 12400000;
-static cvbint64_t camPixelFormat = 0;
+static cvbint64_t camPixelFormat = 17301505;
 static cvbint64_t camWidth = 2048;
 static cvbint64_t camHeight = 1088;
 static cvbint64_t camOffsetX = 0;
 static cvbint64_t camOffsetY = 0;
 static cvbint64_t camExposureTimeAbs = 16000;
-static cvbbool_t camExposureAuto = false;
+static cvbint64_t camExposureAuto = 0;
 static double camGain = 0.00;
-static cvbbool_t camGainAuto = false;
+static cvbint64_t camGainAuto = 0;
 static double camBlackLevel = 4.00;
 static double camGamma = 1.00;
 
@@ -141,10 +141,65 @@ void stopRecordVideo()
 }
 
 
+// reads a feature of type T via CVGenApi
+template<typename T>
+void genicam_read(const std::string nodeName, const T value)
+{
+  cout << "Get "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+      if(typeid(value) == typeid(double)) {
+          double val = 0.0;
+           result = NGetAsFloat(hNode, val);
+           cout << val << " (double)" << endl;
+      } else if(typeid(value) == typeid(cvbbool_t)) {
+          cvbbool_t val = false;
+           result = NGetAsBoolean(hNode, val);
+           cout << val << " (bool)" << endl;
+      } else if(typeid(value) == typeid(cvbint64_t)) {
+            cvbint64_t val = 0;
+           result = NGetAsInteger(hNode, val);
+           cout << val << " (int)" << endl;
+      } else if(typeid(value) == typeid(string)) { //String is not working because compiler think its double ? run time issue
+            char* val;
+            size_t len;
+           result = NGetAsString(hNode, val, len);
+           try {
+           cout << string(val,len) << " (string)" << endl;
+           } catch(std::logic_error ex) {
+               cout << "error at accessing string " << nodeName << endl;
+           }
+           } else
+        result = -1;
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+
+
 // access a feature via CVGenApi
 template<typename T>
 void genicam_access(const std::string nodeName, const T value)
 {
+    genicam_read(nodeName, value);
   cout << "Set "<< nodeName << ": ";
 
   NODEMAP hNodeMap = NULL;
@@ -156,13 +211,20 @@ void genicam_access(const std::string nodeName, const T value)
     result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
     if(result >= 0)
     {
-      if(typeid(value) == typeid(double))
-        result = NSetAsFloat(hNode, value);
-      else if(typeid(value) == typeid(cvbbool_t))
-        result = NSetAsBoolean(hNode, value);
-      else if(typeid(value) == typeid(cvbint64_t))
-        result = NSetAsInteger(hNode, value);
-       else if(typeid(value) == typeid(string)) { //String is not working because compiler think its double ? run time issue
+      if(typeid(value) == typeid(double)) {
+           void* temp =  (void*)&value;
+           double tempstr = *(double*)temp;
+           result = NSetAsFloat(hNode, tempstr);
+      } else if(typeid(value) == typeid(cvbbool_t)) {
+           void* temp =  (void*)&value;
+           cvbbool_t tempstr = *(cvbbool_t*)temp;
+           result = NSetAsBoolean(hNode, tempstr);
+
+      } else if(typeid(value) == typeid(cvbint64_t)) {
+           void* temp =  (void*)&value;
+           cvbint64_t tempstr = *(cvbint64_t*)temp;
+           result = NSetAsInteger(hNode, tempstr);
+      } else if(typeid(value) == typeid(string)) { //String is not working because compiler think its double ? run time issue
            void* temp =  (void*)&value;
            string tempstr = *(string*)temp;
            result = NSetAsString(hNode, tempstr.c_str());
@@ -171,7 +233,7 @@ void genicam_access(const std::string nodeName, const T value)
 
       if(result >= 0)
       {
-        cout << "Node value set" << endl;
+        cout << "Node value set to "<< value << endl;
       }
       else
       {
@@ -191,6 +253,7 @@ void genicam_access(const std::string nodeName, const T value)
     cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
   }
 }
+
 
 
 
@@ -292,9 +355,9 @@ static void programOptions(int argc, char **argv) {
     ("camOffsetX", po::value < cvbint64_t> (&camOffsetX), "Camera option.")
     ("camOffsetY", po::value < cvbint64_t> (&camOffsetY), "Camera option.")
     ("camExposureTimeAbs", po::value <cvbint64_t > (&camExposureTimeAbs), "Camera option.")
-    ("camExposureAuto", po::value < cvbbool_t> (&camExposureAuto), "Camera option.")
+    ("camExposureAuto", po::value < cvbint64_t> (&camExposureAuto), "Camera option.")
     ("camGain", po::value <double > (&camGain), "Camera option.")
-    ("camGainAuto", po::value < cvbbool_t> (&camGainAuto), "Camera option.")
+    ("camGainAuto", po::value < cvbint64_t> (&camGainAuto), "Camera option.")
     ("camBlackLevel", po::value < double> (&camBlackLevel), "Camera option.")
     ("camGamma", po::value < double> (&camGamma), "Camera option.");
 
