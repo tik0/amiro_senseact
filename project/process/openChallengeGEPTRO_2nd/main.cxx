@@ -66,37 +66,37 @@ using namespace rsb::converter;
 enum states {
 	idle,
 	init,
+	explorationStart,
 	exploration,
-	explorationFinish,
+	blobDetectionStart,
 	blobDetection,
-	blobDetectionFinish,
+	objectDetectionStart,
 	objectDetection,
-	objectDetectionFinish,
 	initDone,
 	waiting,
+	objectDeliveryStart,
 	objectDelivery,
-	objectDeliveryFinish,
-	objectTransport,
-	objectTransportFinish
+	objectTransportStart,
+	objectTransport
 };
 
 states amiroState = idle;
 
 std::string statesString[NUM_STATES] {
 	"idle",
-	"init",
+	"initialization",
+	"starting exploration",
 	"exploration",
-	"explorationFinish",
-	"blobDetection",
-	"blobDetectionFinish",
-	"objectDetection",
-	"objectDetectionFinish",
-	"iniDone",
+	"starting blob detection",
+	"blob detection",
+	"starting object detection",
+	"object detection",
+	"initialization done",
 	"waiting",
-	"objectDelivery",
-	"objectDeliveryFinish",
-	"objectTransport",
-	"objectTransportFinish"
+	"starting object delivery",
+	"object delivery",
+	"starting object transport",
+	"object transport"
 };
 	
 
@@ -152,6 +152,8 @@ std::string sInScopeOdometry = "/odo";
 
 // RSB content
 std::string outputRSBOutsideInitDone = "initdone";
+std::string outputRSBOutsideDelivery = "delivered";
+std::string outputRSBOutsideTransport = "transported";
 std::string inputRSBOutsideInit = "init";
 std::string inputRSBOutsideDelivery = "deliver";
 std::string inputRSBOutsideTransport = "transport";
@@ -175,92 +177,6 @@ bool rsbInputBlobDetection = false;
 bool rsbInputObjectDetection = false;
 bool rsbInputDelivery = false;
 bool rsbInputTransport = false;
-
-
-
-/*
-void objectDeliveryCtrl(double distance, double angular) {
-
-}
-
-
-void objectHomingCtrl(double distance, double angular) {
-
-  // get odometry data
-  types::position homingPosition;
-  homingPosition.x = int(distance * cos(angular) * 1e6);
-  homingPosition.y = int(distance * sin(angular)  * 1e6);
-  homingPosition.f_z = int(angular  * 1e6);
-//  homingPosition = myCAN.getOdometry();
-
-  // calculate angle from robot position (without respect to orientation) to origin (in rad)
-  double angleOdo = atan2((double)homingPosition.y, (double)homingPosition.x) + angular;
-  if (angleOdo > 2*M_PI) {
-    angleOdo -= 2*M_PI;
-  }
-
-  // calculate difference angle (in urad) to turn towards origin
-  int diffAngle = (int)(angleOdo*1e6)-homingPosition.f_z;
-
-  // calculate angle (in urad) to turn to origin orientation after reaching origin
-  int backAngle = -homingPosition.f_z-diffAngle;
-  while (backAngle < 0) {
-    backAngle += 2*M_PI*1e6;
-  }
-  while (backAngle > M_PI*1e6) {
-    backAngle -= 2*M_PI*1e6;
-  }
-
-  // calculate distance between origin and robot position (in um)
-  int diffDist = (int) sqrt((double)homingPosition.y*(double)homingPosition.y + (double)homingPosition.x*(double)homingPosition.x);
-
-  // reset position struct
-  homingPosition.y = 0;
-/*
-  // turn towards origin
-  homingPosition.x = 0;
-  homingPosition.f_z = diffAngle;
-  moveToTargetPosition(homingPosition, 1);
-  // drive to origin
-  homingPosition.x = diffDist;
-  homingPosition.f_z = 0;
-  moveToTargetPosition(homingPosition, 1);
-        // turn towards origin orientation
-  homingPosition.x = 0;
-  homingPosition.f_z = backAngle;
-  moveToTargetPosition(homingPosition, 1);
-*/
-/*
-        int speed;
-  // turn towards origin
-  if (diffAngle < 0) {
-    speed = -1e6;
-  } else {
-    speed = 1e6;
-  }
-  myCAN.setTargetSpeed(0,speed);
-        usleep(abs(int(0.99f*diffAngle)));
-        myCAN.setTargetSpeed(0,0);
-  // drive to origin
-  if (diffDist < 0) {
-    speed = -100e3;
-  } else {
-    speed = 100e3;
-  }
-  myCAN.setTargetSpeed(speed,0);
-        usleep(abs(diffDist*11));
-        myCAN.setTargetSpeed(0,0);
-        // turn towards origin orientation
-//  if (backAngle < 0) {
-//    speed = -1e6;
-//  } else {
-//    speed = 1e6;
-//  }
-//  myCAN.setTargetSpeed(0,speed);
-//        usleep(abs(int(0.99f*backAngle)));
-//        myCAN.setTargetSpeed(0,0);
-}
-*/
 
 int processSM(void);
 
@@ -319,7 +235,7 @@ int main(int argc, char **argv) {
     // print all scopes
     INFO_MSG("List of all RSB scopes:");
     INFO_MSG(" - ToBI to AMiRo:   " << sInScopeTobi);
-    INFO_MSG(" - ToBI to AMiRo:   " << sOutScopeTobi);
+    INFO_MSG(" - AMiRo to ToBI:   " << sOutScopeTobi);
     INFO_MSG(" - State debugging: " << sOutScopeState);
     INFO_MSG(" - Exploration cmd: " << sExplorationCmdScope);
     INFO_MSG(" - Exploration ans: " << sExplorationAnswerScope);
@@ -361,7 +277,7 @@ int processSM(void) {
     //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
     ///////////////////////////////////////////////////////////////////////////////
         // Get the global participant config as a template
-        rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
+/*        rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
               {
                 // Get the options for socket transport, because we want to change them
                 rsc::runtime::Properties tmpProp  = tmpPartConf.mutableTransport("socket").getOptions();
@@ -391,7 +307,7 @@ int processSM(void) {
                 tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
 
                 INFO_MSG("Remote Spread Configuration done: " << tmpPropSpread);
-              }
+              }*/
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
@@ -458,7 +374,7 @@ int processSM(void) {
     rsb::Informer< std::string >::Ptr informerOutsideScope;
 
     try {
-        listenerOutsideScope = factory.createListener(sInScopeTobi, tmpPartConf);
+        listenerOutsideScope = factory.createListener(sInScopeTobi);
         listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
 
         informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi);
@@ -515,9 +431,7 @@ int processSM(void) {
 
         // Check input from outside
         if (!queueOutsideScope->empty()) {
-            INFO_MSG("Wasn't empty");
             sRSBInput = *queueOutsideScope->pop();
-            INFO_MSG(" -> " << sRSBInput);
             if (sRSBInput.compare(inputRSBOutsideInit) == 0) {
                 rsbInputOutsideInit = true;
             } else if (sRSBInput.compare(inputRSBOutsideDelivery) == 0) {
@@ -525,8 +439,6 @@ int processSM(void) {
             } else if (sRSBInput.compare(inputRSBOutsideTransport) == 0) {
                 rsbInputOutsideTransport = true;
             }   
-        } else {
-            INFO_MSG("Empty!");
         }
         if (!queueExplorationAnswerScope->empty()) {
             sRSBInput = *queueExplorationAnswerScope->pop();
@@ -560,14 +472,6 @@ int processSM(void) {
         }
 
         INFO_MSG("STATE: " << statesString[amiroState]);
-/*        INFO_MSG(" - OutsideInit = " << rsbInputOutsideInit);
-        INFO_MSG(" - OutsideDeliver = " << rsbInputOutsideDeliver);
-        INFO_MSG(" - OutsideTransport = " << rsbInputOutsideTransport);
-        INFO_MSG(" - Exploration = " << rsbInputExploration);
-        INFO_MSG(" - Blobbing = " << rsbInputBlobDetection);
-        INFO_MSG(" - Detection = " << rsbInputObjectDetection);
-        INFO_MSG(" - Delivery = " << rsbInputDelivery);
-        INFO_MSG(" - Transporting = " << rsbInputTransport);*/
         switch (amiroState) {
             case idle:
                 if (rsbInputOutsideInit) {
@@ -576,36 +480,36 @@ int processSM(void) {
                 break;
             case init:
                 // TODO initalization parts
+                amiroState = explorationStart;
+                break;
+            case explorationStart:
+                *stringPublisher = outputRSBExploration;
+                informerExplorationScope->publish(stringPublisher);
                 amiroState = exploration;
                 break;
             case exploration:
-                *stringPublisher = outputRSBExploration;
-                informerExplorationScope->publish(stringPublisher);
-                amiroState = explorationFinish;
-                break;
-            case explorationFinish:
                 if (rsbInputExploration) {
                     //informerOutsideScope->publish(???);
-                    amiroState = blobDetection;
+                    amiroState = blobDetectionStart;
                 }
                 break;
-            case blobDetection:
+            case blobDetectionStart:
                 *stringPublisher = outputRSBBlobDetection;
                 informerBlobScope->publish(stringPublisher);
-                amiroState = blobDetectionFinish;
+                amiroState = blobDetection;
                 break;
-            case blobDetectionFinish:
+            case blobDetection:
                 if (rsbInputBlobDetection) {
                     //informerOutsideScope->publish(???);
-                    amiroState = objectDetection;
+                    amiroState = objectDetectionStart;
                 }
                 break;
-            case objectDetection:
+            case objectDetectionStart:
                 *stringPublisher = outputRSBObjectDetection;
                 informerObjectDetScope->publish(stringPublisher);
-                amiroState = objectDetectionFinish;
+                amiroState = objectDetection;
                 break;
-            case objectDetectionFinish:
+            case objectDetection:
                 if (rsbInputObjectDetection) {
                     //informerOutsideScope->publish(???);
                     amiroState = initDone;
@@ -618,30 +522,32 @@ int processSM(void) {
                 break;
             case waiting:
                 if (rsbInputOutsideDeliver) {
-                    amiroState = objectDelivery;
+                    amiroState = objectDeliveryStart;
                 } else if (rsbInputOutsideTransport) {
-                    amiroState = objectTransport;
+                    amiroState = objectTransportStart;
                 }
                 break;
-            case objectDelivery:
+            case objectDeliveryStart:
                 *stringPublisher = outputRSBDelivery;
                 informerDeliveryScope->publish(stringPublisher);
-                amiroState = objectDeliveryFinish;
+                amiroState = objectDelivery;
                 break;
-            case objectDeliveryFinish:
+            case objectDelivery:
                 if (rsbInputDelivery) {
-                    //informerOutsideScope->publish(???);
+                    *stringPublisher = outputRSBOutsideDelivery;
+                    informerOutsideScope->publish(stringPublisher);
                     amiroState = waiting;
                 }
                 break;
-            case objectTransport:
+            case objectTransportStart:
                 *stringPublisher = outputRSBTransport;
                 informerTransportScope->publish(stringPublisher);
-                amiroState = objectTransportFinish;
+                amiroState = objectTransport;
                 break;
-            case objectTransportFinish:
+            case objectTransport:
                 if (rsbInputTransport) {
-                    //informerOutsideScope->publish(???);
+                    *stringPublisher = outputRSBOutsideTransport;
+                    informerOutsideScope->publish(stringPublisher);
                     amiroState = waiting;
                 }
                 break;

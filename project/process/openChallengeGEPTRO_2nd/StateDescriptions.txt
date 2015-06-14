@@ -2,30 +2,30 @@ Outside			Main Statemachine		Ext Prog
 
 		-?->	idle
 "init"		->	init
-"exploStart"	<-	exploration		->	start exploration task
-			explorationFinish		<-?-	do exploration
-"exploFin"	<-	explorationFinish	<-	exploration finished
-"blobStart"	<-	blobDetection		->	start searching blobs
-			blobDetectionFinish	<-?-	do searching
-"blobFin"	<-	blobDetectionFinish	<-	searching blobs finished
-"detectStart"	<-	objectDetection		->	start object detection
-			objectDetectionFinish	<-?-	do detection
-"detectFin"	<-	objectDetectionFinish	<-	object detection finished
+"exploStart"	<-	explorationStart	->	start exploration task
+			exploration			<-?-	do exploration
+"exploFin"	<-	exploration		<-	exploration finished
+"blobStart"	<-	blobDetectionStart	->	start searching blobs
+			blobDetection		<-?-	do searching
+"blobFin"	<-	blobDetection		<-	searching blobs finished
+"detectStart"	<-	objectDetectionStart	->	start object detection
+			objectDetection		<-?-	do detection
+"detectFin"	<-	objectDetection		<-	object detection finished
 "initDone"	<-	initDone
 		-?->	waiting
 
 
 		-?->	waiting
-"deliver"	->	objectDelivery		->	start object delivery
-			objectDeliveryFinish	<-?-	do delivery
-"delivered"	<-	objectDeliveryFinish	<-	object delivery finished
+"deliver"	->	objectDeliveryStart	->	start object delivery
+			objectDelivery		<-?-	do delivery
+"delivered"	<-	objectDelivery		<-	object delivery finished
 		-?->	waiting
 
 
 		-?->	waiting
-"transport"	->	objectTransport		->	start object transport
-			objectTransportFinish	<-?-	transporting
-"transported"	<-	objectTransportFinish	<-	object transport finished
+"transport"	->	objectTransportStart	->	start object transport
+			objectTransport		<-?-	transporting
+"transported"	<-	objectTransport		<-	object transport finished
 		-?->	waiting
 
 			

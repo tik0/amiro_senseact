@@ -1,0 +1,28 @@
+Outside			Statemachine
+
+"init"		<-	init
+		-?->	explorationWait
+"start"		->	explorationWait
+"finish"	<-	exploration
+		-?->	blobDetectionWait
+"start"		->	blobDetectionWait
+"finish"	<-	blobDetection
+		-?->	objectDetectionWait
+"start"		->	objectDetectionWait
+"finish"	<-	objectDetection
+		-?->	initDoneWait
+"initDone"	->	initDoneWait
+"deliver"	<-	deliveryStart
+		-?->	deliveryWait
+"start"		->	deliveryWait
+"finish"	<-	delivery
+		-?->	deliverFinish
+"delivered"	->	deliveryFinished
+"transport"	<-	transportStart
+		-?->	transportWait
+"start"		->	transportWait
+"finish"	<-	transport
+		-?->	transportFinish
+"transported"	->	transportFinish
+			finishAnswerer
+			
