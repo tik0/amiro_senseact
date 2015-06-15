@@ -62,13 +62,15 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-#define NUM_STATES 17
+#define NUM_STATES 19
 enum states {
 	init,
 	explorationWait,
 	exploration,
 	blobDetectionWait,
 	blobDetection,
+	localPlannerWait,
+	localPlanner,
 	objectDetectionWait,
 	objectDetection,
 	initDoneWait,
@@ -91,6 +93,8 @@ std::string statesString[NUM_STATES] {
 	"exploration",
 	"blobDetectionWait",
 	"blobDetection",
+	"localPlannerWait",
+	"localPlanner",
 	"objectDetectionWait",
 	"objectDetection",
 	"initDoneWait",
@@ -113,35 +117,29 @@ std::string statesString[NUM_STATES] {
 enum objects { object1 , object2 , object3 , object4 , object5 , object6 };
 std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4","object5","object6"};
 
-// Object detection
-// We send a command "COMP" string  for start comparing or "ESC" for exiting the program
-std::string sObjectDetCmdScope("/objectDetection/answer");
-// We assume object IDs as string from "1" to "6", after sending the "comp" command
-std::string sObjectDetAnswerScope("/objectDetection/command");
-
 // Exploration
-// We send a command "start" string  for start the exploration
 std::string sExplorationCmdScope("/exploration/answer");
-// We assume a "finish" string, which indicates, that the exploration has run clean
 std::string sExplorationAnswerScope("/exploration/command");
 
 // Blob detection
-// TODO
 std::string sBlobCmdScope("/blobDetection/answer");
-// TODO
 std::string sBlobAnswerScope("/blobDetection/command");
 
 // Delivery
-// TODO
 std::string sDeliveryCmdScope("/objectDelivery/answer");
-// TODO
 std::string sDeliveryAnswerScope("/objectDelivery/command");
 
 // Object transport
-// TODO
 std::string sTransportCmdScope("/objectTransport/answer");
-// TODO
 std::string sTransportAnswerScope("/objectTransport/command");
+
+// Object detection
+std::string sObjectDetCmdScope("/objectDetection/answer");
+std::string sObjectDetAnswerScope("/objectDetection/command");
+
+// Local planner
+std::string sLocalPlannerCmdScope("/localplanner/answer");
+std::string sLocalPlannerAnswerScope("/localplanner/command");
 
 // Communication with ToBI
 std::string sOutScopeTobi = "/tobiamiro";
@@ -169,6 +167,8 @@ std::string outputRSBBlobDetection = "start";
 std::string inputRSBBlobDetection = "finish";
 std::string outputRSBObjectDetection = "start";
 std::string inputRSBObjectDetection = "finish";
+std::string outputRSBLocalPlanner = "start";
+std::string inputRSBLocalPlanner = "finish";
 std::string outputRSBDelivery = "start";
 std::string inputRSBDelivery = "finish";
 std::string outputRSBTransport = "start";
@@ -183,10 +183,13 @@ bool rsbInputBlobDetection = false;
 bool rsbInputObjectDetection = false;
 bool rsbInputDelivery = false;
 bool rsbInputTransport = false;
+bool rsbInputLocalPlanner = false;
 
 int processSM(void);
 
 int robotID = 0;
+
+int objectCount = 2;
 
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
@@ -265,7 +268,7 @@ int processSM(void) {
     //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
     ///////////////////////////////////////////////////////////////////////////////
         // Get the global participant config as a template
-/*        rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
+        rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
               {
                 // Get the options for socket transport, because we want to change them
                 rsc::runtime::Properties tmpProp  = tmpPartConf.mutableTransport("socket").getOptions();
@@ -295,7 +298,7 @@ int processSM(void) {
                 tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
 
                 INFO_MSG("Remote Spread Configuration done: " << tmpPropSpread);
-              }*/
+              }
     ///////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
@@ -308,6 +311,14 @@ int processSM(void) {
     listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
+
+    // Local Planner: Listener and Informer
+    rsb::ListenerPtr listenerLocalPlannerAnswerScope = factory.createListener(sLocalPlannerAnswerScope);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueLocalPlannerAnswerScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+    listenerLocalPlannerAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueLocalPlannerAnswerScope)));
+
+    rsb::Informer< std::string >::Ptr informerLocalPlannerScope = factory.createInformer< std::string > (sLocalPlannerCmdScope);
 
     // Exploration: Listener and Informer
     rsb::ListenerPtr listenerExplorationScope = factory.createListener(sExplorationAnswerScope);
@@ -376,6 +387,7 @@ int processSM(void) {
         rsbInputObjectDetection = false;
         rsbInputDelivery = false;
         rsbInputTransport = false;
+        rsbInputLocalPlanner = false;
 
         // Check input from outside
         if (!queueOutsideScope->empty()) {
@@ -398,6 +410,12 @@ int processSM(void) {
             sRSBInput = *queueObjectDetAnswerScope->pop();
             if (sRSBInput.compare(outputRSBObjectDetection) == 0) {
                 rsbInputObjectDetection = true;
+            }
+        }
+        if (!queueLocalPlannerAnswerScope->empty()) {
+            sRSBInput = *queueLocalPlannerAnswerScope->pop();
+            if (sRSBInput.compare(outputRSBLocalPlanner) == 0) {
+                rsbInputLocalPlanner = true;
             }
         }
         if (!queueBlobAnswerScope->empty()) {
@@ -448,6 +466,22 @@ int processSM(void) {
                 sleep(3);
                 *stringPublisher = inputRSBBlobDetection;
                 informerBlobScope->publish(stringPublisher);
+                amiroState = localPlannerWait;
+                break;
+            case localPlannerWait:
+                if (objectCount > 0) {
+                    if (rsbInputLocalPlanner) {
+                        amiroState = localPlanner;
+                    }
+                } else {
+                    amiroState = initDoneWait;
+                }
+                break;
+            case localPlanner:
+                INFO_MSG("DRIVING");
+                sleep(3);
+                *stringPublisher = inputRSBLocalPlanner;
+                informerLocalPlannerScope->publish(stringPublisher);
                 amiroState = objectDetectionWait;
                 break;
             case objectDetectionWait:
@@ -458,9 +492,10 @@ int processSM(void) {
             case objectDetection:
                 INFO_MSG("DETECTING");
                 sleep(3);
+                objectCount--;
                 *stringPublisher = inputRSBObjectDetection;
                 informerObjectDetScope->publish(stringPublisher);
-                amiroState = initDoneWait;
+                amiroState = localPlannerWait;
                 break;
             case initDoneWait:
                 if (rsbInputOutsideInit) {
