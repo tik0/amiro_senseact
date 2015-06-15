@@ -48,7 +48,6 @@ ControllerAreaNetwork myCAN;
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // RST Proto types
-#include <types/LocatedLaserScan.pb.h>
 #include <rst/geometry/Pose.pb.h>
 
 
@@ -147,7 +146,7 @@ std::string sTransportAnswerScope("/objectTransport/answer");
 
 // Object detection
 std::string sObjectDetCmdScope("/objectDetection/command");
-std::string sObjectDetAnswerScope("/objectDetection/answer");
+std::string sObjectDetAnswerScope("/objectDetection/detected");
 
 // Local planner
 std::string sLocalPlannerCmdScope("/localplanner/command");
@@ -177,7 +176,7 @@ std::string outputRSBExploration = "start";
 std::string inputRSBExploration = "finish";
 std::string outputRSBBlobDetection = "start";
 std::string inputRSBBlobDetection = "finish";
-std::string outputRSBObjectDetection = "start";
+std::string outputRSBObjectDetection = "COMP";
 std::string inputRSBObjectDetection = "finish";
 std::string outputRSBLocalPlanner = "start";
 std::string inputRSBLocalPlanner = "finish";
@@ -201,6 +200,7 @@ bool rsbInputObjectDetection = false;
 bool rsbInputLocalPlanner = false;
 
 int objectCount = 0;
+std::string objectDetectionAnswer = "";
 
 int robotID = 0;
 
@@ -422,10 +422,11 @@ int processSM(void) {
             }
         }
         if (!queueObjectDetAnswerScope->empty()) {
-            sRSBInput = *queueObjectDetAnswerScope->pop();
-            if (sRSBInput.compare(inputRSBObjectDetection) == 0) {
-                rsbInputObjectDetection = true;
-            }
+            objectDetectionAnswer = *queueObjectDetAnswerScope->pop();
+            rsbInputObjectDetection = true;
+//            if (sRSBInput.compare(inputRSBObjectDetection) == 0) {
+//                rsbInputObjectDetection = true;
+//            }
         }
         if (!queueLocalPlannerAnswerScope->empty()) {
             sRSBInput = *queueLocalPlannerAnswerScope->pop();
@@ -484,7 +485,7 @@ int processSM(void) {
                     //informerOutsideScope->publish(???);
                     amiroState = objectDetectionMain;
                     if (testWithAnswerer) {
-                        objectCount = 2;
+                        objectCount = 1;
                     }
                 }
                 break;
@@ -563,6 +564,12 @@ int ssmObjectDetection(void) {
         case objectDetection:
             if (rsbInputObjectDetection) {
                 // TODO check if object has been detected and reduce #object afterwards
+                if (objectDetectionAnswer.compare("null") == 0) {
+                    WARNING_MSG(" -> Doesn't know the object.");
+                } else {
+                    INFO_MSG(" -> Object " << objectDetectionAnswer << " found!");
+                    objectCount--;
+                }
                 if (testWithAnswerer) {
                     objectCount--;
                 }

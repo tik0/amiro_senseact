@@ -48,7 +48,6 @@ ControllerAreaNetwork myCAN;
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // RST Proto types
-#include <types/LocatedLaserScan.pb.h>
 #include <rst/geometry/Pose.pb.h>
 
 
@@ -482,7 +481,7 @@ int processSM(void) {
                 sleep(3);
                 *stringPublisher = inputRSBLocalPlanner;
                 informerLocalPlannerScope->publish(stringPublisher);
-                amiroState = objectDetectionWait;
+                amiroState = initDoneWait;
                 break;
             case objectDetectionWait:
                 if (rsbInputObjectDetection) {
