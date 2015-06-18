@@ -107,7 +107,8 @@ int main(int argc, char **argv) {
   while(1) {
     n = RS232_PollComport(cport_nr, buf, BUFSIZE);
     INFO_MSG("Bytes: " << n)
-    
+
+    // Syncronization to the correct byteorder
     if ((buf[0] & 0x03) != 0x00) {
       // Syncing to the last byte
       if(RS232_OpenComport(cport_nr, bdrate, mode, 1))
@@ -132,11 +133,11 @@ int main(int argc, char **argv) {
         ERROR_MSG("Can not open comport")
         return(1);
       }
+      continue;
     }
 
     // We received something
-    if (n == 3)
-    {
+    if (n == 3) {
 
       // Print the incomming byteorder
       DEBUG_MSG( "0 " << (buf[0] & 3))
