@@ -203,6 +203,7 @@ int objectCount = 0;
 std::string objectDetectionAnswer = "";
 
 int robotID = 0;
+std::string colorInit = "";
 
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
@@ -210,6 +211,8 @@ std::string sRemoteServer = "localhost";
 bool testWithAnswerer = false;
 
 // functions
+bool readInitInput(std::string inputData);
+void setLightcolor(void);
 int processSM(void);
 int ssmObjectDetection(void);
 
@@ -267,6 +270,23 @@ int main(int argc, char **argv) {
     INFO_MSG(" - Delivery ans:    " << sDeliveryAnswerScope);
     INFO_MSG(" - Transport cmd:   " << sTransportCmdScope);
     INFO_MSG(" - Transport ans:   " << sTransportAnswerScope);
+
+    std::string str1 = "initrbg";
+    std::string str2 = "init";
+    std::string str3 = "ini";
+    std::string str4 = "iniit";
+    bool t1 = readInitInput(str1);
+    INFO_MSG("Test for '" << str1 << "': " << t1);
+    setLightcolor();
+    bool t2 = readInitInput(str2);
+    INFO_MSG("Test for '" << str2 << "': " << t2);
+    setLightcolor();
+    bool t3 = readInitInput(str3);
+    INFO_MSG("Test for '" << str3 << "': " << t3);
+    setLightcolor();
+    bool t4 = readInitInput(str4);
+    INFO_MSG("Test for '" << str4 << "': " << t4);
+    setLightcolor();
 
     // use camera stream for testing
     return processSM();
@@ -545,6 +565,44 @@ int processSM(void) {
     INFO_MSG("Statemachine has been closed.");
 
     return 0;
+}
+
+bool readInitInput(std::string inputData) {
+    colorInit = "";
+    INFO_MSG("Input is '" << inputData << "' and expected is '" << inputRSBOutsideInit << "' and colors");
+    int expectedLength = inputRSBOutsideInit.size();
+    if (inputData.size() < expectedLength) {
+        WARNING_MSG("Input size is " << inputData.size() << ", but expected " << expectedLength);
+        return false;
+    }
+    std::string justInit;
+    justInit.append(inputData, 0, expectedLength);
+    INFO_MSG("First " << expectedLength << " chars: " << justInit);
+    if (justInit.compare(inputRSBOutsideInit) == 0) {
+        colorInit.append(inputData, expectedLength, inputData.size()-expectedLength);
+        INFO_MSG("Recognized colors: " << colorInit);
+        return true;
+    } else {
+        WARNING_MSG("'" << inputRSBOutsideInit << "' couldn't be found in '" << justInit << "'");
+        return false;
+    }
+}
+
+void setLightcolor(void) {
+    if (robotID < colorInit.size()) {
+        switch (colorInit[robotID]) {
+            case 'r': INFO_MSG("Choosen color is red."); break;
+            case 'b': INFO_MSG("Choosen color is blue."); break;
+            case 'g': INFO_MSG("Choosen color is green."); break;
+            case 'y': INFO_MSG("Choosen color is yellow."); break;
+            default: WARNING_MSG("Color '" << colorInit[robotID] << "' is unknown!");
+        }
+    } else if (colorInit.size() > 0) {
+        WARNING_MSG("For id " << robotID << " isn't any color defined, only for ids until " << colorInit.size()-1);
+    } else {
+        WARNING_MSG("There aren't any colors defined.");
+    }
+
 }
 
 int ssmObjectDetection(void) {
