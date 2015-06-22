@@ -79,6 +79,7 @@ enum states {
 };
 
 states amiroState = idle;
+states amiroStateL = init;
 
 std::string statesString[NUM_STATES] {
 	"idle",
@@ -105,11 +106,12 @@ enum states_od {
 };
 
 states_od objectDetectionState = localPlannerStart;
+states_od objectDetectionStateL = localPlanner;
 
 std::string statesODString[NUM_STATES] {
 	"starting local planner",
 	"local planner",
-	"object detection"
+	"detecting"
 };
 	
 
@@ -204,6 +206,7 @@ std::string objectDetectionAnswer = "";
 
 int robotID = 0;
 std::string colorInit = "";
+bool blinkerRight = false;
 
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
@@ -213,6 +216,7 @@ bool testWithAnswerer = false;
 // functions
 bool readInitInput(std::string inputData);
 void setLightcolor(void);
+void idleBlink(void);
 int processSM(void);
 int ssmObjectDetection(void);
 
@@ -270,23 +274,6 @@ int main(int argc, char **argv) {
     INFO_MSG(" - Delivery ans:    " << sDeliveryAnswerScope);
     INFO_MSG(" - Transport cmd:   " << sTransportCmdScope);
     INFO_MSG(" - Transport ans:   " << sTransportAnswerScope);
-
-    std::string str1 = "initrbg";
-    std::string str2 = "init";
-    std::string str3 = "ini";
-    std::string str4 = "iniit";
-    bool t1 = readInitInput(str1);
-    INFO_MSG("Test for '" << str1 << "': " << t1);
-    setLightcolor();
-    bool t2 = readInitInput(str2);
-    INFO_MSG("Test for '" << str2 << "': " << t2);
-    setLightcolor();
-    bool t3 = readInitInput(str3);
-    INFO_MSG("Test for '" << str3 << "': " << t3);
-    setLightcolor();
-    bool t4 = readInitInput(str4);
-    INFO_MSG("Test for '" << str4 << "': " << t4);
-    setLightcolor();
 
     // use camera stream for testing
     return processSM();
@@ -427,7 +414,7 @@ int processSM(void) {
         // Check input from outside
         if (!queueOutsideScope->empty()) {
             sRSBInput = *queueOutsideScope->pop();
-            if (sRSBInput.compare(inputRSBOutsideInit) == 0) {
+            if (readInitInput(sRSBInput)) {
                 rsbInputOutsideInit = true;
             } else if (sRSBInput.compare(inputRSBOutsideDelivery) == 0) {
                 rsbInputOutsideDeliver = true;
@@ -473,15 +460,28 @@ int processSM(void) {
             }
         }
 
-        INFO_MSG("STATE: " << statesString[amiroState]);
+        // print actual state
+        if (amiroState == objectDetectionMain && objectDetectionState != objectDetectionStateL) {
+            INFO_MSG("STATE: " << statesString[amiroState] << " -> " << statesODString[objectDetectionState]);
+            objectDetectionStateL = objectDetectionState;
+        } else if (amiroState != amiroStateL) {
+            INFO_MSG("STATE: " << statesString[amiroState]);
+        }
+        amiroStateL = amiroState;
+
+        // check states
         switch (amiroState) {
             case idle:
+                idleBlink();
                 if (rsbInputOutsideInit) {
                     amiroState = init;
                 }
                 break;
             case init:
                 // TODO initalization parts
+                setLightcolor();
+                *stringPublisher = inputRSBOutsideInit;
+                informerOutsideScope->publish(stringPublisher);
                 amiroState = explorationStart;
                 break;
             case explorationStart:
@@ -568,41 +568,71 @@ int processSM(void) {
 }
 
 bool readInitInput(std::string inputData) {
-    colorInit = "";
-    INFO_MSG("Input is '" << inputData << "' and expected is '" << inputRSBOutsideInit << "' and colors");
+//    INFO_MSG("Input is '" << inputData << "' and expected is '" << inputRSBOutsideInit << "' and colors");
     int expectedLength = inputRSBOutsideInit.size();
     if (inputData.size() < expectedLength) {
-        WARNING_MSG("Input size is " << inputData.size() << ", but expected " << expectedLength);
+//        WARNING_MSG("Input size is " << inputData.size() << ", but expected " << expectedLength);
         return false;
     }
     std::string justInit;
     justInit.append(inputData, 0, expectedLength);
-    INFO_MSG("First " << expectedLength << " chars: " << justInit);
+//    INFO_MSG("First " << expectedLength << " chars: " << justInit);
     if (justInit.compare(inputRSBOutsideInit) == 0) {
-        colorInit.append(inputData, expectedLength, inputData.size()-expectedLength);
-        INFO_MSG("Recognized colors: " << colorInit);
+        colorInit = "";
+    	colorInit.append(inputData, expectedLength, inputData.size()-expectedLength);
+//        INFO_MSG("Recognized colors: " << colorInit);
         return true;
     } else {
-        WARNING_MSG("'" << inputRSBOutsideInit << "' couldn't be found in '" << justInit << "'");
+//        WARNING_MSG("'" << inputRSBOutsideInit << "' couldn't be found in '" << justInit << "'");
         return false;
     }
 }
 
 void setLightcolor(void) {
+    amiro::Color color;
     if (robotID < colorInit.size()) {
         switch (colorInit[robotID]) {
-            case 'r': INFO_MSG("Choosen color is red."); break;
-            case 'b': INFO_MSG("Choosen color is blue."); break;
-            case 'g': INFO_MSG("Choosen color is green."); break;
-            case 'y': INFO_MSG("Choosen color is yellow."); break;
-            default: WARNING_MSG("Color '" << colorInit[robotID] << "' is unknown!");
+            case 'r':
+//                INFO_MSG("Chosen color is red.");
+                color = amiro::Color::RED;
+                break;
+            case 'b':
+//                INFO_MSG("Chosen color is blue.");
+                color = amiro::Color::BLUE;
+                break;
+            case 'g':
+//                INFO_MSG("Chosen color is green.");
+                color = amiro::Color::GREEN;
+                break;
+            case 'y':
+//                INFO_MSG("Chosen color is yellow.");
+                color = amiro::Color::YELLOW;
+                break;
+            default:
+                WARNING_MSG("Color '" << colorInit[robotID] << "' is unknown!");
+                color = amiro::Color::WHITE;
         }
     } else if (colorInit.size() > 0) {
         WARNING_MSG("For id " << robotID << " isn't any color defined, only for ids until " << colorInit.size()-1);
+        color = amiro::Color::WHITE;
     } else {
         WARNING_MSG("There aren't any colors defined.");
+        color = amiro::Color::WHITE;
     }
+    for (int ledIdx=0; ledIdx<8; ledIdx++) {
+        myCAN.setLightColor(ledIdx, color);
+    }
+}
 
+void idleBlink(void) {
+    blinkerRight = !blinkerRight;
+    for (int ledIdx=0; ledIdx<8; ledIdx++) {
+        if (blinkerRight && ledIdx < 4 || !blinkerRight && ledIdx >= 4) {
+            myCAN.setLightColor(ledIdx, amiro::Color(amiro::Color::WHITE));
+        } else {
+            myCAN.setLightColor(ledIdx, amiro::Color(amiro::Color::BLACK));
+        }
+    }
 }
 
 int ssmObjectDetection(void) {

@@ -61,9 +61,10 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-#define NUM_STATES 19
+#define NUM_STATES 20
 enum states {
 	init,
+	initWait,
 	explorationWait,
 	exploration,
 	blobDetectionWait,
@@ -85,9 +86,11 @@ enum states {
 };
 
 states amiroState = init;
+states amiroStateL = initWait;
 
 std::string statesString[NUM_STATES] {
 	"init",
+	"initWait",
 	"explorationWait",
 	"exploration",
 	"blobDetectionWait",
@@ -158,6 +161,7 @@ std::string outputRSBOutsideInitDone = "initdone";
 std::string outputRSBOutsideDelivery = "delivered";
 std::string outputRSBOutsideTransport = "transported";
 std::string inputRSBOutsideInit = "init";
+std::string outputRSBOutsideColor = "rbgyx";
 std::string inputRSBOutsideDelivery = "deliver";
 std::string inputRSBOutsideTransport = "transport";
 std::string outputRSBExploration = "start";
@@ -175,6 +179,7 @@ std::string inputRSBTransport = "finish";
 
 // RSB input recognizer
 bool rsbInputOutsideInit = false;
+bool rsbInputOutsideInitDone = false;
 bool rsbInputOutsideDeliver = false;
 bool rsbInputOutsideTransport = false;
 bool rsbInputExploration = false;
@@ -188,7 +193,15 @@ int processSM(void);
 
 int robotID = 0;
 
-int objectCount = 2;
+int objectCount = 1;
+
+bool skipToBI = false;
+bool skipExplo = false;
+bool skipBlob = false;
+bool skipLP = false;
+bool skipDet = false;
+bool skipTrans = false;
+bool skipDeli = false;
 
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
@@ -214,7 +227,14 @@ int main(int argc, char **argv) {
         ("robotID,d", po::value < int > (&robotID), "Robot ID.")
         ("tableDepth", po::value < double > (&tableDepth), "Table depth.")
         ("startPosition", po::value < double > (&tableDepth), "Start Position.")
-        ("endPosition", po::value < double > (&endPosition), "End Position.");
+        ("endPosition", po::value < double > (&endPosition), "End Position.")
+        ("skipToBI", "Skipping all parts for ToBI.")
+        ("skipExploration", "Skipping all parts for Exploration.")
+        ("skipBlobbing", "Skipping all parts for Blob Detection.")
+        ("skipLocalPlanner", "Skipping all parts for Local Planner.")
+        ("skipDetection", "Skipping all parts for Object Detection.")
+        ("skipTransport", "Skipping all parts for Object Transport.")
+        ("skipDelivery", "Skipping all parts for Object Delivery.");
 
 
     // allow to give the value as a positional argument
@@ -232,6 +252,15 @@ int main(int argc, char **argv) {
 
     // afterwards, let program options handle argument errors
     po::notify(vm);
+
+    // save skipping flags
+    skipToBI = vm.count("skipToBI");
+    skipExplo = vm.count("skipExploration");
+    skipBlob = vm.count("skipBlobbing");
+    skipLP = vm.count("skipLocalPlanner");
+    skipDet = vm.count("skipDetection");
+    skipTrans = vm.count("skipTransport");
+    skipDeli = vm.count("skipDelivery");
 
     // prepare scopes for ToBI-AMIRo communication
     sOutScopeTobi.append(std::to_string(robotID));
@@ -381,6 +410,7 @@ int processSM(void) {
         // Check RSB input first
         std::string sRSBInput = "";
         rsbInputOutsideInit = false;
+        rsbInputOutsideInitDone = false;
         rsbInputExploration = false;
         rsbInputBlobDetection = false;
         rsbInputObjectDetection = false;
@@ -391,8 +421,10 @@ int processSM(void) {
         // Check input from outside
         if (!queueOutsideScope->empty()) {
             sRSBInput = *queueOutsideScope->pop();
-            if (sRSBInput.compare(outputRSBOutsideInitDone) == 0) {
+            if (sRSBInput.compare(inputRSBOutsideInit) == 0) {
                 rsbInputOutsideInit = true;
+            } else if (sRSBInput.compare(outputRSBOutsideInitDone) == 0) {
+                rsbInputOutsideInitDone = true;
             } else if (sRSBInput.compare(outputRSBOutsideDelivery) == 0) {
                 rsbInputOutsideDeliver = true;
             } else if (sRSBInput.compare(outputRSBOutsideTransport) == 0) {
@@ -436,15 +468,32 @@ int processSM(void) {
             }
         }
 
-        INFO_MSG("STATE: " << statesString[amiroState]);
+        if (amiroState != amiroStateL) {
+            INFO_MSG("STATE: " << statesString[amiroState]);
+        }
+        amiroStateL = amiroState;
+
         switch (amiroState) {
             case init:
-                *stringPublisher = inputRSBOutsideInit;
-                informerOutsideScope->publish(stringPublisher);
-                amiroState = exploration;
+                if (!skipToBI) {
+                    *stringPublisher = inputRSBOutsideInit+outputRSBOutsideColor;
+                    informerOutsideScope->publish(stringPublisher);
+                    amiroState = initWait;
+                } else {
+                    INFO_MSG(" -> Skipping part ToBI Init");
+                    amiroState = explorationWait;
+                }
+                break;
+            case initWait:
+                if (rsbInputOutsideInit) {
+                    amiroState = explorationWait;
+                }
                 break;
             case explorationWait:
-                if (rsbInputExploration) {
+                if (skipExplo) {
+                    INFO_MSG(" -> Skipping part Exploration");
+                    amiroState = blobDetection;
+                } else if (rsbInputExploration) {
                     amiroState = exploration;
                 }
                 break;
@@ -456,7 +505,10 @@ int processSM(void) {
                 amiroState = blobDetectionWait;
                 break;
             case blobDetectionWait:
-                if (rsbInputBlobDetection) {
+                if (skipBlob) {
+                    INFO_MSG(" -> Skipping part Blob Detection");
+                    amiroState = localPlannerWait;
+                } else if (rsbInputBlobDetection) {
                     amiroState = blobDetection;
                 }
                 break;
@@ -468,7 +520,10 @@ int processSM(void) {
                 amiroState = localPlannerWait;
                 break;
             case localPlannerWait:
-                if (objectCount > 0) {
+                if (skipLP) {
+                    INFO_MSG(" -> Skipping part Local Planner");
+                    amiroState = objectDetectionWait;
+                } else if (objectCount > 0) {
                     if (rsbInputLocalPlanner) {
                         amiroState = localPlanner;
                     }
@@ -481,10 +536,13 @@ int processSM(void) {
                 sleep(3);
                 *stringPublisher = inputRSBLocalPlanner;
                 informerLocalPlannerScope->publish(stringPublisher);
-                amiroState = initDoneWait;
+                amiroState = objectDetectionWait;
                 break;
             case objectDetectionWait:
-                if (rsbInputObjectDetection) {
+                if (skipDet) {
+                   INFO_MSG(" -> Skipping part Object Detection");
+                   amiroState = initDoneWait;
+                } else if (rsbInputObjectDetection) {
                     amiroState = objectDetection;
                 }
                 break;
@@ -497,7 +555,10 @@ int processSM(void) {
                 amiroState = localPlannerWait;
                 break;
             case initDoneWait:
-                if (rsbInputOutsideInit) {
+                if (skipToBI) {
+                    INFO_MSG(" -> Skipping part ToBI Init Done and aksing for delivery");
+                    amiroState = objectDeliveryWait;
+                } else if (rsbInputOutsideInitDone) {
                     amiroState = objectDeliveryStart;
                 }
                 break;
@@ -509,7 +570,10 @@ int processSM(void) {
                 amiroState = objectDeliveryWait;
                 break;
             case objectDeliveryWait:
-                if (rsbInputDelivery) {
+                if (skipDeli) {
+                    INFO_MSG(" -> Skipping part Delivery");
+                    amiroState = objectTransportStart;
+                } else if (rsbInputDelivery) {
                     amiroState = objectDelivery;
                 }
                 break;
@@ -521,7 +585,10 @@ int processSM(void) {
                 amiroState = objectDeliveryFinish;
                 break;
             case objectDeliveryFinish:
-                if (rsbInputOutsideDeliver) {
+                if (skipToBI) {
+                    INFO_MSG(" -> Skipping part ToBI receiving delivery answer and asking for transport");
+                    amiroState = objectTransportWait;
+                } else if (rsbInputOutsideDeliver) {
                     amiroState = objectTransportStart;
                 }
                 break;
@@ -533,7 +600,10 @@ int processSM(void) {
                 amiroState = objectTransportWait;
                 break;
             case objectTransportWait:
-                if (rsbInputTransport) {
+                if (skipTrans) {
+                    INFO_MSG(" -> Skipping part Transporting");
+                    amiroState = finishAnswerer;
+                } else if (rsbInputTransport) {
                     amiroState = objectTransport;
                 }
                 break;

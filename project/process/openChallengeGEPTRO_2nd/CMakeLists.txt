@@ -35,7 +35,7 @@ include_directories(include
 )
 
 # add the executable
-add_executable ("${PROJECT_NAME}" main.cxx)
+add_executable ("${PROJECT_NAME}" main.cxx ../../includes/Color.cpp)
 TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
