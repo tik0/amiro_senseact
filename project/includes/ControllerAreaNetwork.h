@@ -269,14 +269,14 @@ class ControllerAreaNetwork {
     this->transmitMessage(&frame);
   }
 
-  void calibrateRingProximitySensors(int index, Color color) {
+  void calibrateRingProximitySensors() {
     this->frame.can_id = 0;
     this->encodeDeviceId(&frame, CAN::CALIBRATE_PROXIMITY_RING);
     this->frame.can_dlc = 0;
     this->transmitMessage(&frame);
   }
 
-  void calibrateFloorProximitySensors(int index, Color color) {
+  void calibrateFloorProximitySensors() {
     this->frame.can_id = 0;
     this->encodeDeviceId(&frame, CAN::CALIBRATE_PROXIMITY_FLOOR);
     this->frame.can_dlc = 0;
