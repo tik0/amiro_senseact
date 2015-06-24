@@ -5,3 +5,5 @@ for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
 done
 scp run.sh root@192.168.1.1:~
 scp stop.sh root@192.168.1.1:~
+# Copy scripts
+scp Choreos/* root@192.168.1.1:~
