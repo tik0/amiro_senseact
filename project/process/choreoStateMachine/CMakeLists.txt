@@ -13,7 +13,7 @@ find_package(PkgConfig)
 
 if ("$ENV{ARCH}" MATCHES arm)
 
-    pkg_check_modules(OPENCV OpenCV)
+pkg_check_modules(OPENCV OpenCV)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(RST rst0.11)
@@ -45,7 +45,7 @@ include_directories(
     ${RST_INCLUDE_DIRS}                                             # RST types
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
     ${PROTO_INCLUDE_DIRS}
-    "../../includes"                                                # Other includes like converters and stuff
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
@@ -59,7 +59,7 @@ file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.h)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} ../../includes/Color.cpp)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp)
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
