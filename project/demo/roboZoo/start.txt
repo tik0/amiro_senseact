@@ -1,0 +1,12 @@
+====== Building the roboZoo Environment for AMiRo ======
+
+This is a demo which runs the roboZoo for RoboCup@Home2015.
+
+===== Run the demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh''
+  - ''./run.sh'' on the AMiRo
+  - ''./stop.sh'' on the AMiRo for stopping
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
