@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ./kill.sh
 cpufreq-set -g perfomance
 spread -c amirospread &

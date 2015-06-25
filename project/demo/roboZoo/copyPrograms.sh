@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 IP=${1}
 NAME=`basename "$PWD"`
