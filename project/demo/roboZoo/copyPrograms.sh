@@ -13,4 +13,5 @@ scp stop.sh root@${IP}:~/${NAME}
 scp Choreos/* root@${IP}:~/${NAME}
 # Copy config
 scp amirospread root@${IP}:~/${NAME}
+scp rsb.conf root@${IP}:~/${NAME}
 
