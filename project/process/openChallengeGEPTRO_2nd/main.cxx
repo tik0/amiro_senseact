@@ -48,7 +48,6 @@ ControllerAreaNetwork myCAN;
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // RST Proto types
-#include <types/LocatedLaserScan.pb.h>
 #include <rst/geometry/Pose.pb.h>
 
 
@@ -62,41 +61,57 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-#define NUM_STATES 14
+#define NUM_STATES 13
 enum states {
 	idle,
 	init,
+	explorationStart,
 	exploration,
-	explorationFinish,
+	blobDetectionStart,
 	blobDetection,
-	blobDetectionFinish,
-	objectDetection,
-	objectDetectionFinish,
+	objectDetectionMain,
 	initDone,
 	waiting,
+	objectDeliveryStart,
 	objectDelivery,
-	objectDeliveryFinish,
-	objectTransport,
-	objectTransportFinish
+	objectTransportStart,
+	objectTransport
 };
 
 states amiroState = idle;
+states amiroStateL = init;
 
 std::string statesString[NUM_STATES] {
 	"idle",
-	"init",
+	"initialization",
+	"starting exploration",
 	"exploration",
-	"explorationFinish",
-	"blobDetection",
-	"blobDetectionFinish",
-	"objectDetection",
-	"objectDetectionFinish",
-	"iniDone",
+	"starting blob detection",
+	"blob detection",
+	"object detection",
+	"initialization done",
 	"waiting",
-	"objectDelivery",
-	"objectDeliveryFinish",
-	"objectTransport",
-	"objectTransportFinish"
+	"starting object delivery",
+	"object delivery",
+	"starting object transport",
+	"object transport"
+};
+
+// object detection states
+#define NUM_STATES_OD 3
+enum states_od {
+	localPlannerStart,
+	localPlanner,
+	objectDetection
+};
+
+states_od objectDetectionState = localPlannerStart;
+states_od objectDetectionStateL = localPlanner;
+
+std::string statesODString[NUM_STATES] {
+	"starting local planner",
+	"local planner",
+	"detecting"
 };
 	
 
@@ -107,35 +122,37 @@ std::string statesString[NUM_STATES] {
 enum objects { object1 , object2 , object3 , object4 , object5 , object6 };
 std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4","object5","object6"};
 
-// Object detection
-// We send a command "COMP" string  for start comparing or "ESC" for exiting the program
-std::string sObjectDetCmdScope("/objectDetection/command");
-// We assume object IDs as string from "1" to "6", after sending the "comp" command
-std::string sObjectDetAnswerScope("/objectDetection/answer");
+// RSB informer
+rsb::Informer<std::string>::Ptr informerObjectDetScope;
+rsb::Informer<std::string>::Ptr informerLocalPlannerScope;
+rsb::Informer<std::string>::Ptr informerExplorationScope;
+rsb::Informer<std::string>::Ptr informerBlobScope;
+rsb::Informer<std::string>::Ptr informerDeliveryScope;
+rsb::Informer<std::string>::Ptr informerTransportScope;
 
 // Exploration
-// We send a command "start" string  for start the exploration
 std::string sExplorationCmdScope("/exploration/command");
-// We assume a "finish" string, which indicates, that the exploration has run clean
 std::string sExplorationAnswerScope("/exploration/answer");
 
 // Blob detection
-// TODO
 std::string sBlobCmdScope("/blobDetection/command");
-// TODO
 std::string sBlobAnswerScope("/blobDetection/answer");
 
 // Delivery
-// TODO
 std::string sDeliveryCmdScope("/objectDelivery/command");
-// TODO
 std::string sDeliveryAnswerScope("/objectDelivery/answer");
 
 // Object transport
-// TODO
 std::string sTransportCmdScope("/objectTransport/command");
-// TODO
 std::string sTransportAnswerScope("/objectTransport/answer");
+
+// Object detection
+std::string sObjectDetCmdScope("/objectDetection/command");
+std::string sObjectDetAnswerScope("/objectDetection/detected");
+
+// Local planner
+std::string sLocalPlannerCmdScope("/localplanner/command");
+std::string sLocalPlannerAnswerScope("/localplanner/answer");
 
 // Communication with ToBI
 std::string sInScopeTobi = "/tobiamiro";
@@ -152,6 +169,8 @@ std::string sInScopeOdometry = "/odo";
 
 // RSB content
 std::string outputRSBOutsideInitDone = "initdone";
+std::string outputRSBOutsideDelivery = "delivered";
+std::string outputRSBOutsideTransport = "transported";
 std::string inputRSBOutsideInit = "init";
 std::string inputRSBOutsideDelivery = "deliver";
 std::string inputRSBOutsideTransport = "transport";
@@ -159,12 +178,17 @@ std::string outputRSBExploration = "start";
 std::string inputRSBExploration = "finish";
 std::string outputRSBBlobDetection = "start";
 std::string inputRSBBlobDetection = "finish";
-std::string outputRSBObjectDetection = "start";
+std::string outputRSBObjectDetection = "COMP";
 std::string inputRSBObjectDetection = "finish";
+std::string outputRSBLocalPlanner = "start";
+std::string inputRSBLocalPlanner = "finish";
 std::string outputRSBDelivery = "start";
 std::string inputRSBDelivery = "finish";
 std::string outputRSBTransport = "start";
 std::string inputRSBTransport = "finish";
+
+// string publisher
+boost::shared_ptr<std::string> stringPublisher(new std::string);
 
 // RSB input recognizer
 bool rsbInputOutsideInit = false;
@@ -172,110 +196,29 @@ bool rsbInputOutsideDeliver = false;
 bool rsbInputOutsideTransport = false;
 bool rsbInputExploration = false;
 bool rsbInputBlobDetection = false;
-bool rsbInputObjectDetection = false;
 bool rsbInputDelivery = false;
 bool rsbInputTransport = false;
+bool rsbInputObjectDetection = false;
+bool rsbInputLocalPlanner = false;
 
-
-
-/*
-void objectDeliveryCtrl(double distance, double angular) {
-
-}
-
-
-void objectHomingCtrl(double distance, double angular) {
-
-  // get odometry data
-  types::position homingPosition;
-  homingPosition.x = int(distance * cos(angular) * 1e6);
-  homingPosition.y = int(distance * sin(angular)  * 1e6);
-  homingPosition.f_z = int(angular  * 1e6);
-//  homingPosition = myCAN.getOdometry();
-
-  // calculate angle from robot position (without respect to orientation) to origin (in rad)
-  double angleOdo = atan2((double)homingPosition.y, (double)homingPosition.x) + angular;
-  if (angleOdo > 2*M_PI) {
-    angleOdo -= 2*M_PI;
-  }
-
-  // calculate difference angle (in urad) to turn towards origin
-  int diffAngle = (int)(angleOdo*1e6)-homingPosition.f_z;
-
-  // calculate angle (in urad) to turn to origin orientation after reaching origin
-  int backAngle = -homingPosition.f_z-diffAngle;
-  while (backAngle < 0) {
-    backAngle += 2*M_PI*1e6;
-  }
-  while (backAngle > M_PI*1e6) {
-    backAngle -= 2*M_PI*1e6;
-  }
-
-  // calculate distance between origin and robot position (in um)
-  int diffDist = (int) sqrt((double)homingPosition.y*(double)homingPosition.y + (double)homingPosition.x*(double)homingPosition.x);
-
-  // reset position struct
-  homingPosition.y = 0;
-/*
-  // turn towards origin
-  homingPosition.x = 0;
-  homingPosition.f_z = diffAngle;
-  moveToTargetPosition(homingPosition, 1);
-  // drive to origin
-  homingPosition.x = diffDist;
-  homingPosition.f_z = 0;
-  moveToTargetPosition(homingPosition, 1);
-        // turn towards origin orientation
-  homingPosition.x = 0;
-  homingPosition.f_z = backAngle;
-  moveToTargetPosition(homingPosition, 1);
-*/
-/*
-        int speed;
-  // turn towards origin
-  if (diffAngle < 0) {
-    speed = -1e6;
-  } else {
-    speed = 1e6;
-  }
-  myCAN.setTargetSpeed(0,speed);
-        usleep(abs(int(0.99f*diffAngle)));
-        myCAN.setTargetSpeed(0,0);
-  // drive to origin
-  if (diffDist < 0) {
-    speed = -100e3;
-  } else {
-    speed = 100e3;
-  }
-  myCAN.setTargetSpeed(speed,0);
-        usleep(abs(diffDist*11));
-        myCAN.setTargetSpeed(0,0);
-        // turn towards origin orientation
-//  if (backAngle < 0) {
-//    speed = -1e6;
-//  } else {
-//    speed = 1e6;
-//  }
-//  myCAN.setTargetSpeed(0,speed);
-//        usleep(abs(int(0.99f*backAngle)));
-//        myCAN.setTargetSpeed(0,0);
-}
-*/
-
-int processSM(void);
+int objectCount = 0;
+std::string objectDetectionAnswer = "";
 
 int robotID = 0;
+std::string colorInit = "";
+bool blinkerRight = false;
 
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
 
-double tableDepth = 0.7; // cm
-double startPosition = 0.10; /*cm start position*/
-double endPosition = 0.20;
+bool testWithAnswerer = false;
 
-// Object detection
-double minimalAngle = 0;
-double minimalValue = 99999;
+// functions
+bool readInitInput(std::string inputData);
+void setLightcolor(void);
+void idleBlink(void);
+int processSM(void);
+int ssmObjectDetection(void);
 
 int main(int argc, char **argv) {
     namespace po = boost::program_options;
@@ -291,9 +234,7 @@ int main(int argc, char **argv) {
         ("outscopeState,s", po::value < std::string > (&sOutScopeState), "Scope for sending the current state internaly.")
         ("inscopeTobi,i", po::value < std::string > (&sInScopeTobi), "Scope for recieving Tobis messages.")
         ("robotID,d", po::value < int > (&robotID), "Robot ID.")
-        ("tableDepth", po::value < double > (&tableDepth), "Table depth.")
-        ("startPosition", po::value < double > (&tableDepth), "Start Position.")
-        ("endPosition", po::value < double > (&endPosition), "End Position.");
+        ("testWithAnswerer", "Prepares some constants for test with answerer.");
 
 
     // allow to give the value as a positional argument
@@ -312,6 +253,8 @@ int main(int argc, char **argv) {
     // afterwards, let program options handle argument errors
     po::notify(vm);
 
+    testWithAnswerer = vm.count("testWithAnswerer");
+
     // prepare scopes for ToBI-AMIRo communication
     sInScopeTobi.append(std::to_string(robotID));
     sOutScopeTobi.append(std::to_string(robotID)).append(sOutScopeTobi2nd);
@@ -319,7 +262,7 @@ int main(int argc, char **argv) {
     // print all scopes
     INFO_MSG("List of all RSB scopes:");
     INFO_MSG(" - ToBI to AMiRo:   " << sInScopeTobi);
-    INFO_MSG(" - ToBI to AMiRo:   " << sOutScopeTobi);
+    INFO_MSG(" - AMiRo to ToBI:   " << sOutScopeTobi);
     INFO_MSG(" - State debugging: " << sOutScopeState);
     INFO_MSG(" - Exploration cmd: " << sExplorationCmdScope);
     INFO_MSG(" - Exploration ans: " << sExplorationAnswerScope);
@@ -341,21 +284,6 @@ int processSM(void) {
 
     // Create the factory
     rsb::Factory &factory = rsb::getFactory();
-
-    // Register
-/*    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
-    rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
-    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
-    rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
-
-    // Prepare RSB listener for incomming lidar scans
-    rsb::ListenerPtr lidarListener = factory.createListener(sInScopeLidar);
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>(1));
-    lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LocatedLaserScan>(lidarQueue)));
-
-    // Prepare RSB async listener for odometry messages
-    rsb::ListenerPtr listener = factory.createListener(sInScopeOdometry);
-//    listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));*/
 
 
     //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
@@ -397,13 +325,22 @@ int processSM(void) {
 
     /////////////////// LOCAL SCOPES///////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
+
     // Object Detection: Listener and Informer
     rsb::ListenerPtr listenerObjectDetAnswerScope = factory.createListener(sObjectDetAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueObjectDetAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
 
-    rsb::Informer< std::string >::Ptr informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
+    informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
+
+    // Local Planner: Listener and Informer
+    rsb::ListenerPtr listenerLocalPlannerAnswerScope = factory.createListener(sLocalPlannerAnswerScope);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueLocalPlannerAnswerScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+    listenerLocalPlannerAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueLocalPlannerAnswerScope)));
+
+    informerLocalPlannerScope = factory.createInformer< std::string > (sLocalPlannerCmdScope);
 
     // Exploration: Listener and Informer
     rsb::ListenerPtr listenerExplorationScope = factory.createListener(sExplorationAnswerScope);
@@ -411,7 +348,7 @@ int processSM(void) {
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerExplorationScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueExplorationAnswerScope)));
 
-    rsb::Informer< std::string >::Ptr informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
+    informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
 
     // Blob detection: Listener and Informer
     rsb::ListenerPtr listenerBlobScope = factory.createListener(sBlobAnswerScope);
@@ -419,7 +356,7 @@ int processSM(void) {
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerBlobScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueBlobAnswerScope)));
 
-    rsb::Informer< std::string >::Ptr informerBlobScope = factory.createInformer< std::string > (sBlobCmdScope);
+    informerBlobScope = factory.createInformer< std::string > (sBlobCmdScope);
 
     // Object seperation and delivery: Listener and Informer
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
@@ -427,7 +364,7 @@ int processSM(void) {
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
 
-    rsb::Informer< std::string >::Ptr informerDeliveryScope = factory.createInformer< std::string > (sDeliveryCmdScope);
+    informerDeliveryScope = factory.createInformer< std::string > (sDeliveryCmdScope);
 
     // Object transport: Listener and Informer
     rsb::ListenerPtr listenerTransportScope = factory.createListener(sTransportAnswerScope);
@@ -435,22 +372,10 @@ int processSM(void) {
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueTransportAnswerScope)));
 
-    rsb::Informer< std::string >::Ptr informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
+    informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
 
     /////////////////// REMOTE SCOPES///////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
-
-/*
-    // Prepare RSB informer and listener
-    rsb::Informer< std::string >::Ptr informerRemoteState[NUM_STATES];
-    rsb::Informer< std::string >::Ptr informerRemoteObject[NUM_OBJECTS];
-    rsb::Informer< std::string >::Ptr informerRemoteObjectFinish[NUM_OBJECTS];
-
-    // Create the listener
-    rsb::ListenerPtr listenerRemoteTobiState;
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueRemoteTobiState(
-            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-*/
 
     rsb::ListenerPtr listenerOutsideScope;
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueOutsideScope(
@@ -458,7 +383,7 @@ int processSM(void) {
     rsb::Informer< std::string >::Ptr informerOutsideScope;
 
     try {
-        listenerOutsideScope = factory.createListener(sInScopeTobi, tmpPartConf);
+        listenerOutsideScope = factory.createListener(sInScopeTobi);
         listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
 
         informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi);
@@ -469,34 +394,6 @@ int processSM(void) {
     }
 
     INFO_MSG("All RSB connections built. Starting statemachine now.");
-
-
-/*
-    try {
-      for (int idx = 0; idx < NUM_STATES; ++idx) {
-        std::string sOutScopeStateTobiTmp(sOutScopeTobi);
-        informerRemoteState[idx] = factory.createInformer< std::string > (sOutScopeStateTobiTmp.append("/").append(statesString[idx]), tmpPartConf);
-      }
-      for (int idx = 0; idx < NUM_OBJECTS; ++idx) {
-        std::string sOutScopeStateTobiTmp(g_sOutScopeStateTobi);
-        std::string sOutScopeStateTobiObjectFinishTmp(g_sOutScopeStateTobi);
-        informerRemoteObject[idx] = factory.createInformer< std::string >       (sOutScopeStateTobiTmp.append("/").append(objectsString[idx]), tmpPartConf);
-        informerRemoteObjectFinish[idx] = factory.createInformer< std::string > (sOutScopeStateTobiObjectFinishTmp.append("/").append(objectsString[idx]).append("finish"), tmpPartConf);
-      }
-
-      // Create the listener for the standby task
-      listenerRemoteTobiState = factory.createListener(g_sInScopeTobi, tmpPartConf);
-      listenerRemoteTobiState->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueRemoteTobiState)));
-    }
-    catch(std::exception& e) {
-      ERROR_MSG("Remote connection not established");
-      return -1;
-    }
-
-    // When we reached this point, everything should be fine
-*/
-
-    boost::shared_ptr<std::string> stringPublisher(new std::string);
 
     // run through statemachine
     bool runningStatemachine = true;
@@ -512,21 +409,18 @@ int processSM(void) {
         rsbInputObjectDetection = false;
         rsbInputDelivery = false;
         rsbInputTransport = false;
+        rsbInputLocalPlanner = false;
 
         // Check input from outside
         if (!queueOutsideScope->empty()) {
-            INFO_MSG("Wasn't empty");
             sRSBInput = *queueOutsideScope->pop();
-            INFO_MSG(" -> " << sRSBInput);
-            if (sRSBInput.compare(inputRSBOutsideInit) == 0) {
+            if (readInitInput(sRSBInput)) {
                 rsbInputOutsideInit = true;
             } else if (sRSBInput.compare(inputRSBOutsideDelivery) == 0) {
                 rsbInputOutsideDeliver = true;
             } else if (sRSBInput.compare(inputRSBOutsideTransport) == 0) {
                 rsbInputOutsideTransport = true;
             }   
-        } else {
-            INFO_MSG("Empty!");
         }
         if (!queueExplorationAnswerScope->empty()) {
             sRSBInput = *queueExplorationAnswerScope->pop();
@@ -535,9 +429,16 @@ int processSM(void) {
             }
         }
         if (!queueObjectDetAnswerScope->empty()) {
-            sRSBInput = *queueObjectDetAnswerScope->pop();
-            if (sRSBInput.compare(inputRSBObjectDetection) == 0) {
-                rsbInputObjectDetection = true;
+            objectDetectionAnswer = *queueObjectDetAnswerScope->pop();
+            rsbInputObjectDetection = true;
+//            if (sRSBInput.compare(inputRSBObjectDetection) == 0) {
+//                rsbInputObjectDetection = true;
+//            }
+        }
+        if (!queueLocalPlannerAnswerScope->empty()) {
+            sRSBInput = *queueLocalPlannerAnswerScope->pop();
+            if (sRSBInput.compare(inputRSBLocalPlanner) == 0) {
+                rsbInputLocalPlanner = true;
             }
         }
         if (!queueBlobAnswerScope->empty()) {
@@ -559,54 +460,59 @@ int processSM(void) {
             }
         }
 
-        INFO_MSG("STATE: " << statesString[amiroState]);
-/*        INFO_MSG(" - OutsideInit = " << rsbInputOutsideInit);
-        INFO_MSG(" - OutsideDeliver = " << rsbInputOutsideDeliver);
-        INFO_MSG(" - OutsideTransport = " << rsbInputOutsideTransport);
-        INFO_MSG(" - Exploration = " << rsbInputExploration);
-        INFO_MSG(" - Blobbing = " << rsbInputBlobDetection);
-        INFO_MSG(" - Detection = " << rsbInputObjectDetection);
-        INFO_MSG(" - Delivery = " << rsbInputDelivery);
-        INFO_MSG(" - Transporting = " << rsbInputTransport);*/
+        // print actual state
+        if (amiroState == objectDetectionMain && objectDetectionState != objectDetectionStateL) {
+            INFO_MSG("STATE: " << statesString[amiroState] << " -> " << statesODString[objectDetectionState]);
+            objectDetectionStateL = objectDetectionState;
+        } else if (amiroState != amiroStateL) {
+            INFO_MSG("STATE: " << statesString[amiroState]);
+        }
+        amiroStateL = amiroState;
+
+        // check states
         switch (amiroState) {
             case idle:
+                idleBlink();
                 if (rsbInputOutsideInit) {
                     amiroState = init;
                 }
                 break;
             case init:
                 // TODO initalization parts
+                setLightcolor();
+                *stringPublisher = inputRSBOutsideInit;
+                informerOutsideScope->publish(stringPublisher);
+                amiroState = explorationStart;
+                break;
+            case explorationStart:
+                *stringPublisher = outputRSBExploration;
+                informerExplorationScope->publish(stringPublisher);
                 amiroState = exploration;
                 break;
             case exploration:
-                *stringPublisher = outputRSBExploration;
-                informerExplorationScope->publish(stringPublisher);
-                amiroState = explorationFinish;
-                break;
-            case explorationFinish:
                 if (rsbInputExploration) {
                     //informerOutsideScope->publish(???);
-                    amiroState = blobDetection;
+                    amiroState = blobDetectionStart;
                 }
                 break;
-            case blobDetection:
+            case blobDetectionStart:
                 *stringPublisher = outputRSBBlobDetection;
                 informerBlobScope->publish(stringPublisher);
-                amiroState = blobDetectionFinish;
+                amiroState = blobDetection;
                 break;
-            case blobDetectionFinish:
+            case blobDetection:
                 if (rsbInputBlobDetection) {
                     //informerOutsideScope->publish(???);
-                    amiroState = objectDetection;
+                    amiroState = objectDetectionMain;
+                    if (testWithAnswerer) {
+                        objectCount = 1;
+                    }
                 }
                 break;
-            case objectDetection:
-                *stringPublisher = outputRSBObjectDetection;
-                informerObjectDetScope->publish(stringPublisher);
-                amiroState = objectDetectionFinish;
-                break;
-            case objectDetectionFinish:
-                if (rsbInputObjectDetection) {
+            case objectDetectionMain:
+                if (objectCount > 0) {
+                    ssmObjectDetection();
+                } else {
                     //informerOutsideScope->publish(???);
                     amiroState = initDone;
                 }
@@ -618,30 +524,32 @@ int processSM(void) {
                 break;
             case waiting:
                 if (rsbInputOutsideDeliver) {
-                    amiroState = objectDelivery;
+                    amiroState = objectDeliveryStart;
                 } else if (rsbInputOutsideTransport) {
-                    amiroState = objectTransport;
+                    amiroState = objectTransportStart;
                 }
                 break;
-            case objectDelivery:
+            case objectDeliveryStart:
                 *stringPublisher = outputRSBDelivery;
                 informerDeliveryScope->publish(stringPublisher);
-                amiroState = objectDeliveryFinish;
+                amiroState = objectDelivery;
                 break;
-            case objectDeliveryFinish:
+            case objectDelivery:
                 if (rsbInputDelivery) {
-                    //informerOutsideScope->publish(???);
+                    *stringPublisher = outputRSBOutsideDelivery;
+                    informerOutsideScope->publish(stringPublisher);
                     amiroState = waiting;
                 }
                 break;
-            case objectTransport:
+            case objectTransportStart:
                 *stringPublisher = outputRSBTransport;
                 informerTransportScope->publish(stringPublisher);
-                amiroState = objectTransportFinish;
+                amiroState = objectTransport;
                 break;
-            case objectTransportFinish:
+            case objectTransport:
                 if (rsbInputTransport) {
-                    //informerOutsideScope->publish(???);
+                    *stringPublisher = outputRSBOutsideTransport;
+                    informerOutsideScope->publish(stringPublisher);
                     amiroState = waiting;
                 }
                 break;
@@ -659,320 +567,111 @@ int processSM(void) {
     return 0;
 }
 
+bool readInitInput(std::string inputData) {
+//    INFO_MSG("Input is '" << inputData << "' and expected is '" << inputRSBOutsideInit << "' and colors");
+    int expectedLength = inputRSBOutsideInit.size();
+    if (inputData.size() < expectedLength) {
+//        WARNING_MSG("Input size is " << inputData.size() << ", but expected " << expectedLength);
+        return false;
+    }
+    std::string justInit;
+    justInit.append(inputData, 0, expectedLength);
+//    INFO_MSG("First " << expectedLength << " chars: " << justInit);
+    if (justInit.compare(inputRSBOutsideInit) == 0) {
+        colorInit = "";
+    	colorInit.append(inputData, expectedLength, inputData.size()-expectedLength);
+//        INFO_MSG("Recognized colors: " << colorInit);
+        return true;
+    } else {
+//        WARNING_MSG("'" << inputRSBOutsideInit << "' couldn't be found in '" << justInit << "'");
+        return false;
+    }
+}
 
+void setLightcolor(void) {
+    amiro::Color color;
+    if (robotID < colorInit.size()) {
+        switch (colorInit[robotID]) {
+            case 'r':
+//                INFO_MSG("Chosen color is red.");
+                color = amiro::Color::RED;
+                break;
+            case 'b':
+//                INFO_MSG("Chosen color is blue.");
+                color = amiro::Color::BLUE;
+                break;
+            case 'g':
+//                INFO_MSG("Chosen color is green.");
+                color = amiro::Color::GREEN;
+                break;
+            case 'y':
+//                INFO_MSG("Chosen color is yellow.");
+                color = amiro::Color::YELLOW;
+                break;
+            default:
+                WARNING_MSG("Color '" << colorInit[robotID] << "' is unknown!");
+                color = amiro::Color::WHITE;
+        }
+    } else if (colorInit.size() > 0) {
+        WARNING_MSG("For id " << robotID << " isn't any color defined, only for ids until " << colorInit.size()-1);
+        color = amiro::Color::WHITE;
+    } else {
+        WARNING_MSG("There aren't any colors defined.");
+        color = amiro::Color::WHITE;
+    }
+    for (int ledIdx=0; ledIdx<8; ledIdx++) {
+        myCAN.setLightColor(ledIdx, color);
+    }
+}
 
-/*
-  // Just a void for sending nothing
-  boost::shared_ptr< void > publishVoid(new int(0));
+void idleBlink(void) {
+    blinkerRight = !blinkerRight;
+    for (int ledIdx=0; ledIdx<8; ledIdx++) {
+        if (blinkerRight && ledIdx < 4 || !blinkerRight && ledIdx >= 4) {
+            myCAN.setLightColor(ledIdx, amiro::Color(amiro::Color::WHITE));
+        } else {
+            myCAN.setLightColor(ledIdx, amiro::Color(amiro::Color::BLACK));
+        }
+    }
+}
 
-  // Local variables
-  bool bGotStateFromTobi = false;  // True if a state from tobi was received
-  bool bGotObject = false; // If an object was detected correctly
-  bool bGotFalseObject = false; // If an object was not detected correctly
-  bool bGotExplorationFinish = false; // Indicates, if the exploration has finished
-  bool bGotHomingFinish = false; // Indicates if the homing to an object has finished
-  bool bGotDeliveryFinish = false; // Indicates, if the homing has finished
-  bool bGotDeliveryFail = false; // Indicates, if the delivery faile
-
-  int  numSeperatedObjects = -1; // Number of objects seperated in the map
-  bool bGotNumberOfSeperatedObjects = false; // Indicate, if the seperation succeeded
-
-  int objectDetectionCounter = -1; // Equals numSeperatedObjects, if all seperated objects were detected
-  std::vector<int> objectsDetected; // This is a lookuptable, where the index is the seperated object, and the content the detected object
-  int objectDelivery = -1; // Number of object, which needs to be delivered IF FOUND
-
-  double objDistance = 0.0, objAngular = 0.0;
-
-  // Variables for the keypress
-  // Check for keypress in winow
-  int KB_codeCV = 0;
-  // Check for keypress in terminal
-  int KB_code = 0;
-
-  // Strings send from tobi
-  std::string sStateFromTobi = "";
-  states amiroState = idle;
-  boost::shared_ptr<std::string> statePublish(new std::string);
-  boost::shared_ptr<std::string> tmpDummy(new std::string);
-
-  // Process the behaviour
-  while (true) {
-
-    // Get messages from tobi
-    if (!queueRemoteTobiState->empty()) {
-      INFO_MSG("Received a state from Tobi")
-      bGotStateFromTobi = true;
-      sStateFromTobi = *queueRemoteTobiState->pop();
-
-      if (sStateFromTobi.compare("object3") == 0) {
-        amiroState = objectDeliveryPushing;
-      }
-      // Check if the content was an object request
-      for (int idx = 0; idx < NUM_OBJECTS; ++idx) {
-        if ( sStateFromTobi.compare(objectsString[idx]) == 0) {  // if ( sStateFromTobi.compare(objectsString[idx]) != 0) {
-          for (int detectedObjIdx = 0; detectedObjIdx < objectsDetected.size(); ++detectedObjIdx) {
-            if (idx == objectsDetected.at(detectedObjIdx)) {
-              objectDelivery = idx;
-              amiroState = objectDeliveryHoming;
-              // HACK
-              amiroState = objectDeliveryPushing;
-              // HACK Finish
-              break;
+int ssmObjectDetection(void) {
+    switch (objectDetectionState) {
+        case localPlannerStart:
+            *stringPublisher = outputRSBLocalPlanner;
+            informerLocalPlannerScope->publish(stringPublisher);
+            objectDetectionState = localPlanner;
+            break;
+        case localPlanner:
+            if (rsbInputLocalPlanner) {
+                *stringPublisher = outputRSBObjectDetection;
+                informerObjectDetScope->publish(stringPublisher);
+                objectDetectionState = objectDetection;
             }
-          }
-        }
-      }
-
-      INFO_MSG("Tobi state: " << sStateFromTobi)
-      // Clear the queu
-      queueRemoteTobiState->clear();
-    } else {
-      bGotStateFromTobi = false;
-    }
-
-    // Get messages from object detection
-    if (!queueObjectDetAnswerScope->empty()) {
-      INFO_MSG("Received an object from object detection")
-      std::string object(*queueObjectDetAnswerScope->pop());
-      if (object.compare("null") != 0) {
-        objectsDetected.push_back(atoi(object.c_str())-1);
-        bGotObject = true;
-      } else {
-        bGotFalseObject = true;
-      }
-    } else {
-      bGotObject = false;
-      bGotFalseObject = false;
-    }
-
-    // Get messages from object detection
-    if (!queueExplorationAnswerScope->empty()) {
-      INFO_MSG("Received a message from exploration")
-      std::string msg(*queueExplorationAnswerScope->pop());
-      if (msg.compare("finish") == 0) {
-        INFO_MSG("Exploration success")
-        bGotExplorationFinish = true;
-      } else if (msg.compare("false") == 0){
-        ERROR_MSG("Exploration failed")
-      }
-    } else {
-      bGotExplorationFinish = false;
-    }
-
-    // Get messages from object seperation and delivery
-    if (!queueDeliveryAnswerScope->empty()) {
-      INFO_MSG("Received an message from object seperation and delivery")
-      std::string msg(*queueDeliveryAnswerScope->pop());
-      if (msg.find("seperated") != std::string::npos) {
-        // We assume the number of objects in the first character
-        numSeperatedObjects = atoi(msg.substr(0,1).c_str());
-        INFO_MSG("Got " << numSeperatedObjects << " objects from seperation")
-        objectDetectionCounter = 0;
-        bGotNumberOfSeperatedObjects = true;
-      } else if (msg.compare("homingFinish") == 0) {
-        bGotHomingFinish = true;
-      } else if (msg.compare("deliverFinish") == 0) {
-        bGotDeliveryFinish = true;
-      } else if (msg.compare("deliverFinish") == 0) {
-        bGotDeliveryFail = false;
-      }
-    } else {
-      bGotNumberOfSeperatedObjects = false;
-      bGotHomingFinish = false;
-      bGotDeliveryFinish = false;
-      bGotDeliveryFail = false;
-    }
-
-    // Check for keypress in terminal
-    KB_code = 0;
-    if (kbhit()) {
-      KB_code = getchar();
-      INFO_MSG("KB_code = " << KB_code)
-      // Do an object detection if "d" button was pressed
-      if (KB_code == 1000) {
-        INFO_MSG("Do object detection")
-        amiroState = objectDetection;
-      }
-    }
-
-    INFO_MSG("STATE: " << statesString[amiroState] )
-    switch (amiroState) {
-      case idle:
-        if(bGotStateFromTobi && sStateFromTobi.compare("init") == 0) {
-          amiroState = init;
-        }
-        break;
-      case init:
-        // Clear all variables
-        objectsDetected.clear();
-        bGotStateFromTobi = false;
-        bGotObject = false;
-        bGotFalseObject = false;
-        bGotExplorationFinish = false;
-        bGotDeliveryFail = false;
-        objectDelivery = -1;
-        // Start the exploration
-        *tmpDummy = "start";
-        informerExplorationScope->publish(tmpDummy);
-        amiroState = exploration;
-        break;
-      case exploration:
-
-        // FAKE Exploration
-        // Get angular and ditance of closest object
-        for (int lidarIdx = 0; lidarIdx < 10; lidarIdx++) {
-        // while(true) {
-          minimalValue = 99999;
-          minimalAngle = 0;
-          boost::shared_ptr< rst::vision::LocatedLaserScan > data = lidarQueue->pop();
-          int minimalIdx = 0;
-          for (int idx = 0; idx < data->scan_values_size()-1; idx++) {
-              double a = data->scan_values(idx);
-
-              if (minimalValue > a && a > data->scan_values_min()) {
-                WARNING_MSG(" " << a)
-                minimalValue = a;
-                minimalIdx = idx;
-              }
-
+            break;
+        case objectDetection:
+            if (rsbInputObjectDetection) {
+                // TODO check if object has been detected and reduce #object afterwards
+                if (objectDetectionAnswer.compare("null") == 0) {
+                    WARNING_MSG(" -> Doesn't know the object.");
+                } else {
+                    INFO_MSG(" -> Object " << objectDetectionAnswer << " found!");
+                    objectCount--;
+                }
+                if (testWithAnswerer) {
+                    objectCount--;
+                }
+                objectDetectionState = localPlannerStart;
             }
-          minimalAngle = - double(data->scan_angle_start()) - double(data->scan_angle_end() - data->scan_angle_start()) / double((data->scan_values_size() - 1)) * double(minimalIdx);
-
-          ERROR_MSG("start " << data->scan_angle_start() << " ; data->scan_angle_end() " << data->scan_angle_end() << " ; idx " << minimalIdx << " ; size " << data->scan_values_size() - 1)
-          ERROR_MSG("v " << minimalValue << " ; a " << minimalAngle)
-
-        }
-
-        minimalValue = minimalValue - 0.16;  // Stop 16 cm before the object
-        types::position homingPosition;
-        homingPosition.x = int(minimalValue * cos(minimalAngle) * 1e6);
-        homingPosition.y = int(minimalValue * sin(minimalAngle)  * 1e6);
-        homingPosition.f_z = int(minimalAngle  * 1e6);
-
-        ERROR_MSG("x " << homingPosition.x << " ; y " << homingPosition.y << " ; fz " << homingPosition.f_z )
-
-        // myCAN.setTargetPosition(homingPosition, 5000); //ms
-        objectHomingCtrl(minimalValue, minimalAngle);
-
-        // Fake fnish
-
-
-
-
-        bGotExplorationFinish = true;
-        if (bGotExplorationFinish) {
-          amiroState = explorationFinish;
-        }
-        break;
-      case explorationFinish:
-        amiroState = objectSeperation;
-        break;
-      case objectSeperation:
-        *tmpDummy = "start";
-        informerDeliveryScope->publish(tmpDummy);
-        amiroState = objectSeperationPending;
-        break;
-      case objectSeperationPending:
-        // HACK
-        bGotNumberOfSeperatedObjects = true;
-        numSeperatedObjects = 1;
-        objectDetectionCounter = 1;
-//        objectHomingCtrl(//distance, //angle);
-        amiroState = objectDetection;
-//        if (bGotNumberOfSeperatedObjects) {
-//          amiroState = objectHoming;
-//        }
-        // HACK FINISH
-        break;
-      case objectHoming:
-        ++objectDetectionCounter;
-        INFO_MSG("objectDetectionCounter: " << objectDetectionCounter)
-        *tmpDummy = std::to_string(objectDetectionCounter);
-        tmpDummy->append("homing");
-        informerDeliveryScope->publish(tmpDummy);
-        amiroState = objectHomingPending;
-        break;
-      case objectHomingPending:
-        if (bGotHomingFinish) {
-          amiroState = objectDetection;
-        }
-        break;
-      case objectDetection:
-        *tmpDummy = "COMP";
-        informerObjectDetCmdScope->publish(tmpDummy);
-        amiroState = objectDetectionPending;
-        break;
-      case objectDetectionPending:
-        if (bGotObject && objectDetectionCounter < numSeperatedObjects) {
-          amiroState = objectHoming;
-        } else if (objectDetectionCounter == numSeperatedObjects) {
-           INFO_MSG("All objects detected, just idle arround")
-           amiroState = idle;
-        } else if (bGotFalseObject) {
-          // Just go to the next object
-          amiroState = objectHoming;
-        }
-        break;
-      case objectDeliveryHoming:
-        // TODO Do we need this?
-        *tmpDummy = std::to_string(objectDelivery);
-        tmpDummy->append("deliver");
-        informerDeliveryScope->publish(tmpDummy);
-        amiroState = objectDeliveryPushing;
-        break;
-      case objectDeliveryPushing:
-        // HACK
-//        objectDeliveryCtrl(//dist, //angle);
-        // Pushing
-        // myCAN.setTargetPosition(homingPosition, 5000); //ms
-      {
-        double distanceToDeliver = (tableDepth - startPosition - endPosition ) / cos(minimalAngle) - minimalValue;
-        objectHomingCtrl(distanceToDeliver, 0);
-      }
-        amiroState = objectDeliveryFinish;
-        break;
-        // HACKFinish
-        if (bGotDeliveryFinish) {
-          amiroState = objectDeliveryFinish;
-        } else if (bGotDeliveryFail) {
-          amiroState = objectDeliveryFail;
-        }
-        break;
-      case objectDeliveryFinish:
-        // FAKE Drive back
-        myCAN.setTargetSpeed(- 200 * 1e3, 0);
-        sleep(1);
-        myCAN.setTargetSpeed(0, 0);
-        myCAN.setTargetSpeed(0, 0);
-        // FAKE FINISH
-        // HACK so that nils listenes
-        while (true) {
-//          informerRemoteObjectFinish[objectDelivery]->publish(statePublish);
-          informerRemoteObjectFinish[2]->publish(statePublish);
-          boost::this_thread::sleep(boost::posix_time::seconds(1));
-        }
-        // HACK FINISH
-        amiroState = idle;
-        break;
-      case objectDeliveryFail:
-        amiroState = idle;
-        break;
-      default:
-        WARNING_MSG("DEFAULT")
+            break;
+        default:
+            ERROR_MSG("Unknown state in statemachine!");
+            return -1;
     }
-
-    *statePublish = statesString[amiroState];
-    INFO_MSG("SENDING STATE SCOPE: " << g_sOutScopeStateTobi << "/" << *statePublish << " ; Content: " << *statePublish)
-
-    // Send every detected object in every iteration
-    for (int idx = 0; idx < objectsDetected.size(); ++idx) {
-      informerRemoteObject[objectsDetected.at(idx)]->publish(statePublish);
+    if (objectDetectionState == localPlanner) {
+        return 1;
+    } else {
+        return 0;
     }
-
-    informerRemoteState[amiroState]->publish(statePublish);
-    // informerAmiroState->publish(statePublish);
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
-
-  }
-*/
+}
 

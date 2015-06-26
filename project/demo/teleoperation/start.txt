@@ -2,6 +2,15 @@
 
 This is a teleoperation for steering the AMiRo via a website
 
+===== Run the demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh''
+  - ''./run.sh'' on the AMiRo
+  - Access with your browser the webpage via ''<IP>:7681''
+  - ''./kill.sh'' on the AMiRo for stopping
+
+
 ===== RSB Scopes =====
 
 std::string g_sInScopeImage = "/IMAGES";

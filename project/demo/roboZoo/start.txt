@@ -1,0 +1,24 @@
+====== Building the roboZoo Environment for AMiRo ======
+
+This is a demo which runs the roboZoo for RoboCup@Home2015.
+
+===== Run the demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh''
+  - Watch out the the ''amirospread'' configuration is correct (Has the local IPs of the AMiRo which is it running)
+  - ''./run.sh <Position 1-4>'' on the AMiRo
+  - Choose the correct AMiRo IP in the ''rsb.conf'' file
+  - Send a choreo via rsb with the send script and a specific songnumber ''playSong.sh <Songnumber>''
+  - ''./stop.sh'' on the AMiRo for stopping
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+
+===== Songnumbers =====
+
+0: Kung Fu Fighting
+1: In the Summertime
+2: Let's Twist Again
+4: Macarena
+5: Gonna Make You Sweat
+
