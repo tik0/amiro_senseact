@@ -30,7 +30,14 @@ include_directories(
 )
 
 # Define the source
-SET (SOURCE main.cxx)
+SET (SOURCE 
+main.cxx
+ArgHandler.cpp
+)
+
+SET (HEADERS
+ArgHandler.hpp
+)
 
 # Add sources to build
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/iplImageConverterSource.cmake")

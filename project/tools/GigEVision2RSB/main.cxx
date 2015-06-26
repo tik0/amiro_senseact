@@ -37,6 +37,9 @@
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
 
+// OTHER
+#include "ArgHandler.hpp"
+
 using namespace std;
 using namespace cv;
 using namespace boost;
@@ -94,19 +97,6 @@ std::size_t numFrames = 0;
 std::string recordFilename = "video.avi";
 std::size_t fpsRecord = 30;
 
-// Camera parameter
-static cvbint64_t camStreamBytesPerSecond = 12400000;
-static cvbint64_t camPixelFormat = 17301505;
-static cvbint64_t camWidth = 2048;
-static cvbint64_t camHeight = 1088;
-static cvbint64_t camOffsetX = 0;
-static cvbint64_t camOffsetY = 0;
-static cvbint64_t camExposureTimeAbs = 16000;
-static cvbint64_t camExposureAuto = 0;
-static double camGain = 0.00;
-static cvbint64_t camGainAuto = 0;
-static double camBlackLevel = 4.00;
-static double camGamma = 1.00;
 
 void initVideoRecorder(cv::Size frameSize)
 {
@@ -168,7 +158,7 @@ void genicam_read(const std::string nodeName, const T value)
             cvbint64_t val = 0;
            result = NGetAsInteger(hNode, val);
            cout << val << " (int)" << endl;
-      } else if(typeid(value) == typeid(string)) { //String is not working because compiler think its double ? run time issue
+      } else if(typeid(value) == typeid(string)) { 
             char* val;
             size_t len;
            result = NGetAsString(hNode, val, len);
@@ -195,9 +185,142 @@ void genicam_read(const std::string nodeName, const T value)
 }
 
 
+
+void genicam_read_int(const std::string nodeName)
+{
+  cout << "Get "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+        cvbint64_t val = 0;
+           result = NGetAsInteger(hNode, val);
+           cout << val << " (int)" << endl;
+  
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+
+void genicam_read_double(const std::string nodeName)
+{
+  cout << "Get "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+          double val = 0.0;
+           result = NGetAsFloat(hNode, val);
+           cout << val << " (double)" << endl;
+  
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+
+void genicam_read_bool(const std::string nodeName)
+{
+  cout << "Get "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+   cvbbool_t val = false;
+           result = NGetAsBoolean(hNode, val);
+           cout << val << " (bool)" << endl;
+  
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+
+void genicam_read_str(const std::string nodeName)
+{
+  cout << "Get "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+            char* val;
+            size_t len;
+           result = NGetAsString(hNode, val, len);
+           try {
+           cout << string(val,len) << " (string)" << endl;
+           } catch(std::logic_error ex) {
+               cout << "error at accessing string " << nodeName << endl;
+           }
+  
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
 // access a feature via CVGenApi
 template<typename T>
-void genicam_access(const std::string nodeName, const T value)
+void genicam_access( std::string nodeName, T value)
 {
     genicam_read(nodeName, value);
   cout << "Set "<< nodeName << ": ";
@@ -253,12 +376,173 @@ void genicam_access(const std::string nodeName, const T value)
     cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
   }
 }
+void genicam_access_int( std::string nodeName, int value)
+{
+    genicam_read_int(nodeName);
+  cout << "Set int "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+
+           result = NSetAsInteger(hNode, value);
 
 
+      if(result >= 0)
+      {
+        cout << "Node value set to "<< value << endl;
+      }
+      else
+      {
+        cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
+      }
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+void genicam_access_double( std::string nodeName, double value)
+{
+    genicam_read_double(nodeName);
+  cout << "Set double "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+
+           result = NSetAsFloat(hNode, value);
+
+
+      if(result >= 0)
+      {
+        cout << "Node value set to "<< value << endl;
+      }
+      else
+      {
+        cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
+      }
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+void genicam_access_bool( std::string nodeName, bool value)
+{
+    genicam_read_bool(nodeName);
+  cout << "Set bool "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+
+           result = NSetAsBoolean(hNode, value);
+
+
+      if(result >= 0)
+      {
+        cout << "Node value set to "<< value << endl;
+      }
+      else
+      {
+        cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
+      }
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+void genicam_access_str( std::string nodeName, string value)
+{
+    genicam_read_str(nodeName);
+  cout << "Set str "<< nodeName << ": ";
+
+  NODEMAP hNodeMap = NULL;
+  cvbres_t result = NMHGetNodeMap(hCamera, hNodeMap);
+  if(result >= 0)
+  {
+    // get width feature node
+    NODE hNode = NULL;
+    result = NMGetNode(hNodeMap, nodeName.c_str(), hNode);
+    if(result >= 0)
+    {
+
+           result = NSetAsString(hNode, value.c_str());
+
+
+      if(result >= 0)
+      {
+        cout << "Node value set to "<< value << endl;
+      }
+      else
+      {
+        cout << "Node value error: " << CVC_ERROR_FROM_HRES(result) << endl;
+      }
+
+      ReleaseObject(hNode);
+    }
+    else
+    {
+      cout << "Node error: " << CVC_ERROR_FROM_HRES(result) << endl;
+    }
+    ReleaseObject(hNodeMap);
+  }
+  else
+  {
+    cout << "Nodemap error: " << CVC_ERROR_FROM_HRES(result) << endl;
+  }
+}
+
+
+    ArgHandler argHandle;
 
 
 int main(int argc, char **argv) {
-
+    
   programOptions(argc, argv);
 
   // Init RSB
@@ -306,18 +590,23 @@ int main(int argc, char **argv) {
       // access camera config
   if(CanNodeMapHandle(hCamera))
   {
-    genicam_access(std::string("StreamBytesPerSecond"), camStreamBytesPerSecond);
-    genicam_access(std::string("PixelFormat"), camPixelFormat);
-    genicam_access(std::string("Width"),camWidth);
-    genicam_access(std::string("Height"), camHeight);
-    genicam_access(std::string("OffsetX"), camOffsetX);
-    genicam_access(std::string("OffsetY"), camOffsetY);
-    genicam_access(std::string("ExposureTimeAbs"), camExposureTimeAbs);
-    genicam_access(std::string("ExposureAuto"), camExposureAuto);
-    genicam_access(std::string("Gain"), camGain);
-    genicam_access(std::string("GainAuto"), camGainAuto);
-    genicam_access(std::string("BlackLevel"), camBlackLevel);
-    genicam_access(std::string("Gamma"), camGamma);
+      vector<pair<string,string>> args = argHandle.getValuesByPrefix("cam");
+      
+      for(vector<pair<string,string>>::iterator it = args.begin();it != args.end();++it) {
+          //cout << genicam_read(it->first,string("")) << endl;
+          if(argHandle.isBoolean(it->second)) {
+          genicam_access_bool(it->first,argHandle.toBoolean(it->second));
+          }
+          if(argHandle.isInteger(it->second)) {
+          genicam_access_int(it->first,argHandle.toInteger(it->second));
+          }
+          if(argHandle.isDouble(it->second)) {
+          genicam_access_double(it->first,argHandle.toDouble(it->second));
+          }
+          if(argHandle.isString(it->second)) {
+          genicam_access_str(it->first,it->second);
+          }
+      }
   }
 
   
@@ -339,47 +628,37 @@ int main(int argc, char **argv) {
 }
 
 static void programOptions(int argc, char **argv) {
-  namespace po = boost::program_options;
 
-  po::options_description options("Allowed options");
-  options.add_options()("help,h", "Display a help message.")
-    ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending the robot localizations.")
-    ("record,r", po::value < bool > (&doRecord), "Set value to 1 to record the video")
-    ("recordFilename,f", po::value < std::string > (&recordFilename), "Filename of the video. Standard value: video.avi")
-    ("numFrames,n", po::value < size_t > (&numFrames), "Numbers of frames to record (0 for no framenumber constraints). Standard value: 0")
-    ("fpsRecord", po::value < size_t > (&fpsRecord), "Frames per second for replay. Standard value: camAcquisitionFrameRateAbs")
-    ("camStreamBytesPerSecond", po::value < cvbint64_t> (&camStreamBytesPerSecond), "Camera option.")
-    ("camPixelFormat", po::value < cvbint64_t > (&camPixelFormat), "Camera option.")
-    ("camWidth", po::value < cvbint64_t> (&camWidth), "Camera option.")
-    ("camHeight", po::value <cvbint64_t > (&camHeight), "Camera option.")
-    ("camOffsetX", po::value < cvbint64_t> (&camOffsetX), "Camera option.")
-    ("camOffsetY", po::value < cvbint64_t> (&camOffsetY), "Camera option.")
-    ("camExposureTimeAbs", po::value <cvbint64_t > (&camExposureTimeAbs), "Camera option.")
-    ("camExposureAuto", po::value < cvbint64_t> (&camExposureAuto), "Camera option.")
-    ("camGain", po::value <double > (&camGain), "Camera option.")
-    ("camGainAuto", po::value < cvbint64_t> (&camGainAuto), "Camera option.")
-    ("camBlackLevel", po::value < double> (&camBlackLevel), "Camera option.")
-    ("camGamma", po::value < double> (&camGamma), "Camera option.");
+    argHandle.processArgs(argc,argv);
+    
+    argHandle.coutArgs();
+    
+    if(argHandle.hasIdentifier("outscope")) {
+        rsbOutScope = argHandle.getValueAsString("outscope");
+        cout << "outscope is now " << rsbOutScope << endl;
+    }
+    if(argHandle.hasIdentifier("record")) {
+        doRecord = argHandle.toBoolean(argHandle.getValueAsString("record"));
+        cout << "record is now " << doRecord << endl;
 
-  
-  
-  // allow to give the value as a positional argument
-  po::positional_options_description p;
-  p.add("value", 1);
+    }
+    if(argHandle.hasIdentifier("recordFilename")) {
+        recordFilename = argHandle.getValueAsString("recordFilename");
+        cout << "recordFilename is now " << recordFilename << endl;
 
-  po::variables_map vm;
-  po::store(
-    po::command_line_parser(argc, argv).options(options).positional(p).run(),
-    vm);
+    }
+    if(argHandle.hasIdentifier("numFrames")) {
+        numFrames = argHandle.toInteger(argHandle.getValueAsString("numFrames"));
+                cout << "numFrames is now " << numFrames << endl;
+    }
+    if(argHandle.hasIdentifier("fpsRecord")) {
+        fpsRecord = argHandle.toInteger(argHandle.getValueAsString("fpsRecord"));
+        cout << "fpsRecord is now " << fpsRecord << endl;
 
-  // first, process the help option
-  if (vm.count("help")) {
-      std::cout << options << "\n";
-      exit(1);
-  }
+    }
 
-  // afterwards, let program options handle argument errors
-  po::notify(vm);
+    
+    
 }
 
 static void processEverything(void) {
