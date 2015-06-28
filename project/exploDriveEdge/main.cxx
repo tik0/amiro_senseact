@@ -87,21 +87,21 @@ std::string ansFinish = "finished";
 std::string ansProblem = "broken";
 
 enum stateType {
-	STturnEdge,
-	STfindDirection,
-	STfirstEdge,
-	STturn,
-	STsecondEdge,
-	STfinalize
+  STturnEdge,
+  STfindDirection,
+  STfirstEdge,
+  STturn,
+  STsecondEdge,
+  STfinalize
 };
 
 std::string stateTypeString[] {
-	"turn ortho to edge",
-	"find direction",
-	"driving first edge",
-	"turn",
-	"driving second edge",
-	"finalize"
+  "turn ortho to edge",
+  "find direction",
+  "driving first edge",
+  "turn",
+  "driving second edge",
+  "finalize"
 };
 
 
