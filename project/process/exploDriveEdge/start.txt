@@ -1,0 +1,12 @@
+This is a x86 program for driving along two edges on a table. It isn't controlling its distance to the edge next to it while driving, so the robot won't drive extactly next to the edge!
+
+It starts its behavior on rsb command (type string) and sends if it's finished (type string):
+* Start: send "start" over RSB scope "/explodrive/command"
+* Listen to RSB scope "/explodrive/answer"
+  -> on "finished" the program finished without any problems
+  -> on "broken" the program has stopped due to some problems (e.g. rirReader doesn't send any sensor values anymore)
+* After finishing movement (in both cases if really finished or broken) the programs waits for next start command
+
+Compile: cmake . && make
+Programs needed: rirReader which should send the ring proximity sensor values over the scopes "/rir_prox/obstacle" and "/rir_prox/ground"
+Run program: exploDriveEdge

@@ -70,9 +70,9 @@ using namespace rsb::patterns;
 
 // velocities
 #define VEL_FORWARD 8
-#define VEL_FORWARD_SLOW 5
+#define VEL_FORWARD_SLOW 4
 #define VEL_TURNING 40
-#define VEL_TURNING_SLOW 25
+#define VEL_TURNING_SLOW 20
 
 
 // scopenames for rsb
