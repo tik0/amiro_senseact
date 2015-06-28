@@ -36,12 +36,17 @@ ControllerAreaNetwork myCAN;
 #include <converter/vecIntConverter/main.hpp>
 #include <boost/shared_ptr.hpp>
 #include <rsb/Factory.h>
+#include <rsb/Version.h>
 #include <rsb/converter/Repository.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#if RSB_VERSION_NUMERIC<1200
+  #include <rsb/QueuePushHandler.h>
+#else
+  #include <rsb/util/QueuePushHandler.h>
+#endif
 
 // RST
 #include <rsb/converter/Repository.h>
@@ -241,7 +246,11 @@ int main(int argc, char **argv) {
 int processSM(void) {
 
     // Create the factory
-  rsb::Factory &factory = rsb::getFactory();
+#if RSB_VERSION_NUMERIC<1200
+  rsb::Factory& factory = rsb::Factory::getInstance();
+#else
+  rsb::Factory& factory = rsb::getFactory();
+#endif
   // Register
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
@@ -308,7 +317,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerObjectDetAnswerScope = factory.createListener(sObjectDetAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueObjectDetAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
+    listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerObjectDetCmdScope = factory.createInformer< std::string > (sObjectDetCmdScope);
 
@@ -316,7 +325,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerExplorationScope = factory.createListener(sExplorationAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueExplorationAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerExplorationScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueExplorationAnswerScope)));
+    listenerExplorationScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueExplorationAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
 
@@ -324,7 +333,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueDeliveryAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
+    listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerDeliveryScope = factory.createInformer< std::string > (sDeliveryCmdScope);
 
@@ -355,7 +364,7 @@ int processSM(void) {
 
       // Create the listener for the standby task
       listenerRemoteTobiState = factory.createListener(g_sInScopeTobi, tmpPartConf);
-      listenerRemoteTobiState->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueRemoteTobiState)));
+      listenerRemoteTobiState->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueRemoteTobiState)));
     }
     catch(std::exception& e) {
       ERROR_MSG("Remote connection not established");

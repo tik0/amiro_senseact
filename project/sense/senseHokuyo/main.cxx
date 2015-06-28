@@ -2,6 +2,7 @@
 #include <rsb/filter/OriginFilter.h>
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
+#include <rsb/Version.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
@@ -122,7 +123,11 @@ transfer rates over standard serial port");
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
 
-  rsb::Factory &factory = rsb::Factory::getInstance();
+#if RSB_VERSION_NUMERIC<1200
+  rsb::Factory& factory = rsb::Factory::getInstance();
+#else
+  rsb::Factory& factory = rsb::getFactory();
+#endif
 
   // Create the informer
   rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informer = factory.createInformer<rst::vision::LocatedLaserScan> (outScope);

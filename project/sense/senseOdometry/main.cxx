@@ -21,6 +21,7 @@
 // RSB
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
+#include <rsb/Version.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
@@ -29,7 +30,7 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // Proto types
-#include <rst0.11/stable/rst/geometry/Pose.pb.h>
+#include <rst/geometry/Pose.pb.h>
 
 #include <stdint.h>  // int32
 
@@ -85,7 +86,11 @@ int main(int argc, char **argv) {
   rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB informer
+#if RSB_VERSION_NUMERIC<1200
   rsb::Factory& factory = rsb::Factory::getInstance();
+#else
+  rsb::Factory& factory = rsb::getFactory();
+#endif
   rsb::Informer< rst::geometry::Pose >::Ptr informer = factory.createInformer< rst::geometry::Pose > (rsbOutScope);
 
   // Init the CAN interface

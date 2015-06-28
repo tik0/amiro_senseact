@@ -25,6 +25,7 @@
 #include <rsb/filter/OriginFilter.h>
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
+#include <rsb/Version.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
@@ -147,7 +148,11 @@ int main(int argc, char **argv) {
   INFO_MSG("Initialize RSB");
 
   // Get the RSB factory
+#if RSB_VERSION_NUMERIC<1200
   rsb::Factory& factory = rsb::Factory::getInstance();
+#else
+  rsb::Factory& factory = rsb::getFactory();
+#endif
 
   // ------------ Converters ----------------------
 

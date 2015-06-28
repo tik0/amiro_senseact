@@ -28,6 +28,7 @@ using namespace boost::chrono;
 
 // rsb
 #include <rsb/Factory.h>
+#include <rsb/Version.h>
 #include <rsb/Handler.h>
 #include <rsb/util/EventQueuePushHandler.h>
 #include <rsb/MetaData.h>
@@ -313,7 +314,11 @@ int main(int argc, char **argv) {
         doHoming = vm.count("homing");
 
   // Get the RSB factory
+#if RSB_VERSION_NUMERIC<1200
   rsb::Factory& factory = rsb::Factory::getInstance();
+#else
+  rsb::Factory& factory = rsb::getFactory();
+#endif
 
   // prepare RSB listener for choreos
   rsb::ListenerPtr choreoListener = factory.createListener(choreoInscope);

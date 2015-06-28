@@ -18,6 +18,7 @@
 
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
+#include <rsb/Version.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
@@ -66,7 +67,11 @@ int main(int argc, char **argv) {
   converterRepository<std::string>()->registerConverter(converter);
   
   // Prepare RSB informer
+#if RSB_VERSION_NUMERIC<1200
   rsb::Factory& factory = rsb::Factory::getInstance();
+#else
+  rsb::Factory& factory = rsb::getFactory();
+#endif
   rsb::Informer< std::vector<int> >::Ptr informer_vec = factory.createInformer< std::vector<int> > (rsbOutScope);
 
   // Init the CAN interface
