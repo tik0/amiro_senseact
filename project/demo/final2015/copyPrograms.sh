@@ -13,3 +13,5 @@ scp stop.sh root@${IP}:~/${NAME}
 scp amirospread root@${IP}:~/${NAME}
 scp rsb.conf root@${IP}:~/${NAME}
 
+# Copy simulation folder
+scp -r sim root@${IP}:~/${NAME}/

@@ -15,3 +15,13 @@ Tobi <- AMiRo ID1 <- AMiRo ID0
   - ''./stop.sh'' on the AMiRo for stopping
 
 One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+
+===== Simulate the Communication from Tobi =====
+
+  - Log into the AMiRo
+  - Go to the folder ''~/final2015/sim''
+  - ''./simStateInitFollow.sh <ID>'' (AMiRo with the given ID {0,1} is now following the device ahead)
+  - ''./simStateInitWaypoint.sh <ID>'' (AMiRo with the given ID {0,1} stops, saves the environment and detects the movements in the surrounding)
+  - ''./simStateStopWaypoint.sh <ID>'' (AMiRo with the given ID {0,1} stops the detection the movements in the surrounding)
+  - ''./simStateInitFollow.sh <ID>'' (AMiRo with the given ID {0,1} is now following again)
+  - ''./simStateStopFollow.sh <ID>'' (AMiRo with the given ID {0,1} halts)
