@@ -32,28 +32,28 @@ Please use the [[sense:start?do=index|Sitemap]] for a complete overview.
 ===== process =====
 
 The **process** folder contains __processes of the robots__ for working with the MuRoX environment.
-Please use the [[start?do=index|Sitemap]] for a complete overview.
+Please use the [[process:start?do=index|Sitemap]] for a complete overview.
 
 [[process:start?do=index|{{ :process:process.png?300 }}]]
 
 ===== sandbox =====
 
 The **sandbox** folder contains alpha versions of programs for working with the MuRoX environment.
-Please use the [[start?do=index|Sitemap]] for a complete overview.
+Please use the [[sandbox:start?do=index|Sitemap]] for a complete overview.
 
 [[sandbox:start?do=index|{{ :sandbox:sandbox.png?300 }}]]
 
 ===== includes =====
 
 The **includes** folder contains includes like types, messaging or converters for the MuRoX environment.
-Please use the [[includes::start?do=index|Sitemap]] for a complete overview.
+Please use the [[includes:start?do=index|Sitemap]] for a complete overview.
 
 [[includes:start?do=index|{{ includes::includes.png?300 |}}]]
 
 ===== tools =====
 
 The **tools** folder contains tools for working with the MuRoX environment.
-Please use the [[start?do=index|Sitemap]] for a complete overview.
+Please use the [[tools:start?do=index|Sitemap]] for a complete overview.
 
 [[tools:start?do=index|{{ :tools:tools.png?300 }}]]
 
