@@ -8,6 +8,6 @@ The scenario is the delivery of goods from a table to a position from where Tobi
   - ''. ./build.sh .''
   - ''./copyPrograms.sh''
   - ''./run.sh'' on the AMiRo
-  - ''./kill.sh'' on the AMiRo for stopping
+  - ''./stop.sh'' on the AMiRo for stopping
 
 One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
