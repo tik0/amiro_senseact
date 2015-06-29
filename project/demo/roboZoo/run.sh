@@ -1,6 +1,6 @@
 #!/bin/sh
 ./kill.sh
-cpufreq-set -g perfomance
+cpufreq-set -g performance
 spread -c amirospread &
 sleep 5
 

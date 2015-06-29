@@ -1,5 +1,5 @@
 #!/bin/sh
-cpufreq-set -g perfomance
+cpufreq-set -g performance
 spread &
 sleep 5
 ./websocketServerLibWebSockets --resource_path ./Server --port 7681 --thread_camera &

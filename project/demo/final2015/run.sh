@@ -3,7 +3,7 @@ ID=${1}
 Echo "Final setup: Tobi <- AMiRo ID 1 <- AMiRo ID 0"
 echo "Start AMiRo with ID ${ID}"
 ./stop.sh
-cpufreq-set -g perfomance
+cpufreq-set -g performance
 spread -c amirospread &
 sleep 5
 

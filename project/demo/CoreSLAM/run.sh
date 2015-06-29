@@ -1,5 +1,5 @@
 #!/bin/sh
-cpufreq-set -g perfomance
+cpufreq-set -g performance
 spread &
 sleep 5
 ./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 1 --delta 0.01 --sigma_xy 0.01 &
