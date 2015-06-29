@@ -1,5 +1,5 @@
-#!/bin/bash
-./killFinal.sh
+#!/bin/sh
+./stop.sh
 
 # sensing lidar from 'project/sense/senseHokuyo/'
 ./senseHokuyo -d /dev/ttyACM0 -o /AMiRo_Hokuyo/lidar &

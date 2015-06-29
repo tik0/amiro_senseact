@@ -1,0 +1,12 @@
+cmake_minimum_required (VERSION 2.6)
+
+# Set the project name to the name of the folder
+string (REGEX MATCH "[^/]+$" PROJECT_NAME "${CMAKE_CURRENT_BINARY_DIR}")
+message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
+
+# Add folders to build and run CMakeLists.txt in it
+add_subdirectory ($ENV{MUROX_PROJECT}/process/final2015 final2015)
+add_subdirectory ($ENV{MUROX_PROJECT}/sandbox/waypoint waypoint)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/followToBI followToBI)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
+add_subdirectory ($ENV{MUROX_PROJECT}/act/stopMotor stopMotor)

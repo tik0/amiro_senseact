@@ -1,5 +1,6 @@
-#!/bin/bash
-./killFinal.sh
+#!/bin/sh
+./stop.sh
+cpufreq-set -g perfomance
 spread -c amirospread &
 sleep 5
 
@@ -12,4 +13,7 @@ sleep 3
 ./waypoint --lidarinscope /AMiRo_Hokuyo/lidar &
 
 # start state machine
-#./final2015 &
+./final2015 &
+
+wait
+cpufreq-set -g ondemand

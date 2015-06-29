@@ -1,0 +1,13 @@
+====== Building the Fianl 2015 Environment for AMiRo ======
+
+This is a demo works together with Tobi.
+The scenario is the following of Tobi until a waypoint is reached, and sending status information about the point of interest.
+
+===== Run the demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh''
+  - ''./run.sh'' on the AMiRo
+  - ''./stop.sh'' on the AMiRo for stopping
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
