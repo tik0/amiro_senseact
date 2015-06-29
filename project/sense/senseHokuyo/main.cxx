@@ -36,8 +36,8 @@ using namespace std;
 //using namespace cv;
 using namespace rsb;
 using namespace rsb::converter;
-static std::string outScope = "/image";
-
+static std::string outScope = "/lidar";
+static std::size_t publishNthScan = 1;
 #include "HokuyoReader.hh"
 static std::string hokuyoDevice = "/dev/ttyACM0";
 //SCAN_NAME is used to determine the scanType and scanSkip values
@@ -71,6 +71,7 @@ int main(int argc, char **argv) {
     options.add_options()("help,h", "Display a help message.")
             ("outscope,o", po::value < std::string > (&outScope),"Scope for sending scans")
             ("device,d", po::value < std::string > (&hokuyoDevice),"Device name (e.g. /dev/ttyACM0)")
+            ("publishNthScan", po::value < std::size_t > (&publishNthScan),"Publish only every n'th scan via RSB")
             ("baudrate,b", po::value < int > (&baud),"Communication baud rate (does not matter for USB connection)")
             ("scanName,n", po::value < std::string > (&scanName),"[range | top_urg_range+intensity | range+intensity1+AGC1]")
             ("scanStart,s", po::value < int > (&scanStart),"Index where to start of the scan (e.g. Min 44)")
@@ -151,35 +152,33 @@ transfer rates over standard serial port");
   laserScan->set_scan_values_max(4.0); // From Hokuyo URG04 manual
   laserScan->set_scan_angle_increment(radPerSkipStep);
 
-//  const ::google::protobuf::RepeatedField< float > *rf =
-//  ::google::protobuf::RepeatedField< float > scan_values = laserScan->scan_values();
   int n_data_expected = ceil((static_cast<float>(scanEnd - scanStart + 1) / static_cast<float>(scanSkip)));
-//  rf->Reserve(n_data);
+
   // Reserve data
   for(int idx = 1; idx <= n_data_expected; ++idx)
     laserScan->mutable_scan_values()->Add(0.0f);
 
   // Process the lidar forever
+  size_t publishCounter = 0;
   for (; ;) {
     // Fetch the data
     hokuyoReader.GetScan(data, n_data);
     // process it
-//    const ::google::protobuf::RepeatedField< float > *rf = &laserScan->scan_values();
-//    rf->Reserve(n_data);
-//    INFO_MSG("soize" << n_data << " vs. " << laserScan->scan_values().Capacity() << " vs. " << laserScan->mutable_scan_values()->size())
     if (n_data == n_data_expected ) {
-//    laserScan->mutable_scan_values()->AddAlreadyReserved();
-      for(int idx = 0; idx < n_data; ++idx) {
-        // Convert the data from millimeter to meter
-        laserScan->mutable_scan_values()->Set(idx, static_cast<float>(data[idx]) / 1000);
+      if (publishCounter % publishNthScan == 0) {
+        for(int idx = 0; idx < n_data; ++idx) {
+          // Convert the data from millimeter to meter
+          laserScan->mutable_scan_values()->Set(idx, static_cast<float>(data[idx]) / 1000);
+        }
+        // Send the data.
+        informer->publish(laserScan);
+        publishCounter = 0;
       }
-      // Send the data.
-      informer->publish(laserScan);
+      ++publishCounter;
     } else {
       ERROR_MSG("n_data: " << n_data << " vs. n_data_expected: " << n_data_expected)
     }
 
-    // Clear the
   }
 
   // Free the hokuyoReader
