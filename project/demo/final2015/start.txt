@@ -3,6 +3,10 @@
 This is a demo works together with Tobi.
 The scenario is the following of Tobi until a waypoint is reached, and sending status information about the point of interest.
 
+Setup of Tobi and the AMiRos:
+
+Tobi <- AMiRo ID1 <- AMiRo ID0
+
 ===== Run the demo =====
 
   - ''. ./build.sh .''

@@ -1,4 +1,7 @@
 #!/bin/sh
+ID=${1}
+Echo "Final setup: Tobi <- AMiRo ID 1 <- AMiRo ID 0"
+echo "Start AMiRo with ID ${ID}"
 ./stop.sh
 cpufreq-set -g perfomance
 spread -c amirospread &
@@ -13,7 +16,7 @@ sleep 3
 ./waypoint --lidarinscope /AMiRo_Hokuyo/lidar &
 
 # start state machine
-./final2015 &
+./final2015 --id ${ID} &
 
 wait
 cpufreq-set -g ondemand
