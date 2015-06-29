@@ -12,10 +12,10 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.12)
-pkg_check_modules(RSC rsc0.12)
+pkg_check_modules(RSB rsb0.11)
+pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.12)
+pkg_check_modules(RST rstsandbox0.11)
 pkg_check_modules(OpenCV opencv)
 pkg_check_modules(EIGEN eigen3)
 # FIND_PACKAGE(OpenCV REQUIRED)

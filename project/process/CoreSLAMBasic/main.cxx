@@ -107,77 +107,44 @@ std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
 static rst::geometry::Rotation odomRot;
 
-// RSB Server function for the mapping server
-boost::shared_ptr<cv::Mat> mapServer() {
-  // Convert the map to a cv::Mat image
-  boost::shared_ptr<cv::Mat> dst(new cv::Mat(cv::Size(TS_MAP_SIZE,TS_MAP_SIZE), CV_8U)); // destination image for sending
-  cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
-  image.convertTo(*dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
-  return dst;
-}
-
-// RSB Server function for switching from SLAM to localization
-static bool doMapUpdate = false;
-boost::shared_ptr<std::string> switchSLAM2Localization() {
-  // Switch the behaviour
-  doMapUpdate = ~doMapUpdate;
-  // Tell the client which behaviour is valid
-  if (doMapUpdate)
-    return boost::shared_ptr<std::string>(new std::string("SLAM"));
-  else
-    return boost::shared_ptr<std::string>(new std::string("LOC"));
-}
-
-void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
-  
-  laser_count_++;
-  if ((laser_count_ % throttle_scans_) != 0)
-    return;
-
-//  DEBUG_MSG( "Scan rec.")
-//  Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
-//  Eigen::AngleAxisd lidar_angle(lidar_quat);
-//  Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
-//  const double yaw = rpy(2);
-
-  // Copy the whole scan
-  rsbScan = *data;
-
-  // Shifting the rays
-  DEBUG_MSG("Startscan: " << rsbScan.scan_angle_start() * 180.0 / M_PI)
-  DEBUG_MSG("Endscan: " << rsbScan.scan_angle_end() * 180.0 / M_PI)
-  DEBUG_MSG("Angle: " << rsbScan.scan_angle() * 180.0 / M_PI)
-  DEBUG_MSG("Size: " << rsbScan.scan_values_size())
-  DEBUG_MSG("Inc: " << rsbScan.scan_angle_increment() * 180.0 / M_PI)
-//  rsbScan.set_scan_angle_increment(-rsbScan.scan_angle_increment);
-
-
-//  rsbScan.set_scan_angle_start(rsbScan.scan_angle_start() + M_PI / 2.0f);
-//  rsbScan.set_scan_angle_end(rsbScan.scan_angle_end() + M_PI / 2.0f);
-//
-//  rsbScan.set_scan_angle_start(0);
-//  rsbScan.set_scan_angle_end(240.0f / 180.0f * M_PI);
-//  rsbScan.set_scan_angle_start(120.0f / 180.0f * M_PI);
-//    rsbScan.set_scan_angle_end(-120.0f / 180.0f * M_PI);
-  
-  // Check if two adjiacent rays stand almost perpendiculat on the surface
-  // and set the first one to an invalid measurement if the angle is to big
-  for (int idx = 0; idx < rsbScan.scan_values_size()-1; idx++) {
-    float a = rsbScan.scan_values(idx);
-    float b = rsbScan.scan_values(idx+1);
-    float h = a * sin(rsbScan.scan_angle_increment());
-    float b_t = sqrt(pow(a,2) - pow(h,2));
-    float b_tt = b - b_t;
-    float beta_t = atan2(h, b_t);
-    float beta_tt = atan2(h, b_tt);
-    float beta = beta_t + beta_tt;
-    if (sin(beta) < rayPruningAngle())
-      rsbScan.mutable_scan_values()->Set(idx, rsbScan.scan_values_max() + 42.0f); // Increment the value, so that it becomes invalid
+// RSB Server function for the mapping server which replies with a 8bit map of the environment
+class mapServer: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
+public:
+  boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
+    // Convert the map to a cv::Mat image
+    boost::shared_ptr<cv::Mat> dst(new cv::Mat(cv::Size(TS_MAP_SIZE,TS_MAP_SIZE), CV_8U)); // destination image for sending
+    cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
+    image.convertTo(*dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
+    INFO_MSG("Server returns map")
+    return dst;
   }
-  // Delete the last value, if the former value is invalid
-  if (rsbScan.scan_values(rsbScan.scan_values_size() -2) > rsbScan.scan_values_max())
-    rsbScan.mutable_scan_values()->Set(rsbScan.scan_values_size() - 1, rsbScan.scan_values_max() + 42.0f);
+};
 
+#define NUM_STATES 3
+enum states {
+  idle,
+  slam,
+  localization
+};
+
+static states slamState = idle;
+
+std::string statesString[NUM_STATES] {
+  "idle",
+  "slam",
+  "localization"
+};
+
+// Control the SLAM behaviour
+void controlCoreSLAMBehaviour(boost::shared_ptr<std::string> e) {
+
+  // Control the behaviour
+  if (e->compare("start") == 0)
+    slamState = slam;
+  else if (e->compare("finish") == 0)
+    slamState = localization;
+  else
+    slamState = idle;
 
 }
 
@@ -302,7 +269,11 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
         data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
     }
     // Monte carlo localization is done inside
-    ts_iterative_map_building(&data, &state_, doMapUpdate);
+    if (slamState == slam)
+      ts_iterative_map_building(&data, &state_, true /*do Map Update*/);
+    else /*if (slamState == localization)*/
+      ts_iterative_map_building(&data, &state_, false /*do only localization*/);
+
     DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
     DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
   }
@@ -321,6 +292,10 @@ int main(int argc, const char **argv){
   std::string odomInScope = "/AMiRo_Hokuyo/gps";
   std::string serverScope = "/AMiRo_Hokuyo/server/slam";
   std::string mapAsImageOutScope = "/AMiRo_Hokuyo/image";
+  std::string sExplorationScope = "/exploration";
+  std::string sExplorationCmdScope = "/command";
+  std::string sExplorationAnswerScope = "/answer";
+  std::string mapServerReq = "map";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
 
@@ -329,15 +304,16 @@ int main(int argc, const char **argv){
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
     ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
     ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
+    ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
+    ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
     ("mapAsImageOutScope", po::value < std::string > (&mapAsImageOutScope), "Scope for sending the map as compressed image to a remote spread daemon")
     ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
     ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
     ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
-    ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
     ("transX", po::value < double > (&transX),"Translation of the lidar in x [m]")
     ("transY", po::value < double > (&transY),"Translation of the lidar in y [m]")
     ("transZ", po::value < double > (&transZ),"Translation of the lidar in z [m]")
@@ -415,23 +391,31 @@ int main(int argc, const char **argv){
   // Prepare RSB async listener for odometry messages
   rsb::ListenerPtr listener = factory.createListener(odomInScope);
   listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
+  // Prepare RSB listener for controling the programs behaviour
+  rsb::ListenerPtr expListener = factory.createListener(sExplorationScope);
+  expListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&controlCoreSLAMBehaviour)));
   // Prepare RSB informer for sending the map as an compressed image
   rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
   // Prepare RSB server for the map server
-  rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope);
-
-  server->registerMethod("map", rsb::patterns::LocalServer::CallbackPtr(new rsb::patterns::LocalServer::FunctionCallback<void, cv::Mat>(&mapServer)));
-  server->registerMethod("SlamLocSwitch", rsb::patterns::LocalServer::CallbackPtr(new rsb::patterns::LocalServer::FunctionCallback<void, std::string>(&switchSLAM2Localization)));
-
-  // Show the map as a cv Image
-  cv::Size size(TS_MAP_SIZE / 2,TS_MAP_SIZE / 2);
-  cv::Mat dst(size, CV_16S); // destination image for scaling
-  cv::Mat dstColor(size, CV_8UC3); // Color image
+  rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
+  server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
+  // server->registerMethod(mapServerReq.c_str(), rsb::patterns::LocalServer::CallbackPtr(new rsb::patterns::LocalServer::FunctionCallback<void, cv::Mat>(&mapServer)));
 
   rst::vision::LocatedLaserScan scan;
+  // Do SLAM
   while( true ){
+    // Idle arround if the state says so
+    if (slamState == idle) {
+      usleep(50000); // Sleep for 50 ms
+      continue;
+    }
+
+    ++laser_count_;
+    if ((laser_count_ % throttle_scans_) != 0)
+      continue;
+
     // Fetch a new scan and store it to scan
-    convertDataToScan(lidarQueue->pop(), scan);
+    scan = *(lidarQueue->pop());
     ts_position_t pose;
     ts_position_t odom_pose;
     getOdomPose(odom_pose);
@@ -452,6 +436,11 @@ int main(int argc, const char **argv){
     }
 
     if (sendMapAsCompressedImage) {
+      // Show the map as a cv Image
+      cv::Size size(TS_MAP_SIZE / 2,TS_MAP_SIZE / 2);
+      cv::Mat dst(size, CV_16S); // destination image for scaling
+      cv::Mat dstColor(size, CV_8UC3); // Color image
+
       cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
       cv::resize(image,dst,size);//resize image
       cv::flip(dst, dst, 0);  // horizontal flip
