@@ -1,2 +1,2 @@
-#!/bin/bash
-rsb-sendcpp0.11 /tobiamiro0/command states/initFollow.txt
+#!/bin/sh
+rsb-sendcpp0.11 /tobiamiro${1}/command states/initFollow.txt
