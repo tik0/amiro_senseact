@@ -1,32 +1,39 @@
-Outside			Main Statemachine		Ext Prog
+Outside				Main Statemachine		Ext Prog
 
-		-?->	idle
-"init"		->	init
-"exploStart"	<-	explorationStart	->	start exploration task
-			exploration			<-?-	do exploration
-"exploFin"	<-	exploration		<-	exploration finished
-"blobStart"	<-	blobDetectionStart	->	start searching blobs
-			blobDetection		<-?-	do searching
-"blobFin"	<-	blobDetection		<-	searching blobs finished
-"detectStart"	<-	objectDetectionStart	->	start object detection
-			objectDetection		<-?-	do detection
-"detectFin"	<-	objectDetection		<-	object detection finished
-"initDone"	<-	initDone
-		-?->	waiting
-
-
-		-?->	waiting
-"deliver"	->	objectDeliveryStart	->	start object delivery
-			objectDelivery		<-?-	do delivery
-"delivered"	<-	objectDelivery		<-	object delivery finished
-		-?->	waiting
+			-?->	idle
+"init<Colors>"		->	idle
+"init"(RS)		<-	init
+				explorationStart	->	start exploration task
+				exploration			<-?-	do exploration
+				exploration		<-	exploration finished
+				blobDetectionStart	->	start searching blobs
+				blobDetection		<-?-	do searching
+				blobDetection		<-	searching blobs finished
+				objectDetectionStart	->	start object detection
+				objectDetection		<-?-	do detection
+"object<Num>"(D)	<-	objectDetection		<-	<Num> object detected, Num > 0
+"object<Num>rec"	->	objectDetection
+				objectDetection		<-	object detection finished
+"initDone"		<-	initDone
+			-?->	waiting
 
 
-		-?->	waiting
-"transport"	->	objectTransportStart	->	start object transport
-			objectTransport		<-?-	transporting
-"transported"	<-	objectTransport		<-	object transport finished
-		-?->	waiting
+			-?->	waiting
+"object<Num>"		->	waiting
+"object<Num>start"(RS)	<-	objectDeliveryStart	->	start object delivery
+				objectDelivery		<-?-	do delivery
+"object<Num>finish"(D)	<-	objectDelivery		<-	object delivery finished
+"object<Num>finishrec"	->	objectDelivery
+			-?->	waiting
+
+
+			-?->	waiting
+"transport"		->	waiting
+"transportstart"(RS)	<-	objectTransportStart	->	start object transport
+				objectTransport		<-?-	transporting
+"transportfinish"(D)	<-	objectTransport		<-	object transport finished
+"transportfinishrec"	->	objectTransport
+			-?->	waiting
 
 			
 

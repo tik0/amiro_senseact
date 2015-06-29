@@ -169,10 +169,11 @@ std::string sInScopeOdometry = "/odo";
 
 // RSB content
 std::string outputRSBOutsideInitDone = "initdone";
-std::string outputRSBOutsideDelivery = "delivered";
-std::string outputRSBOutsideTransport = "transported";
+std::string outputRSBOutsideObjectDet = "object";
+std::string outputRSBOutsideDeliveryAPP = "finish";
+std::string outputRSBOutsideTransportAPP = "finished";
 std::string inputRSBOutsideInit = "init";
-std::string inputRSBOutsideDelivery = "deliver";
+std::string inputRSBOutsideDelivery = "object";
 std::string inputRSBOutsideTransport = "transport";
 std::string outputRSBExploration = "start";
 std::string inputRSBExploration = "finish";
@@ -201,7 +202,16 @@ bool rsbInputTransport = false;
 bool rsbInputObjectDetection = false;
 bool rsbInputLocalPlanner = false;
 
+// RSB received recognizer
+bool rsbRecObjectDet[] = {false, false, false, false, false, false};
+bool rsbRecAllObjects = false;
+bool rsbRecObjectDelivery = false;
+bool rsbRecTransport = false;
+
 int objectCount = 0;
+int objectCountMax = 6;
+int objectOffsetForToBI = 2;
+bool objectDetected[] = {false, false, false, false, false, false};
 std::string objectDetectionAnswer = "";
 
 int robotID = 0;
@@ -215,6 +225,7 @@ bool testWithAnswerer = false;
 
 // functions
 bool readInitInput(std::string inputData);
+void readRecObjectDetection(std::string inputData);
 void setLightcolor(void);
 void idleBlink(void);
 int processSM(void);
@@ -420,7 +431,9 @@ int processSM(void) {
                 rsbInputOutsideDeliver = true;
             } else if (sRSBInput.compare(inputRSBOutsideTransport) == 0) {
                 rsbInputOutsideTransport = true;
-            }   
+            } else {
+                readRecObjectDetection(sRSBInput);
+            }
         }
         if (!queueExplorationAnswerScope->empty()) {
             sRSBInput = *queueExplorationAnswerScope->pop();
@@ -510,10 +523,17 @@ int processSM(void) {
                 }
                 break;
             case objectDetectionMain:
+                rsbRecAllObjects = true;
+                for (int objIdx=0; objIdx<objectCountMax; objIdx) {
+                    if (objectDetected[objIdx] && !rsbRecObjectDet[objIdx]) {
+                        rsbRecAllObjects = false;
+                        *stringPublisher = outputRSBOutsideObjectDet.append(std::to_string(objIdx+1+objectOffsetForToBI));
+                        informerOutsideScope->publish(stringPublisher);
+                    }
+                }
                 if (objectCount > 0) {
                     ssmObjectDetection();
-                } else {
-                    //informerOutsideScope->publish(???);
+                } else if (rsbRecAllObjects) {
                     amiroState = initDone;
                 }
                 break;
@@ -585,6 +605,30 @@ bool readInitInput(std::string inputData) {
     } else {
 //        WARNING_MSG("'" << inputRSBOutsideInit << "' couldn't be found in '" << justInit << "'");
         return false;
+    }
+}
+
+void readRecObjectDetection(std::string inputData) {
+    if (inputData.size() > 9) {
+        std::string mainPart;
+        mainPart.append(inputData, 0, outputRSBOutsideObjectDet.size());
+        std::string lastPart;
+        lastPart.append(inputData, inputData.size()-3, inputData.size());
+        if (mainPart.compare(outputRSBOutsideObjectDet) == 0 && lastPart.compare("rec") == 0) {
+            std::string sNum;
+            sNum.append(inputData, outputRSBOutsideObjectDet.size(), inputData.size()-3);
+            int objNum = std::stoi(sNum);
+            INFO_MSG("Read number n=" << objNum << " out of string '" << sNum << "'");
+            if (objNum > objectOffsetForToBI) {
+                rsbRecObjectDet[objNum-objectOffsetForToBI-1] = true;
+            } else {
+                WARNING_MSG("Object number is too small!");
+            } 
+        } else {
+            WARNING_MSG("The input '" << mainPart << "' doesn't fit with '" << outputRSBOutsideObjectDet << "' or the input appendix '" << lastPart << "' isn't 'rec'");
+        }
+    } else {
+        WARNING_MSG("Input data has not a length greater than 9: '" << inputData << "'");
     }
 }
 
