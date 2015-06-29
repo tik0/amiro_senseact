@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
-            ("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving compressed images");
+            ("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving uncompressed cv::Mat images");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
