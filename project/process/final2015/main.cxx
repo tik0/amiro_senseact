@@ -389,7 +389,7 @@ int processSM(void) {
 		}
 
 		*signal_state = statesString[amiroState];
-		INFO_MSG("SENDING STATE SCOPE: " << g_sOutScopeStateTobi << "/" << *signal_state)
+//		INFO_MSG("SENDING STATE SCOPE: " << g_sOutScopeStateTobi << "/" << *signal_state)
 
 //		informerRemoteState[amiroState]->publish(signal_state);
 		// informerAmiroState->publish(signal_state);
