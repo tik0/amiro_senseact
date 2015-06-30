@@ -112,8 +112,8 @@ int main(int argc, char **argv) {
 	// Afterwards, let program options handle argument errors
 	po::notify(vm);
 	
-	g_sInScopeTobi.append("0");
-	g_sOutScopeStateTobi.append("0").append("tobi");
+	g_sInScopeTobi.append(amiro_id);
+	g_sOutScopeStateTobi.append(amiro_id).append("tobi");
 
 	return processSM();
 }
