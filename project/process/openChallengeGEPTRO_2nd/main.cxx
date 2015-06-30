@@ -172,9 +172,7 @@ std::string sInScopeOdometry = "/odo";
 std::string outputRSBOutsideInitDone = "initdone";
 std::string outputRSBOutsideObjectDet = "object";
 std::string outputRSBOutsideDeliveryAPP = "finish";
-std::string outputRSBOutsideDelivery = "delivered";
-std::string outputRSBOutsideTransport = "transported";
-std::string outputRSBOutsideTransportAPP = "finished";
+std::string outputRSBOutsideTransportAPP = "finish";
 std::string inputRSBOutsideInit = "init";
 std::string inputRSBOutsideDelivery = "object";
 std::string inputRSBOutsideTransport = "transport";
@@ -205,7 +203,7 @@ bool rsbInputTransport = false;
 bool rsbInputObjectDetection = false;
 bool rsbInputLocalPlanner = false;
 
-// RSB received recognizer
+// RSB output resend flags
 bool rsbRecObjectDet[] = {false, false, false, false, false, false};
 bool rsbRecAllObjects = false;
 bool rsbRecObjectDelivery = false;
@@ -231,6 +229,8 @@ bool testWithAnswerer = false;
 // functions
 bool readInitInput(std::string inputData);
 bool readRecObjectDetection(std::string inputData);
+bool readDeliveryFinished(std::string inputData);
+bool readTransportFinished(std::string inputData);
 void setLightcolor(void);
 void idleBlink(void);
 int processSM(void);
@@ -548,8 +548,6 @@ int processSM(void) {
                         objOutput.append(outputRSBOutsideObjectDet).append(std::to_string(objIdx+1+objectOffsetForToBI));
                         *stringPublisher = objOutput;
                         informerOutsideScope->publish(stringPublisher);
-                    } else if (!objectDetected[objIdx]) {
-                        INFO_MSG("Object " << objIdx << " hasn't been detected yet.");
                     }
                 }
                 if (objectCount > 0) {
@@ -580,7 +578,7 @@ int processSM(void) {
                 if (rsbInputOutsideDeliver) {
                     std::string sOutput = "";
                     sOutput.append(inputRSBOutsideDelivery).append(std::to_string(deliverObjectId)).append("start");
-                    *stringPublisher = outputRSBOutsideDelivery;
+                    *stringPublisher = sOutput;
                     informerOutsideScope->publish(stringPublisher);
                 }
                 if (rsbInputDelivery) {
@@ -622,22 +620,17 @@ int processSM(void) {
 }
 
 bool readInitInput(std::string inputData) {
-//    INFO_MSG("Input is '" << inputData << "' and expected is '" << inputRSBOutsideInit << "' and colors");
     int expectedLength = inputRSBOutsideInit.size();
     if (inputData.size() < expectedLength) {
-//        WARNING_MSG("Input size is " << inputData.size() << ", but expected " << expectedLength);
         return false;
     }
     std::string justInit;
     justInit.append(inputData, 0, expectedLength);
-//    INFO_MSG("First " << expectedLength << " chars: " << justInit);
     if (justInit.compare(inputRSBOutsideInit) == 0) {
         colorInit = "";
     	colorInit.append(inputData, expectedLength, inputData.size()-expectedLength);
-//        INFO_MSG("Recognized colors: " << colorInit);
         return true;
     } else {
-//        WARNING_MSG("'" << inputRSBOutsideInit << "' couldn't be found in '" << justInit << "'");
         return false;
     }
 }
@@ -652,20 +645,31 @@ bool readRecObjectDetection(std::string inputData) {
             std::string sNum;
             sNum.append(inputData, outputRSBOutsideObjectDet.size(), inputData.size()-3-outputRSBOutsideObjectDet.size());
             int objNum = std::stoi(sNum);
-//            INFO_MSG("Read number n=" << objNum << " out of string '" << sNum << "'");
             if (objNum > objectOffsetForToBI) {
                 rsbRecObjectDet[objNum-objectOffsetForToBI-1] = true;
                 return true;
-            } else {
-//                WARNING_MSG("Object number is too small!");
             }
             return false;
-        } else {
-//            WARNING_MSG("The input '" << mainPart << "' doesn't fit with '" << outputRSBOutsideObjectDet << "' or the input appendix '" << lastPart << "' isn't 'rec'");
         }
         return false;
-    } else {
-//        WARNING_MSG("Input data has not a length greater than 9: '" << inputData << "'");
+    }
+    return false;
+}
+
+bool readDeliveryFinished(std::string inputData) {
+    std::string expected = "";
+    expected.append(inputRSBOutsideDelivery).append(std::to_string(deliverObjectId)).append(outputRSBOutsideDeliveryAPP).append("rec");
+    if (inputData.compare(expected) == 0) {
+        return true;
+    }
+    return false;
+}
+
+bool readTransportFinished(std::string inputData) {
+    std::string expected = "";
+    expected.append(inputRSBOutsideTransport).append(outputRSBOutsideTransportAPP).append("rec");
+    if (inputData.compare(expected) == 0) {
+        return true;
     }
     return false;
 }

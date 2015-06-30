@@ -61,54 +61,28 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-#define NUM_STATES 20
+#define NUM_STATES 7
 enum states {
-	init,
-	initWait,
-	explorationWait,
+	idle,
 	exploration,
-	blobDetectionWait,
 	blobDetection,
-	localPlannerWait,
 	localPlanner,
-	objectDetectionWait,
 	objectDetection,
-	initDoneWait,
-	objectDeliveryStart,
-	objectDeliveryWait,
 	objectDelivery,
-	objectDeliveryFinish,
-	objectTransportStart,
-	objectTransportWait,
-	objectTransport,
-	objectTransportFinish,
-	finishAnswerer
+	objectTransport
 };
 
-states amiroState = init;
-states amiroStateL = initWait;
+states amiroState = idle;
+states amiroStateL = exploration;
 
 std::string statesString[NUM_STATES] {
-	"init",
-	"initWait",
-	"explorationWait",
+	"idle",
 	"exploration",
-	"blobDetectionWait",
 	"blobDetection",
-	"localPlannerWait",
 	"localPlanner",
-	"objectDetectionWait",
 	"objectDetection",
-	"initDoneWait",
-	"objectDeliveryStart",
-	"objectDeliveryWait",
 	"objectDelivery",
-	"objectDeliveryFinish",
-	"objectTransportStart",
-	"objectTransportWait",
-	"objectTransport",
-	"objectTransportFinish",
-	"finishAnswerer"
+	"objectTransport"
 };
 	
 
@@ -157,14 +131,6 @@ std::string sInScopeOdometry = "/odo";
 
 
 // RSB content
-std::string outputRSBOutsideInitDone = "initdone";
-std::string outputRSBOutsideObjectDet = "object";
-std::string outputRSBOutsideDelivery = "delivered";
-std::string outputRSBOutsideTransport = "transported";
-std::string inputRSBOutsideInit = "init";
-std::string outputRSBOutsideColor = "rbgyx";
-std::string inputRSBOutsideDelivery = "object4";
-std::string inputRSBOutsideTransport = "transport";
 std::string outputRSBExploration = "start";
 std::string inputRSBExploration = "finish";
 std::string outputRSBBlobDetection = "start";
@@ -179,10 +145,6 @@ std::string outputRSBTransport = "start";
 std::string inputRSBTransport = "finish";
 
 // RSB input recognizer
-bool rsbInputOutsideInit = false;
-bool rsbInputOutsideInitDone = false;
-bool rsbInputOutsideDeliver = false;
-bool rsbInputOutsideTransport = false;
 bool rsbInputExploration = false;
 bool rsbInputBlobDetection = false;
 bool rsbInputObjectDetection = false;
@@ -194,19 +156,15 @@ int processSM(void);
 
 int robotID = 0;
 
-int objectCount = 2;
+int objectCount = 0;
 bool objectDetected[] = {false, false};
 
-bool skipToBI = false;
 bool skipExplo = false;
 bool skipBlob = false;
 bool skipLP = false;
 bool skipDet = false;
 bool skipTrans = false;
 bool skipDeli = false;
-
-std::string sRemoteServerPort = "4823";
-std::string sRemoteServer = "localhost";
 
 double tableDepth = 0.7; // cm
 double startPosition = 0.10; /*cm start position*/
@@ -221,16 +179,11 @@ int main(int argc, char **argv) {
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
-        ("spread,s", po::value < std::string > (&sRemoteServer), "IP of remote spread server.")
-        ("spreadPort,p", po::value < std::string > (&sRemoteServerPort), "Port of remote spread server.")
-        ("outscopeTobi,o", po::value < std::string > (&sOutScopeTobi), "Scope for sending the current state to tobi.")
         ("outscopeState,s", po::value < std::string > (&sOutScopeState), "Scope for sending the current state internaly.")
-        ("inscopeTobi,i", po::value < std::string > (&sInScopeTobi), "Scope for recieving Tobis messages.")
         ("robotID,d", po::value < int > (&robotID), "Robot ID.")
         ("tableDepth", po::value < double > (&tableDepth), "Table depth.")
         ("startPosition", po::value < double > (&tableDepth), "Start Position.")
         ("endPosition", po::value < double > (&endPosition), "End Position.")
-        ("skipToBI", "Skipping all parts for ToBI.")
         ("skipExploration", "Skipping all parts for Exploration.")
         ("skipBlobbing", "Skipping all parts for Blob Detection.")
         ("skipLocalPlanner", "Skipping all parts for Local Planner.")
@@ -256,7 +209,6 @@ int main(int argc, char **argv) {
     po::notify(vm);
 
     // save skipping flags
-    skipToBI = vm.count("skipToBI");
     skipExplo = vm.count("skipExploration");
     skipBlob = vm.count("skipBlobbing");
     skipLP = vm.count("skipLocalPlanner");
@@ -264,15 +216,8 @@ int main(int argc, char **argv) {
     skipTrans = vm.count("skipTransport");
     skipDeli = vm.count("skipDelivery");
 
-    // prepare scopes for ToBI-AMIRo communication
-    sOutScopeTobi.append(std::to_string(robotID));
-    sInScopeTobi.append(std::to_string(robotID)).append(sInScopeTobi2nd);
-
     // print all scopes
     INFO_MSG("List of all RSB scopes:");
-    INFO_MSG(" - ToBI to AMiRo:   " << sInScopeTobi);
-    INFO_MSG(" - AMiRo to ToBI:   " << sOutScopeTobi);
-    INFO_MSG(" - State debugging: " << sOutScopeState);
     INFO_MSG(" - Exploration cmd: " << sExplorationCmdScope);
     INFO_MSG(" - Exploration ans: " << sExplorationAnswerScope);
     INFO_MSG(" - BlobDetect cmd:  " << sBlobCmdScope);
@@ -294,46 +239,6 @@ int processSM(void) {
     // Create the factory
     rsb::Factory &factory = rsb::getFactory();
 
-
-    //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
-    ///////////////////////////////////////////////////////////////////////////////
-        // Get the global participant config as a template
-        rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
-              {
-                // Get the options for socket transport, because we want to change them
-                rsc::runtime::Properties tmpProp  = tmpPartConf.mutableTransport("socket").getOptions();
-
-                // disable socket transport
-                std::string enabled = "0";
-                tmpProp["enabled"] = boost::any(enabled);
-
-                // Write the socket tranport properties back to the participant config
-                tmpPartConf.mutableTransport("socket").setOptions(tmpProp);
-              }
-              {
-                // Get the options for spread transport, because we want to change them
-                rsc::runtime::Properties tmpPropSpread = tmpPartConf.mutableTransport("spread").getOptions();
-
-                // enable socket transport
-                std::string enabled = "1";
-                tmpPropSpread["enabled"] = boost::any(enabled);
-
-                // the port of the server
-                tmpPropSpread["port"] = boost::any(sRemoteServerPort);
-
-                // Change the server
-                tmpPropSpread["host"] = boost::any(sRemoteServer);
-
-                // Write the tranport properties back to the participant config
-                tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
-
-                INFO_MSG("Remote Spread Configuration done: " << tmpPropSpread);
-              }
-    ///////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
-
-    /////////////////// LOCAL SCOPES///////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
     // Object Detection: Listener and Informer
     rsb::ListenerPtr listenerObjectDetAnswerScope = factory.createListener(sObjectDetAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueObjectDetAnswerScope(
@@ -382,25 +287,6 @@ int processSM(void) {
 
     rsb::Informer< std::string >::Ptr informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
 
-    /////////////////// REMOTE SCOPES///////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
-
-    rsb::ListenerPtr listenerOutsideScope;
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueOutsideScope(
-            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    rsb::Informer< std::string >::Ptr informerOutsideScope;
-
-    try {
-        listenerOutsideScope = factory.createListener(sInScopeTobi);
-        listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
-
-        informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi);
-    }
-    catch(std::exception& e) {
-        ERROR_MSG("Remote connection not established");
-        return -1;
-    }
-
     INFO_MSG("All RSB connections built. Starting statemachine now.");
 
     boost::shared_ptr<std::string> stringPublisher(new std::string);
@@ -411,8 +297,6 @@ int processSM(void) {
 
         // Check RSB input first
         std::string sRSBInput = "";
-        rsbInputOutsideInit = false;
-        rsbInputOutsideInitDone = false;
         rsbInputExploration = false;
         rsbInputBlobDetection = false;
         rsbInputObjectDetection = false;
@@ -421,28 +305,6 @@ int processSM(void) {
         rsbInputLocalPlanner = false;
 
         // Check input from outside
-        if (!queueOutsideScope->empty()) {
-            sRSBInput = *queueOutsideScope->pop();
-            if (sRSBInput.compare(inputRSBOutsideInit) == 0) {
-                rsbInputOutsideInit = true;
-            } else if (sRSBInput.compare(outputRSBOutsideInitDone) == 0) {
-                rsbInputOutsideInitDone = true;
-            } else if (sRSBInput.compare(outputRSBOutsideDelivery) == 0) {
-                rsbInputOutsideDeliver = true;
-            } else if (sRSBInput.compare(outputRSBOutsideTransport) == 0) {
-                rsbInputOutsideTransport = true;
-            } else {
-                std::string mainPart;
-                mainPart.append(sRSBInput, 0, outputRSBOutsideObjectDet.size());
-                if (mainPart.compare(outputRSBOutsideObjectDet) == 0) {
-                    std::string sNum = "";
-                    sNum.append(sRSBInput, outputRSBOutsideObjectDet.size(), sRSBInput.size());
-                    int objId = std::stoi(sNum);
-                    INFO_MSG("Object " << objId << " has been found.");
-                    objectDetected[objId-3] = true;
-                }
-            }
-        }
         if (!queueExplorationAnswerScope->empty()) {
             sRSBInput = *queueExplorationAnswerScope->pop();
             if (sRSBInput.compare(outputRSBExploration) == 0) {
@@ -486,27 +348,19 @@ int processSM(void) {
         amiroStateL = amiroState;
 
         switch (amiroState) {
-            case init:
-                if (!skipToBI) {
-                    *stringPublisher = inputRSBOutsideInit+outputRSBOutsideColor;
-                    informerOutsideScope->publish(stringPublisher);
-                    amiroState = initWait;
-                } else {
-                    INFO_MSG(" -> Skipping part ToBI Init");
-                    amiroState = explorationWait;
-                }
-                break;
-            case initWait:
-                if (rsbInputOutsideInit) {
-                    amiroState = explorationWait;
-                }
-                break;
-            case explorationWait:
-                if (skipExplo) {
-                    INFO_MSG(" -> Skipping part Exploration");
-                    amiroState = blobDetection;
-                } else if (rsbInputExploration) {
+            case idle:
+                if (rsbInputExploration && !skipExplo) {
                     amiroState = exploration;
+                } else if (rsbInputBlobDetection && !skipBlob) {
+                    amiroState = blobDetection;
+                } else if (rsbInputLocalPlanner && !skipLP) {
+                    amiroState = localPlanner;
+                } else if (rsbInputObjectDetection && !skipDet) {
+                    amiroState = objectDetection;
+                } else if (rsbInputDelivery && !skipDeli) {
+                    amiroState = objectDelivery;
+                } else if (rsbInputTransport && !skipTrans) {
+                    amiroState = objectTransport;
                 }
                 break;
             case exploration:
@@ -514,144 +368,45 @@ int processSM(void) {
                 sleep(3);
                 *stringPublisher = inputRSBExploration;
                 informerExplorationScope->publish(stringPublisher);
-                amiroState = blobDetectionWait;
-                break;
-            case blobDetectionWait:
-                if (skipBlob) {
-                    INFO_MSG(" -> Skipping part Blob Detection");
-                    amiroState = localPlannerWait;
-                } else if (rsbInputBlobDetection) {
-                    amiroState = blobDetection;
-                }
+                amiroState = idle;
                 break;
             case blobDetection:
                 INFO_MSG("BLOBBING");
                 sleep(3);
                 *stringPublisher = inputRSBBlobDetection;
                 informerBlobScope->publish(stringPublisher);
-                amiroState = localPlannerWait;
-                break;
-            case localPlannerWait:
-                if (skipLP) {
-                    INFO_MSG(" -> Skipping part Local Planner");
-                    amiroState = objectDetectionWait;
-                } else if (objectCount > 0) {
-                    if (rsbInputLocalPlanner) {
-                        amiroState = localPlanner;
-                    }
-                } else {
-                    amiroState = initDoneWait;
-                }
+                amiroState = idle;
                 break;
             case localPlanner:
                 INFO_MSG("DRIVING");
                 sleep(3);
                 *stringPublisher = inputRSBLocalPlanner;
                 informerLocalPlannerScope->publish(stringPublisher);
-                amiroState = objectDetectionWait;
-                break;
-            case objectDetectionWait:
-                if (skipDet) {
-                   INFO_MSG(" -> Skipping part Object Detection");
-                   amiroState = initDoneWait;
-                } else if (rsbInputObjectDetection) {
-                    amiroState = objectDetection;
-                }
+                amiroState = idle;
                 break;
             case objectDetection:
                 INFO_MSG("DETECTING");
                 sleep(3);
-                objectCount--;
                 inputRSBObjectDetection = std::to_string(objectCount+3);
+                objectCount++;
                 *stringPublisher = inputRSBObjectDetection;
                 informerObjectDetScope->publish(stringPublisher);
-                amiroState = localPlannerWait;
-                break;
-            case initDoneWait:
-                if (skipToBI) {
-                    INFO_MSG(" -> Skipping part ToBI Init Done and aksing for delivery");
-                    amiroState = objectDeliveryWait;
-                } else {
-                    if (objectDetected[0] && objectDetected[1]) {
-                        INFO_MSG("Sending rec message of object 4.");
-                        std::string sOutput = "";
-                        sOutput.append(outputRSBOutsideObjectDet).append("4rec");
-                        *stringPublisher = sOutput;
-                        informerOutsideScope->publish(stringPublisher);
-                        sleep(3);
-                        INFO_MSG("Sending rec message of object 3.");
-                        sOutput = "";
-                        sOutput.append(outputRSBOutsideObjectDet).append("3rec");
-                        *stringPublisher = sOutput;
-                        informerOutsideScope->publish(stringPublisher);
-                    } else {
-                        WARNING_MSG("No object has been detected!");
-                    }
-                    if (rsbInputOutsideInitDone) {
-                        amiroState = objectDeliveryStart;
-                    }
-                }
-                break;
-            case objectDeliveryStart:
-                INFO_MSG("WAITING");
-                sleep(3);
-                *stringPublisher = inputRSBOutsideDelivery;
-                informerOutsideScope->publish(stringPublisher);
-                amiroState = objectDeliveryWait;
-                break;
-            case objectDeliveryWait:
-                if (skipDeli) {
-                    INFO_MSG(" -> Skipping part Delivery");
-                    amiroState = objectTransportStart;
-                } else if (rsbInputDelivery) {
-                    amiroState = objectDelivery;
-                }
+                amiroState = idle;
                 break;
             case objectDelivery:
                 INFO_MSG("DELIVERING");
                 sleep(3);
                 *stringPublisher = inputRSBDelivery;
                 informerDeliveryScope->publish(stringPublisher);
-                amiroState = objectDeliveryFinish;
-                break;
-            case objectDeliveryFinish:
-                if (skipToBI) {
-                    INFO_MSG(" -> Skipping part ToBI receiving delivery answer and asking for transport");
-                    amiroState = objectTransportWait;
-                } else if (rsbInputOutsideDeliver) {
-                    amiroState = objectTransportStart;
-                }
-                break;
-            case objectTransportStart:
-                INFO_MSG("WAITING");
-                sleep(3);
-                *stringPublisher = inputRSBOutsideTransport;
-                informerOutsideScope->publish(stringPublisher);
-                amiroState = objectTransportWait;
-                break;
-            case objectTransportWait:
-                if (skipTrans) {
-                    INFO_MSG(" -> Skipping part Transporting");
-                    amiroState = finishAnswerer;
-                } else if (rsbInputTransport) {
-                    amiroState = objectTransport;
-                }
+                amiroState = idle;
                 break;
             case objectTransport:
                 INFO_MSG("TRANSPORTING");
                 sleep(3);
                 *stringPublisher = inputRSBTransport;
                 informerTransportScope->publish(stringPublisher);
-                amiroState = objectTransportFinish;
+                amiroState = idle;
                 break;
-            case objectTransportFinish:
-                if (rsbInputOutsideTransport) {
-                    amiroState = finishAnswerer;
-                }
-                break;
-            case finishAnswerer:
-                INFO_MSG("Statemachine of Answerer finished.");
-		return 0;
             default:
                 ERROR_MSG("Unknown state in statemachine!");
                 return -1;
