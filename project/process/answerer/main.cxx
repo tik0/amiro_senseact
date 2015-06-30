@@ -136,7 +136,7 @@ std::string sTransportCmdScope("/objectTransport/answer");
 std::string sTransportAnswerScope("/objectTransport/command");
 
 // Object detection
-std::string sObjectDetCmdScope("/objectDetection/answer");
+std::string sObjectDetCmdScope("/objectDetection/detected");
 std::string sObjectDetAnswerScope("/objectDetection/command");
 
 // Local planner
@@ -158,17 +158,18 @@ std::string sInScopeOdometry = "/odo";
 
 // RSB content
 std::string outputRSBOutsideInitDone = "initdone";
+std::string outputRSBOutsideObjectDet = "object";
 std::string outputRSBOutsideDelivery = "delivered";
 std::string outputRSBOutsideTransport = "transported";
 std::string inputRSBOutsideInit = "init";
 std::string outputRSBOutsideColor = "rbgyx";
-std::string inputRSBOutsideDelivery = "deliver";
+std::string inputRSBOutsideDelivery = "object4";
 std::string inputRSBOutsideTransport = "transport";
 std::string outputRSBExploration = "start";
 std::string inputRSBExploration = "finish";
 std::string outputRSBBlobDetection = "start";
 std::string inputRSBBlobDetection = "finish";
-std::string outputRSBObjectDetection = "start";
+std::string outputRSBObjectDetection = "COMP";
 std::string inputRSBObjectDetection = "finish";
 std::string outputRSBLocalPlanner = "start";
 std::string inputRSBLocalPlanner = "finish";
@@ -193,7 +194,8 @@ int processSM(void);
 
 int robotID = 0;
 
-int objectCount = 1;
+int objectCount = 2;
+bool objectDetected[] = {false, false};
 
 bool skipToBI = false;
 bool skipExplo = false;
@@ -429,6 +431,16 @@ int processSM(void) {
                 rsbInputOutsideDeliver = true;
             } else if (sRSBInput.compare(outputRSBOutsideTransport) == 0) {
                 rsbInputOutsideTransport = true;
+            } else {
+                std::string mainPart;
+                mainPart.append(sRSBInput, 0, outputRSBOutsideObjectDet.size());
+                if (mainPart.compare(outputRSBOutsideObjectDet) == 0) {
+                    std::string sNum = "";
+                    sNum.append(sRSBInput, outputRSBOutsideObjectDet.size(), sRSBInput.size());
+                    int objId = std::stoi(sNum);
+                    INFO_MSG("Object " << objId << " has been found.");
+                    objectDetected[objId-3] = true;
+                }
             }
         }
         if (!queueExplorationAnswerScope->empty()) {
@@ -550,6 +562,7 @@ int processSM(void) {
                 INFO_MSG("DETECTING");
                 sleep(3);
                 objectCount--;
+                inputRSBObjectDetection = std::to_string(objectCount+3);
                 *stringPublisher = inputRSBObjectDetection;
                 informerObjectDetScope->publish(stringPublisher);
                 amiroState = localPlannerWait;
@@ -558,8 +571,25 @@ int processSM(void) {
                 if (skipToBI) {
                     INFO_MSG(" -> Skipping part ToBI Init Done and aksing for delivery");
                     amiroState = objectDeliveryWait;
-                } else if (rsbInputOutsideInitDone) {
-                    amiroState = objectDeliveryStart;
+                } else {
+                    if (objectDetected[0] && objectDetected[1]) {
+                        INFO_MSG("Sending rec message of object 4.");
+                        std::string sOutput = "";
+                        sOutput.append(outputRSBOutsideObjectDet).append("4rec");
+                        *stringPublisher = sOutput;
+                        informerOutsideScope->publish(stringPublisher);
+                        sleep(3);
+                        INFO_MSG("Sending rec message of object 3.");
+                        sOutput = "";
+                        sOutput.append(outputRSBOutsideObjectDet).append("3rec");
+                        *stringPublisher = sOutput;
+                        informerOutsideScope->publish(stringPublisher);
+                    } else {
+                        WARNING_MSG("No object has been detected!");
+                    }
+                    if (rsbInputOutsideInitDone) {
+                        amiroState = objectDeliveryStart;
+                    }
                 }
                 break;
             case objectDeliveryStart:

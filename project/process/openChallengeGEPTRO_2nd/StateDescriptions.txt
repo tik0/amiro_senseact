@@ -9,9 +9,9 @@ Outside				Main Statemachine		Ext Prog
 				blobDetectionStart	->	start searching blobs
 				blobDetection		<-?-	do searching
 				blobDetection		<-	searching blobs finished
-				objectDetectionStart	->	start object detection
+				objectDetectionStart	->	start object detection: "COMP"
 				objectDetection		<-?-	do detection
-"object<Num>"(D)	<-	objectDetection		<-	<Num> object detected, Num > 0
+"object<Num>"(D)	<-	objectDetection		<-	<Num> object detected, Num > 0: "<Num>" | "null"
 "object<Num>rec"	->	objectDetection
 				objectDetection		<-	object detection finished
 "initDone"		<-	initDone

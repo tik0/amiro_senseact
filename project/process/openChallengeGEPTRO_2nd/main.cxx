@@ -129,6 +129,7 @@ rsb::Informer<std::string>::Ptr informerExplorationScope;
 rsb::Informer<std::string>::Ptr informerBlobScope;
 rsb::Informer<std::string>::Ptr informerDeliveryScope;
 rsb::Informer<std::string>::Ptr informerTransportScope;
+rsb::Informer<std::string>::Ptr informerOutsideScope;
 
 // Exploration
 std::string sExplorationCmdScope("/exploration/command");
@@ -171,6 +172,8 @@ std::string sInScopeOdometry = "/odo";
 std::string outputRSBOutsideInitDone = "initdone";
 std::string outputRSBOutsideObjectDet = "object";
 std::string outputRSBOutsideDeliveryAPP = "finish";
+std::string outputRSBOutsideDelivery = "delivered";
+std::string outputRSBOutsideTransport = "transported";
 std::string outputRSBOutsideTransportAPP = "finished";
 std::string inputRSBOutsideInit = "init";
 std::string inputRSBOutsideDelivery = "object";
@@ -214,6 +217,8 @@ int objectOffsetForToBI = 2;
 bool objectDetected[] = {false, false, false, false, false, false};
 std::string objectDetectionAnswer = "";
 
+int deliverObjectId = 0;
+
 int robotID = 0;
 std::string colorInit = "";
 bool blinkerRight = false;
@@ -225,7 +230,7 @@ bool testWithAnswerer = false;
 
 // functions
 bool readInitInput(std::string inputData);
-void readRecObjectDetection(std::string inputData);
+bool readRecObjectDetection(std::string inputData);
 void setLightcolor(void);
 void idleBlink(void);
 int processSM(void);
@@ -391,7 +396,6 @@ int processSM(void) {
     rsb::ListenerPtr listenerOutsideScope;
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueOutsideScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    rsb::Informer< std::string >::Ptr informerOutsideScope;
 
     try {
         listenerOutsideScope = factory.createListener(sInScopeTobi);
@@ -427,12 +431,24 @@ int processSM(void) {
             sRSBInput = *queueOutsideScope->pop();
             if (readInitInput(sRSBInput)) {
                 rsbInputOutsideInit = true;
-            } else if (sRSBInput.compare(inputRSBOutsideDelivery) == 0) {
-                rsbInputOutsideDeliver = true;
+//            } else if (sRSBInput.compare(inputRSBOutsideDelivery) == 0) {
+//                rsbInputOutsideDeliver = true;
             } else if (sRSBInput.compare(inputRSBOutsideTransport) == 0) {
                 rsbInputOutsideTransport = true;
             } else {
-                readRecObjectDetection(sRSBInput);
+                std::string mainPart;
+                mainPart.append(sRSBInput, 0, inputRSBOutsideDelivery.size());
+/*                if (mainPart.compare(inputRSBOutsideDelivery) == 0) {
+                    rsbInputOutsideDeliver = true;
+                } else {
+                    readRecObjectDetection(sRSBInput);
+                }*/
+                if (!readRecObjectDetection(sRSBInput) && mainPart.compare(inputRSBOutsideDelivery) == 0) {
+                    rsbInputOutsideDeliver = true;
+                    std::string sNum = "";
+                    sNum.append(sRSBInput, mainPart.size(), sRSBInput.size());
+                    deliverObjectId = std::stoi(sNum);
+                }
             }
         }
         if (!queueExplorationAnswerScope->empty()) {
@@ -518,17 +534,22 @@ int processSM(void) {
                     //informerOutsideScope->publish(???);
                     amiroState = objectDetectionMain;
                     if (testWithAnswerer) {
-                        objectCount = 1;
+                        objectCount = 2;
                     }
                 }
                 break;
             case objectDetectionMain:
                 rsbRecAllObjects = true;
-                for (int objIdx=0; objIdx<objectCountMax; objIdx) {
+                for (int objIdx=0; objIdx<objectCountMax; objIdx++) {
                     if (objectDetected[objIdx] && !rsbRecObjectDet[objIdx]) {
+                        INFO_MSG("Object " << objIdx << " detected, but not recognized yet.");
                         rsbRecAllObjects = false;
-                        *stringPublisher = outputRSBOutsideObjectDet.append(std::to_string(objIdx+1+objectOffsetForToBI));
+                        std::string objOutput = "";
+                        objOutput.append(outputRSBOutsideObjectDet).append(std::to_string(objIdx+1+objectOffsetForToBI));
+                        *stringPublisher = objOutput;
                         informerOutsideScope->publish(stringPublisher);
+                    } else if (!objectDetected[objIdx]) {
+                        INFO_MSG("Object " << objIdx << " hasn't been detected yet.");
                     }
                 }
                 if (objectCount > 0) {
@@ -550,11 +571,18 @@ int processSM(void) {
                 }
                 break;
             case objectDeliveryStart:
+                INFO_MSG("Delivering object " << deliverObjectId)
                 *stringPublisher = outputRSBDelivery;
                 informerDeliveryScope->publish(stringPublisher);
                 amiroState = objectDelivery;
                 break;
             case objectDelivery:
+                if (rsbInputOutsideDeliver) {
+                    std::string sOutput = "";
+                    sOutput.append(inputRSBOutsideDelivery).append(std::to_string(deliverObjectId)).append("start");
+                    *stringPublisher = outputRSBOutsideDelivery;
+                    informerOutsideScope->publish(stringPublisher);
+                }
                 if (rsbInputDelivery) {
                     *stringPublisher = outputRSBOutsideDelivery;
                     informerOutsideScope->publish(stringPublisher);
@@ -567,6 +595,12 @@ int processSM(void) {
                 amiroState = objectTransport;
                 break;
             case objectTransport:
+                if (rsbInputOutsideTransport) {
+                    std::string sOutput = "";
+                    sOutput.append(inputRSBOutsideTransport).append("start");
+                    *stringPublisher = sOutput;
+                    informerOutsideScope->publish(stringPublisher);  
+                }
                 if (rsbInputTransport) {
                     *stringPublisher = outputRSBOutsideTransport;
                     informerOutsideScope->publish(stringPublisher);
@@ -608,28 +642,32 @@ bool readInitInput(std::string inputData) {
     }
 }
 
-void readRecObjectDetection(std::string inputData) {
+bool readRecObjectDetection(std::string inputData) {
     if (inputData.size() > 9) {
         std::string mainPart;
         mainPart.append(inputData, 0, outputRSBOutsideObjectDet.size());
         std::string lastPart;
-        lastPart.append(inputData, inputData.size()-3, inputData.size());
+        lastPart.append(inputData, inputData.size()-3, 3);
         if (mainPart.compare(outputRSBOutsideObjectDet) == 0 && lastPart.compare("rec") == 0) {
             std::string sNum;
-            sNum.append(inputData, outputRSBOutsideObjectDet.size(), inputData.size()-3);
+            sNum.append(inputData, outputRSBOutsideObjectDet.size(), inputData.size()-3-outputRSBOutsideObjectDet.size());
             int objNum = std::stoi(sNum);
-            INFO_MSG("Read number n=" << objNum << " out of string '" << sNum << "'");
+//            INFO_MSG("Read number n=" << objNum << " out of string '" << sNum << "'");
             if (objNum > objectOffsetForToBI) {
                 rsbRecObjectDet[objNum-objectOffsetForToBI-1] = true;
+                return true;
             } else {
-                WARNING_MSG("Object number is too small!");
-            } 
+//                WARNING_MSG("Object number is too small!");
+            }
+            return false;
         } else {
-            WARNING_MSG("The input '" << mainPart << "' doesn't fit with '" << outputRSBOutsideObjectDet << "' or the input appendix '" << lastPart << "' isn't 'rec'");
+//            WARNING_MSG("The input '" << mainPart << "' doesn't fit with '" << outputRSBOutsideObjectDet << "' or the input appendix '" << lastPart << "' isn't 'rec'");
         }
+        return false;
     } else {
-        WARNING_MSG("Input data has not a length greater than 9: '" << inputData << "'");
+//        WARNING_MSG("Input data has not a length greater than 9: '" << inputData << "'");
     }
+    return false;
 }
 
 void setLightcolor(void) {
@@ -696,14 +734,19 @@ int ssmObjectDetection(void) {
         case objectDetection:
             if (rsbInputObjectDetection) {
                 // TODO check if object has been detected and reduce #object afterwards
+//                if (testWithAnswerer) {
+//                    objectCount--;
+//                } else 
                 if (objectDetectionAnswer.compare("null") == 0) {
                     WARNING_MSG(" -> Doesn't know the object.");
                 } else {
                     INFO_MSG(" -> Object " << objectDetectionAnswer << " found!");
                     objectCount--;
-                }
-                if (testWithAnswerer) {
-                    objectCount--;
+                    objectDetected[std::stoi(objectDetectionAnswer)-objectOffsetForToBI-1] = true;
+                    std::string objOutput = "";
+                    objOutput.append(outputRSBOutsideObjectDet).append(objectDetectionAnswer);
+                    *stringPublisher = objOutput;
+                    informerOutsideScope->publish(stringPublisher);
                 }
                 objectDetectionState = localPlannerStart;
             }
@@ -712,7 +755,7 @@ int ssmObjectDetection(void) {
             ERROR_MSG("Unknown state in statemachine!");
             return -1;
     }
-    if (objectDetectionState == localPlanner) {
+    if (objectDetectionState == localPlannerStart) {
         return 1;
     } else {
         return 0;
