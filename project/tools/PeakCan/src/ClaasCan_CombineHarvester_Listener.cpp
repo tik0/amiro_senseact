@@ -5,7 +5,7 @@
  *      Author: itsowl
  */
 
-#include <src/ClaasCan_CombineHarvester_Listener.hpp>
+#include "ClaasCan_CombineHarvester_Listener.hpp"
 #include <ClaasCan_CombineHarvester.pb.h>
 
 //RSC

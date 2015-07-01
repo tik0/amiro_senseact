@@ -45,9 +45,7 @@ export SPREADCONFIG=${VDEMO_demoRoot}/data/spread/$basepc
 export SPREADCONFIG_RSB=${VDEMO_demoRoot}/data/spread/${basepc}-rsb
 export car=$basepc
 export cam=$basepc
-export upper=$basepc
-export lower=$basepc
-export VDEMO_machine_setup="$VDEMO_demoRoot/robot_setup/$basepc"
+export VDEMO_machine_setup="$VDEMO_demoRoot/machine_setup/$basepc"
 export VDEMO_component_default_config="$VDEMO_demoRoot/component_default_claas_config.sh"
 
 # use the modules.xml description from the distribution

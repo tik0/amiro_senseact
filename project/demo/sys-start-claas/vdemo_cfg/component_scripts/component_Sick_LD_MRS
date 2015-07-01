@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function component {
+  SICK_IP=192.168.100.151
+  SETUP="40 40 40 40 40 40"
+  echo "starting senseSick_LD_MRS -s ${SICK_IP} -q ${SETUP}"
+  senseSick_LD_MRS -s ${SICK_IP} -q ${SETUP}
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

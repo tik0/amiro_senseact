@@ -32,19 +32,24 @@
 # COMPONENT LIST
 ##############################################################################
 
-export VDEMO_component_spread_upper="spread,$car, -c  -g net -n -L 0 -w 2:"
-export VDEMO_component_spread_lower="spread,$cam, -c  -g net -L 0 -w 2:"
+export VDEMO_component_spread_car="spread,$car, -c  -g net -n -L 0 -w 2:"
+export VDEMO_component_spread_cam="spread,$cam, -c  -g net -L 0 -w 2:"
 export VDEMO_component_spread_rsb="rsb_spread,$spreadhost, -c  -g net -L 0 -w 2:"
 
-export VDEMO_component_hokuyo="hokuyo,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_hokuyo="hokuyo,$cam, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_gigEvisionImperX="gigEvisionImperX,$cam, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_LeuzeODS9ODS96B="LeuzeODS9ODS96B,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_PepperlFuchsOMD8000="PepperlFuchsOMD8000,$car, -c  -g sense -L 1 -w 2:"
-export VDEMO_component_OpenNI2="OpenNI2,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_OpenNI2="OpenNI2,$cam, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_PeakCan="PeakCan,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_LASE_2000D_226="LASE_2000D_226,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_Sick_LD_MRS="Sick_LD_MRS,$car, -c  -g sense -L 1 -w 2:"
 
-export VDEMO_component_rsb_logger="rsb_logger,$car, -c  -n -d -1 -l -g logging -L 9: "
-export VDEMO_component_rsb_monitor_car="rsb_monitor,$car, -c  -n -d -1 -l -g logging -L 9: "
-export VDEMO_component_rsb_monitor_cam="rsb_monitor,$cam, -c  -n -d -1 -l -g logging -L 9: "
+export VDEMO_component_rsb_webserver="rsb_webserver,$car, -c  -g webserver -L 2 -w 2:"
+
+export VDEMO_component_rsb_logger="rsb_logger,$car, -c  -n -d -1 -g logging -L 3:"
+export VDEMO_component_rsb_monitor_car="rsb_monitor,$car, -c  -n -d -1 -g logging -L 3:"
+export VDEMO_component_rsb_monitor_cam="rsb_monitor,$cam, -c  -n -d -1 -g logging -L 3:"
 
 ##############################################################################
 # GROUPS
@@ -59,7 +64,7 @@ export VDEMO_component_group_logging="\
 fi
 
 export VDEMO_component_group_net="\
-$VDEMO_component_spread_lower\
+$VDEMO_component_spread_cam\
 "
 
 export VDEMO_component_group_sense="\
@@ -67,7 +72,10 @@ $VDEMO_component_hokuyo\
 $VDEMO_component_gigEvisionImperX\
 $VDEMO_component_PepperlFuchsOMD8000\
 $VDEMO_component_LeuzeODS9ODS96B\
-$VDEMO_component_OpenNi2\
+$VDEMO_component_OpenNI2\
+$VDEMO_component_PeakCan\
+$VDEMO_component_LASE_2000D_226\
+$VDEMO_component_Sick_LD_MRS\
 "
 
 export VDEMO_component_group_util="\
@@ -76,9 +84,14 @@ $VDEMO_component_rsb_monitor_car\
 $VDEMO_component_rsb_monitor_cam\
 "
 
+export VDEMO_component_group_web="\
+$VDEMO_component_rsb_webserver\
+"
+
 export VDEMO_component_group_default="\
 $VDEMO_component_group_net\
 $VDEMO_component_group_sense\
+$VDEMO_component_group_web\
 $VDEMO_component_group_util\
 "
 

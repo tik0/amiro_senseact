@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function component {
+  SICK_IP=192.168.100.100
+  SETUP="20 20 20 20 20 20"
+  echo "starting senseLASE_2000D_226 -s ${SICK_IP} -q ${SETUP}"
+  senseLASE_2000D_226 -s ${SICK_IP} -q ${SETUP}
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"
