@@ -1,0 +1,18 @@
+package rst.sensor;
+
+option java_outer_classname = "sensorPosition";
+
+message SensorPosition {
+	
+//Sensor Position Data
+required int32 x = 1;
+required int32 y = 2;
+required int32 z = 3;
+
+required double alpha = 4;
+required double beta = 5;
+required double gamma = 6;
+
+required string uniqueIdentifier = 7;
+
+}
