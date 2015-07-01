@@ -9,3 +9,8 @@ CAR PC:
 Replace the string in /etc/hostname with "car"
 192.168.100.95    cam
 192.168.100.96    car
+
+
+
+For cloning into submodules:
+git submodule update --init --recursive
