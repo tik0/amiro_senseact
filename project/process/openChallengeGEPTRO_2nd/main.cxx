@@ -61,7 +61,7 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-#define NUM_STATES 13
+#define NUM_STATES 15
 enum states {
 	idle,
 	init,
@@ -74,8 +74,10 @@ enum states {
 	waiting,
 	objectDeliveryStart,
 	objectDelivery,
+        objectDeliveryFinish,
 	objectTransportStart,
-	objectTransport
+	objectTransport,
+	objectTransportFinish
 };
 
 states amiroState = idle;
@@ -93,8 +95,10 @@ std::string statesString[NUM_STATES] {
 	"waiting",
 	"starting object delivery",
 	"object delivery",
+        "object delivery finished",
 	"starting object transport",
-	"object transport"
+	"object transport",
+        "object transport finished"
 };
 
 // object detection states
@@ -241,9 +245,6 @@ int main(int argc, char **argv) {
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
-//    ("outscopeSteering,os", po::value < std::string > (&g_sOutScope_Steering), "Scope for sending steering commands.")
-//    ("inscopeHeadingStop,ih", po::value < std::string > (&g_sInScope_HeadingStop), "Scope for receiving a Heading-Stop.")
-//    ("inscopeStream,is", po::value < std::string > (&g_sInScope_Stream), "Scope for receiving input images.")
         ("spread,s", po::value < std::string > (&sRemoteServer), "IP of remote spread server.")
         ("spreadPort,p", po::value < std::string > (&sRemoteServerPort), "Port of remote spread server.")
         ("outscopeTobi,o", po::value < std::string > (&sOutScopeTobi), "Scope for sending the current state to tobi.")
@@ -398,10 +399,10 @@ int processSM(void) {
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
     try {
-        listenerOutsideScope = factory.createListener(sInScopeTobi);
+        listenerOutsideScope = factory.createListener(sInScopeTobi, tmpPartConf);
         listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
 
-        informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi);
+        informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi, tmpPartConf);
     }
     catch(std::exception& e) {
         ERROR_MSG("Remote connection not established");
@@ -426,24 +427,23 @@ int processSM(void) {
         rsbInputTransport = false;
         rsbInputLocalPlanner = false;
 
+        rsbRecObjectDelivery = false;
+        rsbRecTransport = false;
+
         // Check input from outside
         if (!queueOutsideScope->empty()) {
             sRSBInput = *queueOutsideScope->pop();
             if (readInitInput(sRSBInput)) {
                 rsbInputOutsideInit = true;
-//            } else if (sRSBInput.compare(inputRSBOutsideDelivery) == 0) {
-//                rsbInputOutsideDeliver = true;
             } else if (sRSBInput.compare(inputRSBOutsideTransport) == 0) {
                 rsbInputOutsideTransport = true;
             } else {
                 std::string mainPart;
                 mainPart.append(sRSBInput, 0, inputRSBOutsideDelivery.size());
-/*                if (mainPart.compare(inputRSBOutsideDelivery) == 0) {
-                    rsbInputOutsideDeliver = true;
-                } else {
-                    readRecObjectDetection(sRSBInput);
-                }*/
-                if (!readRecObjectDetection(sRSBInput) && mainPart.compare(inputRSBOutsideDelivery) == 0) {
+                rsbRecObjectDelivery = readDeliveryFinished(sRSBInput);
+                rsbRecTransport = readTransportFinished(sRSBInput);
+                if (!readRecObjectDetection(sRSBInput) && !rsbRecObjectDelivery
+                    && !rsbRecTransport && mainPart.compare(inputRSBOutsideDelivery) == 0) {
                     rsbInputOutsideDeliver = true;
                     std::string sNum = "";
                     sNum.append(sRSBInput, mainPart.size(), sRSBInput.size());
@@ -460,9 +460,6 @@ int processSM(void) {
         if (!queueObjectDetAnswerScope->empty()) {
             objectDetectionAnswer = *queueObjectDetAnswerScope->pop();
             rsbInputObjectDetection = true;
-//            if (sRSBInput.compare(inputRSBObjectDetection) == 0) {
-//                rsbInputObjectDetection = true;
-//            }
         }
         if (!queueLocalPlannerAnswerScope->empty()) {
             sRSBInput = *queueLocalPlannerAnswerScope->pop();
@@ -569,7 +566,7 @@ int processSM(void) {
                 }
                 break;
             case objectDeliveryStart:
-                INFO_MSG("Delivering object " << deliverObjectId)
+                INFO_MSG(" -> Delivering object " << deliverObjectId)
                 *stringPublisher = outputRSBDelivery;
                 informerDeliveryScope->publish(stringPublisher);
                 amiroState = objectDelivery;
@@ -582,9 +579,17 @@ int processSM(void) {
                     informerOutsideScope->publish(stringPublisher);
                 }
                 if (rsbInputDelivery) {
-                    *stringPublisher = outputRSBOutsideDelivery;
-                    informerOutsideScope->publish(stringPublisher);
+                    amiroState = objectDeliveryFinish;
+                }
+                break;
+            case objectDeliveryFinish:
+                if (rsbRecObjectDelivery) {
                     amiroState = waiting;
+                } else {
+                    std::string sOutput = "";
+                    sOutput.append(inputRSBOutsideDelivery).append(std::to_string(deliverObjectId)).append(outputRSBOutsideDeliveryAPP);
+                    *stringPublisher = sOutput;
+                    informerOutsideScope->publish(stringPublisher);
                 }
                 break;
             case objectTransportStart:
@@ -599,10 +604,18 @@ int processSM(void) {
                     *stringPublisher = sOutput;
                     informerOutsideScope->publish(stringPublisher);  
                 }
-                if (rsbInputTransport) {
-                    *stringPublisher = outputRSBOutsideTransport;
-                    informerOutsideScope->publish(stringPublisher);
+                if (rsbInputTransport && !rsbRecTransport) {
+                    amiroState = objectTransportFinish;
+                }
+                break;
+            case objectTransportFinish:
+                if (rsbRecTransport) {
                     amiroState = waiting;
+                } else {
+                    std::string sOutput = "";
+                    sOutput.append(inputRSBOutsideTransport).append(outputRSBOutsideTransportAPP);
+                    *stringPublisher = sOutput;
+                    informerOutsideScope->publish(stringPublisher);
                 }
                 break;
             default:
@@ -649,9 +662,7 @@ bool readRecObjectDetection(std::string inputData) {
                 rsbRecObjectDet[objNum-objectOffsetForToBI-1] = true;
                 return true;
             }
-            return false;
         }
-        return false;
     }
     return false;
 }

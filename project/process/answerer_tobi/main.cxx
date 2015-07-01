@@ -159,21 +159,19 @@ bool readDelivery(std::string inputData) {
             suffix.append(inputData, outputRSBDelivery.size(), inputRSBDeliverySufStart.size());
             if (suffix.compare(inputRSBDeliverySufStart) == 0) {
                 deliveryRec = true;
-                INFO_MSG("readDelivery: Suffix '" << suffix << "' found -> delivery start has been received.");
+                INFO_MSG(" -> delivery start has been received.");
                 return true;
             }
-            return false;
         }
         suffix = "";
         if (inputData.size() >= outputRSBDelivery.size() + inputRSBDeliverySufFin.size()) {
             suffix.append(inputData, outputRSBDelivery.size(), inputRSBDeliverySufFin.size());
             if (suffix.compare(inputRSBDeliverySufFin) == 0) {
                 rsbInputDelivery = true;
-                INFO_MSG("readDelivery: Suffix '" << suffix << "' found -> delivery finished.");
+                INFO_MSG(" -> delivery finished.");
                 return true;
             }
         }
-        return false;
     }
     return false;
 }
@@ -184,14 +182,12 @@ bool readObjectDetection(std::string inputData) {
     if (prefix.compare(inputRSBObject) == 0) {
         std::string sNum = "";
         sNum.append(inputData, prefix.size(), inputData.size()-prefix.size());
-        INFO_MSG("readObjectDetection: Detected Object number is '" << sNum << "'");
         int objId = std::stoi(sNum);
         if (objId > objectOffsetForToBI) {
-            INFO_MSG("readObjectDetection: Object " << objId << " has been detected.");
+            INFO_MSG(" -> Object " << objId << " has been detected.");
             objectDetected[objId-objectOffsetForToBI-1] = true;
             return true;
         }
-        return false;
     }
     return false;
 }
@@ -199,28 +195,25 @@ bool readObjectDetection(std::string inputData) {
 bool readTransport(std::string inputData) {
     std::string prefix = "";
     prefix.append(inputData, 0, outputRSBTransport.size());
-    if (prefix.compare(outputRSBDelivery) == 0) {
+    if (prefix.compare(outputRSBTransport) == 0) {
         std::string suffix = "";
         if (inputData.size() >= outputRSBTransport.size() + inputRSBTransportSufStart.size()) {
             suffix.append(inputData, outputRSBTransport.size(), inputRSBTransportSufStart.size());
             if (suffix.compare(inputRSBTransportSufStart) == 0) {
                 transportRec = true;
-                INFO_MSG("readTransport: Suffix '" << suffix << "' found -> transport start has been received.");
+                INFO_MSG(" -> transport start has been received.");
                 return true;
             }
-            return false;
         }
         suffix = "";
         if (inputData.size() >= outputRSBTransport.size() + inputRSBTransportSufFin.size()) {
             suffix.append(inputData, outputRSBTransport.size(), inputRSBTransportSufFin.size());
             if (suffix.compare(inputRSBTransportSufFin) == 0) {
                 rsbInputTransport = true;
-                INFO_MSG("readTransport: Suffix '" << suffix << "' found -> transport finished.");
+                INFO_MSG(" -> transport finished.");
                 return true;
             }
-            return false;
         }
-        return false;
     }
     return false;
 }
@@ -322,10 +315,10 @@ int processSM(void) {
     rsb::Informer< std::string >::Ptr informerOutsideScope;
 
     try {
-        listenerOutsideScope = factory.createListener(sInScopeTobi);
+        listenerOutsideScope = factory.createListener(sInScopeTobi, tmpPartConf);
         listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
 
-        informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi);
+        informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi, tmpPartConf);
     }
     catch(std::exception& e) {
         ERROR_MSG("Remote connection not established");
@@ -397,8 +390,6 @@ int processSM(void) {
                     *stringPublisher = sOutput;
                     informerOutsideScope->publish(stringPublisher);
                     objectDetected[0] = false;
-                } else {
-                    WARNING_MSG("No object has been detected!");
                 }
                 if (rsbInputInitDone) {
                     amiroState = objectDeliveryStart;
@@ -414,6 +405,10 @@ int processSM(void) {
                 break;
             case objectDeliveryWait:
                 if (rsbInputDelivery) {
+                    sOutput = "";
+                    sOutput.append(outputRSBDelivery).append(inputRSBDeliverySufFin).append(outputRSBRec);
+                    *stringPublisher = sOutput;
+                    informerOutsideScope->publish(stringPublisher);
                     amiroState = objectTransportStart;
                 }
                 break;
@@ -427,6 +422,10 @@ int processSM(void) {
                 break;
             case objectTransportWait:
                 if (rsbInputTransport) {
+                    sOutput = "";
+                    sOutput.append(outputRSBTransport).append(inputRSBTransportSufFin).append(outputRSBRec);
+                    *stringPublisher = sOutput;
+                    informerOutsideScope->publish(stringPublisher);
                     amiroState = finishAnswerer;
                 }
                 break;
