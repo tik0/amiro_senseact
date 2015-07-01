@@ -54,7 +54,7 @@ LINK_DIRECTORIES (
 )
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCE} ../../includes/types/LocatedLaserScan.pb.cc)
+add_executable ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 
 target_link_libraries (
     "${PROJECT_NAME}"
