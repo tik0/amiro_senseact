@@ -1,9 +1,0 @@
-#!/bin/bash
-
-UUID=$(cat /proc/sys/kernel/random/uuid)
-
-export RSBAM_MEMORY_NAME="Scene"
-export RSBAM_DIR_TO_INSERT="/tmp/annotations$UUID/"
-
-source "$VDEMO_componentPath/component_rsbam"
-

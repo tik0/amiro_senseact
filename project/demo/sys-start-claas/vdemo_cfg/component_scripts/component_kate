@@ -1,7 +1,0 @@
-#!/bin/bash
-
-function component {
-        kate
-}
-
-source "$VDEMO_root/vdemo_standard_component_suffix.sh"

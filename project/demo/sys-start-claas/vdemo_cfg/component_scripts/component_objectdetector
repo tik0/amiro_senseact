@@ -1,7 +1,0 @@
-#!/bin/bash
-
-OPTION_PROCESSOR="-p ObjectProcessor"
-OPTION_GRABBER="-g OpenNI"
-OPTION_OTHER="-c ${prefix}/etc/pca/pca_ToBi.cfg"
-
-source "$VDEMO_componentPath/component_pca"

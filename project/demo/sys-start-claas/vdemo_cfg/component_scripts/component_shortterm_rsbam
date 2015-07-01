@@ -1,6 +1,0 @@
-#!/bin/bash
-
-export RSBAM_MEMORY_NAME="ShortTerm"
-
-source "$VDEMO_componentPath/component_rsbam"
-

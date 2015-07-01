@@ -1,7 +1,0 @@
-#!/bin/bash
-
-function component {
-        ${prefix}/bin/pocketsphinxAdapter ${VDEMO_PSA_CONFIG} --hmm=${prefix}/share/pocketsphinx/model/en-us/en-us --dict=${prefix}/share/SpeechRec/psGrammar/dictionary/tobiDic.dic
-}
-
-source "$VDEMO_root/vdemo_standard_component_suffix.sh"
