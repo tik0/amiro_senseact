@@ -1,0 +1,25 @@
+#!/bin/bash
+
+function component {
+  echo "starting sensing LenzODS9ODS96B"
+#   -h [ --help ]         Display a help message.
+#   -o [ --outscope ] arg Scope for sending odometry values
+#   -t [ --period ] arg   Update interval (0 for maximum rate)
+#   -p [ --port ] arg     Portnumber of ttyS<0-15> (Standardvalue: 0)
+#   -b [ --bdrate ] arg   Baudrate (Standardvalue: 19200)
+  senseLeuzeODS9ODS96B -o /sense/LeuzeODS9ODS96B -t 0 -p 2 -b 19200
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

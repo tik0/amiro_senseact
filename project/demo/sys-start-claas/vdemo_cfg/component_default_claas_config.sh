@@ -38,9 +38,9 @@ export VDEMO_component_spread_rsb="rsb_spread,$spreadhost, -c  -g net -L 0 -w 2:
 
 export VDEMO_component_hokuyo="hokuyo,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_gigEvisionImperX="gigEvisionImperX,$cam, -c  -g sense -L 1 -w 2:"
-export VDEMO_component_LenzODS9ODS96B="LenzODS9ODS96B,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_LeuzeODS9ODS96B="LeuzeODS9ODS96B,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_PepperlFuchsOMD8000="PepperlFuchsOMD8000,$car, -c  -g sense -L 1 -w 2:"
-export VDEMO_component_OpenNi2="OpenNi2,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_OpenNI2="OpenNI2,$car, -c  -g sense -L 1 -w 2:"
 
 export VDEMO_component_rsb_logger="rsb_logger,$car, -c  -n -d -1 -l -g logging -L 9: "
 export VDEMO_component_rsb_monitor_car="rsb_monitor,$car, -c  -n -d -1 -l -g logging -L 9: "
@@ -66,7 +66,7 @@ export VDEMO_component_group_sense="\
 $VDEMO_component_hokuyo\
 $VDEMO_component_gigEvisionImperX\
 $VDEMO_component_PepperlFuchsOMD8000\
-$VDEMO_component_LenzODS9ODS96B\
+$VDEMO_component_LeuzeODS9ODS96B\
 $VDEMO_component_OpenNi2\
 "
 

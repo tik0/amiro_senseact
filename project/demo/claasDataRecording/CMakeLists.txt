@@ -7,11 +7,11 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/GigEVision2RSB GigEVision2RSB)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
-add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseLenzODS9ODS96B senseLenzODS9ODS96B)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseLeuzeODS9ODS96B senseLeuzeODS9ODS96B)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/sensePepperlFuchsOMD8000 sensePepperlFuchsOMD8000)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseOpenNi2 senseOpenNi2)
 
-SET(folders "sensePepperlFuchsOMD8000;senseLenzODS9ODS96B;senseHokuyo;GigEVision2RSB;senseOpenNi2")
+SET(folders "sensePepperlFuchsOMD8000;senseLeuzeODS9ODS96B;senseHokuyo;GigEVision2RSB;senseOpenNi2")
 MESSAGE( STATUS "Processing: " )
 FOREACH(folder ${folders})
   INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/${folder}/${folder}"

@@ -1,2 +1,0 @@
--l grab -l grab -a GrabImage1 "-sg F camera=1:mode=f70raw81024:reset  -nyuv image_left" -a GrabImage2 "-sg F camera=2:mode=f70raw81024:reset  -nyuv image_right" -l fps -l fps -a fpsview1 image_left -a fpsview2 image_right -l xcf_image_pub -a XCFImagePublisher1 "-n image_left -i image_left" -l xcf_image_pub -a XCFImagePublisher2 "-n image_right -i image_right"
--l dc1394control -a dc1394control1 "-n 1"

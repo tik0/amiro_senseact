@@ -1,8 +1,0 @@
-#-sg V mode=yuv800
--l gst_image_sub -a XCFImageSubscriber1 "-u ImageData -i videostream"
--l BoostDetector_iw
--a BoostDetector_iw1 '-f $prefix/share/BoostDetector_iw/FaceDetector/FaceDetector.xml -e Faces'
-#-l StableDetectionTrackerPlugin
--l XCFExport -a XCFExport1 '-m xcf:Visual -n -i Faces'
--l xcf_image_pub -a XCFImagePublisher1 '-n xcf:Visual -x 0'
-
