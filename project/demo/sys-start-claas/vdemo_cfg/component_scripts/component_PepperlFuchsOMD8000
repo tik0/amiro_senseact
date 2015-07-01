@@ -7,7 +7,7 @@ function component {
 #   -t [ --period ] arg   Update interval in ms ( 20 for maximum rate)
 #   -p [ --port ] arg     Portnumber of ttyS<0-15> (Standardvalue: 0)
 #   -b [ --bdrate ] arg   Baudrate (Standardvalue: 115200)
-  sensePepperlFuchsOMD8000 -o / sense/PepperlFuchsOMD8000 -t 0 -p 2 -b 115200
+  sensePepperlFuchsOMD8000 -o /sense/PepperlFuchsOMD8000 -t 50 -p 1 -b 115200
 }
 
 function clean_component {
