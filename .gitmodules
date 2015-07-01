@@ -14,3 +14,6 @@
 [submodule "project/tools/mongoose"]
 	path = project/tools/mongoose
 	url = https://github.com/cesanta/mongoose.git
+[submodule "project/tools/rsb_ws_bridge_claas"]
+	path = project/tools/rsb_ws_bridge_claas
+	url = https://github.com/tik0/rsb_ws_bridge_claas
