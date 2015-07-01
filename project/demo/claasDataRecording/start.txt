@@ -1,0 +1,8 @@
+====== Building the CLAAS Data Recording programs ======
+
+This is a demo builds an isntalls all the necessary programs for the datarecording.
+
+===== Run the demo =====
+
+  - ''./build.sh .''
+  - ''sudo make install''
