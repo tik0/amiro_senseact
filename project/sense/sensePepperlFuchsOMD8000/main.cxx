@@ -40,6 +40,7 @@
 #include <functional>
 
 #define BUFSIZE 50
+#define NUMDISTANCES 11
 #define REQ_BUFSIZE 5
 static unsigned char reqString[REQ_BUFSIZE] = {0xde, 0x01, 0x05, 0x59, 0x83};
 
@@ -155,7 +156,7 @@ int main(int argc, char **argv) {
 
       // Convert it to rsb data
       msg->Clear();  // Delete the content
-      for(uint8_t idxCounter = 0; idxCounter <= 10; ++idxCounter) {
+      for(uint8_t idxCounter = 0; idxCounter < NUMDISTANCES; ++idxCounter) {
         msg->mutable_distance_mm()->Add(distances[idxCounter]);
         msg->mutable_echo()->Add(echos[idxCounter]);
         msg->mutable_notarget()->Add(noTarget[idxCounter]);
