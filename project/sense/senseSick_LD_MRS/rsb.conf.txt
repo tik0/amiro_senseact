@@ -1,0 +1,7 @@
+[transport.socket]
+enabled = 1
+host = localhost
+server = auto
+port = 55555
+[transport.spread]
+enabled = 0
