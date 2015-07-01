@@ -196,7 +196,7 @@ http://pubs.opengroup.org/onlinepubs/7908799/xsh/termios.h.html
 http://man7.org/linux/man-pages/man3/termios.3.html
 */
 
-  Cport[comport_number] = open(comports[comport_number], (O_RDWR | O_NOCTTY | O_NDELAY) & !O_NONBLOCK);
+  Cport[comport_number] = open(comports[comport_number], (O_RDWR | O_NOCTTY));
   if(Cport[comport_number]==-1)
   {
     perror("unable to open comport ");

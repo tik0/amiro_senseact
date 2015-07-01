@@ -125,9 +125,9 @@ int main(int argc, char **argv) {
   timer_start(sensorRequest, rsbPeriod);
 
   // Raw distances
-  uint16_t distances[10];
-  uint16_t echos[10];
-  uint16_t noTarget[10];
+  uint16_t distances[11];
+  uint16_t echos[11];
+  uint16_t noTarget[11];
 
   while(1) {
     n = RS232_PollComport(cport_nr, buf, BUFSIZE);
