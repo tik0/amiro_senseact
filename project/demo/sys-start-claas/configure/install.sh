@@ -10,11 +10,20 @@ wget -q http://packages.cor-lab.de/keys/cor-lab.asc -O- | sudo apt-key add -
 
 # Install missing packages
 sudo apt-get update
-apt-get install nmap wireshark kate xterm gimp inkscape audacity vlc wine screen vim nano iftop htop wavemon subversion git filezilla zip unzip rar unrar p7zip valgrind zsh g++ libboost-all-dev cmake synergy exfat-fuse exfat-utils tcl8.5 tk8.5 expect openssh-server build-essential cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev libopencv-dev x264 v4l-utils libopenni2-dev openni2-utils openni2-doc konsole ninja-build libeigen3-dev libeigen3-doc libeigen2-dev libeigen2-doc
+apt-get install nmap wireshark kate xterm gimp inkscape audacity vlc wine screen vim nano iftop htop wavemon subversion git filezilla zip unzip rar unrar p7zip valgrind zsh g++ libboost-all-dev cmake synergy exfat-fuse exfat-utils tcl8.5 tk8.5 expect openssh-server build-essential cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev libopencv-dev x264 v4l-utils libopenni2-dev openni2-utils openni2-doc konsole ninja-build libeigen3-dev libeigen3-doc libeigen2-dev libeigen2-doc iwidgets4 iwidgets4-doc tclx8.4 tclx8.4-dev
 # RSB install
 V=0.12
 apt-get install sudo apt-get install librsb${V} cl-rsb rsb-tools-cpp${V} rsb-tools-cl${V}
 sudo apt-get install spread librsbspread${V}
+
+
+# Install vdemo
+cd /tmp
+git clone https://code.cor-lab.org/git/vdemo
+cd vdemo
+mkdir build && cd build
+cmake ..
+make install
 
 
 # Set proxy set/unset scripts
