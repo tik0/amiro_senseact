@@ -1,0 +1,8 @@
+#-sp ~/dvenjako/public/fruits.avi
+-l xcf_image_sub "-i image_right -o imageRGB"
+-l sysiphus 
+-a Sysiphus1 "-i imageRGB -s halfsize"
+-l GradientDiscretizerPlugin -a GradientDiscretizerPlugin1 '-i halfsize --imagewidth 640 --imageheight 480'
+-l DOTDetectorPlugin -a DOTDetectorPlugin1 '-i halfsize --config /vol/airobots/releases/sz/etc/vdemo_scripts/data/icewing/Options.xml'
+-l XCFImport -a XCFImport1 '-m xcf:ShortTerm -ev -z iu -p /learnObject[STATUS/@value=\"accepted\"] -e TemplateRequest'
+-l XCFExport -a XCFExport1 "-i DOTResult -x DOTResult"

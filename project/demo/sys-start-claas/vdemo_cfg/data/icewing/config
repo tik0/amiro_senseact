@@ -1,0 +1,242 @@
+# Options for iceWing V0.10
+
+"MainMenu._Help/iceWing _Manual<F1><stock gtk-help>|Help/_About iceWing<stock gtk-about>" = 0
+"MainMenu._View/_Plugin Info<<control>i>" = 0
+"MainMenu._Edit/_Enable DACS-Output" = 1
+"kinectmotion1.Result.Preview" = 0
+"kinectmotion1.Result.Remember Data" = 1
+"kinectmotion1.Result.Info Window...<<control>i>" = 0
+"kinectmotion1.Result.View/Pan Down" = 0
+"kinectmotion1.Result.View/Pan Up" = 0
+"kinectmotion1.Result.View/Pan Right" = 0
+"kinectmotion1.Result.View/Pan Left" = 0
+"kinectmotion1.Result.View/Zoom 1:1<<control>1>" = 0
+"kinectmotion1.Result.View/Zoom to Fit Window<<control>f>" = 0
+"kinectmotion1.Result.View/Zoom Out<<control>minus>" = 0
+"kinectmotion1.Result.View/Zoom In<<control>plus>" = 0
+"kinectmotion1.Result.File/Close Window<<control>w>" = 0
+"kinectmotion1.Result.File/Clear Session" = 0
+"kinectmotion1.Result.File/Save Session" = 0
+"kinectmotion1.Result.File/Save Original<<control>o>" = 0
+"kinectmotion1.Result.File/Save<<control>s>" = 0
+"kinectmotion1.Value" = 5
+"variable.kinectmotion1Plugins" = 
+"kinectmotion1.Perform plugin processing" = 1
+"kinectmatcher1.Matching_Result.Preview" = 0
+"kinectmatcher1.Matching_Result.Remember Data" = 1
+"kinectmatcher1.Matching_Result.Info Window...<<control>i>" = 0
+"kinectmatcher1.Matching_Result.View/Pan Down" = 0
+"kinectmatcher1.Matching_Result.View/Pan Up" = 0
+"kinectmatcher1.Matching_Result.View/Pan Right" = 0
+"kinectmatcher1.Matching_Result.View/Pan Left" = 0
+"kinectmatcher1.Matching_Result.View/Zoom 1:1<<control>1>" = 0
+"kinectmatcher1.Matching_Result.View/Zoom to Fit Window<<control>f>" = 0
+"kinectmatcher1.Matching_Result.View/Zoom Out<<control>minus>" = 0
+"kinectmatcher1.Matching_Result.View/Zoom In<<control>plus>" = 0
+"kinectmatcher1.Matching_Result.File/Close Window<<control>w>" = 0
+"kinectmatcher1.Matching_Result.File/Clear Session" = 0
+"kinectmatcher1.Matching_Result.File/Save Session" = 0
+"kinectmatcher1.Matching_Result.File/Save Original<<control>o>" = 0
+"kinectmatcher1.Matching_Result.File/Save<<control>s>" = 0
+"kinectmatcher1.Value" = 5
+"variable.kinectmatcher1Plugins" = 
+"kinectmatcher1.Perform plugin processing" = 1
+"3DKinectConvert1.Draw XYZ image" = 0
+"3DKinectConvert1.Create XYZ image" = 1
+"3DKinectConvert1.Create float depth image" = 0
+"3DKinectConvert1.Create 8 bit depth image" = 0
+"3DKinectConvert1.Perform plugin processing" = 1
+"3DKinectConvert1.FLOAT.Preview" = 0
+"3DKinectConvert1.FLOAT.Remember Data" = 1
+"3DKinectConvert1.FLOAT.Info Window...<<control>i>" = 0
+"3DKinectConvert1.FLOAT.View/Pan Down" = 0
+"3DKinectConvert1.FLOAT.View/Pan Up" = 0
+"3DKinectConvert1.FLOAT.View/Pan Right" = 0
+"3DKinectConvert1.FLOAT.View/Pan Left" = 0
+"3DKinectConvert1.FLOAT.View/Zoom 1:1<<control>1>" = 0
+"3DKinectConvert1.FLOAT.View/Zoom to Fit Window<<control>f>" = 0
+"3DKinectConvert1.FLOAT.View/Zoom Out<<control>minus>" = 0
+"3DKinectConvert1.FLOAT.View/Zoom In<<control>plus>" = 0
+"3DKinectConvert1.FLOAT.File/Close Window<<control>w>" = 0
+"3DKinectConvert1.FLOAT.File/Clear Session" = 0
+"3DKinectConvert1.FLOAT.File/Save Session" = 0
+"3DKinectConvert1.FLOAT.File/Save Original<<control>o>" = 0
+"3DKinectConvert1.FLOAT.File/Save<<control>s>" = 0
+"3DKinectConvert1.8BIT.Preview" = 0
+"3DKinectConvert1.8BIT.Remember Data" = 1
+"3DKinectConvert1.8BIT.Info Window...<<control>i>" = 0
+"3DKinectConvert1.8BIT.View/Pan Down" = 0
+"3DKinectConvert1.8BIT.View/Pan Up" = 0
+"3DKinectConvert1.8BIT.View/Pan Right" = 0
+"3DKinectConvert1.8BIT.View/Pan Left" = 0
+"3DKinectConvert1.8BIT.View/Zoom 1:1<<control>1>" = 0
+"3DKinectConvert1.8BIT.View/Zoom to Fit Window<<control>f>" = 0
+"3DKinectConvert1.8BIT.View/Zoom Out<<control>minus>" = 0
+"3DKinectConvert1.8BIT.View/Zoom In<<control>plus>" = 0
+"3DKinectConvert1.8BIT.File/Close Window<<control>w>" = 0
+"3DKinectConvert1.8BIT.File/Clear Session" = 0
+"3DKinectConvert1.8BIT.File/Save Session" = 0
+"3DKinectConvert1.8BIT.File/Save Original<<control>o>" = 0
+"3DKinectConvert1.8BIT.File/Save<<control>s>" = 0
+"3DKinectConvert1.XYZ.Preview" = 0
+"3DKinectConvert1.XYZ.Remember Data" = 1
+"3DKinectConvert1.XYZ.Info Window...<<control>i>" = 0
+"3DKinectConvert1.XYZ.View/Pan Down" = 0
+"3DKinectConvert1.XYZ.View/Pan Up" = 0
+"3DKinectConvert1.XYZ.View/Pan Right" = 0
+"3DKinectConvert1.XYZ.View/Pan Left" = 0
+"3DKinectConvert1.XYZ.View/Zoom 1:1<<control>1>" = 0
+"3DKinectConvert1.XYZ.View/Zoom to Fit Window<<control>f>" = 0
+"3DKinectConvert1.XYZ.View/Zoom Out<<control>minus>" = 0
+"3DKinectConvert1.XYZ.View/Zoom In<<control>plus>" = 0
+"3DKinectConvert1.XYZ.File/Close Window<<control>w>" = 0
+"3DKinectConvert1.XYZ.File/Clear Session" = 0
+"3DKinectConvert1.XYZ.File/Save Session" = 0
+"3DKinectConvert1.XYZ.File/Save Original<<control>o>" = 0
+"3DKinectConvert1.XYZ.File/Save<<control>s>" = 0
+"3DKinectGrab1 Recorder.Status" = standby
+"3DKinectGrab1 Recorder.stop" = 0
+"3DKinectGrab1 Recorder.start" = 0
+"3DKinectGrab1 Recorder.Record color image" = 1
+"3DKinectGrab1 Recorder.Record depth image" = 1
+"3DKinectGrab1 Recorder.Output" = recorded.oni
+"3DKinectGrab1 Grabbing.Draw colored depth" = 0
+"3DKinectGrab1 Grabbing.Users (Pixels, Skeleton)" = 0
+"3DKinectGrab1 Grabbing.Depth image (16 bit)" = 1
+"3DKinectGrab1 Grabbing.Color image" = 1
+"3DKinectGrab1 Grabbing.Perform plugin processing" = 1
+"3DKinectGrab1.DEPTH.Preview" = 0
+"3DKinectGrab1.DEPTH.Remember Data" = 1
+"3DKinectGrab1.DEPTH.Info Window...<<control>i>" = 0
+"3DKinectGrab1.DEPTH.View/Pan Down" = 0
+"3DKinectGrab1.DEPTH.View/Pan Up" = 0
+"3DKinectGrab1.DEPTH.View/Pan Right" = 0
+"3DKinectGrab1.DEPTH.View/Pan Left" = 0
+"3DKinectGrab1.DEPTH.View/Zoom 1:1<<control>1>" = 0
+"3DKinectGrab1.DEPTH.View/Zoom to Fit Window<<control>f>" = 0
+"3DKinectGrab1.DEPTH.View/Zoom Out<<control>minus>" = 0
+"3DKinectGrab1.DEPTH.View/Zoom In<<control>plus>" = 0
+"3DKinectGrab1.DEPTH.File/Close Window<<control>w>" = 0
+"3DKinectGrab1.DEPTH.File/Clear Session" = 0
+"3DKinectGrab1.DEPTH.File/Save Session" = 0
+"3DKinectGrab1.DEPTH.File/Save Original<<control>o>" = 0
+"3DKinectGrab1.DEPTH.File/Save<<control>s>" = 0
+"3DKinectGrab1.RGB.Preview" = 0
+"3DKinectGrab1.RGB.Remember Data" = 1
+"3DKinectGrab1.RGB.Info Window...<<control>i>" = 0
+"3DKinectGrab1.RGB.View/Pan Down" = 0
+"3DKinectGrab1.RGB.View/Pan Up" = 0
+"3DKinectGrab1.RGB.View/Pan Right" = 0
+"3DKinectGrab1.RGB.View/Pan Left" = 0
+"3DKinectGrab1.RGB.View/Zoom 1:1<<control>1>" = 0
+"3DKinectGrab1.RGB.View/Zoom to Fit Window<<control>f>" = 0
+"3DKinectGrab1.RGB.View/Zoom Out<<control>minus>" = 0
+"3DKinectGrab1.RGB.View/Zoom In<<control>plus>" = 0
+"3DKinectGrab1.RGB.File/Close Window<<control>w>" = 0
+"3DKinectGrab1.RGB.File/Clear Session" = 0
+"3DKinectGrab1.RGB.File/Save Session" = 0
+"3DKinectGrab1.RGB.File/Save Original<<control>o>" = 0
+"3DKinectGrab1.RGB.File/Save<<control>s>" = 0
+"Record1.Reset FilenameCounter" = 0
+"Record1.File Name (e.g 'image_%d.ppm'):" = image_%d.ppm
+"Record1.Quality" = 75
+"Record1.AVI framerate" = 12.500000
+"Record1.Framerate based dup/drop-frames" = 1
+"Record1.Image format:" = 0
+"Record1.Convert to RGB" = 0
+"Record1.Framedrop" = 0
+"Record1.Record:" = 1
+"variable.Record1Plugins" = 
+"Input data.Font Shadows" = 0
+"Input data.Font" = 1
+"Input data - Settings.scaleMax" = 0.000000
+"Input data - Settings.scaleMin" = 0.000000
+"Input data - Settings.Planes which should be shown [0 1 2]" = 
+"Input data - Settings.Include min/max value in histogram?" = 1
+"Input data - Settings.Use lines for histogram" = 0
+"Input data - Settings.Histogram:" = 1
+"Input data.Show MetaInfo" = 0
+"Input data.Preview" = 0
+"Input data.Remember Data" = 1
+"Input data.Info Window...<<control>i>" = 0
+"Input data.View/Pan Down" = 0
+"Input data.View/Pan Up" = 0
+"Input data.View/Pan Right" = 0
+"Input data.View/Pan Left" = 0
+"Input data.View/Zoom 1:1<<control>1>" = 0
+"Input data.View/Zoom to Fit Window<<control>f>" = 0
+"Input data.View/Zoom Out<<control>minus>" = 0
+"Input data.View/Zoom In<<control>plus>" = 0
+"Input data.File/Close Window<<control>w>" = 0
+"Input data.File/Clear Session" = 0
+"Input data.File/Save Session" = 0
+"Input data.File/Save Original<<control>o>" = 0
+"Input data.File/Save<<control>s>" = 0
+"Preferences Window2.PDF viewer (e.g 'acroread %f'):" = 
+"Preferences Window2.Scrollbars in categorie pages" = 1
+"Preferences Window2.Use tree for" = 3
+"Preferences Window2.Save pan/zoom values" = 0
+"Preferences Window2.Auto-save at exit" = 0
+"Preferences Window2.Save As| Save |Clear" = 0
+"Preferences Window.Reset FilenameCounter" = 0
+"Preferences Window.Save full window" = 1
+"Preferences Window.Show SaveMessage" = 1
+"Preferences Window.Quality" = 75
+"Preferences Window.AVI framerate" = 12.500000
+"Preferences Window.Image name (e.g 'Gsnap_%d.ppm'):" = Gsnap_%03d.ppm
+"Preferences Window.Image format:" = 0
+"MainMenu._Edit/_Preferences<<control>p><stock gtk-preferences>" = 0
+"MainMenu._File/_Quit<<control>q><stock gtk-quit>" = 0
+"MainMenu._File/S_ave default<<control><shift>s><stock gtk-save>" = 0
+"MainMenu._File/_Save...<<control>s><stock gtk-save-as>" = 0
+"MainMenu._File/Load _default<<control><shift>l><stock gtk-open>" = 0
+"MainMenu._File/_Load...<<control>l><stock gtk-open>" = 0
+MENURC START
+; (gtk_accel_path "<pcontext>/Preview/CStretch5" "")
+; (gtk_accel_path "<pcontext>/View/Pan Left" "")
+; (gtk_accel_path "<pcontext>/Preview/HistEQ" "")
+; (gtk_accel_path "<pcontext>/View/Zoom Out" "<Control>minus")
+; (gtk_accel_path "<pcontext>/Show MetaInfo" "")
+; (gtk_accel_path "<mmenu>/File/Quit" "<Control>q")
+; (gtk_accel_path "<pcontext>/File/Clear Session" "")
+; (gtk_accel_path "<pcontext>/Sep1" "")
+; (gtk_accel_path "<pcontext>/View/Pan Right" "")
+; (gtk_accel_path "<pcontext>/Settings..." "<Control>p")
+; (gtk_accel_path "<pcontext>/File/Save OrigSeq" "")
+; (gtk_accel_path "<pcontext>/File/Sep2" "")
+; (gtk_accel_path "<pcontext>/File/Sep1" "")
+; (gtk_accel_path "<mmenu>/Edit/Enable DACS-Output" "")
+; (gtk_accel_path "<pcontext>/Preview/Random" "")
+; (gtk_accel_path "<mmenu>/File/Load..." "<Control>l")
+; (gtk_accel_path "<pcontext>/Tear" "")
+; (gtk_accel_path "<mmenu>/Help/iceWing Manual" "F1")
+; (gtk_accel_path "<pcontext>/File/Save" "<Control>s")
+; (gtk_accel_path "<pcontext>/File/Save Original" "<Control>o")
+; (gtk_accel_path "<pcontext>/File/Save Seq" "")
+; (gtk_accel_path "<pcontext>/File/Tear" "")
+; (gtk_accel_path "<mmenu>/View/Plugin Info" "<Control>i")
+; (gtk_accel_path "<mmenu>/File/Save..." "<Control>s")
+; (gtk_accel_path "<mmenu>/File/Sep" "")
+; (gtk_accel_path "<mmenu>/Help/About iceWing" "")
+; (gtk_accel_path "<pcontext>/View/Zoom In" "<Control>plus")
+; (gtk_accel_path "<mmenu>/Edit/Preferences" "<Control>p")
+; (gtk_accel_path "<mmenu>/File/Save default" "<Shift><Control>s")
+; (gtk_accel_path "<mmenu>/File/Load default" "<Shift><Control>l")
+; (gtk_accel_path "<pcontext>/Info Window..." "<Control>i")
+; (gtk_accel_path "<pcontext>/Font Shadows" "")
+; (gtk_accel_path "<pcontext>/Font/med" "")
+; (gtk_accel_path "<pcontext>/View/Zoom 1:1" "<Control>1")
+; (gtk_accel_path "<pcontext>/View/Sep1" "")
+; (gtk_accel_path "<pcontext>/Font/big" "")
+; (gtk_accel_path "<pcontext>/File/Close Window" "<Control>w")
+; (gtk_accel_path "<pcontext>/Preview/CStretch" "")
+; (gtk_accel_path "<pcontext>/Preview/Normal" "")
+; (gtk_accel_path "<pcontext>/View/Pan Down" "")
+; (gtk_accel_path "<pcontext>/File/Save Session" "")
+; (gtk_accel_path "<pcontext>/View/Pan Up" "")
+; (gtk_accel_path "<pcontext>/Remember Data" "")
+; (gtk_accel_path "<pcontext>/View/Tear" "")
+; (gtk_accel_path "<pcontext>/View/Zoom to Fit Window" "<Control>f")
+; (gtk_accel_path "<pcontext>/Font/small" "")
+; (gtk_accel_path "<pcontext>/Preview/CStretch10" "")
+MENURC END

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export JAM_MEMORY_NAME="ShortTerm"
+
+source "$VDEMO_componentPath/component_jam2"
+

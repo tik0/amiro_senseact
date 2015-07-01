@@ -1,0 +1,81 @@
+\documentclass[11pt]{article}
+
+\usepackage{wasysym} 
+
+\usepackage[ngerman]{babel}
+%\usepackage[top=2.5cm,bottom=2.5cm,left=2cm,right=2cm]{geometry}
+%\usepackage[latin1]{inputenc}
+%\usepackage{paperandpencil}    
+
+\setlength{\marginparwidth}{1.2in}
+\let\oldmarginpar\marginpar
+\renewcommand\marginpar[1]{\-\oldmarginpar[\raggedleft #1]%
+{\raggedright #1}}    
+
+\newenvironment{checklist}{%
+  \begin{list}{}{}% whatever you want the list to be
+  \let\olditem\item
+  \renewcommand\item{\olditem -- \marginpar{$\Box$} }
+  \newcommand\checkeditem{\olditem -- \marginpar{$\CheckedBox$} }
+}{%
+  \end{list}
+}   
+
+\begin{document}
+\begin{center}
+\textbf{\Huge Checkliste f\"ur Task:}\\
+\vspace{1cm}
+\begin{center}
+% \begin{tabularx}{\textwidth}[b]{p{5cm} X p{5cm}} \cline{3-3} \cline{6-6}
+%Taskname
+
+%\end{tabularx}
+\begin{tabular}{@{}l@{}}\rule{10cm}{0.01cm}\\
+\hspace{4cm}Taskname
+\end{tabular}
+\end{center}
+%\textbf{\Huge \underline{\textit{Follow Me}}}
+\end{center}
+\underline{\textit{WICHTIG}: Diese Checkliste muss vor jeder Task abgearbeitet werden!}
+
+\textbf{Hardware (allgemein):}
+\begin{checklist}
+	\item Ist das vordere Display an?
+	\item Ist der Arm an?
+	\item Ist die ArmServerBox gr\"un?
+	\item Sind die Motoren an?
+	\item Ist die Lautst\"arke voll aufgedreht?
+	\item Ist das Mikro an?
+	\item Ist das Mikrokabel richtig drin?
+	\item Ist der Mikropegel gut eingestellt?
+	\item Hast du eine Punkteliste dabei?
+\end{checklist}
+\textbf{Hardware (Vision):}
+\begin{checklist}
+	\item Ist die obere Kinect an?
+	\item Ist die untere Kinect an?
+	\item L\"auft die Grashopper (f\"ur Facerecognition)?
+	\item L\"auft die 5D?
+\end{checklist}	
+\textbf{vdemo-Komponenten:}
+\begin{checklist}
+ 	%\item Ist ein Bumper gedr\"uckt?
+	\item Ros in der Konsole gestartet? (groovy-usemap)
+	\item[$\Rightarrow$] \textbf{ACHTUNG:} Bei FollowMe groovy-recmap
+	\item Laufen alle vdemo-Komponenten?
+	\item L\"auft Pocket-Sphinx?
+	\item L\"auft Spreaddeamon korrekt?
+	\item Ist das Gesicht auf dem vorderen Display zu sehen?
+	\item Sendet der Laser Daten?
+	\item Kriegt \textbf{ros4xcf} Laserdaten? (checkLaserdata)
+	\item L\"auft der ObjectBuilder?
+	\item L\"auft der LegDetector?
+	\item Ist die Initialposition in ROS gesetzt? 
+	\item Wurde lokalisiert?
+	\item Bonsai: Config und Statemachine geladen?  
+\end{checklist}
+\textbf{Sonstiges:}
+\begin{checklist}
+	\item Reciever zur\"uck geben?
+\end{checklist}
+\end{document}

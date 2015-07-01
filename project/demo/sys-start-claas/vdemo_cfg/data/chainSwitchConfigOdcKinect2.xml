@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ChainSwitchConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="ChainSwitchConfiguration.xsd">
+
+	<Tunnels>
+		<Tunnel name="trigger" from="start" to="KinectTrigger" type="NOTHING"/>
+	</Tunnels>
+	
+	<Chains>
+		<Chain name="odc">
+			<Item name="trigger"/>
+		</Chain>
+	</Chains>
+
+
+</ChainSwitchConfiguration>

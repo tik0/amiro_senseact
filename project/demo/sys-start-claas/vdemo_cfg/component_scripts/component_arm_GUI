@@ -1,0 +1,12 @@
+#!/bin/bash
+
+function component {
+  if [  "$VDEMO_robot_config_loaded" = "TRUE" ]; then
+        ${prefix}/opt/robocup-statemachine/bin/ArmDebugGui ${prefix}/opt/robocup-statemachine/etc/bonsai_configs/tools/armDebugGui.xml
+
+  else
+        ${prefix}/opt/robocup-statemachine/bin/ArmDebugGui ${prefix}/opt/robocup-statemachine/etc/bonsai_configs/tools/armDebugGui.xml
+  fi        
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

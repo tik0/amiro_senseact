@@ -1,0 +1,35 @@
+-sg F -t 0 
+-crop 20 00 590 460
+-l remove_region
+-a RemoveRegion-1 "imageRGB 224 153 72"
+-l preview -a ImagePreview-1 imageRGB,reduced
+-l sysiphus 
+-a Sysiphus1 "-i imageRGB,reduced -s halfsize"
+
+#-l IttiSaliency -a IttiSaliency1 imageRGB,reduced
+-l IttiSaliency -a IttiSaliency1 halfsize
+
+-l dcControl
+#-l coord_s
+-l XCFExport
+
+-l zorba_collection -A ZorbaCollection1 "itti_saliency:xml saliency.xml"
+-l xquery_zorba
+-a XQueryZorba1 "${VDEMO_demoRoot}/data/icewing/saliency-coords.xq itti_saliency:xml -o itti_saliency:xml,world"
+-a XCFExport1 "-m xcf:ShortTerm -n -i itti_saliency:xml,world -n"
+
+-l xcf_image_pub
+-a XCFImagePublisher1 "-n RealTopCam -i imageRGB"
+
+#-l xcf_image_pub
+#-a XCFImagePublisher2 "-n saliency -i itti_saliency:img"
+
+#-l rlist_update
+#-a RegionListUpdate1 "-a addRemoveRegion -m updRemoveRegion -d delRemoveRegion -o region_removal"
+#-l XCFImport
+#-a XCFImport1 "-m xcf:ShortTerm -ev -p /IGNORE -e addRemoveRegion"
+#-l XCFImport
+#-a XCFImport2 "-m xcf:ShortTerm -ev -p /IGNORE -z r -e delRemoveRegion"
+
+-time '100 all'
+

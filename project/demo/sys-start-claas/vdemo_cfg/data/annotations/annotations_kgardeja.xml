@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<LIST type="ANNOTATION">
+
+  <ELEMENT_TYPE>de.unibi.airobots.btl.data.map.Annotation</ELEMENT_TYPE>
+
+  <GENERATOR>unknown</GENERATOR>
+
+  <TIMESTAMP>
+    <INSERTED value="1421850536811"/>
+    <UPDATED value="1421850536811"/>
+  </TIMESTAMP>
+
+  <ANNOTATION label="Eingang">
+    <TIMESTAMP>
+      <INSERTED value="1423056490709"/>
+      <UPDATED value="1423056490709"/>
+    </TIMESTAMP>
+    <GENERATOR>unknown</GENERATOR>
+    <VIEWPOINT category="VIEW" label="init">
+      <TIMESTAMP>
+        <INSERTED value="1423042975673"/>
+        <UPDATED value="1423042975673"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056508191"/>
+          <UPDATED value="1423056508191"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="3.141590118408203" x="16.54999923706055" y="12.94999980926514"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <PRECISEPOLYGON>
+      <GENERATOR>unknown</GENERATOR>
+      <TIMESTAMP>
+        <INSERTED value="1423056490734"/>
+        <UPDATED value="1423056490734"/>
+      </TIMESTAMP>
+      <POINT2D scope="GLOBAL" x="15950" y="13450">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490739"/>
+          <UPDATED value="1423056490739"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="18300" y="13300">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490739"/>
+          <UPDATED value="1423056490739"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="18250" y="11950">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490739"/>
+          <UPDATED value="1423056490739"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="16600" y="12000">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490739"/>
+          <UPDATED value="1423056490739"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="16250" y="12150">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490738"/>
+          <UPDATED value="1423056490738"/>
+        </TIMESTAMP>
+      </POINT2D>
+    </PRECISEPOLYGON>
+  </ANNOTATION>
+
+  <ANNOTATION label="Livingroom">
+    <TIMESTAMP>
+      <INSERTED value="1423056490739"/>
+      <UPDATED value="1423056490739"/>
+    </TIMESTAMP>
+    <GENERATOR>unknown</GENERATOR>
+    <VIEWPOINT category="VIEW" label="linit">
+      <TIMESTAMP>
+        <INSERTED value="1421850652461"/>
+        <UPDATED value="1421850652461"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1421850654531"/>
+          <UPDATED value="1421850654531"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="-1" x="12" y="13"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <VIEWPOINT category="VIEW" label="livingroom1">
+      <TIMESTAMP>
+        <INSERTED value="1422021908086"/>
+        <UPDATED value="1422021908086"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056520359"/>
+          <UPDATED value="1423056520359"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="1.84909999370575" x="13" y="14"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <VIEWPOINT category="VIEW" label="livingroom2">
+      <TIMESTAMP>
+        <INSERTED value="1423043066629"/>
+        <UPDATED value="1423043066629"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056527190"/>
+          <UPDATED value="1423056527190"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="0" x="14" y="10.5"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <VIEWPOINT category="VIEW" label="livingroom3">
+      <TIMESTAMP>
+        <INSERTED value="1423043080787"/>
+        <UPDATED value="1423043080787"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056540839"/>
+          <UPDATED value="1423056540839"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="3.141590118408203" x="12.19999980926514" y="11.25"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <PRECISEPOLYGON>
+      <GENERATOR>unknown</GENERATOR>
+      <TIMESTAMP>
+        <INSERTED value="1423056490771"/>
+        <UPDATED value="1423056490771"/>
+      </TIMESTAMP>
+      <POINT2D scope="GLOBAL" x="11650" y="15850">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490774"/>
+          <UPDATED value="1423056490774"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="14750" y="15650">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490774"/>
+          <UPDATED value="1423056490774"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="14700" y="9850">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490773"/>
+          <UPDATED value="1423056490773"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="11550" y="9950">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490774"/>
+          <UPDATED value="1423056490774"/>
+        </TIMESTAMP>
+      </POINT2D>
+    </PRECISEPOLYGON>
+  </ANNOTATION>
+
+  <ANNOTATION label="Kitchen">
+    <TIMESTAMP>
+      <INSERTED value="1423056490775"/>
+      <UPDATED value="1423056490775"/>
+    </TIMESTAMP>
+    <GENERATOR>unknown</GENERATOR>
+    <VIEWPOINT category="VIEW" label="kinit">
+      <TIMESTAMP>
+        <INSERTED value="1421850669573"/>
+        <UPDATED value="1421850669573"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423043232081"/>
+          <UPDATED value="1423043232081"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="-1" x="13" y="7"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <VIEWPOINT category="VIEW" label="kitchen1">
+      <TIMESTAMP>
+        <INSERTED value="1423043150497"/>
+        <UPDATED value="1423043150497"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423043154458"/>
+          <UPDATED value="1423043154458"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="3" x="12" y="6"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <VIEWPOINT category="VIEW" label="kitchen2">
+      <TIMESTAMP>
+        <INSERTED value="1423043163588"/>
+        <UPDATED value="1423043163588"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056567582"/>
+          <UPDATED value="1423056567582"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="0" x="14.25" y="7.349999904632568"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <PRECISEPOLYGON>
+      <GENERATOR>unknown</GENERATOR>
+      <TIMESTAMP>
+        <INSERTED value="1423056490803"/>
+        <UPDATED value="1423056490803"/>
+      </TIMESTAMP>
+      <POINT2D scope="GLOBAL" x="11400" y="5450">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490805"/>
+          <UPDATED value="1423056490805"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="14900" y="5350">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490806"/>
+          <UPDATED value="1423056490806"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="15000" y="8200">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490805"/>
+          <UPDATED value="1423056490805"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="11750" y="8450">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490806"/>
+          <UPDATED value="1423056490806"/>
+        </TIMESTAMP>
+      </POINT2D>
+    </PRECISEPOLYGON>
+  </ANNOTATION>
+
+  <ANNOTATION label="trash">
+    <TIMESTAMP>
+      <INSERTED value="1423056490806"/>
+      <UPDATED value="1423056490806"/>
+    </TIMESTAMP>
+    <GENERATOR>unknown</GENERATOR>
+    <VIEWPOINT category="VIEW" label="tinit">
+      <TIMESTAMP>
+        <INSERTED value="1423043281755"/>
+        <UPDATED value="1423043281755"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056592645"/>
+          <UPDATED value="1423056592645"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="0" x="16" y="8.75"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <PRECISEPOLYGON>
+      <GENERATOR>unknown</GENERATOR>
+      <TIMESTAMP>
+        <INSERTED value="1423056490827"/>
+        <UPDATED value="1423056490827"/>
+      </TIMESTAMP>
+      <POINT2D scope="GLOBAL" x="15150" y="9550">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056585366"/>
+          <UPDATED value="1423056585366"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="16299" y="9450">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056585366"/>
+          <UPDATED value="1423056585366"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="16250" y="8450">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056585367"/>
+          <UPDATED value="1423056585367"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="15150" y="8550">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056585368"/>
+          <UPDATED value="1423056585368"/>
+        </TIMESTAMP>
+      </POINT2D>
+    </PRECISEPOLYGON>
+  </ANNOTATION>
+
+  <ANNOTATION label="fridge">
+    <TIMESTAMP>
+      <INSERTED value="1423056490830"/>
+      <UPDATED value="1423056490830"/>
+    </TIMESTAMP>
+    <GENERATOR>unknown</GENERATOR>
+    <VIEWPOINT category="VIEW" label="finit">
+      <TIMESTAMP>
+        <INSERTED value="1423043323098"/>
+        <UPDATED value="1423043323098"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056605197"/>
+          <UPDATED value="1423056605197"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="3" x="12.30000019073486" y="9.300000190734863"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <PRECISEPOLYGON>
+      <GENERATOR>unknown</GENERATOR>
+      <TIMESTAMP>
+        <INSERTED value="1423056490850"/>
+        <UPDATED value="1423056490850"/>
+      </TIMESTAMP>
+      <POINT2D scope="GLOBAL" x="11400" y="10700">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490853"/>
+          <UPDATED value="1423056490853"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="13000" y="10400">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490853"/>
+          <UPDATED value="1423056490853"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="12700" y="7900">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490853"/>
+          <UPDATED value="1423056490853"/>
+        </TIMESTAMP>
+      </POINT2D>
+      <POINT2D scope="GLOBAL" x="11100" y="8050">
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1423056490854"/>
+          <UPDATED value="1423056490854"/>
+        </TIMESTAMP>
+      </POINT2D>
+    </PRECISEPOLYGON>
+  </ANNOTATION>
+
+</LIST>

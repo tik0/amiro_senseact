@@ -1,0 +1,20 @@
+#!/bin/bash
+
+function component {
+    FILE="${HOME}/rosconfig/kinect_tf"
+    ${prefix}/ros/bin/RobocupKinectFloorCalibration -v -r 50 -t 0.02 -p 0.02 -g 0.03 -f ${FILE}
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

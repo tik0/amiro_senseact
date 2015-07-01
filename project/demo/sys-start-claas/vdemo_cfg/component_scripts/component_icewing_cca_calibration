@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# common parameters
+
+function component {
+
+    MODULE="${BIRON_icewingDir}/icewing"
+    
+    DC_CONTROL_OPTIONS="-rc ${VDEMO_demoRoot}/data/icewing/settingsObjectDetectionKinect"
+    AR_DATA="${prefix}/share/ARToolKit/Data"
+    MARKERS="${AR_DATA}/p0.patt:${AR_DATA}/p1.patt:${AR_DATA}/p2.patt:${AR_DATA}/p3.patt:${AR_DATA}/p4.patt:${AR_DATA}/p5.patt:${AR_DATA}/p6.patt:${AR_DATA}/p7.patt:${AR_DATA}/p8.patt:${AR_DATA}/p9.patt"
+    
+    echo "has asus: $VDEMO_has_asus"
+
+    #if $VDEMO_has_asus; then
+        GRAB_OPTIONS_KINECT="--rgb_resx 640 --rgb_resy 480 --rgb_fps 30"
+    #else
+    #    GRAB_OPTIONS_KINECT="--playback ${VDEMO_demoRoot}/data/objects.oni"
+    #fi
+
+    ${MODULE} ${DC_CONTROL_OPTIONS} \
+    -l 3DKinectGrab -a 3DKinectGrab1 "${GRAB_OPTIONS_KINECT}" \
+    -l 3DKinectConvert -a 3DKinectConvert1 -x \
+    -l ARTDetector -a ARTDetector1 "-i KinectRGB -o markers -m ${MARKERS} -c ${AR_DATA}/camera_para.dat" \
+    -l RsbXmlExport -a RsbXmlExport1 "-i markers -x /markers"
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_check {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

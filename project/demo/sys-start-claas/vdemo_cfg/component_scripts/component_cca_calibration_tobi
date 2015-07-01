@@ -1,0 +1,21 @@
+#!/bin/bash
+
+function component {
+    ${prefix}/bin/cca-calibration-tobi \
+    --tracker-scope=/tracking/bart \
+    --armserver-scope=/armserver
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

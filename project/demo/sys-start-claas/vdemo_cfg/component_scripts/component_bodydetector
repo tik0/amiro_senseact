@@ -1,0 +1,11 @@
+#!/bin/bash
+
+function component {
+    if [  "$PT_PIPELINE" = "rsb" ]; then
+        RSB_FLAG="--rsb" 
+    fi
+
+    ${prefix}/bin/BodyDetector ${RSB_FLAG}
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

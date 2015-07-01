@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ChainSwitchConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="ChainSwitchConfiguration.xsd">
+
+	<Tunnels>
+		<Tunnel name="trigger_kinect" from="start" to="trigger_kinect"
+			type="NOTHING" />
+		<Tunnel name="trigger_5d" from="start" to="trigger_5d" type="NOTHING" />
+		<Tunnel name="pca_to_export" from="pca_boxes_out" to="export_bb_in"
+			type="STRING" />
+		<Tunnel name="pca_to_cold" from="pca_boxes_out" to="coldBoundingBoxes_in"
+			type="STRING" />
+		<Tunnel name="cold_to_export" from="ColdBBoxOut" to="export_bb_in"
+			type="STRING" />
+	</Tunnels>
+
+	<Chains>
+		<Chain name="recognition">
+			<Item name="trigger_kinect" />
+			<Item name="trigger_5d" />
+			<Item name="pca_to_cold" />
+			<Item name="cold_to_export" />
+		</Chain>
+		<Chain name="detection">
+			<Item name="trigger_kinect" />
+			<Item name="pca_to_export" />
+		</Chain>
+		<Chain name="bebot">
+			<Item name="trigger_kinect" />
+			<Item name="pca_to_export" />
+		</Chain>
+	</Chains>
+
+</ChainSwitchConfiguration>

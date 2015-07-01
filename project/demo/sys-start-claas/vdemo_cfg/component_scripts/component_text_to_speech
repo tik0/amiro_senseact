@@ -1,0 +1,9 @@
+#!/bin/bash
+
+function component {
+        ${prefix}/opt/marytts-remote/bin/MaryRemote
+        #${prefix}/bin/marytts-server.sh
+        #${prefix}/bin/maryserver
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

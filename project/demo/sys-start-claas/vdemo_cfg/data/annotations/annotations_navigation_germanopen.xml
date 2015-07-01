@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<LIST type="ANNOTATION">
+
+  <ELEMENT_TYPE>de.unibi.airobots.btl.data.map.Annotation</ELEMENT_TYPE>
+
+  <GENERATOR>unknown</GENERATOR>
+
+  <TIMESTAMP>
+    <INSERTED value="1414499037510"/>
+    <UPDATED value="1414499037510"/>
+  </TIMESTAMP>
+
+  <ANNOTATION label="arena">
+    <TIMESTAMP>
+      <INSERTED value="1424960873077"/>
+      <UPDATED value="1424960873077"/>
+    </TIMESTAMP>
+    <GENERATOR>unknown</GENERATOR>
+    <VIEWPOINT category="VIEW" label="waypointA">
+      <TIMESTAMP>
+        <INSERTED value="1424960882085"/>
+        <UPDATED value="1424960882085"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1424960891966"/>
+          <UPDATED value="1424960891966"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="-1.679069995880127" x="13" y="6.25"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <VIEWPOINT category="VIEW" label="waypointB">
+      <TIMESTAMP>
+        <INSERTED value="1424960899501"/>
+        <UPDATED value="1424960899501"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1424960917076"/>
+          <UPDATED value="1424960917076"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="1.518210053443909" x="13.5" y="11.25"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <PRECISEPOLYGON>
+      <GENERATOR>unknown</GENERATOR>
+      <TIMESTAMP>
+        <INSERTED value="1424960873078"/>
+        <UPDATED value="1424960873078"/>
+      </TIMESTAMP>
+    </PRECISEPOLYGON>
+  </ANNOTATION>
+
+</LIST>

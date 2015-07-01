@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<LIST type="ANNOTATION">
+
+  <ELEMENT_TYPE>de.unibi.airobots.btl.data.map.Annotation</ELEMENT_TYPE>
+
+  <GENERATOR>unknown</GENERATOR>
+
+  <TIMESTAMP>
+    <INSERTED value="1401882594643"/>
+    <UPDATED value="1401882594643"/>
+  </TIMESTAMP>
+
+  <ANNOTATION label="testAnnotations">
+    <TIMESTAMP>
+      <INSERTED value="1401882625773"/>
+      <UPDATED value="1401882625773"/>
+    </TIMESTAMP>
+    <GENERATOR>unknown</GENERATOR>
+    <VIEWPOINT category="VIEW" label="testViewpoint">
+      <TIMESTAMP>
+        <INSERTED value="1401882641031"/>
+        <UPDATED value="1401882641031"/>
+      </TIMESTAMP>
+      <GENERATOR>unknown</GENERATOR>
+      <ROBOTPOSITION>
+        <GENERATOR>unknown</GENERATOR>
+        <TIMESTAMP>
+          <INSERTED value="1401882642786"/>
+          <UPDATED value="1401882642786"/>
+        </TIMESTAMP>
+        <POSITION kind="absolute" ref="world" theta="0" x="13.30000019073486" y="15.39999961853027"/>
+      </ROBOTPOSITION>
+    </VIEWPOINT>
+    <PRECISEPOLYGON>
+      <GENERATOR>unknown</GENERATOR>
+      <TIMESTAMP>
+        <INSERTED value="1401882625773"/>
+        <UPDATED value="1401882625773"/>
+      </TIMESTAMP>
+    </PRECISEPOLYGON>
+  </ANNOTATION>
+
+</LIST>

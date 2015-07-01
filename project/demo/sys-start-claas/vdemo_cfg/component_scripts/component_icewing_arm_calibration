@@ -1,0 +1,35 @@
+#!/bin/bash
+
+function component {
+
+${prefix}/bin/icewing -time 0 \
+-l 3DKinectGrab \
+-a 3DKinectGrab1 "" \
+-l 3DKinectConvert \
+-a 3DKinectConvert1 "-b -x" \
+-l OpenCVChessboardFinder \
+-a OpenCVChessboardFinder1 "-i KinectRGB -s -f -n 10 -x 5 -y 4" \
+-l DepthEnrichmentPlugin \
+-a DepthEnrichmentPlugin1 "--meter" \
+-l XCFExport \
+-a XCFExport1 "-i ChessboardLocation3D -x ChessboardPosition" 
+
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_check {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

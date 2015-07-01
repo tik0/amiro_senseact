@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# options for sourcing components:
+#
+#   OPTION_PROCESSOR
+#   OPTION_GRABBER
+#   OPTION_OTHER
+#
+
+if [ -z "${OPTION_GRABBER}" ]
+then
+OPTION_GRABBER="-g OpenNI"
+echo Variable 'OPTION_GRABBER' not set! Using default value: '${OPTION_GRABBER}'
+fi
+
+if [ -z "${OPTION_PROCESSOR}" ]
+then
+OPTION_PROCESSOR=""
+#OPTION_PROCESSOR="-p ObjectProcessor"
+echo Variable 'OPTION_PROCESSOR' not set! Using default value: '${OPTION_PROCESSOR}'
+fi
+
+if [ -z "${OPTION_OTHER}" ]
+then
+echo Variable 'OPTION_OTHER' not set!
+fi
+
+function component {
+
+    LD_LIBRARY_PATH=${prefix}/lib:${prefix}/usr/lib:${prefix}/lib/vtk-5.6 OPEN_NI_INSTALL_PATH=${prefix} \
+    ${prefix}/bin/PointCloudAnalyzer \
+    -s pca \
+    ${OPTION_PROCESSOR} \
+    ${OPTION_GRABBER} \
+    -l ${prefix}/etc/pca/logging.properties \
+    ${OPTION_OTHER}
+
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_check {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# common parameters
+
+
+function component {
+
+    echo "has dslr: $VDEMO_has_dslr"
+    echo "has asus: $VDEMO_has_asus"
+    echo "object models: ${OBJECT_MODELS}"
+
+    if $VDEMO_has_asus; then
+        if $VDEMO_has_dslr; then
+            GRAB_OPTIONS="--input DSLR"
+        else
+            GRAB_OPTIONS="--input Kinect"
+        fi
+    else
+	    GRAB_OPTIONS="--sim ${VDEMO_demoRoot}/data/objects.oni"
+    fi
+
+    
+    
+    ${prefix}/bin/ClaFuRemoteTool --trace --segmentation-config ${VDEMO_demoRoot}/data/pca.cfg -d ${OBJECT_MODELS} -p /clafu/results --remote /clafu/server ${GRAB_OPTIONS}
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

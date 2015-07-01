@@ -1,0 +1,10 @@
+#-sg F mode=f71yuv422516x242+0+60 
+#-sg V mode=yuv800
+# -sg F device=/dev/video1394/0:camera=1:fps=30:mode=yuv800 
+# -sg F mode=yuv800
+-sg f mode=f70raw81024x768:bayer=neighbor:pattern=GRBG:fps=30 -crop 0 150 1024 668
+-l StableDetectionTrackerPlugin
+-l XCFExport -a XCFExport1 '-m xcf:motor -n -i Faces'
+-l dcControl
+-l BoostDetector_iw -a BoostDetector_iw1 '-f /vol/airobots/releases/flobi/share/BoostDetector_iw/FaceDetector/FaceDetector.xml -e Faces'
+-l xcf_image_pub -a XCFImagePublisher1 '-n xcf:motor -x 0'

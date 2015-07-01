@@ -1,0 +1,6 @@
+-l lib3DKinectGrab.so
+-l lib3DKinectConvert.so
+-l libkinectmatcher.so
+-a kinectmatcher1 "-X SlamPos"
+-l libkinectmotion.so 
+-a kinectmotion1 "-X SlamPos"

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+
+function component {
+
+    if [  "$PT_PIPELINE" = "rsb" ]; then
+        RSB_FLAG="--rsb" 
+    fi
+    
+    ${prefix}/bin/ObjectBuilderAM ${RSB_FLAG} --debug
+    
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_check {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

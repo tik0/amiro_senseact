@@ -1,0 +1,72 @@
+#!/bin/bash
+
+function component {
+
+    MAP_PART="rec_map"
+    if [ $MAP ]; then MAP_PART="use_map"; fi
+
+    MODE_PART="mobile"
+    if $VDEMO_simulation; then MODE_PART="simulation"; fi
+
+    export LAUNCH_FILE="tobi_${MODE_PART}_${MAP_PART}.launch"
+
+    echo "Starting launch file: ${LAUNCH_FILE}"
+
+    export STAGEPATH="${prefix}/share/stage"
+    source ${prefix}/ros/setup.bash
+    roslaunch tobi_2dnav ${LAUNCH_FILE}
+}
+
+function stop_component {
+	VDEMO_title="$1"
+    VDEMO_pid=$(vdemo_pidFromScreen ${VDEMO_title})
+    VDEMO_compo_pids=$(vdemo_pidsFromComponent ${VDEMO_pid})
+
+    echo "stopping $VDEMO_title (VDEMO_pid: ${VDEMO_pid}, VDEMO_compo_pids: ${VDEMO_compo_pids})" >&2
+
+    for pid in $VDEMO_compo_pids; do
+        echo "killing child process $pid"
+        kill -2 $pid > /dev/null 2>&1
+        for i in {1..150}; do
+            sleep 0.1
+            kill -0 $pid > /dev/null 2>&1 || break
+        done
+    done
+
+    PIDS=$(all_children "$VDEMO_pid")
+    kill $VDEMO_pid $PIDS > /dev/null 2>&1
+    for i in {1..20}; do
+        sleep 0.1
+        kill -0 $VDEMO_pid $PIDS > /dev/null 2>&1 || break
+    done
+    kill -9 $VDEMO_pid $PIDS > /dev/null 2>&1
+}
+
+function on_check {
+    if $VDEMO_simulation; then
+        true
+    else
+        num_sick=$(ps -e | grep sicklms | wc -l)
+        num_robot=$(ps -e | grep RosAria | wc -l)
+        num_kinect=$(ps -e | grep XnSensorServer | wc -l)
+        if [ "$num_sick" -eq 0 ]
+        then
+            echo "Laser is NOT running"
+            false
+        elif [ "$num_robot" -eq 0 ]
+        then
+            echo "Robot Base Connection is NOT running"
+            false
+        elif [ "$num_kinect" -eq 0 ]
+        then
+            echo "Kinect is NOT running"
+            false
+        else
+            echo "ROS is running"
+            true
+        fi
+    fi
+}
+
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

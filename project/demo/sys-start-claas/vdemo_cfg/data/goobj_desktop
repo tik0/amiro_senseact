@@ -1,0 +1,67 @@
+#==============================================================================
+# Bilder von der Kamera
+#------------------------------------------------------------------------------
+### Live ########
+-rc  ${prefix}/cfg/Icewing/goobj.rc
+-ses ${prefix}/cfg/Icewing/goobj.sess
+-sg V input=2:format=6 
+-n icewing
+-f
+
+-t 0
+-p 384x288
+
+#export VITA_LIB=/vol/vita/lib/iceWing
+#export PATH=/vol/vita/bin/:$PATH
+
+#========================== local libs =======================
+
+#==============================================================================
+# Helligkeits-Steuerung der Kamera
+#------------------------------------------------------------------------------
+#-l $VITA_LIB/libGainControl.so
+#-a gainControl1 "-n RobbyCam_ -l ${prefix}/cfg/Icewing/Logging_AGC.conf"
+
+#-l "$VITA_LIB/libplugin_PatternMatch.so" 
+#-a PatternMatch1 "-g -f ${prefix}/cfg/ObjAtt/Logging_OASVision.conf"
+
+#==============================================================================
+# Gesichts-Identifikation
+#------------------------------------------------------------------------------
+-l $VITA_LIB/libBoostDetector_iw.so
+-a BoostDetector_iw1 "-f ${prefix}/share/BoostDetector_iw/FaceDetector/FaceDetector.xml -e FaceData"
+
+#-l $VITA_LIB/libFaceClassify.so
+#-a FaceClassify1 "-u ${prefix}/cfg/Icewing/IdSpace40.es -w 40 -l 40"
+
+-l $VITA_LIB/libXCFExport.so
+#-a XCFExport1 "-I BoostClassify -x xcfFacesOut"
+-a XCFExport1 "-I FaceData -x xcfFacesOut"
+
+#-l $VITA_LIB/libXCFExport.so
+#-a XCFExport2 "-i PatternMatchResult -x ObjectDetectStream"
+
+#-l "$VITA_LIB/libXcfIceWingConfigurator.so" 
+#-a "IceWingConfigurator_1" "-x OAS_configstream -g -f /vol/mobirob/BIRON_SunShine_compiled/cfg/Icewing/Logging_IceWingConfigurator.conf"
+
+#-l "$VITA_LIB/libIwCvConverter.so"
+#-a "IwCvConverter1" "-ni image -to IPLIMAGE -no GrabImageCv -co RGB"
+
+#-l "$VITA_LIB/libpluginSmooth.so"
+#-a "plugin_Smooth1" "-ni GrabImageCv -no CvSmoothed"
+
+#-l "$VITA_LIB/libIwCvConverter.so"
+#-a "IwCvConverter2" "-ti IPLIMAGE -ci RGB -ni CvSmoothed -co HSV -to IPLIMAGE -no hsv_Img"
+
+# This plugin is for BIRON only so it ist located here !
+#-l "${prefix}/lib/libpluginSameColor.so"
+#-a "plugin_SameColor1" "-ni hsv_Img -AOut Activation"
+
+#-l "${prefix}/lib/libpluginXCFSendOpenCV.so"
+#-a "plugin_XCFSendOpenCV1" "-ni Activation -pub OAS_ColActivationStream"
+
+#-l "${prefix}/lib/libpluginOpenCvToTransport.so"
+#-a "plugin_OpenCvToTransport1" "-ni GrabImageCv -no GrabImageCvTrans"
+
+#-l "${prefix}/lib/libpluginXCFSendOpenCV.so"
+#-a "plugin_XCFSendOpenCV2" "-ni GrabImageCvTrans -pub OAS_GrabImageStream"

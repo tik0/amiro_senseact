@@ -1,0 +1,7 @@
+#!/bin/bash
+
+function component {
+        ${prefix}/opt/robocup-statemachine/bin/scxml-starter-robocup --result -c ${PATH_TO_BONSAI_CONFIG} -t ${PATH_TO_TASK_SCXML} -l ${prefix}/opt/robocup-statemachine/etc/skillsLogging.properties 2> /tmp/state_machine_logfile.log
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

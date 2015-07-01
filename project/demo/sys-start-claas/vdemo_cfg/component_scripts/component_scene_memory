@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export JAM_MEMORY_NAME="Scene"
+
+export JAM_DIR_TO_INSERT="${prefix}/share/memory/scene"
+
+source "$VDEMO_componentPath/component_jam2"
+

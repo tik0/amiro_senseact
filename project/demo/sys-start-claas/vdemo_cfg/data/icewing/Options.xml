@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<DOT_DETECTOR_PLUGIN_OPTIONS>
+
+  <PARSING>
+    <XPATH>
+      <BASE>/*</BASE>
+      <BOUNDING_BOX>
+        <RELATIVE>Region/coord[@ref="image" and @kind="relative"]</RELATIVE>
+        <ABSOLUTE>Region/coord[@ref="image" and @kind="absolute"]</ABSOLUTE>
+      </BOUNDING_BOX>
+      <CLASS_LABEL>Region/Object/@userLabel</CLASS_LABEL>
+      <IMAGE_TIMESTAMP>Region/@image_timestamp</IMAGE_TIMESTAMP>
+    </XPATH>
+  </PARSING>
+
+  <GENERATING>
+    <TEMPLATES>
+      <BASE_FILE>TemplateBase.xml</BASE_FILE>
+      <ENTRY_FILE>TemplateEntry.xml</ENTRY_FILE>
+    </TEMPLATES>
+    <XPATH>
+      <BASE>/*
+        <TIMESTAMP>
+          <MESSAGE_CREATED>TIMESTAMP/INSERTED/@value</MESSAGE_CREATED>
+          <IMAGE_CREATED></IMAGE_CREATED>
+        </TIMESTAMP>
+      </BASE>
+      <ENTRY>
+        <BOUNDING_BOX>
+          <RELATIVE>Region/coord[@ref="image" and @kind="relative"]</RELATIVE>
+          <ABSOLUTE>Region/coord[@ref="image" and @kind="absolute"]</ABSOLUTE>
+        </BOUNDING_BOX>
+        <CLASS_LABEL>Region/Object/@detectorLabel</CLASS_LABEL>
+        <CLASS_ID>Region/Object/@detectorID</CLASS_ID>
+        <SCORE>Region/Object/@confidence</SCORE>
+        <TIMESTAMP>
+          <IMAGE_CREATED>Region/@image_timestamp</IMAGE_CREATED>
+          <MESSAGE_CREATED></MESSAGE_CREATED>
+        </TIMESTAMP>
+        <IMG_NO>Region/Object/@img_nr</IMG_NO>
+      </ENTRY>
+    </XPATH>
+  </GENERATING>
+
+  <PARAMETERS>
+    <IMPORT_IDS>
+      <IMAGE>halfsize</IMAGE>
+      <DISCRETIZED_GRADIENTS>DiscretizedGradients</DISCRETIZED_GRADIENTS>
+      <TEMPLATE_REQUESTS>TemplateRequest</TEMPLATE_REQUESTS>
+    </IMPORT_IDS>
+    <EXPORT_IDS>
+      <REGIONS>DOTResult</REGIONS>
+    </EXPORT_IDS>
+    <TEMPLATES height="120" width="120"/>
+    <REGION size="7"/>
+    <DETECTOR_FILE></DETECTOR_FILE>
+    <THRESHOLDS adaptiveLearning="95" candidate="80" onlyBestCandidatePerPosition="1"/>
+    <HISTORY length="30000"/>
+    <ADAPTIVE_LEARNING enableAdaptiveLearning="0" rejectBorderTemplateInAdaptiveLearning="0"/>
+    <REQUESTS shiftRequestsIntoImage="1"/>
+    <MANUAL_INPUT enable="0"/>
+  </PARAMETERS>
+
+</DOT_DETECTOR_PLUGIN_OPTIONS>
+

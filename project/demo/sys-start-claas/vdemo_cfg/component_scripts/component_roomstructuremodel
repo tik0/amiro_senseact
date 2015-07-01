@@ -1,0 +1,25 @@
+#!/bin/bash
+
+export RSM_RSB=true
+
+function component {
+    OPTION=""
+    if $RSM_RSB; then
+        OPTION="--rsb --utterance-input"
+    fi
+    ${prefix}/bin/RoomStructureModel ${OPTION} ${prefix}/etc/model.txt  ${prefix}/etc/guesses_brazil.txt
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+	true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

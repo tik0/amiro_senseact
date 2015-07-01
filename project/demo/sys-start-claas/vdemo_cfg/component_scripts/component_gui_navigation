@@ -1,0 +1,10 @@
+#!/bin/bash
+
+source ${prefix}/ros/setup.bash
+
+function component {
+    echo "Starting ros4rsb with ROS_MASTER_URI $ROS_MASTER_URI"
+    rosrun rviz rviz -d $prefix/etc/vdemo_scripts/data/default_robocup.rviz
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

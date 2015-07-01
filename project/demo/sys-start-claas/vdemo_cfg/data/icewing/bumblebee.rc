@@ -1,0 +1,189 @@
+# Options for iceWing V0.10
+
+"MainMenu._Help/iceWing _Manual<F1><stock gtk-help>|Help/_About iceWing<stock gtk-about>" = 0
+"MainMenu._View/_Plugin Info<<control>i>" = 0
+"MainMenu._Edit/_Enable DACS-Output" = 1
+"GrabImage1.Grab Image" = 6
+"GrabImage1.Wait Time" = 79
+"GrabImage1.Frame correct Wait Time" = 0
+"GrabImage1.File TimeStep" = -1
+"GrabImage1.Downsampling" = 1
+"GrabImage1.Interlace:" = 0
+"GrabImage1.V channel.Font Shadows" = 0
+"GrabImage1.V channel.Font" = 1
+"GrabImage1.V channel - Settings.scaleMax" = 0.000000
+"GrabImage1.V channel - Settings.scaleMin" = 0.000000
+"GrabImage1.V channel - Settings.Planes which should be shown [0 1 2]" = 
+"GrabImage1.V channel - Settings.Include min/max value in histogram?" = 1
+"GrabImage1.V channel - Settings.Use lines for histogram" = 0
+"GrabImage1.V channel - Settings.Histogram:" = 1
+"GrabImage1.V channel.Show MetaInfo" = 0
+"GrabImage1.U channel.Font Shadows" = 0
+"GrabImage1.U channel.Font" = 1
+"GrabImage1.U channel - Settings.scaleMax" = 0.000000
+"GrabImage1.U channel - Settings.scaleMin" = 0.000000
+"GrabImage1.U channel - Settings.Planes which should be shown [0 1 2]" = 
+"GrabImage1.U channel - Settings.Include min/max value in histogram?" = 1
+"GrabImage1.U channel - Settings.Use lines for histogram" = 0
+"GrabImage1.U channel - Settings.Histogram:" = 1
+"GrabImage1.U channel.Show MetaInfo" = 0
+"GrabImage1.Y channel.Font Shadows" = 0
+"GrabImage1.Y channel.Font" = 1
+"GrabImage1.Y channel - Settings.scaleMax" = 0.000000
+"GrabImage1.Y channel - Settings.scaleMin" = 0.000000
+"GrabImage1.Y channel - Settings.Planes which should be shown [0 1 2]" = 
+"GrabImage1.Y channel - Settings.Include min/max value in histogram?" = 1
+"GrabImage1.Y channel - Settings.Use lines for histogram" = 0
+"GrabImage1.Y channel - Settings.Histogram:" = 1
+"GrabImage1.Y channel.Show MetaInfo" = 0
+"GrabImage1.V channel.Preview" = 0
+"GrabImage1.V channel.Remember Data" = 1
+"GrabImage1.V channel.Info Window...<<control>i>" = 0
+"GrabImage1.V channel.View/Pan Down" = 0
+"GrabImage1.V channel.View/Pan Up" = 0
+"GrabImage1.V channel.View/Pan Right" = 0
+"GrabImage1.V channel.View/Pan Left" = 0
+"GrabImage1.V channel.View/Zoom 1:1<<control>1>" = 0
+"GrabImage1.V channel.View/Zoom to Fit Window<<control>f>" = 0
+"GrabImage1.V channel.View/Zoom Out<<control>minus>" = 0
+"GrabImage1.V channel.View/Zoom In<<control>plus>" = 0
+"GrabImage1.V channel.File/Close Window<<control>w>" = 0
+"GrabImage1.V channel.File/Clear Session" = 0
+"GrabImage1.V channel.File/Save Session" = 0
+"GrabImage1.V channel.File/Save Original<<control>o>" = 0
+"GrabImage1.V channel.File/Save<<control>s>" = 0
+"GrabImage1.U channel.Preview" = 0
+"GrabImage1.U channel.Remember Data" = 1
+"GrabImage1.U channel.Info Window...<<control>i>" = 0
+"GrabImage1.U channel.View/Pan Down" = 0
+"GrabImage1.U channel.View/Pan Up" = 0
+"GrabImage1.U channel.View/Pan Right" = 0
+"GrabImage1.U channel.View/Pan Left" = 0
+"GrabImage1.U channel.View/Zoom 1:1<<control>1>" = 0
+"GrabImage1.U channel.View/Zoom to Fit Window<<control>f>" = 0
+"GrabImage1.U channel.View/Zoom Out<<control>minus>" = 0
+"GrabImage1.U channel.View/Zoom In<<control>plus>" = 0
+"GrabImage1.U channel.File/Close Window<<control>w>" = 0
+"GrabImage1.U channel.File/Clear Session" = 0
+"GrabImage1.U channel.File/Save Session" = 0
+"GrabImage1.U channel.File/Save Original<<control>o>" = 0
+"GrabImage1.U channel.File/Save<<control>s>" = 0
+"GrabImage1.Y channel.Preview" = 0
+"GrabImage1.Y channel.Remember Data" = 1
+"GrabImage1.Y channel.Info Window...<<control>i>" = 0
+"GrabImage1.Y channel.View/Pan Down" = 0
+"GrabImage1.Y channel.View/Pan Up" = 0
+"GrabImage1.Y channel.View/Pan Right" = 0
+"GrabImage1.Y channel.View/Pan Left" = 0
+"GrabImage1.Y channel.View/Zoom 1:1<<control>1>" = 0
+"GrabImage1.Y channel.View/Zoom to Fit Window<<control>f>" = 0
+"GrabImage1.Y channel.View/Zoom Out<<control>minus>" = 0
+"GrabImage1.Y channel.View/Zoom In<<control>plus>" = 0
+"GrabImage1.Y channel.File/Close Window<<control>w>" = 0
+"GrabImage1.Y channel.File/Clear Session" = 0
+"GrabImage1.Y channel.File/Save Session" = 0
+"GrabImage1.Y channel.File/Save Original<<control>o>" = 0
+"GrabImage1.Y channel.File/Save<<control>s>" = 0
+"Record1.Reset FilenameCounter" = 0
+"Record1.File Name (e.g 'image_%d.ppm'):" = /home/biron/bumblebeeaufnahmen/image_%d_%T.ppm
+"Record1.Quality" = 75
+"Record1.AVI framerate" = 12.500000
+"Record1.Framerate based dup/drop-frames" = 1
+"Record1.Image format:" = 0
+"Record1.Convert to RGB" = 1
+"Record1.Framedrop" = 0
+"Record1.Record:" = 1
+"variable.Record1Plugins" = 
+"Input data.Font Shadows" = 0
+"Input data.Font" = 1
+"Input data - Settings.scaleMax" = 0.000000
+"Input data - Settings.scaleMin" = 0.000000
+"Input data - Settings.Planes which should be shown [0 1 2]" = 
+"Input data - Settings.Include min/max value in histogram?" = 1
+"Input data - Settings.Use lines for histogram" = 0
+"Input data - Settings.Histogram:" = 1
+"Input data.Show MetaInfo" = 0
+"Input data.Preview" = 0
+"Input data.Remember Data" = 1
+"Input data.Info Window...<<control>i>" = 0
+"Input data.View/Pan Down" = 0
+"Input data.View/Pan Up" = 0
+"Input data.View/Pan Right" = 0
+"Input data.View/Pan Left" = 0
+"Input data.View/Zoom 1:1<<control>1>" = 0
+"Input data.View/Zoom to Fit Window<<control>f>" = 0
+"Input data.View/Zoom Out<<control>minus>" = 0
+"Input data.View/Zoom In<<control>plus>" = 0
+"Input data.File/Close Window<<control>w>" = 0
+"Input data.File/Clear Session" = 0
+"Input data.File/Save Session" = 0
+"Input data.File/Save Original<<control>o>" = 0
+"Input data.File/Save<<control>s>" = 0
+"Preferences Window2.PDF viewer (e.g 'acroread %f'):" = 
+"Preferences Window2.Scrollbars in categorie pages" = 1
+"Preferences Window2.Use tree for" = 3
+"Preferences Window2.Save pan/zoom values" = 1
+"Preferences Window2.Auto-save at exit" = 0
+"Preferences Window2.Save As| Save |Clear" = 0
+"Preferences Window.Reset FilenameCounter" = 0
+"Preferences Window.Save full window" = 1
+"Preferences Window.Show SaveMessage" = 1
+"Preferences Window.Quality" = 75
+"Preferences Window.AVI framerate" = 12.500000
+"Preferences Window.Image name (e.g 'Gsnap_%d.ppm'):" = Gsnap_%03d.ppm
+"Preferences Window.Image format:" = 0
+"MainMenu._Edit/_Preferences<<control>p><stock gtk-preferences>" = 0
+"MainMenu._File/_Quit<<control>q><stock gtk-quit>" = 0
+"MainMenu._File/S_ave default<<control><shift>s><stock gtk-save>" = 0
+"MainMenu._File/_Save...<<control>s><stock gtk-save-as>" = 0
+"MainMenu._File/Load _default<<control><shift>l><stock gtk-open>" = 0
+"MainMenu._File/_Load...<<control>l><stock gtk-open>" = 0
+MENURC START
+; (gtk_accel_path "<pcontext>/File/Tear" "")
+; (gtk_accel_path "<mmenu>/File/Save..." "<Control>s")
+; (gtk_accel_path "<pcontext>/View/Pan Right" "")
+; (gtk_accel_path "<mmenu>/Help/About iceWing" "")
+; (gtk_accel_path "<pcontext>/Show MetaInfo" "")
+; (gtk_accel_path "<pcontext>/View/Pan Up" "")
+; (gtk_accel_path "<pcontext>/View/Zoom 1:1" "<Control>1")
+; (gtk_accel_path "<pcontext>/View/Zoom to Fit Window" "<Control>f")
+; (gtk_accel_path "<mmenu>/Edit/Enable DACS-Output" "")
+; (gtk_accel_path "<pcontext>/File/Save Seq" "")
+; (gtk_accel_path "<pcontext>/Preview/HistEQ" "")
+; (gtk_accel_path "<pcontext>/File/Save OrigSeq" "")
+; (gtk_accel_path "<pcontext>/File/Save Original" "<Control>o")
+; (gtk_accel_path "<pcontext>/View/Tear" "")
+; (gtk_accel_path "<pcontext>/View/Pan Left" "")
+; (gtk_accel_path "<pcontext>/Preview/CStretch5" "")
+; (gtk_accel_path "<pcontext>/Info Window..." "<Control>i")
+; (gtk_accel_path "<pcontext>/Font/med" "")
+; (gtk_accel_path "<pcontext>/File/Sep2" "")
+; (gtk_accel_path "<mmenu>/File/Sep" "")
+; (gtk_accel_path "<pcontext>/File/Sep1" "")
+; (gtk_accel_path "<mmenu>/Help/iceWing Manual" "F1")
+; (gtk_accel_path "<pcontext>/Preview/Random" "")
+; (gtk_accel_path "<pcontext>/File/Save Session" "")
+; (gtk_accel_path "<pcontext>/Preview/CStretch" "")
+; (gtk_accel_path "<pcontext>/Tear" "")
+; (gtk_accel_path "<mmenu>/Edit/Preferences" "<Control>p")
+; (gtk_accel_path "<pcontext>/View/Sep1" "")
+; (gtk_accel_path "<pcontext>/File/Close Window" "<Control>w")
+; (gtk_accel_path "<pcontext>/Font Shadows" "")
+; (gtk_accel_path "<mmenu>/View/Plugin Info" "<Control>i")
+; (gtk_accel_path "<pcontext>/Font/big" "")
+; (gtk_accel_path "<pcontext>/File/Clear Session" "")
+; (gtk_accel_path "<mmenu>/File/Load..." "<Control>l")
+; (gtk_accel_path "<mmenu>/File/Load default" "<Shift><Control>l")
+; (gtk_accel_path "<mmenu>/File/Quit" "<Control>q")
+; (gtk_accel_path "<pcontext>/View/Pan Down" "")
+; (gtk_accel_path "<pcontext>/View/Zoom Out" "<Control>minus")
+; (gtk_accel_path "<pcontext>/Remember Data" "")
+; (gtk_accel_path "<pcontext>/Preview/Normal" "")
+; (gtk_accel_path "<pcontext>/View/Zoom In" "<Control>plus")
+; (gtk_accel_path "<pcontext>/File/Save" "<Control>s")
+; (gtk_accel_path "<pcontext>/Preview/CStretch10" "")
+; (gtk_accel_path "<pcontext>/Sep1" "")
+; (gtk_accel_path "<pcontext>/Settings..." "<Control>p")
+; (gtk_accel_path "<mmenu>/File/Save default" "<Shift><Control>s")
+; (gtk_accel_path "<pcontext>/Font/small" "")
+MENURC END

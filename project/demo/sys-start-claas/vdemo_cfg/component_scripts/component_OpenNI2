@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function component {
+  echo "starting sensing OpenNI2 device"
+#   -h [ --help ]         Display a help message.
+#   -o [ --outscope ] arg Scope for sending depth images
+  senseOpenNI2 -o / sense/OpenNI2
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+source ${prefix}/ros/setup.bash
+
+function component {
+  echo "Starting ros4rsb with ROS_MASTER_URI $ROS_MASTER_URI"
+  if [  "$VDEMO_robot_config_loaded" = "TRUE" ]; then
+       DISPLAY=:0.0 roslaunch ros4rsb ros4rsb_mobile_dynamic_map.launch
+  else
+        DISPLAY=:0.0 roslaunch ros4rsb ros4rsb_sim_dynamic_map.launch
+  fi 
+
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

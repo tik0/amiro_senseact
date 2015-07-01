@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# common parameters
+
+
+# settings files
+
+function component {
+    PARAM="-m xcf:ShortTerm -t 1000 -a 3000 -n forgettingShortTerm"
+    ${prefix}/bin/AMForgetting $PARAM
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_check {
+    true
+}
+
+function on_stop {
+    true
+}
+
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+function component {
+    PYVER=$(python -V 2>&1 | cut -d " " -f 2 | cut -d . -f 1-2)
+    export PYTHONPATH=${prefix}/lib/python${PYVER}/site-packages:${PYTHONPATH}
+    echo "PYTHONPATH: ${PYTHONPATH}"
+    TASKNAME="${PATH_TO_TASK_SCXML}"
+    TASKNAME="$(basename ${TASKNAME})"
+    TASKNAME="${TASKNAME%%.xml}"
+    OUTDIR="${HOME}/robocup-logs/${TASKNAME:-unknown}"
+    mkdir -p ${OUTDIR}
+    "${prefix}/bin/logging-controller" -i rpc -b "${prefix}/bin/rsbag-recordmaster" -l -g -o ${OUTDIR} \
+        -a "/bonsai/alive" \
+        -r "/bonsai/report" \
+        -s "/bonsai/transitions" \
+        -u "spread://${spreadhost}:4803" -- \
+        -I "${prefix}/share/rst0.11/proto/stable" \
+        -I "${prefix}/share/rst0.11/proto/sandbox" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/devices/generic/HostInformation.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/hri/Body.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/hri/Legs.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/hri/LegsList.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/hri/PersonHypotheses.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/hri/PersonHypothesis.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/kinematics/AngularVelocities.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/kinematics/LinearVelocities.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/kinematics/Twist.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/monitoring/ProcessCues.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/navigation/CommandResult.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/navigation/CoordinateCommand.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/navigation/LabelCommand.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/navigation/OccupancyGrid2DInt.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/navigation/Path.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/statemachine/StateChange.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/tracking/TrackedPosture3DFloat.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/tracking/TrackedPostures3DFloat.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/vision/LaserScan.proto" \
+        -l "${prefix}/share/rst0.11/proto/sandbox/rst/classification/ClassifiedRegion2D.proto" \
+        -l "${prefix}/share/rst0.11/proto/stable/rst/classification/ClassificationResult.proto" \
+        -l "${prefix}/share/rst0.11/proto/stable/rst/generic/Dictionary.proto" \
+        -l "${prefix}/share/rst0.11/proto/stable/rst/geometry/BoundingBox.proto" \
+        -l "${prefix}/share/rst0.11/proto/stable/rst/geometry/Pose.proto" \
+        -l "${prefix}/share/rst0.11/proto/stable/rst/geometry/Rotation.proto" \
+        -l "${prefix}/share/rst0.11/proto/stable/rst/geometry/Translation.proto"
+
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+	true
+}
+
+function on_stop {
+    pkill -INT -f bag-record || true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

@@ -1,0 +1,42 @@
+#!/bin/bash
+
+function component {
+
+${prefix}/bin/icewing -time 0 \
+-l 3DKinectGrab \
+-a 3DKinectGrab1 "" \
+-l 3DKinectConvert \
+-a 3DKinectConvert1 "-b -x" \
+-l 5dimagegrab_plugin \
+-l OpenCVChessboardFinder \
+-a OpenCVChessboardFinder1 "-i KinectRGB -o ChessboardLocationKinect  -s -f -n 2 -x 5 -y 4" \
+-l OpenCVChessboardFinder \
+-a OpenCVChessboardFinder2 "-i imageRGB -o ChessboardLocationDSLR -s -f -n 2 -x 5 -y 4" \
+-l DepthEnrichmentPlugin \
+-a DepthEnrichmentPlugin1 "-j ChessboardLocationKinect --meter" \
+-l XCFExport \
+-a XCFExport1 "-i ChessboardLocation3D -x ChessboardPosition" \
+-l XCFExport \
+-a XCFExport2 "-i ChessboardLocationKinect -x ChessboardLocationKinect" \
+-l XCFExport \
+-a XCFExport3 "-i ChessboardLocationDSLR -x ChessboardLocationDSLR" 
+
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_check {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+
+
+title="jam_${JAM_MEMORY_NAME}"
+
+function component {
+
+	if [ -z "${ANNOTATION_FILE}" ]; then
+		echo "Annotation file not defined. Use default annotations."
+	  	ANNOTATION_FILE=${VDEMO_demoRoot}/data/annotations/annotations_${MAP}.xml
+	fi
+	
+	if [ ! -f ${ANNOTATION_FILE} ]; then
+		echo "${ANNOTATION_FILE} does not exist."
+	else
+		if [ -n "${JAM_DIR_TO_INSERT}" ]; then
+			echo "### Copy annotations for map: ${MAP}" 
+			cp -vf ${ANNOTATION_FILE} ${JAM_DIR_TO_INSERT}/annotations.xml
+		else
+			echo "JAM_DIR_TO_INSERT not defined" 
+		fi
+	fi
+
+    if [ -x "$prefix/bin/jam" ]
+    then
+	${prefix}/bin/jam $JAM_MEMORY_NAME $JAM_DIR_TO_INSERT
+    elif [ -x "$prefix/bin/jam.sh" ]
+    then
+	${prefix}/bin/jam.sh $JAM_MEMORY_NAME $JAM_DIR_TO_INSERT
+    fi
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

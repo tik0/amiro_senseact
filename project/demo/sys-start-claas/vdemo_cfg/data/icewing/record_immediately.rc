@@ -1,0 +1,13 @@
+# Options for iceWing V0.10
+
+"Record1.Reset FilenameCounter" = 0
+"Record1.File Name (e.g 'image_%d.ppm'):" = /var/tmp/recording/image_%T_%t.ppm
+"Record1.Quality" = 75
+"Record1.AVI framerate" = 30.000000
+"Record1.Framerate based dup/drop-frames" = 0
+"Record1.Image format:" = 0
+"Record1.Convert to RGB" = 0
+"Record1.Framedrop" = 0
+"Record1.Record:" = 2
+"variable.Record1Plugins" = 
+
