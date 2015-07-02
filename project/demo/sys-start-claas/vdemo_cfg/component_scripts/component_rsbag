@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function component {
-  DATE=`date +"%y-%m-%d_%H-%M"`
+  DATE=`date +"%y-%m-%d_%H-%M-%S"`
   FILENAME=${HOME}/${DATE}_rsbag.tide
   echo "start recording to ${FILENAME}"
   rsbag record -o ${FILENAME} 'spread:/'
