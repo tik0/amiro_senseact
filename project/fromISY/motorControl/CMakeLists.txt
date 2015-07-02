@@ -17,7 +17,7 @@ pkg_check_modules(RSC rsc0.11)
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
-    "../../includes"                                                # Other includes like converters and stuff
+    "$ENV{MUROX_INCLUDE_DIRS}"                                                # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
