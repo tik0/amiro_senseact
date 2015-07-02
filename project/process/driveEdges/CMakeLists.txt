@@ -34,8 +34,7 @@ include_directories(
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
-    "../../includes"                                                # Other includes like converters and stuff
-    "../extspread"						    # Programatik spread
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
@@ -57,7 +56,7 @@ file(GLOB HEADERS *.hpp)
 
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
-#add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} ../../includes/Color.cpp ../extspread/extspread.hpp ../extspread/extspread.cxx)
+
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
