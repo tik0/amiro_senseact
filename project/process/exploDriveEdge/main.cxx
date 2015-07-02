@@ -79,12 +79,12 @@ using namespace rsb::patterns;
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 std::string proxSensorInscopeGround = "/rir_prox/ground";
-std::string commandInscope = "/explodrive/command";
-std::string answerOutscope = "/explodrive/answer";
+std::string commandInscope = "/exploration/command";
+std::string answerOutscope = "/exploration/answer";
 
 // rsb messages
 std::string cmdStart = "start";
-std::string ansFinish = "finished";
+std::string ansFinish = "finish";
 std::string ansProblem = "broken";
 
 enum stateType {
