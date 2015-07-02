@@ -46,7 +46,7 @@ static unsigned char reqString[REQ_BUFSIZE] = {0xde, 0x01, 0x05, 0x59, 0x83};
 
 using namespace std;
 
-static std::string rsbOutScope = "/distance";
+static std::string rsbOutScope = "/sense/PuFOMD8000/1";
 static uint32_t rsbPeriod = 20;
 static int32_t cport_nr = 0;
 static int32_t bdrate = 115200;
@@ -69,6 +69,7 @@ void sensorRequest()
 }
 
 int main(int argc, char **argv) {
+  std::vector<double> coordinates(7, 0);
   INFO_MSG("")
   // Handle program options
   namespace po = boost::program_options;
@@ -78,7 +79,8 @@ int main(int argc, char **argv) {
     ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending odometry values")
     ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval in ms ( 20 for maximum rate)")
     ("port,p", po::value < int32_t > (&cport_nr), "Portnumber of ttyS<0-15> (Standardvalue: 0)")
-    ("bdrate,b", po::value < int32_t > (&bdrate), "Baudrate (Standardvalue: 115200)");
+    ("bdrate,b", po::value < int32_t > (&bdrate), "Baudrate (Standardvalue: 115200)")
+	("position,q", po::value <std::vector<double> > (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma w");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -102,13 +104,21 @@ int main(int argc, char **argv) {
   rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB informer
-  rsb::Factory& factory = rsb::Factory::getInstance();
+  rsb::Factory& factory = rsb::getFactory();
   rsb::Informer< rst::claas::PepperlFuchsOMD8000 >::Ptr informer = factory.createInformer< rst::claas::PepperlFuchsOMD8000 > (rsbOutScope);
 
 
   // Datastructure for the messages
   rsb::Informer<rst::claas::PepperlFuchsOMD8000>::DataPtr msg(new rst::claas::PepperlFuchsOMD8000);
 
+  // Set position values for the sensor
+  msg->mutable_pose()->mutable_translation()->set_x(coordinates.at(0));
+  msg->mutable_pose()->mutable_translation()->set_y(coordinates.at(1));
+  msg->mutable_pose()->mutable_translation()->set_z(coordinates.at(2));
+  msg->mutable_pose()->mutable_rotation()->set_qx(coordinates.at(3));
+  msg->mutable_pose()->mutable_rotation()->set_qy(coordinates.at(4));
+  msg->mutable_pose()->mutable_rotation()->set_qz(coordinates.at(5));
+  msg->mutable_pose()->mutable_rotation()->set_qw(coordinates.at(6));
   
   // Set up the serial connection
   int n;
