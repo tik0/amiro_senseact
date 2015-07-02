@@ -37,22 +37,22 @@ int main(int argc, char **argv) {
 	 * Open socket connections to the PeakCans
 	 */
 	if(peakcan.setUpSocket(interface_1, peakcan.socketHandle_1) < 0){
-		std::cerr<< "Socket: " << interface_1 << " could not be created"<< std::endl;
+		std::cerr<< "Socket: " << interface_1 << " could not be created"<< "\n";
 		return -2;
 	}
 
 	if(peakcan.setUpSocket(interface_2, peakcan.socketHandle_2) < 0){
-		std::cerr<< "Socket: " << interface_2 << " could not be created"<< std::endl;
+		std::cerr<< "Socket: " << interface_2 << " could not be created"<< "\n";
 		return -2;
 	}
 
 	if(peakcan.setUpSocket(interface_3, peakcan.socketHandle_3) < 0){
-		std::cerr<< "Socket: " << interface_3 << " could not be created"<< std::endl;
+		std::cerr<< "Socket: " << interface_3 << " could not be created"<< "\n";
 		return -2;
 	}
 
 	if(peakcan.setUpSocket(interface_4, peakcan.socketHandle_4) < 0){
-		std::cerr<< "Socket: " << interface_4 << " could not be created"<< std::endl;
+		std::cerr<< "Socket: " << interface_4 << " could not be created"<< "\n";
 		return -2;
 	}
 
@@ -77,6 +77,26 @@ int main(int argc, char **argv) {
 	can2.join();
 	can3.join();
 
-	std::cout<< "Closing PeakCan Connection" << "\n";
+	int exit = close(peakcan.socketHandle_4);
+	if(exit < 0){
+		std::cerr<< "Error closing socket: " << interface_4 << "\n";
+	}
+
+	exit = close(peakcan.socketHandle_3);
+	if(exit < 0){
+		std::cerr<< "Error closing socket: " << interface_3 << "\n";
+	}
+
+	exit = close(peakcan.socketHandle_2);
+	if(exit < 0){
+		std::cerr<< "Error closing socket: " << interface_2 << "\n";
+	}
+
+	exit = close(peakcan.socketHandle_1);
+	if(exit < 0){
+		std::cerr<< "Error closing socket: " << interface_1 << "\n";
+	}
+
+	std::cout<< "All socket connections closed" << "\n";
 }
 
