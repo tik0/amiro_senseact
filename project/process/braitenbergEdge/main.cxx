@@ -75,6 +75,9 @@ static int AIR_OFFSETS[] = {2213, 2316, 2341, 2329, 2331, 2290, 2335, 2152};
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 std::string proxSensorInscopeGround = "/rir_prox/ground";
 
+// show colors
+bool showColors = true;
+
 enum colorType {
 	black,
 	orange,
@@ -131,7 +134,7 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-      ("loadOffsets,l", "Loads offset from the file 'irConfig.conf'.");
+      ("showColors,c", "Shows measured environment with LEDs.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -148,6 +151,8 @@ int main(int argc, char **argv) {
 
   // afterwards, let program options handle argument errors
   po::notify(vm);
+
+  showColors = vm.count("showColors");
 
   INFO_MSG("Initialize RSB");
 
@@ -197,37 +202,34 @@ int main(int argc, char **argv) {
       for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
         INFO_MSG( (int) sensorIdx << ": " << sensorValuesObstacle->at(sensorIdx) << "/" << sensorValuesGround->at(sensorIdx));
 
-        float senDist = edgeDist(sensorValuesGround->at(sensorIdx));
-        int led = sensorIdx+4;
-        if (led >= 8) led -= 8;
-        if (senDist < GROUND_MARGIN_DANGER) {
-          if (setColors[sensorIdx] != red) {
-//            INFO_MSG(" -> switch color from " << colorTypeString[setColors[sensorIdx]] << " to red.");
-            CAN.setLightColor(led, amiro::Color(amiro::Color::RED));
-            setColors[sensorIdx] = red;
+        if (showColors) {
+          float senDist = edgeDist(sensorValuesGround->at(sensorIdx));
+          int led = sensorIdx+4;
+          if (led >= 8) led -= 8;
+          if (senDist < GROUND_MARGIN_DANGER) {
+            if (setColors[sensorIdx] != red) {
+              CAN.setLightColor(led, amiro::Color(amiro::Color::RED));
+              setColors[sensorIdx] = red;
+            }
+          } else if (senDist < GROUND_MARGIN) {
+            if (setColors[sensorIdx] != orange) {
+              CAN.setLightColor(led, amiro::Color(amiro::Color::ORANGE));
+              setColors[sensorIdx] = orange;
+            }
+          } else if (sensorValuesObstacle->at(sensorIdx) > OBSTACLE_MARGIN_SIDE) {
+            if (setColors[sensorIdx] != white) {
+              CAN.setLightColor(led, amiro::Color(amiro::Color::WHITE));
+              setColors[sensorIdx] = white;
+            }
+          } else if (sensorValuesObstacle->at(sensorIdx) > OBSTACLE_MARGIN) {
+            if (setColors[sensorIdx] != blue) {
+              CAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
+              setColors[sensorIdx] = blue;
+            }
+          } else if (setColors[sensorIdx] != green) {
+            CAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
+            setColors[sensorIdx] = green;
           }
-        } else if (senDist < GROUND_MARGIN) {
-          if (setColors[sensorIdx] != orange) {
-//            INFO_MSG(" -> switch color from " << colorTypeString[setColors[sensorIdx]] << " to orange.");
-            CAN.setLightColor(led, amiro::Color(amiro::Color::ORANGE));
-            setColors[sensorIdx] = orange;
-          }
-        } else if (sensorValuesObstacle->at(sensorIdx) > OBSTACLE_MARGIN_SIDE) {
-          if (setColors[sensorIdx] != white) {
-//            INFO_MSG(" -> switch color from " << colorTypeString[setColors[sensorIdx]] << " to white.");
-            CAN.setLightColor(led, amiro::Color(amiro::Color::WHITE));
-            setColors[sensorIdx] = white;
-          }
-        } else if (sensorValuesObstacle->at(sensorIdx) > OBSTACLE_MARGIN) {
-          if (setColors[sensorIdx] != blue) {
-//            INFO_MSG(" -> switch color from " << colorTypeString[setColors[sensorIdx]] << " to blue.");
-            CAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
-            setColors[sensorIdx] = blue;
-          }
-        } else if (setColors[sensorIdx] != green) {
-//          INFO_MSG(" -> switch color from " << colorTypeString[setColors[sensorIdx]] << " to green.");
-          CAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
-          setColors[sensorIdx] = green;
         }
       }
 
