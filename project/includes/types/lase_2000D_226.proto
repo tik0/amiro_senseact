@@ -1,5 +1,7 @@
 package rst.claas;
 
+import "rst/geometry/Pose.proto";
+
 option java_outer_classname = "lase_2000D_226";
 
 message LASE_2000D_226 {
@@ -14,5 +16,7 @@ repeated fixed32 distance = 4 [packed=true];	//1 .. 1000 Points a 4 Byte = 4000 
 repeated fixed32 pulsewidth = 5 [packed=true];	//1 .. 1000 Points a 4 Byte = 4000 Byte
 
 required string uniqueIdentifier = 6;
+
+optional geometry.Pose pose = 7; 
 }
 

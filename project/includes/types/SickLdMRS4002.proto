@@ -1,5 +1,7 @@
 package rst.claas;
 
+import "rst/geometry/Pose.proto";
+
 option java_outer_classname = "SickLdMRS400102Type";
 
 message SickLdMRS400102 {
@@ -46,7 +48,9 @@ message SickLdMRS400102 {
 	//repeated uint32 y_coord = 32 [packed=true];
 
 	//addtional Values
-	required string uniqueIdentifier = 31;  
+	required string uniqueIdentifier = 31;
+
+	optional geometry.Pose pose = 32;  
 }
 
 message SickLdMRS400102_coord
