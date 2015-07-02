@@ -77,12 +77,9 @@ $VDEMO_component_LeuzeODS9ODS96B\
 $VDEMO_component_OpenNI2\
 $VDEMO_component_PeakCan\
 $VDEMO_component_LASE_2000D_226\
-<<<<<<< Updated upstream
 $VDEMO_component_Sick_LD_MRS_1\
 $VDEMO_component_Sick_LD_MRS_2\
-=======
 $VDEMO_component_Sick_LD_MRS\
->>>>>>> Stashed changes
 $VDEMO_component_gigEvisionManta\
 "
 
