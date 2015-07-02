@@ -49,6 +49,7 @@ export VDEMO_component_Sick_LD_MRS_2="Sick_LD_MRS_2,$car, -c  -g sense -L 1 -w 2
 
 export VDEMO_component_rsb_webserver="rsb_webserver,$car, -c  -g webserver -L 2 -w 2:"
 
+export VDEMO_component_rsbag="rsbag,$cam, -c -d -1 -g logging -L 3:"
 export VDEMO_component_rsb_logger="rsb_logger,$car, -c  -n -d -1 -g logging -L 3:"
 export VDEMO_component_rsb_monitor_car="rsb_monitor,$car, -c  -n -d -1 -g logging -L 3:"
 export VDEMO_component_rsb_monitor_cam="rsb_monitor,$cam, -c  -n -d -1 -g logging -L 3:"
@@ -84,6 +85,7 @@ $VDEMO_component_gigEvisionManta\
 "
 
 export VDEMO_component_group_util="\
+$VDEMO_component_rsbag\
 $VDEMO_component_rsb_logger\
 $VDEMO_component_rsb_monitor_car\
 $VDEMO_component_rsb_monitor_cam\

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function component {
+  DATE=`date +"%y-%m-%d_%H-%M"`
+  FILENAME=${HOME}/${DATE}_rsbag.tide
+  echo "start recording to ${FILENAME}"
+  rsbag record -o ${FILENAME} 'spread:/'
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"
