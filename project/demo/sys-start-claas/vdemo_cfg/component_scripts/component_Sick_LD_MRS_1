@@ -1,10 +1,10 @@
 #!/bin/bash
 
 function component {
-  LASE_IP=192.168.100.160
-  SETUP="20 20 20 20 20 20"
-  echo "starting senseLASE_2000D_226 -s ${LASE_IP} -q ${SETUP}"
-  senseLASE_2000D_226 -s ${LASE_IP} -q ${SETUP}
+  SICK_IP=192.168.100.150
+  SETUP="50 50 50 50 50 50"
+  echo "starting senseSick_LD_MRS -s ${SICK_IP} -q ${SETUP}"
+  senseSick_LD_MRS -s ${SICK_IP} -q ${SETUP}
 }
 
 function clean_component {

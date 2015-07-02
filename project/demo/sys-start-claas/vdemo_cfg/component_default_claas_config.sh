@@ -43,7 +43,8 @@ export VDEMO_component_PepperlFuchsOMD8000="PepperlFuchsOMD8000,$car, -c  -g sen
 export VDEMO_component_OpenNI2="OpenNI2,$cam, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_PeakCan="PeakCan,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_LASE_2000D_226="LASE_2000D_226,$car, -c  -g sense -L 1 -w 2:"
-export VDEMO_component_Sick_LD_MRS="Sick_LD_MRS,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_Sick_LD_MRS_1="Sick_LD_MRS_1,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_Sick_LD_MRS_2="Sick_LD_MRS_2,$car, -c  -g sense -L 1 -w 2:"
 
 export VDEMO_component_rsb_webserver="rsb_webserver,$car, -c  -g webserver -L 2 -w 2:"
 
@@ -75,7 +76,8 @@ $VDEMO_component_LeuzeODS9ODS96B\
 $VDEMO_component_OpenNI2\
 $VDEMO_component_PeakCan\
 $VDEMO_component_LASE_2000D_226\
-$VDEMO_component_Sick_LD_MRS\
+$VDEMO_component_Sick_LD_MRS_1\
+$VDEMO_component_Sick_LD_MRS_2\
 "
 
 export VDEMO_component_group_util="\
