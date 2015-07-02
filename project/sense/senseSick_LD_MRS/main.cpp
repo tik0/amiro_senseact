@@ -12,20 +12,19 @@
 #include <MSG.h>
 #include <boost/program_options.hpp>
 
-#include <SensorPosition.pb.h>
-#include <GenericInformer.hpp>
+//#include <SensorPosition.pb.h>
+//#include <GenericInformer.hpp>
 
 int main(int argc, char* argv[])
 {
 	//Parameters for the sick connection
 	std::string tcpServerIP = "192.168.100.150";
 	uint16_t tcpServerPort = 12002;
-	//std::string clientIP = "192.168.100.152";
 
 	//Scope for sending the data
-	std::string sickOutScope = "/Sick";
+	std::string sickOutScope = "/sense/SickLDMRS/1";
 
-	std::vector<double> coordinates;
+	std::vector<double> coordinates(7, 0);
 
 	INFO_MSG("")
 	// Handle program options
@@ -35,9 +34,8 @@ int main(int argc, char* argv[])
 	options.add_options()("help,h", "Display a help message.")
 	("TcpServerIP,s", po::value <std::string> (&tcpServerIP), "Server ip address, default = 192.168.100.150")
 	("TcpServerPort,p", po::value <uint16_t> (&tcpServerPort), "Server port, default = 12002")
-	//("ClientIP,c", po::value <std::string> (&clientIP), "Client ip address, default = 192.168.100.151")
-	("outscope,o", po::value <std::string> (&sickOutScope), "Scope for sending sick data, default = /Sick")
-	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma");
+	("outscope,o", po::value <std::string> (&sickOutScope), "Scope for sending sick data, default = /sense/SickLDMRS/1")
+	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma w");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -55,18 +53,15 @@ int main(int argc, char* argv[])
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
 
-	GenericInformer<rst::sensor::SensorPosition> informerLasePosition(sickOutScope);
-	informerLasePosition.getMsgPointer()->set_x(coordinates.at(0));
-	informerLasePosition.getMsgPointer()->set_y(coordinates.at(1));
-	informerLasePosition.getMsgPointer()->set_z(coordinates.at(2));
-	informerLasePosition.getMsgPointer()->set_alpha(coordinates.at(3));
-	informerLasePosition.getMsgPointer()->set_beta(coordinates.at(4));
-	informerLasePosition.getMsgPointer()->set_gamma(coordinates.at(5));
-	informerLasePosition.getMsgPointer()->set_uniqueidentifier(tcpServerIP);
-	informerLasePosition.publishMsg();
-
-	//set uniqueIdentifier for every sick scanner, which is the IP address
+	//set uniqueIdentifier for the scanner, which is the IP address and position values for the sensor
 	sickLDMRS4002->set_uniqueidentifier(tcpServerIP);
+	sickLDMRS4002->mutable_pose()->mutable_translation()->set_x(coordinates.at(0));
+	sickLDMRS4002->mutable_pose()->mutable_translation()->set_y(coordinates.at(1));
+	sickLDMRS4002->mutable_pose()->mutable_translation()->set_z(coordinates.at(2));
+	sickLDMRS4002->mutable_pose()->mutable_rotation()->set_qx(coordinates.at(3));
+	sickLDMRS4002->mutable_pose()->mutable_rotation()->set_qy(coordinates.at(4));
+	sickLDMRS4002->mutable_pose()->mutable_rotation()->set_qz(coordinates.at(5));
+	sickLDMRS4002->mutable_pose()->mutable_rotation()->set_qw(coordinates.at(6));
 
 	//Create an informer that is capable of sending events
 	rsb::Informer<SickLdMRS400102>::Ptr informer;

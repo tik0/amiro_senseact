@@ -37,9 +37,6 @@
 
 #include <lase_2000D_226.pb.h>
 
-#include <SensorPosition.pb.h>
-#include <GenericInformer.hpp>
-
 #define BUFLEN 8192
 #define MAXMEASPOINTS 1000
 
@@ -99,9 +96,9 @@ int main(int argc, char* argv[])
 	uint16_t laseServerPort = 1024;
 
 	//Scope for sending the data
-	std::string laseOutScope = "/LASE";
+	std::string laseOutScope = "/sense/LASE2000D/1";
 
-	std::vector<double> coordinates;
+	std::vector<double> coordinates(7, 0);
 
 	INFO_MSG("")
 	// Handle program options
@@ -113,8 +110,8 @@ int main(int argc, char* argv[])
 	("CLIENT_PORT,p", po::value <uint16_t> (&clientPort), "Client port, default = 1025")
 	("LASE_SERVER_IP_ADDRESS,s", po::value <std::string> (&laseServerIP), "Lase server ip address, default = 192.168.100.160")
 	("LASE_SERVER_PORT,t", po::value <uint16_t> (&laseServerPort), "Lase server port, default = 1024")
-	("outscope,o", po::value <std::string> (&laseOutScope), "Scope for sending lase data, default = /LASE")
-	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma");
+	("outscope,o", po::value <std::string> (&laseOutScope), "Scope for sending lase data, default = /sense/LASE2000D/1")
+	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma w");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -132,18 +129,15 @@ int main(int argc, char* argv[])
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
 
-	//set uniqueIdentifier for every sick scanner, which is the IP address
+	//set uniqueIdentifier for the scanner, which is the IP address and position values for the sensor
 	lase_2000D_226->set_uniqueidentifier(laseServerIP);
-
-	GenericInformer<rst::sensor::SensorPosition> informerLasePosition(laseOutScope);
-	informerLasePosition.getMsgPointer()->set_x(coordinates.at(0));
-	informerLasePosition.getMsgPointer()->set_y(coordinates.at(1));
-	informerLasePosition.getMsgPointer()->set_z(coordinates.at(2));
-	informerLasePosition.getMsgPointer()->set_alpha(coordinates.at(3));
-	informerLasePosition.getMsgPointer()->set_beta(coordinates.at(4));
-	informerLasePosition.getMsgPointer()->set_gamma(coordinates.at(5));
-	informerLasePosition.getMsgPointer()->set_uniqueidentifier(laseServerIP);
-	informerLasePosition.publishMsg();
+	lase_2000D_226->mutable_pose()->mutable_translation()->set_x(coordinates.at(0));
+	lase_2000D_226->mutable_pose()->mutable_translation()->set_y(coordinates.at(1));
+	lase_2000D_226->mutable_pose()->mutable_translation()->set_z(coordinates.at(2));
+	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qx(coordinates.at(3));
+	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qy(coordinates.at(4));
+	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qz(coordinates.at(5));
+	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qw(coordinates.at(6));
 
 	struct hostent *client_hPtr;
 	struct hostent *server_hPtr;

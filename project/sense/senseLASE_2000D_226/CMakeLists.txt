@@ -12,6 +12,7 @@ find_package(PkgConfig)
 
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(RST rst0.11)
 pkg_check_modules(PROTO protobuf)
 
 # Get the system includes
@@ -22,17 +23,16 @@ execute_process(COMMAND echo ${GXX_OUTPUT} COMMAND grep "^\ " COMMAND sed "s#\ #
 set(source_files
   lase_interface.cpp
   $ENV{MUROX_INCLUDE_DIRS}/types/lase_2000D_226.pb.cc
-  $ENV{MUROX_PROJECT}/tools/GenericInformer/src/GenericInformer.hpp
-  $ENV{MUROX_INCLUDE_DIRS}/types/SensorPosition.pb.cc)
+)
 
 # Set the include pathe
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
+    ${RST_INCLUDE_DIRS}					            # RST
     ${PROTO_INCLUDE_DIRS}                                           # Protobuffer
     "$ENV{MUROX_INCLUDE_DIRS}"  
-    "$ENV{MUROX_INCLUDE_DIRS}/types"                                          # Other includes like converters and stuff
-    "$ENV{MUROX_PROJECT}/tools/GenericInformer/src"
+    "$ENV{MUROX_INCLUDE_DIRS}/types"                                # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for
     ${GXX_INCLUDES}
 )
@@ -49,6 +49,7 @@ target_link_libraries (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
     ${PROTO_LIBRARIES}
     boost_regex
     boost_date_time
@@ -56,6 +57,9 @@ target_link_libraries (
     boost_system
     boost_thread
 )
+
+# Special flags for RST
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
 # Additional compiler flags
 SET (CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings")
