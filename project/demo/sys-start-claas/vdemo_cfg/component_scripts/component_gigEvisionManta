@@ -1,0 +1,62 @@
+#!/bin/bash
+
+function component {
+  echo "starting Manta"
+  export CVBDATA=/var/opt/cvb
+  export GENICAM_GENTL64_PATH=/opt/cvb/drivers/genicam
+  export CVGENICAM_REGISTRY=/var/opt/cvb/Registry
+  export CVB=/opt/cvb
+  export GENICAM_CACHE_V2_3=/var/opt/genicam-2.3/cache
+  export GENICAM_ROOT_V2_3=/opt/genicam-2.3
+  export GENICAM_LOG_CONFIG_V2_3=/opt/genicam-2.3/log/config-unix/DefaultLogging.properties
+  export GENICAM_GENTL64_PATH=/opt/cvb/drivers/genicam
+  export CVGENICAM_REGISTRY=/var/opt/cvb/Registry
+  # Copy the driver file
+cat > /etc/opt/cvb/drivers/GenICam.ini <<EOF
+[SYSTEM]
+NumCameras=1
+CreateAutoIni=0
+AutoSwitchEnable=0
+AutoConfigExecuted=0
+[Channel_0]
+TL=/opt/cvb/drivers/genicam/GevTL.cti
+TLType=GEV
+Interface=SD::MAC->A0-36-9F-68-57-4F
+Device=::ID->00-0F-31-4C-90-19::169.254.200.185
+Vendor=Allied Vision Technologies
+Model=Manta G-223B-NIR (E0020524)
+PixelFormat=5
+NumBuffer=3
+RotateImage=0
+AccessMode=4
+MCMasterMode=0
+MCSession=224.1.1.1
+MCNoJoin=0
+PacketSize=-1
+InterPacketDelay=-1
+HeartbeatTimeout=-1
+HeartbeatTimeoutMargin=-1
+EOF
+  
+  #start file for Manta camera
+  GigEVision2RSB \
+  --record 0 \
+  --outscope /sense/gigevision/manta \
+  --recordFilename video.avi \
+  --numFrames 0 \
+  --camAcquisitionFrameRateAbs 30
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"

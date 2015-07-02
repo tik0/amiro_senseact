@@ -38,6 +38,7 @@ export VDEMO_component_spread_rsb="rsb_spread,$spreadhost, -c  -g net -L 0 -w 2:
 
 export VDEMO_component_hokuyo="hokuyo,$cam, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_gigEvisionImperX="gigEvisionImperX,$cam, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_gigEvisionManta="gigEvisionManta,$cam, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_LeuzeODS9ODS96B="LeuzeODS9ODS96B,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_PepperlFuchsOMD8000="PepperlFuchsOMD8000,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_OpenNI2="OpenNI2,$cam, -c  -g sense -L 1 -w 2:"
@@ -66,18 +67,23 @@ fi
 
 export VDEMO_component_group_net="\
 $VDEMO_component_spread_cam\
+$VDEMO_component_spread_car\
 "
 
 export VDEMO_component_group_sense="\
 $VDEMO_component_hokuyo\
-$VDEMO_component_gigEvisionImperX\
 $VDEMO_component_PepperlFuchsOMD8000\
 $VDEMO_component_LeuzeODS9ODS96B\
 $VDEMO_component_OpenNI2\
 $VDEMO_component_PeakCan\
 $VDEMO_component_LASE_2000D_226\
+<<<<<<< Updated upstream
 $VDEMO_component_Sick_LD_MRS_1\
 $VDEMO_component_Sick_LD_MRS_2\
+=======
+$VDEMO_component_Sick_LD_MRS\
+>>>>>>> Stashed changes
+$VDEMO_component_gigEvisionManta\
 "
 
 export VDEMO_component_group_util="\
