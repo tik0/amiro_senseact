@@ -68,13 +68,7 @@ target_link_libraries (
     vecIntConverter
 )
 
-# Get rid of depricated warnings
-SET (
-    CMAKE_C_FLAGS
-    -Wno-deprecated-declarations
-)
-
-SET (
-    CMAKE_CXX_FLAGS
-    -Wno-deprecated-declarations
-)
+# Additional compiler flags
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11 -Wcpp)
+# Special flags for RST
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
