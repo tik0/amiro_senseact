@@ -39,10 +39,10 @@ include_directories(
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
+add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory (../../includes/converter/matConverter lib/matConverter)
+add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
 
 file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)

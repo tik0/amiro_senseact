@@ -25,18 +25,12 @@ include_directories(
 )
 
 # Add folders to build and run CMakeLists.txt in it
-#add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
 
 if (NOT TARGET vecIntConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
 endif()
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
-
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
-
 # Link the executable to the library. 
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
