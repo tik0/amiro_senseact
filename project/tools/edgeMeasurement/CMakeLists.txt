@@ -56,8 +56,7 @@ file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)
 
 # add the executable
-#add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} ../../includes/Color.cpp ../../includes/types/twbTracking.pb.cc ../extspread/extspread.hpp ../extspread/extspread.cxx)
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} ../../includes/Color.cpp)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp)
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
