@@ -1,5 +1,7 @@
 package rst.claas;
 
+import "rst/geometry/Pose.proto";
+
 option java_outer_classname = "LeuzODS9ODS96BType";
 
 message LeuzODS9ODS96B {
@@ -11,4 +13,5 @@ required bool device_error_signal = 4;
 required bool device_error_laser = 5;
 required bool distance_out_of_range = 6;
 
+optional geometry.Pose pose = 7;
 }
