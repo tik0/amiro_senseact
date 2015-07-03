@@ -4,7 +4,7 @@
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
 // #define ERROR_MSG_
-#include "../../includes/MSG.h"
+#include <MSG.h>
 
 #include <math.h>
 
@@ -89,6 +89,7 @@ static bool sendMapAsCompressedImage = false;
 //#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
 #include <types/LocatedLaserScan.pb.h>
 #include <rst/geometry/Pose.pb.h>
+#include <types/twbTracking.pb.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -106,6 +107,89 @@ std::mutex map_to_odom_mutex_;
 std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
 static rst::geometry::Rotation odomRot;
+
+// Show an image in a window with the given name.
+// The image will be flipped along its x-axis.
+// The window will appear at (x,y).
+void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
+  cv::Mat fmat;
+  cv::flip(mat, fmat, 0);
+  cv::imshow(winname, fmat);
+  cv::moveWindow(winname, x, y);
+}
+
+// callBack for path to point
+class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
+  boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/, boost::shared_ptr<bool> draw_debug) {
+
+    // Convert the map to a cv::Mat image
+    cv::Mat dst(cv::Size(TS_MAP_SIZE,TS_MAP_SIZE), CV_8U); // destination image for sending
+    cv::Mat map = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
+    map.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
+
+    // Obstacle list
+    vector<vector<cv::Point2i> > contours;
+
+    // Temporary stuff
+    cv::Mat mask, thresholded, debug;
+
+    if (draw_debug) cv::cvtColor(map, debug, CV_GRAY2BGR);
+
+    // Get area inside of walls
+    cv::threshold(map,thresholded,250,255,cv::THRESH_BINARY);
+    thresholded.copyTo(mask);
+    cv::findContours(mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    mask = Mat::zeros(map.size(),CV_8UC1);
+    cv::drawContours(mask, contours, -1, cv::Scalar(255),-1);
+    cv::Mat help = Mat::ones(map.size(),CV_8UC1)*255;
+    thresholded.copyTo(help,mask);
+
+    // Switch black & white
+    cv::Mat objects = Mat::ones(map.size(), CV_8UC1)*255;
+    cv::subtract(objects, help, objects);
+
+    // Find objects
+    cv::findContours(objects, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    int numObjects = contours.size();
+    cv::Point2f centers[numObjects];
+    float objectRadius[numObjects];
+    cv::Moments moments;
+    boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList(new twbTracking::proto::Pose2DList);
+
+    for(int i = 0; i < numObjects; ++i) {
+      if (cv::contourArea(contours[i]) < 5) continue;
+
+      // Calculate objects center of gravity
+      moments = cv::moments(contours[i], true);
+      centers[i] = Point2f(moments.m10/moments.m00 , moments.m01/moments.m00);
+
+      // Get objects radius
+      cv::Point2f center;
+      cv::minEnclosingCircle(contours[i],center,objectRadius[i]);
+
+      // Add object as pose
+      twbTracking::proto::Pose2D *pose2D1 = pose2DList->add_pose();
+      pose2D1->set_x(centers[i].x * delta_);
+      pose2D1->set_y(centers[i].y * delta_);
+      pose2D1->set_orientation(objectRadius[i]);
+      pose2D1->set_id(0);
+
+      if (draw_debug) {
+        cv::drawContours(debug, contours, i, cv::Scalar(255,191,0),-1);
+        cv::circle(debug, centers[i], 3, cv::Scalar(139,0,0),-1);
+        cv::circle(debug, center, objectRadius[i], cv::Scalar(0,0,139),1);
+      }
+    }
+    if (draw_debug) {
+      imshowf("objects", debug);
+      cv::waitKey(1);
+    }
+    INFO_MSG("Server returns obstacle list")
+
+    return pose2DList;
+  }
+};
 
 // RSB Server function for the mapping server which replies with a 8bit map of the environment
 class mapServer: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
@@ -296,6 +380,7 @@ int main(int argc, const char **argv){
   std::string sExplorationCmdScope = "/command";
   std::string sExplorationAnswerScope = "/answer";
   std::string mapServerReq = "map";
+  std::string obstacleServerReq = "getObjectsList";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
 
@@ -305,6 +390,7 @@ int main(int argc, const char **argv){
     ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
     ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
     ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
+    ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
     ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
@@ -383,6 +469,10 @@ int main(int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
   boost::shared_ptr<muroxConverter::MatConverter> matConverter(new muroxConverter::MatConverter());
   rsb::converter::converterRepository<std::string>()->registerConverter(matConverter);
+  boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>> pose2DConverter(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(pose2DConverter);
+  boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList> > pose2DListConverter(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(pose2DListConverter);
 
   // Prepare RSB listener for incomming lidar scans
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -399,7 +489,7 @@ int main(int argc, const char **argv){
   // Prepare RSB server for the map server
   rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
   server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
-  // server->registerMethod(mapServerReq.c_str(), rsb::patterns::LocalServer::CallbackPtr(new rsb::patterns::LocalServer::FunctionCallback<void, cv::Mat>(&mapServer)));
+  server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
 
   rst::vision::LocatedLaserScan scan;
   // Do SLAM
