@@ -292,7 +292,14 @@ int main(int argc, char **argv) {
     INFO_MSG(" - Transport cmd:   " << sTransportCmdScope);
     INFO_MSG(" - Transport ans:   " << sTransportAnswerScope);
 
-    // use camera stream for testing
+    // reset odometry
+    types::position robotPosition;
+    robotPosition.x = 0;
+    robotPosition.y = 0;
+    robotPosition.f_z = 0;
+    myCAN.setOdometry(robotPosition);
+
+    // do statemachine now
     return processSM();
 }
 
