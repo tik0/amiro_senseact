@@ -137,6 +137,9 @@ rsb::Informer<std::string>::Ptr                informerDeliveryScope;
 rsb::Informer<std::string>::Ptr                informerTransportScope;
 rsb::Informer<std::string>::Ptr                informerOutsideScope;
 
+// Localization
+std::string mapServerScope = "/CoreSlamServer";
+
 // Exploration
 std::string sExplorationCmdScope("/exploration/command");
 std::string sExplorationAnswerScope("/exploration/answer");
@@ -195,9 +198,12 @@ std::string inputRSBDelivery = "finish";
 std::string outputRSBTransport = "start";
 std::string inputRSBTransport = "finish";
 
+std::string obstacleServerReq = "getObjectsList";
+
 // publisher variables
 boost::shared_ptr<std::string> stringPublisher(new std::string);
 boost::shared_ptr<twbTracking::proto::Pose2D> positionPublisher(new twbTracking::proto::Pose2D());
+boost::shared_ptr<twbTracking::proto::Pose2DList> objects(new twbTracking::proto::Pose2DList());
 
 // RSB input recognizer
 bool rsbInputOutsideInit = false;
@@ -431,6 +437,13 @@ int processSM(void) {
         return -1;
     }
 
+    /////////////////// SERVER REQUESTS ///////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    // core slam server
+    //RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
+
+
     INFO_MSG("All RSB connections built. Starting statemachine now.");
 
     // run through statemachine
@@ -544,6 +557,7 @@ int processSM(void) {
                 }
                 break;
             case blobDetectionStart:
+                //objects = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
                 *stringPublisher = outputRSBBlobDetection;
                 informerBlobScope->publish(stringPublisher);
                 amiroState = blobDetection;
