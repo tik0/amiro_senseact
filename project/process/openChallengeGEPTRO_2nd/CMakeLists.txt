@@ -34,8 +34,20 @@ include_directories(include
     ${Boost_INCLUDE_DIR}
 )
 
+message(STATUS " RST ${RST_INCLUDE_DIRS}")
+
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
+#add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
+
+# Add folders to build and run CMakeLists.txt in it
+if (NOT TARGET matConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
+endif()
+
 # add the executable
-add_executable ("${PROJECT_NAME}" main.cxx $ENV{MUROX_INCLUDE_DIRS}/Color.cpp)
+add_executable ("${PROJECT_NAME}" main.cxx $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
 TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}

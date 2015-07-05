@@ -6,7 +6,7 @@
 
 //#define TRACKING
 #define INFO_MSG_
-// #define DEBUG_MSG_
+#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
 // #define ERROR_MSG_
@@ -14,11 +14,6 @@
 #include <functional>
 #include <algorithm>
 #include <math.h>
-
-// Guide-Follower protocol
-#define PROTOCOL_ERROR 0
-#define PROTOCOL_OK 1
-#define PROTOCOL_DISCONNECT 2
 
 
 #include <iostream>
@@ -67,10 +62,14 @@ int trackingMarkerID = 0;
 float meterPerPixel = 1.0/400.0;
 
 #define VEL_TURNING 40
+#define VEL_FORWARD 8
 
-float robotRadius = 0.05;
-float robotObjectDist = 0.1;
+float robotRadius = 50000;
+float robotObjectDist = 10000;
 float turnThreshold = 5 * 180/M_PI;
+
+int objCount = 0;
+int objOffset = 2;
 
 // scopenames for rsb
 std::string progressInscope = "/objectDetectionMain/command";
@@ -80,15 +79,24 @@ std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";
 std::string mapServerScope = "/mapGenerator";
 std::string objectOutscope = "/objectDetection/command";
-std::string objectInscope = "/objectDetection/amswerer";
+std::string objectInscope = "/objectDetection/detected";
 
 // string publisher
 boost::shared_ptr<std::string> stringPublisher(new std::string);
 
 
+// terminal flags
+bool skipPP = false;
+bool skipLP = false;
+bool skipFR = false;
+bool skipOD = false;
+bool skipVC = false;
+
+
 // method prototypes
 void getOwnPosition(types::position& ts_pose, rst::geometry::Pose odomInput);
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN);
+float normAngle(float angle);
 int mymcm(int mym);
 
 
@@ -99,8 +107,11 @@ int main(int argc, char **argv) {
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
-			     ("id", po::value<int>(&trackingMarkerID), "Tracking ID for AMiRo (default = 0)")
-			     ("mpp", po::value<float>(&meterPerPixel), "Meter per pixel (default = 1/400 m/pixel)");
+			     ("skipPathPlanner", "Skipping Path Planner.")
+			     ("skipLocalPlanner", "Skipping Local Planner.")
+			     ("skipFinalRotation", "Skipping Final Rotation towards the object.")
+			     ("skipDetection", "Skipping Object Detection.")
+			     ("skipCorrection", "Skipping View Correction after detection failure.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -118,6 +129,12 @@ int main(int argc, char **argv) {
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
 
+	skipPP = vm.count("skipPathPlanner");
+	skipLP = vm.count("skipLocalPlanner");
+	skipFR = vm.count("skipFinalRotation");
+	skipOD = vm.count("skipDetection");
+	skipVC = vm.count("skipCorrection");
+
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
 
@@ -131,6 +148,9 @@ int main(int argc, char **argv) {
 	// Register new converter for Pose2D
 	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D> > converterlocalization(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterlocalization);
+
+        boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
+        rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
 
 	// ------------ Listener ----------------------
 
@@ -183,6 +203,7 @@ int main(int argc, char **argv) {
          * 7.2) Continue with 2)
          * 8) Publish result
          */
+        INFO_MSG("Start progress");
 
 	while (true) {
 		if (!progressQueue->empty()) {
@@ -190,18 +211,18 @@ int main(int argc, char **argv) {
 			objectPositionPtr = progressQueue->pop();
                         bool objectDetected = false;
 			float detectionDist = robotRadius + robotObjectDist + objectPositionPtr->orientation();
-			INFO_MSG("Focusing on object at position " << objectPositionPtr->x() << "/" << objectPositionPtr->y() << " with a radius of " << objectPositionPtr << " m");
+			INFO_MSG("Focusing on object at position " << objectPositionPtr->x() << "/" << objectPositionPtr->y() << " with a radius of " << objectPositionPtr->orientation() << " um");
 
 			// if the object hasn't been detected yet
                         while(!objectDetected) {
 				// calculate final detection position
 				getOwnPosition(ownPos, *odomQueue->pop());
-				INFO_MSG("Find ownself at position " << ownPos.x << "/" << ownPos.y);
+				INFO_MSG("Find oneself at position " << ownPos.x << "/" << ownPos.y);
 				float angleToObject = atan2(objectPositionPtr->y()-ownPos.y, objectPositionPtr->x()-ownPos.x);
 				detectionPositionPtr->set_x(objectPositionPtr->x()-detectionDist*cos(angleToObject));
 				detectionPositionPtr->set_y(objectPositionPtr->y()-detectionDist*sin(angleToObject));
 				INFO_MSG("Final detection position is " << detectionPositionPtr->x() << "/" << detectionPositionPtr->y());
-
+/*
 				// calculate path to final detection position
 				boost::shared_ptr<twbTracking::proto::Pose2DList> path = mapServer->call<twbTracking::proto::Pose2DList>("getPath", detectionPositionPtr);
 				INFO_MSG("Calculated path (#items: " << path->pose_size() << "):");
@@ -218,33 +239,77 @@ int main(int argc, char **argv) {
 				while (pathResponseQueue->empty());
 				pathResponseQueue->pop();
 				INFO_MSG("Finished driving.");
+*/
 
-				// rotate towards object
-				getOwnPosition(ownPos, *odomQueue->pop());
-				float angle = atan2(objectPositionPtr->y()-ownPos.y, objectPositionPtr->x()-ownPos.x);
-				float turnAngle = 0;
-				float angleDiff = abs(angle-ownPos.f_z);
-				if (angleDiff < M_PI && angleDiff > turnThreshold) {
-					turnAngle = angle-ownPos.f_z;
+				// test movement
+/*				float ownAngleD = normAngle(((float)ownPos.f_z)/1000000.0);
+				float driveAngle = atan2(detectionPositionPtr->y()-ownPos.y, detectionPositionPtr->x()-ownPos.x);
+				float driveDist = sqrt(pow(detectionPositionPtr->y()-ownPos.y, 2) + pow(detectionPositionPtr->x()-ownPos.x, 2));
+
+				float turnAngleD = 0;
+				float angleDiffD = abs(driveAngle-ownAngleD);
+				if (angleDiffD < M_PI && angleDiffD > turnThreshold) {
+					turnAngleD = driveAngle-ownAngleD;
 				} else {
-					turnAngle = angle-ownPos.f_z+2*M_PI;
+					turnAngleD = driveAngle-ownAngleD+2*M_PI;
 				}
-				float fac = 1;
-				if (turnAngle < 0) fac = -1;
-				int waitingTime_us = (int)(((turnAngle*1000.0) / ((float)VEL_TURNING*10.0*fac)) * 1000);
-				INFO_MSG("Turning for " << turnAngle << " rad for " << waitingTime_us*1000 << " ms with a speed of " << fac*VEL_TURNING/100 << " rad/s");
-				sendMotorCmd(0, mymcm(fac*VEL_TURNING), myCAN);
-				usleep(waitingTime_us);
+				float facD = 1;
+				if (turnAngleD < 0) facD = -1;
+				int waitingTimeD_us = (int)(((turnAngleD*1000.0) / ((float)VEL_TURNING*10.0*facD)) * 1000000);
+				sendMotorCmd(0, mymcm(facD*VEL_TURNING), myCAN);
+				usleep(waitingTimeD_us);
 				sendMotorCmd(0, 0, myCAN);
 
+				waitingTimeD_us = (int)(driveDist / ((float)VEL_FORWARD*10000.0) * 1000000);
+				sendMotorCmd(mymcm(VEL_FORWARD), 0, myCAN);
+				usleep(waitingTimeD_us);
+				sendMotorCmd(0, 0, myCAN);
+*/
+
+				// rotate towards object
+				if (!skipFR) {
+					getOwnPosition(ownPos, *odomQueue->pop());
+					float ownAngle = normAngle(((float)ownPos.f_z)/1000000.0);
+        	                        DEBUG_MSG("Own Position is " << ownPos.x << "/" << ownPos.y << " (" << ownAngle << " rad)");
+					float angle = atan2(objectPositionPtr->y()-ownPos.y, objectPositionPtr->x()-ownPos.x);
+					float turnAngle = 0;
+					float angleDiff = abs(angle-ownAngle);
+					if (angleDiff < M_PI && angleDiff > turnThreshold) {
+						turnAngle = angle-ownAngle;
+					} else {
+						turnAngle = angle-ownAngle+2*M_PI;
+					}
+        	                        DEBUG_MSG("Angle = " << angle << ", angle diff = " << angleDiff << ", turn angle = " << turnAngle);
+					float fac = 1;
+					if (turnAngle < 0) fac = -1;
+					int waitingTime_us = (int)(((turnAngle*1000.0) / ((float)VEL_TURNING*10.0*fac)) * 1000000);
+					INFO_MSG("Turning for " << turnAngle << " rad for " << (waitingTime_us/1000) << " ms with a speed of " << fac*VEL_TURNING/100 << " rad/s");
+					sendMotorCmd(0, mymcm(fac*VEL_TURNING), myCAN);
+					usleep(waitingTime_us);
+					sendMotorCmd(0, 0, myCAN);
+				}
+
 				// do object detection
-				objectDetected = true;
+				if (!skipOD) {
+				} else {
+					objectDetected = true;
+				}
 
 				// correct object view if not detected
+				if (!skipVC) {
+				} else {
+					break;
+				}
 			}
 
 			// publish result
-			std::string sOutput = "finish";
+                        objCount++;
+			std::string sOutput = std::to_string(objCount+objOffset);
+			if (!objectDetected) {
+				sOutput = "null";
+			} else {
+	                        INFO_MSG("Object " << (objCount+objOffset) << " detected");
+			}
 			*stringPublisher = sOutput;
 			progressInformer->publish(stringPublisher);
 			
@@ -268,11 +333,20 @@ void getOwnPosition(types::position& pose, rst::geometry::Pose odomInput) {
 	const double yaw = rpy(2);
 
 	// Save data
-	pose.x = translation.x();
-	pose.y = translation.y();
-	pose.f_z = yaw;
+	pose.x = translation.x()*1000000;
+	pose.y = translation.y()*1000000;
+	pose.f_z = yaw*1000000;
 }
 
+float normAngle(float angle) {
+	while (angle >= 2*M_PI) {
+		angle -= 2*M_PI;
+	}
+	while (angle < 0) {
+		angle += 2*M_PI;
+	}
+	return angle;
+}
 
 
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN) {

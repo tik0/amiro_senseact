@@ -239,14 +239,14 @@ int processSM(void) {
     // Create the factory
     rsb::Factory &factory = rsb::getFactory();
 
-    // Object Detection: Listener and Informer
+/*    // Object Detection: Listener and Informer
     rsb::ListenerPtr listenerObjectDetAnswerScope = factory.createListener(sObjectDetAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueObjectDetAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
-
+*/
     // Local Planner: Listener and Informer
     rsb::ListenerPtr listenerLocalPlannerAnswerScope = factory.createListener(sLocalPlannerAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueLocalPlannerAnswerScope(
@@ -305,37 +305,37 @@ int processSM(void) {
         rsbInputLocalPlanner = false;
 
         // Check input from outside
-        if (!queueExplorationAnswerScope->empty()) {
+        if (!skipExplo && !queueExplorationAnswerScope->empty()) {
             sRSBInput = *queueExplorationAnswerScope->pop();
             if (sRSBInput.compare(outputRSBExploration) == 0) {
                 rsbInputExploration = true;
             }
         }
-        if (!queueObjectDetAnswerScope->empty()) {
+/*        if (!skipDet && !queueObjectDetAnswerScope->empty()) {
             sRSBInput = *queueObjectDetAnswerScope->pop();
             if (sRSBInput.compare(outputRSBObjectDetection) == 0) {
                 rsbInputObjectDetection = true;
             }
-        }
-        if (!queueLocalPlannerAnswerScope->empty()) {
+        }*/
+        if (!skipLP && !queueLocalPlannerAnswerScope->empty()) {
             sRSBInput = *queueLocalPlannerAnswerScope->pop();
             if (sRSBInput.compare(outputRSBLocalPlanner) == 0) {
                 rsbInputLocalPlanner = true;
             }
         }
-        if (!queueBlobAnswerScope->empty()) {
+        if (!skipBlob && !queueBlobAnswerScope->empty()) {
             sRSBInput = *queueBlobAnswerScope->pop();
             if (sRSBInput.compare(outputRSBBlobDetection) == 0) {
                 rsbInputBlobDetection = true;
             }
         }
-        if (!queueDeliveryAnswerScope->empty()) {
+        if (!skipDeli && !queueDeliveryAnswerScope->empty()) {
             sRSBInput = *queueDeliveryAnswerScope->pop();
             if (sRSBInput.compare(outputRSBDelivery) == 0) {
                 rsbInputDelivery = true;
             }
         }
-        if (!queueTransportAnswerScope->empty()) {
+        if (!skipTrans && !queueTransportAnswerScope->empty()) {
             sRSBInput = *queueTransportAnswerScope->pop();
             if (sRSBInput.compare(outputRSBTransport) == 0) {
                 rsbInputTransport = true;
@@ -385,12 +385,12 @@ int processSM(void) {
                 amiroState = idle;
                 break;
             case objectDetection:
-                INFO_MSG("DETECTING");
+/*                INFO_MSG("DETECTING");
                 sleep(3);
                 inputRSBObjectDetection = std::to_string(objectCount+3);
                 objectCount++;
                 *stringPublisher = inputRSBObjectDetection;
-                informerObjectDetScope->publish(stringPublisher);
+                informerObjectDetScope->publish(stringPublisher);*/
                 amiroState = idle;
                 break;
             case objectDelivery:

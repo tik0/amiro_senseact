@@ -9,6 +9,7 @@
 // CAN
 #include <ControllerAreaNetwork.h>
 #include <Types.h>
+#include <types/twbTracking.pb.h>
 #include <Constants.h>
 types::position homingPosition;
 ControllerAreaNetwork myCAN;
@@ -47,10 +48,10 @@ ControllerAreaNetwork myCAN;
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
 
-// RST Proto types
 #include <rst/geometry/Pose.pb.h>
-
-
+#include <rst/geometry/Translation.pb.h>
+#include <rst/geometry/Rotation.pb.h>
+using namespace rst::geometry;
 
 using namespace boost;
 using namespace std;
@@ -61,7 +62,6 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-#define NUM_STATES 15
 enum states {
 	idle,
 	init,
@@ -69,6 +69,7 @@ enum states {
 	exploration,
 	blobDetectionStart,
 	blobDetection,
+	objectDetectionStart,
 	objectDetectionMain,
 	initDone,
 	waiting,
@@ -83,13 +84,14 @@ enum states {
 states amiroState = idle;
 states amiroStateL = init;
 
-std::string statesString[NUM_STATES] {
+std::string statesString[] {
 	"idle",
 	"initialization",
 	"starting exploration",
 	"exploration",
 	"starting blob detection",
 	"blob detection",
+	"starting object detection",
 	"object detection",
 	"initialization done",
 	"waiting",
@@ -102,7 +104,6 @@ std::string statesString[NUM_STATES] {
 };
 
 // object detection states
-#define NUM_STATES_OD 3
 enum states_od {
 	localPlannerStart,
 	localPlanner,
@@ -112,7 +113,7 @@ enum states_od {
 states_od objectDetectionState = localPlannerStart;
 states_od objectDetectionStateL = localPlanner;
 
-std::string statesODString[NUM_STATES] {
+std::string statesODString[] {
 	"starting local planner",
 	"local planner",
 	"detecting"
@@ -127,13 +128,14 @@ enum objects { object1 , object2 , object3 , object4 , object5 , object6 };
 std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4","object5","object6"};
 
 // RSB informer
-rsb::Informer<std::string>::Ptr informerObjectDetScope;
-rsb::Informer<std::string>::Ptr informerLocalPlannerScope;
-rsb::Informer<std::string>::Ptr informerExplorationScope;
-rsb::Informer<std::string>::Ptr informerBlobScope;
-rsb::Informer<std::string>::Ptr informerDeliveryScope;
-rsb::Informer<std::string>::Ptr informerTransportScope;
-rsb::Informer<std::string>::Ptr informerOutsideScope;
+rsb::Informer<twbTracking::proto::Pose2D>::Ptr informerObjectDetScope;
+//rsb::Informer<std::string>::Ptr                informerObjectDetScope;
+rsb::Informer<std::string>::Ptr                informerLocalPlannerScope;
+rsb::Informer<std::string>::Ptr                informerExplorationScope;
+rsb::Informer<std::string>::Ptr                informerBlobScope;
+rsb::Informer<std::string>::Ptr                informerDeliveryScope;
+rsb::Informer<std::string>::Ptr                informerTransportScope;
+rsb::Informer<std::string>::Ptr                informerOutsideScope;
 
 // Exploration
 std::string sExplorationCmdScope("/exploration/command");
@@ -152,8 +154,8 @@ std::string sTransportCmdScope("/objectTransport/command");
 std::string sTransportAnswerScope("/objectTransport/answer");
 
 // Object detection
-std::string sObjectDetCmdScope("/objectDetection/command");
-std::string sObjectDetAnswerScope("/objectDetection/detected");
+std::string sObjectDetCmdScope("/objectDetectionMain/command");
+std::string sObjectDetAnswerScope("/objectDetectionMain/answer");
 
 // Local planner
 std::string sLocalPlannerCmdScope("/localplanner/command");
@@ -193,8 +195,9 @@ std::string inputRSBDelivery = "finish";
 std::string outputRSBTransport = "start";
 std::string inputRSBTransport = "finish";
 
-// string publisher
+// publisher variables
 boost::shared_ptr<std::string> stringPublisher(new std::string);
+boost::shared_ptr<twbTracking::proto::Pose2D> positionPublisher(new twbTracking::proto::Pose2D());
 
 // RSB input recognizer
 bool rsbInputOutsideInit = false;
@@ -309,6 +312,17 @@ int processSM(void) {
     // Create the factory
     rsb::Factory &factory = rsb::getFactory();
 
+    //////////////////// REGISTRATION OF OTHER TYPES //////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    // Register converter for the pose list
+    boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList> > pose2DListConverter(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList>());
+    rsb::converter::converterRepository<std::string>()->registerConverter(pose2DListConverter);
+
+    // Register new converter for Pose2D
+    boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D> > converterlocalization(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>());
+    rsb::converter::converterRepository<std::string>()->registerConverter(converterlocalization);
+
 
     //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -356,7 +370,8 @@ int processSM(void) {
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
 
-    informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
+    informerObjectDetScope = factory.createInformer<twbTracking::proto::Pose2D> (sObjectDetCmdScope);
+//    informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
 
     // Local Planner: Listener and Informer
     rsb::ListenerPtr listenerLocalPlannerAnswerScope = factory.createListener(sLocalPlannerAnswerScope);
@@ -536,11 +551,20 @@ int processSM(void) {
             case blobDetection:
                 if (rsbInputBlobDetection) {
                     //informerOutsideScope->publish(???);
-                    amiroState = objectDetectionMain;
+                    amiroState = objectDetectionStart;
                     if (testWithAnswerer) {
                         objectCount = 2;
                     }
                 }
+                break;
+            case objectDetectionStart:
+                if (objectCount > 0) {
+                    positionPublisher->set_x(0);
+                    positionPublisher->set_y(0);
+                    positionPublisher->set_orientation(0.1);
+                    informerObjectDetScope->publish(positionPublisher);
+                }
+                amiroState = objectDetectionMain;
                 break;
             case objectDetectionMain:
                 rsbRecAllObjects = true;
@@ -554,8 +578,26 @@ int processSM(void) {
                         informerOutsideScope->publish(stringPublisher);
                     }
                 }
+                if (rsbInputObjectDetection) {
+                    // TODO check if object has been detected and reduce #object afterwards
+//                    if (testWithAnswerer) {
+//                        objectCount--;
+//                    } else 
+                    if (objectDetectionAnswer.compare("null") == 0) {
+                        WARNING_MSG(" -> Doesn't know the object.");
+                    } else {
+                        INFO_MSG(" -> Object " << objectDetectionAnswer << " found!");
+                        objectCount--;
+                        objectDetected[std::stoi(objectDetectionAnswer)-objectOffsetForToBI-1] = true;
+                        std::string objOutput = "";
+                        objOutput.append(outputRSBOutsideObjectDet).append(objectDetectionAnswer);
+                        *stringPublisher = objOutput;
+                        informerOutsideScope->publish(stringPublisher);
+                        amiroState = objectDetectionStart;
+                    }
+                }
                 if (objectCount > 0) {
-                    ssmObjectDetection();
+//                    ssmObjectDetection();
                 } else if (rsbRecAllObjects) {
                     amiroState = initDone;
                 }
@@ -739,6 +781,7 @@ void idleBlink(void) {
     }
 }
 
+/*
 int ssmObjectDetection(void) {
     switch (objectDetectionState) {
         case localPlannerStart:
@@ -783,4 +826,6 @@ int ssmObjectDetection(void) {
         return 0;
     }
 }
+*/
+
 

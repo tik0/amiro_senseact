@@ -90,18 +90,20 @@ std::string ansProblem = "broken";
 enum stateType {
   STturnEdge,
   STfindDirection,
-  STfirstEdge,
+  STdriveEdge,
+  STcheckEdge,
+  STcorrectEdge,
   STturn,
-  STsecondEdge,
   STfinalize
 };
 
 std::string stateTypeString[] {
   "turn ortho to edge",
   "find direction",
-  "driving first edge",
+  "driving edge",
+  "check edge",
+  "correct edge",
   "turn",
-  "driving second edge",
   "finalize"
 };
 
@@ -200,6 +202,8 @@ int main(int argc, char **argv) {
     stateType state = STturnEdge;
     stateType stateL = STturn;
 
+    int edgeNum = 0;
+
     while(ok) {
       if (!proxQueueObstacle->empty() && !proxQueueGround->empty()) {
         counter = 0;
@@ -246,33 +250,55 @@ int main(int argc, char **argv) {
             } else if (abs(edgeDistR-edgeDistL) <= EDGE_DIFF && edgeDistR < GROUND_MARGIN && edgeDistL < GROUND_MARGIN) {
               turn = 0;
               sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-              state = STfirstEdge;
+              state = STdriveEdge;
+              edgeNum++;
             }
             break;
-          case STfirstEdge:
+          case STdriveEdge:
             edgeDistL = edgeDist(sensorValuesGround->at(3));
             edgeDistR = edgeDist(sensorValuesGround->at(4));
             if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
-              turn = 2;
-              sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
+              sendMotorCmd(0, 0, CAN);
+              usleep(500000);
+              state = STcheckEdge;
+            }
+            break;
+          case STcheckEdge:
+            edgeDistL = edgeDist(sensorValuesGround->at(3));
+            edgeDistR = edgeDist(sensorValuesGround->at(4));
+            if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
+              INFO_MSG("Edge detected");
+              state = STcorrectEdge;
+            } else {
+              sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
+              state = STdriveEdge;
+            }
+            break;
+          case STcorrectEdge:
+            edgeDistR = edgeDist(sensorValuesGround->at(3));
+            edgeDistL = edgeDistL*cos(M_PI/8);
+            edgeDistR = GROUND_MARGIN_DANGER - edgeDistR;
+            INFO_MSG("Distance to edge: " << edgeDistL << " cm (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
+            if (edgeDistR > 0) {
+              sendMotorCmd(mymcm(-VEL_FORWARD_SLOW), 0, CAN);
+              usleep((int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000));
+            }
+            turn = 2;
+            sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
+            if (edgeNum > 1) {
+              state = STfinalize;
+            } else {
               state = STturn;
             }
             break;
           case STturn:
+            edgeNum++;
             edgeDistL = edgeDist(sensorValuesGround->at(1));
             edgeDistR = edgeDist(sensorValuesGround->at(2));
             if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) <= EDGE_DIFF) {
               turn = 0;
               sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-              state = STsecondEdge;
-            }
-            break;
-          case STsecondEdge:
-            edgeDistL = edgeDist(sensorValuesGround->at(3));
-            edgeDistR = edgeDist(sensorValuesGround->at(4));
-            if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
-              sendMotorCmd(0, 0, CAN);
-              state = STfinalize;
+              state = STdriveEdge;
             }
             break;
           case STfinalize:
