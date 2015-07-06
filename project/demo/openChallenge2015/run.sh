@@ -1,5 +1,13 @@
 #!/bin/sh
-./kill.sh
+
+if [ -z "${1}" ]; then
+  echo "Set an ID for the AMiRo"
+  exit 1
+fi
+
+./stop.sh
+
+
 cpufreq-set -g performance
 spread -c amirospread &
 sleep 5
