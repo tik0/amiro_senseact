@@ -196,6 +196,7 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
       imshowf("objects", debug);
       cv::waitKey(1);
     }
+
     INFO_MSG("Server returns obstacle list")
 
     return pose2DList;
@@ -210,6 +211,9 @@ public:
     boost::shared_ptr<cv::Mat> dst(new cv::Mat(cv::Size(TS_MAP_SIZE,TS_MAP_SIZE), CV_8U)); // destination image for sending
     cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
     image.convertTo(*dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
+    for (size_t idx = 0; idx < dst->rows * dst->cols; ++idx)
+      if (dst->at<uint8_t>(idx) > 127) // Delete all unsure guesses
+        dst->at<uint8_t>(idx) = 0xFF;
     INFO_MSG("Server returns map")
     return dst;
   }
@@ -245,6 +249,9 @@ void controlCoreSLAMBehaviour(boost::shared_ptr<std::string> e) {
 
 }
 
+static types::position robotInitPosition;
+static double mapOffset = 0;
+
 bool
 getOdomPose(ts_position_t& ts_pose)
 {
@@ -252,11 +259,19 @@ getOdomPose(ts_position_t& ts_pose)
   // Read the odometry data (This function halts until some data was received)
   types::position robotPosition = ::CAN->getOdometry();
 
-  const double translation_x = static_cast<double>(robotPosition.x) * 1e-3;
-  const double translation_y = static_cast<double>(robotPosition.y) * 1e-3;
-  const double yaw           = static_cast<double>(robotPosition.f_z) * 1e-6;
-  ts_pose.x = translation_x + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation_y + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  // Set the Robot to the center of the map, independent from the first odometry message
+  if(!gotFirstOdometry) {
+    robotInitPosition.x = robotPosition.x;
+    robotInitPosition.y = robotPosition.y;
+    robotInitPosition.f_z = robotPosition.f_z;
+    gotFirstOdometry = true;
+  }
+
+  const double translation_x = static_cast<double>(robotPosition.x - robotInitPosition.x) * 1e-3;
+  const double translation_y = static_cast<double>(robotPosition.y - robotInitPosition.y) * 1e-3;
+  const double yaw           = static_cast<double>(robotPosition.f_z - robotInitPosition.f_z) * 1e-6;
+  ts_pose.x = translation_x + mapOffset; // convert to mm
+  ts_pose.y = translation_y + mapOffset; // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
 
   DEBUG_MSG("ODOM POSE: " << ts_pose.x << " mm " << ts_pose.y << " mm " << ts_pose.theta << " deg")
@@ -316,14 +331,9 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   ts_position_t odom_pose;
   if(!getOdomPose(odom_pose))
      return false;
-  if(!gotFirstOdometry) {
-    first_odom_.x     = odom_pose.x;
-    first_odom_.y     = odom_pose.y;
-    first_odom_.theta = odom_pose.theta;
-    gotFirstOdometry = true;
-  }
-  state_.position.x += odom_pose.x - prev_odom_.x - first_odom_.x;
-  state_.position.y += odom_pose.y - prev_odom_.y - first_odom_.y;
+
+  state_.position.x += odom_pose.x - prev_odom_.x;
+  state_.position.y += odom_pose.y - prev_odom_.y;
   state_.position.theta += odom_pose.theta - prev_odom_.theta - first_odom_.theta;
   prev_odom_ = odom_pose;
 
@@ -372,12 +382,13 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
   // Publish the new odometry data
   rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::PoseEuler);
-  odomData->mutable_translation()->set_x(pose.x * 1e-3); // From mm to m
-  odomData->mutable_translation()->set_y(pose.y * 1e-3); // From mm to m
+  odomData->mutable_translation()->set_x((pose.x - mapOffset) * 1e-3); // From mm to m
+  odomData->mutable_translation()->set_y((pose.y - mapOffset) * 1e-3); // From mm to m
   odomData->mutable_translation()->set_z(0.0f);
   odomData->mutable_rotation()->set_roll(0.0f);
   odomData->mutable_rotation()->set_pitch(0.0f);
   odomData->mutable_rotation()->set_yaw(pose.theta * M_PI / 180);
+  DEBUG_MSG("SLAM POSE: " << (pose.x - mapOffset) * 1e-3 << " m " << (pose.y - mapOffset) * 1e-3 << " m " << pose.theta * M_PI / 180 << " rad")
   informerOdometry->publish(odomData);
 
   return true;
@@ -441,9 +452,9 @@ int main(int argc, const char **argv){
   // afterwards, let program options handle argument errors
   po::notify(vm);
 
-
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
+  mapOffset = ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
 
   // Get the RSB factory
 
