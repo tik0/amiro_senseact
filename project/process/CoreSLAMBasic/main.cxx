@@ -30,7 +30,9 @@ static double delta_ = 0.02;  // Meter per pixel
 static ts_map_t ts_map_;
 static ts_state_t state_;
 static ts_position_t position_;
+static ts_position_t first_odom_;
 static ts_position_t prev_odom_;
+static bool gotFirstOdometry = false;
 static ts_laser_parameters_t lparams_;
 #define METERS_TO_MM    1000
 #define MM_TO_METERS    0.001
@@ -90,11 +92,20 @@ static bool sendMapAsCompressedImage = false;
 #include <types/LocatedLaserScan.pb.h>
 #include <rst/geometry/Pose.pb.h>
 #include <types/twbTracking.pb.h>
+#include <types/PoseEuler.pb.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>  // resize
+
+// Include CAN funtionality for odometry
+#include <ControllerAreaNetwork.h>
+// Declare the CAN interface
+ControllerAreaNetwork *CAN;
+
+// For sending the localization
+rsb::Informer<std::string>::Ptr informerOdometry;
 
 using namespace boost;
 using namespace std;
@@ -232,34 +243,20 @@ void controlCoreSLAMBehaviour(boost::shared_ptr<std::string> e) {
 
 }
 
-void storeOdomData(boost::shared_ptr<rst::geometry::Pose> event) {
-  mtxOdom.lock();
-    odomTrans = event->translation();
-    odomRot = event->rotation();
-  mtxOdom.unlock();
-}
-
 bool
 getOdomPose(ts_position_t& ts_pose)
 {
-  rst::geometry::Translation translation;
-  rst::geometry::Rotation rotation;
-  mtxOdom.lock();
-    translation = odomTrans;
-    rotation = odomRot;
-  mtxOdom.unlock();
-  
-  // Convert from quaternion to euler
-  Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
-  Eigen::AngleAxisd lidar_angle(lidar_quat);
-  Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
-  const double yaw = rpy(2);
 
-  ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  // Read the odometry data (This function halts until some data was received)
+  types::position robotPosition = ::CAN->getOdometry();
+
+  const double translation_x = static_cast<double>(robotPosition.x) * 1e-6;
+  const double translation_y = static_cast<double>(robotPosition.y) * 1e-6;
+  const double yaw           = static_cast<double>(robotPosition.f_z) * 1e-6;
+  ts_pose.x = translation_x*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.y = translation_y*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
 
-  DEBUG_MSG( "Odom: x: " <<  translation.x() << "m   y: " << translation.y() << "m     theta: " << rotation.qz() << "°" )
   DEBUG_MSG("ODOM POSE: " << ts_pose.x << " " << ts_pose.y << " " << ts_pose.theta)
 
   return true;
@@ -317,9 +314,15 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   ts_position_t odom_pose;
   if(!getOdomPose(odom_pose))
      return false;
-  state_.position.x += odom_pose.x - prev_odom_.x;
-  state_.position.y += odom_pose.y - prev_odom_.y;
-  state_.position.theta += odom_pose.theta - prev_odom_.theta;
+  if(!gotFirstOdometry) {
+    first_odom_.x     = odom_pose.x;
+    first_odom_.y     = odom_pose.y;
+    first_odom_.theta = odom_pose.theta;
+    gotFirstOdometry = true;
+  }
+  state_.position.x += odom_pose.x - prev_odom_.x - first_odom_.x;
+  state_.position.y += odom_pose.y - prev_odom_.y - first_odom_.y;
+  state_.position.theta += odom_pose.theta - prev_odom_.theta - first_odom_.theta;
   prev_odom_ = odom_pose;
 
   ts_position_t prev = state_.position;
@@ -364,6 +367,17 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   // Set the new pose
   pose = state_.position;
 
+
+  // Publish the new odometry data
+  rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::PoseEuler);
+  odomData->mutable_translation()->set_x(pose.x);
+  odomData->mutable_translation()->set_y(pose.y);
+  odomData->mutable_translation()->set_z(0.0f);
+  odomData->mutable_rotation()->set_roll(0.0f);
+  odomData->mutable_rotation()->set_pitch(0.0f);
+  odomData->mutable_rotation()->set_yaw(pose.theta * M_PI / 180);
+  informerOdometry->publish(odomData);
+
   return true;
 }
 
@@ -373,7 +387,8 @@ int main(int argc, const char **argv){
   namespace po = boost::program_options;
   
   std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
-  std::string odomInScope = "/AMiRo_Hokuyo/gps";
+//  std::string odomInScope = "/AMiRo_Hokuyo/gps";
+  std::string localizationOutScope = "/localization";
   std::string serverScope = "/AMiRo_Hokuyo/server/slam";
   std::string mapAsImageOutScope = "/AMiRo_Hokuyo/image";
   std::string sExplorationScope = "/exploration";
@@ -387,7 +402,8 @@ int main(int argc, const char **argv){
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
-    ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
+//    ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
+    ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
     ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
     ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
     ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
@@ -478,18 +494,20 @@ int main(int argc, const char **argv){
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>(1));
   lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LocatedLaserScan>(lidarQueue)));
-  // Prepare RSB async listener for odometry messages
-  rsb::ListenerPtr listener = factory.createListener(odomInScope);
-  listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
   // Prepare RSB listener for controling the programs behaviour
   rsb::ListenerPtr expListener = factory.createListener(sExplorationScope);
   expListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&controlCoreSLAMBehaviour)));
   // Prepare RSB informer for sending the map as an compressed image
   rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
+  // Prepare RSB informer for sending the map as an compressed image
+  informerOdometry = factory.createInformer<std::string> (localizationOutScope);
   // Prepare RSB server for the map server
   rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
   server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
   server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
+
+  // Init the CAN controller
+  ::CAN = new(ControllerAreaNetwork);
 
   rst::vision::LocatedLaserScan scan;
   // Do SLAM

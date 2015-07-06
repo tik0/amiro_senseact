@@ -3,6 +3,7 @@ ID=${1}
 
 # kill maybe already started programs
 ./stop.sh
+sleep 1
 
 cpufreq-set -g performance
 
@@ -16,7 +17,7 @@ sleep 5
 ./rirReader -l > /dev/null &
 
 # start localization programs
-./CoreSLAM --lidarinscope /lidar --odominscope /odom --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 &
+./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 &
 
 # start all moving programs
 ./exploDriveEdge -l > /dev/null &

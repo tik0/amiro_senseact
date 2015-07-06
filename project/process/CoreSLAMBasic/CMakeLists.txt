@@ -45,7 +45,7 @@ SET (SOURCE main.cxx)
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 
@@ -60,6 +60,6 @@ TARGET_LINK_LIBRARIES (
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11)
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
 # Special flags for RST
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
