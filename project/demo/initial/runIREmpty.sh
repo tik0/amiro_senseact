@@ -1,3 +1,3 @@
 #!/bin/sh
-./measureOffsetTest -c -f irEmpty --ignoreFloor
+./measureOffsetTest -c -f irEmpty.conf --ignoreFloor
 

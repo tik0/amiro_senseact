@@ -1,3 +1,3 @@
 #!/bin/sh
-./measureOffsetTest -c -f irConfig --ignoreFloor
+./measureOffsetTest -c -f irConfig.conf --ignoreFloor
 
