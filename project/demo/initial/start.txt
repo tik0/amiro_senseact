@@ -1,0 +1,14 @@
+====== Building the Open Challenge 2015 Environment for AMiRo ======
+
+This is a demo which works together with Tobi.
+The scenario is the delivery of goods from a table to a position from where Tobi can grab them.
+
+===== Run the demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh''
+  - ''./runIRConfig.sh'' on the AMiRo for calculating the table offsets
+                         (make sure that the AMiRo is standing on the table without any objects in range)
+  - ''./runIREmpty.sh'' on the AMiRo for calculating the air offsets
+                        (make sure that the AMiRo has nothing in range including the table)
+  - Use the "-h" option for detailed information about useage of the programs "edgeMeasurement" and "senseRingProximity".
