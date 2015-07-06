@@ -105,7 +105,7 @@ static bool sendMapAsCompressedImage = false;
 ControllerAreaNetwork *CAN;
 
 // For sending the localization
-rsb::Informer<std::string>::Ptr informerOdometry;
+rsb::Informer<rst::geometry::PoseEuler>::Ptr informerOdometry;
 
 using namespace boost;
 using namespace std;
@@ -500,7 +500,7 @@ int main(int argc, const char **argv){
   // Prepare RSB informer for sending the map as an compressed image
   rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
   // Prepare RSB informer for sending the map as an compressed image
-  informerOdometry = factory.createInformer<std::string> (localizationOutScope);
+  informerOdometry = factory.createInformer<rst::geometry::PoseEuler> (localizationOutScope);
   // Prepare RSB server for the map server
   rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
   server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
