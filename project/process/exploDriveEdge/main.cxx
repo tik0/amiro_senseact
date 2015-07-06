@@ -6,7 +6,7 @@
 
 //#define TRACKING
 #define INFO_MSG_
-// #define DEBUG_MSG_
+#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 #define WARNING_MSG_
 // #define ERROR_MSG_
@@ -87,6 +87,10 @@ std::string cmdStart = "start";
 std::string ansFinish = "finish";
 std::string ansProblem = "broken";
 
+// edge count
+int edgeNum = 0;
+int edgeCount = 2;
+
 enum stateType {
   STturnEdge,
   STfindDirection,
@@ -129,6 +133,7 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
+      ("edgeCount,e", po::value <int> (&edgeCount), "Count of edges the robot should drive (default = 2).")
       ("loadOffsets,l", "Loads offset from the file 'irConfig.conf'.");
 
   // allow to give the value as a positional argument
@@ -202,7 +207,7 @@ int main(int argc, char **argv) {
     stateType state = STturnEdge;
     stateType stateL = STturn;
 
-    int edgeNum = 0;
+    edgeNum = 0;
 
     while(ok) {
       if (!proxQueueObstacle->empty() && !proxQueueGround->empty()) {
@@ -251,7 +256,6 @@ int main(int argc, char **argv) {
               turn = 0;
               sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
               state = STdriveEdge;
-              edgeNum++;
             }
             break;
           case STdriveEdge:
@@ -285,14 +289,15 @@ int main(int argc, char **argv) {
             }
             turn = 2;
             sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
-            if (edgeNum > 1) {
+            if (edgeNum == edgeCount) {
               state = STfinalize;
             } else {
+              edgeNum++;
               state = STturn;
             }
+            DEBUG_MSG("#Edges driven: " << (edgeNum) << " of " << edgeCount);
             break;
           case STturn:
-            edgeNum++;
             edgeDistL = edgeDist(sensorValuesGround->at(1));
             edgeDistR = edgeDist(sensorValuesGround->at(2));
             if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) <= EDGE_DIFF) {
