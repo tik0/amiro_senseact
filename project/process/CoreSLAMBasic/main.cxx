@@ -234,12 +234,14 @@ std::string statesString[NUM_STATES] {
 void controlCoreSLAMBehaviour(boost::shared_ptr<std::string> e) {
 
   // Control the behaviour
-  if (e->compare("start") == 0)
+  if ((e->compare("start") == 0) || (e->compare("slam")))
     slamState = slam;
-  else if (e->compare("finish") == 0)
+  else if ((e->compare("finish") == 0) || (e->compare("localization")))
     slamState = localization;
-  else
+  else if (e->compare("idle") == 0)
     slamState = idle;
+  else
+    WARNING_MSG("STATEMACHINE: Received string " << *e << ". Remain in state " << statesString[slamState])
 
 }
 
@@ -250,14 +252,14 @@ getOdomPose(ts_position_t& ts_pose)
   // Read the odometry data (This function halts until some data was received)
   types::position robotPosition = ::CAN->getOdometry();
 
-  const double translation_x = static_cast<double>(robotPosition.x) * 1e-6;
-  const double translation_y = static_cast<double>(robotPosition.y) * 1e-6;
+  const double translation_x = static_cast<double>(robotPosition.x) * 1e-3;
+  const double translation_y = static_cast<double>(robotPosition.y) * 1e-3;
   const double yaw           = static_cast<double>(robotPosition.f_z) * 1e-6;
-  ts_pose.x = translation_x*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation_y*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.x = translation_x + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.y = translation_y + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
 
-  DEBUG_MSG("ODOM POSE: " << ts_pose.x << " " << ts_pose.y << " " << ts_pose.theta)
+  DEBUG_MSG("ODOM POSE: " << ts_pose.x << " mm " << ts_pose.y << " mm " << ts_pose.theta << " deg")
 
   return true;
 }
@@ -370,8 +372,8 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
   // Publish the new odometry data
   rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::PoseEuler);
-  odomData->mutable_translation()->set_x(pose.x);
-  odomData->mutable_translation()->set_y(pose.y);
+  odomData->mutable_translation()->set_x(pose.x * 1e-3); // From mm to m
+  odomData->mutable_translation()->set_y(pose.y * 1e-3); // From mm to m
   odomData->mutable_translation()->set_z(0.0f);
   odomData->mutable_rotation()->set_roll(0.0f);
   odomData->mutable_rotation()->set_pitch(0.0f);
@@ -483,6 +485,8 @@ int main(int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
   rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler > > odomEulerConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler >());
+  rsb::converter::converterRepository<std::string>()->registerConverter(odomEulerConverter);
   boost::shared_ptr<muroxConverter::MatConverter> matConverter(new muroxConverter::MatConverter());
   rsb::converter::converterRepository<std::string>()->registerConverter(matConverter);
   boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>> pose2DConverter(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>());

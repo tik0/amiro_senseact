@@ -5,6 +5,7 @@ This program is a the tinySLAM implementation for the RoboCup 2015.
 The Program listens on the scope ''/exploration'' with which you can control an internal statemachine.
 The controler starts in an idle state and you can switch by sending strings to it:
 
-  - ''start'' Switch to the SLAM
-  - ''finish'' Switch to localization
-  - ''<anyString>'' Switch to idle mode
+  - ''start'' or ''slam'' Switch to the SLAM
+  - ''finish'' or ''localization'' Switch to localization
+  - ''idle'' Switch to idle mode
+  - ''<anyString>'' Remein in current state
