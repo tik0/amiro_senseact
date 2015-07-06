@@ -3,7 +3,7 @@
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
-// #define ERROR_MSG_
+ #define ERROR_MSG_
 #include <MSG.h>
 
 #include <math.h>
@@ -133,70 +133,92 @@ void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
 class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
   boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/, boost::shared_ptr<bool> draw_debug) {
 
+    ERROR_MSG("1")
     // Convert the map to a cv::Mat image
-    cv::Mat dst(cv::Size(TS_MAP_SIZE,TS_MAP_SIZE), CV_8U); // destination image for sending
-    cv::Mat map = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
-    map.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
+    cv::Mat map(cv::Size(TS_MAP_SIZE,TS_MAP_SIZE), CV_8UC1); // destination image for sending
+    cv::Mat tmp = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16UC1, static_cast<void*>(&ts_map_.map[0]));
+    tmp.convertTo(map, CV_8UC1, 0.00390625);  // Convert to 8bit depth image
+    for (size_t idx = 0; idx < map.rows * map.cols; ++idx)
+      if (map.at<uint8_t>(idx) > 127) // Delete all unsure guesses
+        map.at<uint8_t>(idx) = 0xFF;
 
+    int erosion_size = 0.1/*m*/ / delta_;
+    cv::Mat element = cv::getStructuringElement( cv::MORPH_ELLIPSE,
+                                           cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+                                           cv::Point( erosion_size, erosion_size ) );
+    cv::erode( map, map, element );
     // Obstacle list
     vector<vector<cv::Point2i> > contours;
 
     // Temporary stuff
     cv::Mat mask, thresholded, debug;
 
-    if (draw_debug) cv::cvtColor(map, debug, CV_GRAY2BGR);
-
+//    if (draw_debug)
+    ERROR_MSG("2")
+    cv::cvtColor(map, debug, CV_GRAY2BGR);
+    ERROR_MSG("3")
     // Get area inside of walls
-    cv::threshold(map,thresholded,250,255,cv::THRESH_BINARY);
+    cv::threshold(map,thresholded,127,255,cv::THRESH_BINARY);
+    ERROR_MSG("4")
     thresholded.copyTo(mask);
+    ERROR_MSG("5")
     cv::findContours(mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    ERROR_MSG("6")
     mask = Mat::zeros(map.size(),CV_8UC1);
+    ERROR_MSG("7")
     cv::drawContours(mask, contours, -1, cv::Scalar(255),-1);
+    ERROR_MSG("8")
     cv::Mat help = Mat::ones(map.size(),CV_8UC1)*255;
+    ERROR_MSG("9")
     thresholded.copyTo(help,mask);
-
+    ERROR_MSG("3")
     // Switch black & white
     cv::Mat objects = Mat::ones(map.size(), CV_8UC1)*255;
     cv::subtract(objects, help, objects);
-
+    ERROR_MSG("4")
     // Find objects
     cv::findContours(objects, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
+    ERROR_MSG("5")
     int numObjects = contours.size();
     cv::Point2f centers[numObjects];
     float objectRadius[numObjects];
     cv::Moments moments;
     boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList(new twbTracking::proto::Pose2DList);
-
+    ERROR_MSG("6")
     for(int i = 0; i < numObjects; ++i) {
       if (cv::contourArea(contours[i]) < 5) continue;
-
+    ERROR_MSG("7")
       // Calculate objects center of gravity
       moments = cv::moments(contours[i], true);
       centers[i] = Point2f(moments.m10/moments.m00 , moments.m01/moments.m00);
-
+    ERROR_MSG("8")
       // Get objects radius
       cv::Point2f center;
       cv::minEnclosingCircle(contours[i],center,objectRadius[i]);
-
+    ERROR_MSG("9")
       // Add object as pose
       twbTracking::proto::Pose2D *pose2D1 = pose2DList->add_pose();
       pose2D1->set_x(centers[i].x * delta_);
       pose2D1->set_y(centers[i].y * delta_);
       pose2D1->set_orientation(objectRadius[i]);
       pose2D1->set_id(0);
-
-      if (draw_debug) {
+      ERROR_MSG("10")
+//      if (draw_debug) {
         cv::drawContours(debug, contours, i, cv::Scalar(255,191,0),-1);
         cv::circle(debug, centers[i], 3, cv::Scalar(139,0,0),-1);
         cv::circle(debug, center, objectRadius[i], cv::Scalar(0,0,139),1);
-      }
+//      }
     }
+#ifndef __arm__
     if (draw_debug) {
       imshowf("objects", debug);
       cv::waitKey(1);
     }
-
+#endif
+    std::vector<int> compression_params;
+    compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(3);
+    imwrite("detection.png", debug, compression_params);
     INFO_MSG("Server returns obstacle list")
 
     return pose2DList;
@@ -238,15 +260,16 @@ std::string statesString[NUM_STATES] {
 void controlCoreSLAMBehaviour(boost::shared_ptr<std::string> e) {
 
   // Control the behaviour
-  if ((e->compare("start") == 0) || (e->compare("slam")))
+  if ((e->compare("start") == 0) || (e->compare("slam") == 0))
     slamState = slam;
-  else if ((e->compare("finish") == 0) || (e->compare("localization")))
+  else if ((e->compare("finish") == 0) || (e->compare("localization") == 0))
     slamState = localization;
   else if (e->compare("idle") == 0)
     slamState = idle;
   else
     WARNING_MSG("STATEMACHINE: Received string " << *e << ". Remain in state " << statesString[slamState])
 
+    INFO_MSG("STATEMACHINE: Received " << *e << " State is: " << statesString[slamState])
 }
 
 static types::position robotInitPosition;
