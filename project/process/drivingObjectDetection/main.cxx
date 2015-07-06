@@ -51,6 +51,7 @@ using namespace std;
 #include <Types.h>
 
 #include <types/twbTracking.pb.h>
+#include <types/PoseEuler.pb.h>
 
 #include <ControllerAreaNetwork.h>
 
@@ -74,7 +75,7 @@ int objOffset = 2;
 // scopenames for rsb
 std::string progressInscope = "/objectDetectionMain/command";
 std::string progressOutscope = "/objectDetectionMain/answer";
-std::string odometryInscope = "/odom";
+std::string odometryInscope = "/localization";
 std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";
 std::string mapServerScope = "/mapGenerator";
@@ -94,7 +95,7 @@ bool skipVC = false;
 
 
 // method prototypes
-void getOwnPosition(types::position& ts_pose, rst::geometry::Pose odomInput);
+void getOwnPosition(types::position& ts_pose, rst::geometry::PoseEuler odomInput);
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN);
 float normAngle(float angle);
 int mymcm(int mym);
@@ -152,6 +153,9 @@ int main(int argc, char **argv) {
         boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
         rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
 
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler > > odomEulerConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler >());
+	rsb::converter::converterRepository<std::string>()->registerConverter(odomEulerConverter);
+
 	// ------------ Listener ----------------------
 
 	// prepare RSB listener for path responses
@@ -167,8 +171,8 @@ int main(int argc, char **argv) {
 
 	// Prepare RSB async listener for odometry messages
 	rsb::ListenerPtr odomListener = factory.createListener(odometryInscope);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>>odomQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
-	odomListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(odomQueue)));
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>>odomQueue(new rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>(1));
+	odomListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::PoseEuler>(odomQueue)));
 
 	// ---------------- Informer ---------------------
 
@@ -187,6 +191,7 @@ int main(int argc, char **argv) {
 	ControllerAreaNetwork myCAN;
 
         // do algorithm
+	rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::PoseEuler);
 	boost::shared_ptr<twbTracking::proto::Pose2D> objectPositionPtr(new twbTracking::proto::Pose2D());
 	boost::shared_ptr<twbTracking::proto::Pose2D> detectionPositionPtr(new twbTracking::proto::Pose2D());
 	types::position ownPos;
@@ -287,6 +292,7 @@ int main(int argc, char **argv) {
 					sendMotorCmd(0, mymcm(fac*VEL_TURNING), myCAN);
 					usleep(waitingTime_us);
 					sendMotorCmd(0, 0, myCAN);
+					usleep(500000);
 				}
 
 				// do object detection
@@ -322,8 +328,8 @@ int main(int argc, char **argv) {
 }
 
 
-void getOwnPosition(types::position& pose, rst::geometry::Pose odomInput) {
-	rst::geometry::Translation translation = odomInput.translation();
+void getOwnPosition(types::position& pose, rst::geometry::PoseEuler odomInput) {
+/*	rst::geometry::Translation translation = odomInput.translation();
 	rst::geometry::Rotation rotation = odomInput.rotation();
 
 	// Convert from quaternion to euler
@@ -331,11 +337,11 @@ void getOwnPosition(types::position& pose, rst::geometry::Pose odomInput) {
 	Eigen::AngleAxisd lidar_angle(lidar_quat);
 	Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
 	const double yaw = rpy(2);
-
+*/
 	// Save data
-	pose.x = translation.x()*1000000;
-	pose.y = translation.y()*1000000;
-	pose.f_z = yaw*1000000;
+	pose.x = odomInput.mutable_translation()->x()*1000000;
+	pose.y = odomInput.mutable_translation()->y()*1000000;
+	pose.f_z = odomInput.mutable_rotation()->yaw()*1000000;
 }
 
 float normAngle(float angle) {
