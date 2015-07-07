@@ -17,7 +17,7 @@
 
 using namespace std;
 
-const float LocalPlanner::cellSize = 0.03f;
+const float LocalPlanner::cellSize = 0.02f;
 //const int LocalPlanner::maxW = 300000;
 //const int LocalPlanner::maxV = 30000;
 const int LocalPlanner::maxW = 300000;
@@ -74,7 +74,8 @@ void LocalPlanner::driveToPoint(cv::Point3f currentPose, cv::Point2f nextPose) {
 	float diffX = nextPose.x - currentPose.x;
 	float diffY = nextPose.y - currentPose.y;
 	float theta = currentPose.z;
-/*
+
+
 	while (theta > M_PI) {
 		theta -= 2.0 * M_PI;
 	}
@@ -90,7 +91,8 @@ void LocalPlanner::driveToPoint(cv::Point3f currentPose, cv::Point2f nextPose) {
 	} else if (angleDiff < -M_PI) {
 		angleDiff += 2.0 * M_PI;
 	}
-*/
+
+/*
 	while (theta >= 2.0*M_PI) {
 		theta -= 2.0 * M_PI;
 	}
@@ -124,20 +126,25 @@ void LocalPlanner::driveToPoint(cv::Point3f currentPose, cv::Point2f nextPose) {
 		waitingTime_us = (int)(((turnAngle*1000000.0) / ((float)maxW*fac)) * 1000000);
 		INFO_MSG("Turning for " << turnAngle << " rad for " << (waitingTime_us/1000) << " ms with a speed of " << fac*maxW/1000000.0 << " rad/s");
 	}
-/*
+*/
+
+	int v = 0;
 	// calculate the robots angular velocity
-	int w = min(max(-maxW, (int) (turnAngle * maxW / 2 * M_PI)), maxW);
+	int w = min(max(-maxW, (int) (angleDiff * maxW / 2 * M_PI)), maxW);
 	// if the robot is oriented towards the cell, drive forward
-	if (abs(turnAngle) < M_PI / 6.0) {
+	if (abs(angleDiff) < M_PI / 6.0) {
 		float dist = sqrt(diffX * diffX + diffY * diffY);
 		v = min(max(6000 + (int) (dist * 20 * 24000), 0), maxV);
 	}
-*/
+	setSteering(v, w);
+
+/*
 	// send the steering command
 	setSteering(v, w);
 	usleep(waitingTime_us);
 	setSteering(0, 0);
 	usleep(500000);
+*/
 }
 
 // send new steering commands to the motorControl
