@@ -24,6 +24,7 @@ extern "C"{
 // Parameters needed for Marcov sampling
 static double sigma_xy_ = 0.01;  // m
 static double sigma_theta_ = 0.05;  // rad
+static int samples = 100; // Number of resampling steps
 // parameters for coreslam
 static double hole_width_ = 0.1;  // m
 static double delta_ = 0.02;  // Meter per pixel
@@ -321,7 +322,7 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
 
   // new coreslam instance
   ts_map_init(&ts_map_);
-  ts_state_init(&state_, &ts_map_, &lparams_, &position_, (int)(sigma_xy_*1000), (int)(sigma_theta_*180/M_PI), (int)(hole_width_*1000), 0);
+  ts_state_init(&state_, &ts_map_, &lparams_, &position_, (int)(sigma_xy_*1000), (int)(sigma_theta_*180/M_PI), (int)(hole_width_*1000), 0, samples);
 
   INFO_MSG("Initialized with sigma_xy=" << sigma_xy_<< ", sigma_theta=" << ", hole_width=" << hole_width_ << ", delta=" << delta_);
   INFO_MSG("Initialization complete");
@@ -449,6 +450,7 @@ int main(int argc, const char **argv){
     ("mapAsImageOutScope", po::value < std::string > (&mapAsImageOutScope), "Scope for sending the map as compressed image to a remote spread daemon")
     ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
     ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
+    ("samples", po::value < int > (&samples), "Sampling steps of the marcov localization sampler")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
     ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")

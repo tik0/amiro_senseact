@@ -3,7 +3,7 @@
 #include "CoreSLAM.h"
 
 void
-ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta, int hole_width, int direction)
+ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta, int hole_width, int direction, int samples)
 {
     ts_random_init(&state->randomizer, 0xdead);
     state->map = map;
@@ -20,6 +20,7 @@ ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,
     state->sigma_xy = sigma_xy;
     state->sigma_theta = sigma_theta;
     state->hole_width = hole_width;
+    state->samples = samples;
 }
 
 void
@@ -110,7 +111,7 @@ void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int do_m
     position.x += state->laser_params.offset * cos(thetarad);
     position.y += state->laser_params.offset * sin(thetarad);
     sd->position[state->direction] = position = 
-        ts_monte_carlo_search(&state->randomizer, &state->scan, state->map, &position, state->sigma_xy, state->sigma_theta, 100, NULL);
+        ts_monte_carlo_search(&state->randomizer, &state->scan, state->map, &position, state->sigma_xy, state->sigma_theta, state->samples, NULL);
     sd->position[state->direction].x -= state->laser_params.offset * cos(position.theta * M_PI / 180);
     sd->position[state->direction].y -= state->laser_params.offset * sin(position.theta * M_PI / 180);
     d = sqrt((state->position.x - sd->position[state->direction].x) * (state->position.x - sd->position[state->direction].x) +
