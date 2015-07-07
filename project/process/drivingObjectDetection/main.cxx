@@ -4,7 +4,6 @@
 // Description : -
 //============================================================================
 
-//#define TRACKING
 #define INFO_MSG_
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
@@ -146,13 +145,15 @@ int main(int argc, char **argv) {
 			new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList>());
 	rsb::converter::converterRepository<std::string>()->registerConverter(pose2DListConverter);
 
-	// Register new converter for Pose2D
+	// Register converter for Pose2D
 	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D> > converterlocalization(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterlocalization);
 
+	// Register converter for Pose
         boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
         rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
 
+	// Register converter for PoseEuler
 	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler > > odomEulerConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler >());
 	rsb::converter::converterRepository<std::string>()->registerConverter(odomEulerConverter);
 
@@ -227,6 +228,26 @@ int main(int argc, char **argv) {
 				detectionPositionPtr->set_x(objectPositionPtr->x()-detectionDist*cos(angleToObject));
 				detectionPositionPtr->set_y(objectPositionPtr->y()-detectionDist*sin(angleToObject));
 				INFO_MSG("Final detection position is " << detectionPositionPtr->x() << "/" << detectionPositionPtr->y());
+
+				rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
+				twbTracking::proto::Pose2D *pose2D_1 = pose2DList->add_pose();
+				pose2D_1->set_x(((float)ownPos.x)/1000000.0);
+				pose2D_1->set_y(((float)ownPos.y)/1000000.0);
+				pose2D_1->set_orientation(0);
+				pose2D_1->set_id(0);
+				twbTracking::proto::Pose2D *pose2D_2 = pose2DList->add_pose();
+				pose2D_2->set_x(((float)detectionPositionPtr->x())/1000000.0);
+				pose2D_2->set_y(((float)detectionPositionPtr->y())/1000000.0);
+				pose2D_2->set_orientation(0);
+				pose2D_2->set_id(0);
+				pathInformer->publish(pose2DList);
+				sleep(1);
+				if (!pathResponseQueue->empty()) {
+					pathResponseQueue->pop();
+				}
+				INFO_MSG("Waiting for Local Planner.");
+				while(pathResponseQueue->empty());
+				INFO_MSG("Local Planner finished.");
 /*
 				// calculate path to final detection position
 				boost::shared_ptr<twbTracking::proto::Pose2DList> path = mapServer->call<twbTracking::proto::Pose2DList>("getPath", detectionPositionPtr);
@@ -329,15 +350,6 @@ int main(int argc, char **argv) {
 
 
 void getOwnPosition(types::position& pose, rst::geometry::PoseEuler odomInput) {
-/*	rst::geometry::Translation translation = odomInput.translation();
-	rst::geometry::Rotation rotation = odomInput.rotation();
-
-	// Convert from quaternion to euler
-	Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
-	Eigen::AngleAxisd lidar_angle(lidar_quat);
-	Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
-	const double yaw = rpy(2);
-*/
 	// Save data
 	pose.x = odomInput.mutable_translation()->x()*1000000;
 	pose.y = odomInput.mutable_translation()->y()*1000000;

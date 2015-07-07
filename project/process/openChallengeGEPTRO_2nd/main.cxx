@@ -575,7 +575,7 @@ int processSM(void) {
                 if (objectCount > 0) {
                     positionPublisher->set_x(0);
                     positionPublisher->set_y(0);
-                    positionPublisher->set_orientation(0.1);
+                    positionPublisher->set_orientation(100000);
                     informerObjectDetScope->publish(positionPublisher);
                 }
                 amiroState = objectDetectionMain;

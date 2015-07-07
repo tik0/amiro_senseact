@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
             }
             turn = 2;
             sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
-            if (edgeNum == edgeCount) {
+            if (edgeNum >= edgeCount-1) {
               state = STfinalize;
             } else {
               edgeNum++;

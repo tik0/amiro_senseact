@@ -7,9 +7,12 @@ killall -9 answerer_tobi
 killall -9 openChallengeGEPTRO_2nd
 killall -9 answerer
 
-# kill all moving programs
-killall -9 exploDriveEdge
+# kill all secondary moving programs
 killall -9 drivingObjectDetection
+
+# kill all primary moving programs
+killall -9 exploDriveEdge
+killall -9 localPlanner
 
 # kill localization
 killall -9 CoreSLAM
