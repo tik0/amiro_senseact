@@ -17,7 +17,7 @@
 
 using namespace std;
 
-const float LocalPlanner::cellSize = 0.01f;
+const float LocalPlanner::cellSize = 0.03f;
 //const int LocalPlanner::maxW = 300000;
 //const int LocalPlanner::maxV = 30000;
 const int LocalPlanner::maxW = 300000;

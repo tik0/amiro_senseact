@@ -372,14 +372,14 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 //  INFO_MSG( "PoseOdom " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
 
   // Mapping
-  if(laser_count_ < 10){
+//  if(laser_count_ < 10){
     // not much of a map, let's bootstrap for now
     // TODO need to be fixed for arbitrary angels
 //    ts_scan_t ranges;
 //    convertToScan(scan , ranges);
 //    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
 //    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
-  }else{
+//  }else{
 
     ts_sensor_data_t data;
     data.position[0] = state_.position;
@@ -399,7 +399,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
     DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
     DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
-  }
+//  }
   // Set the new pose
   pose = state_.position;
 
