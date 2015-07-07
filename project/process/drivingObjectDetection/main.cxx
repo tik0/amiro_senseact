@@ -267,8 +267,10 @@ int main(int argc, char **argv) {
 				INFO_MSG("Finished driving.");
 */
 
+
+/*
 				// test movement
-/*				float ownAngleD = normAngle(((float)ownPos.f_z)/1000000.0);
+				float ownAngleD = normAngle(((float)ownPos.f_z)/1000000.0);
 				float driveAngle = atan2(detectionPositionPtr->y()-ownPos.y, detectionPositionPtr->x()-ownPos.x);
 				float driveDist = sqrt(pow(detectionPositionPtr->y()-ownPos.y, 2) + pow(detectionPositionPtr->x()-ownPos.x, 2));
 

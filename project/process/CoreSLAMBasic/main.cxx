@@ -48,7 +48,6 @@ static int throttle_scans_ = 1;
 // Every deviation above that angle results in a pruning of the ray c
 static float rayPruningAngleDegree = 60; /* [0 .. 90] */
 float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
-
 // Converting helpers
 #include <Eigen/Geometry>
 
@@ -108,6 +107,15 @@ ControllerAreaNetwork *CAN;
 // For sending the localization
 rsb::Informer<rst::geometry::PoseEuler>::Ptr informerOdometry;
 
+// Actual position
+rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::PoseEuler);
+
+#include "pathPlanner.hpp"
+
+// object that calculates paths
+PathPlanner *pathPlanner;
+
+
 using namespace boost;
 using namespace std;
 using namespace rsb;
@@ -129,6 +137,50 @@ void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
   cv::imshow(winname, fmat);
   cv::moveWindow(winname, x, y);
 }
+
+///////////// JUST COPIED FROM ISYPROJECT ///////////////////////
+/////////////////////////////////////////////////////////////////
+
+/* TODO Things to change:
+ *  1. Generating a cv::Mat
+ *  2. Get own position, input is just the target position - done
+ */
+
+// callBack for path to point
+class pathCallback: public rsb::patterns::LocalServer::Callback<twbTracking::proto::Pose2D, twbTracking::proto::Pose2DList> {
+	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
+			boost::shared_ptr<twbTracking::proto::Pose2D> pose) {
+
+		// generate the obstacle map
+		Mat obstacleMap;
+// 1. TODO	mapGenerator.generateObstacleMap(combinedMap, obstacleMap);
+
+		// convert pose to cv::point2f
+		// note: 3. coordinate is ignored
+		Point2f target(pose.get()->x(), pose.get()->y());
+
+		// convert robot position to cv::point3f
+		mtxOdom.lock();
+		Point3f robotPose(odomData->mutable_translation()->x(), odomData->mutable_translation()->y(), odomData->mutable_rotation()->yaw());
+		mtxOdom.unlock();
+
+		// calculate a path
+		std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, robotPose, target);
+
+		// convert that path to a pose2DList
+		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
+		for (Point2f p : path) {
+			twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
+			pose2D->set_x(p.x);
+			pose2D->set_y(p.y);
+			pose2D->set_orientation(0);
+			pose2D->set_id(0);
+		}
+		return pose2DList;
+	}
+};
+
+/////////////////////////////////////////////////////////////////
 
 // callBack for path to point
 class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
@@ -405,7 +457,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
 
   // Publish the new odometry data
-  rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::PoseEuler);
+  mtxOdom.lock();
   odomData->mutable_translation()->set_x((pose.x - mapOffset) * 1e-3); // From mm to m
   odomData->mutable_translation()->set_y((pose.y - mapOffset) * 1e-3); // From mm to m
   odomData->mutable_translation()->set_z(0.0f);
@@ -414,6 +466,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   odomData->mutable_rotation()->set_yaw(pose.theta * M_PI / 180);
   DEBUG_MSG("SLAM POSE: " << (pose.x - mapOffset) * 1e-3 << " m " << (pose.y - mapOffset) * 1e-3 << " m " << pose.theta * M_PI / 180 << " rad")
   informerOdometry->publish(odomData);
+  mtxOdom.unlock();
 
   return true;
 }
@@ -480,6 +533,10 @@ int main(int argc, const char **argv){
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
   mapOffset = ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
+
+  // Create path planner
+  PathPlanner pathPlannerObj(delta_);
+  pathPlanner = &pathPlannerObj;
 
   // Get the RSB factory
 

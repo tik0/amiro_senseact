@@ -45,7 +45,7 @@ SET (SOURCE main.cxx)
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h pathPlanner.cxx pathPlanner.hpp $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 

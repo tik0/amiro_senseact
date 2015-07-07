@@ -5,7 +5,7 @@
  *      Author: fpatzelt <fpatzelt@techfak.uni-bielefeld.de>
  */
 
-#include <pathPlanner.hpp>
+#include "pathPlanner.hpp"
 #include <iostream>
 #include <math.h>
 #include <algorithm>
