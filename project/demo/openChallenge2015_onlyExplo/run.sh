@@ -18,7 +18,7 @@ spread -c amirospread &
 sleep 5
 
 # start all sensing programs
-./senseHokuyo -d /dev/ttyACM0 -o /lidar --publishNthScan 3 > /dev/null &
+./senseHokuyo -d /dev/ttyACM0 -o /lidar --publishNthScan 1 > /dev/null &
 ./senseOdometry -o /odom > /dev/null &
 ./rirReader -l > /dev/null &
 

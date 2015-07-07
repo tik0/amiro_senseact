@@ -23,7 +23,7 @@ extern "C"{
 #endif
 // Parameters needed for Marcov sampling
 static double sigma_xy_ = 0.01;  // m
-static double sigma_theta_ = 0.35;  // rad
+static double sigma_theta_ = 0.05;  // rad
 // parameters for coreslam
 static double hole_width_ = 0.1;  // m
 static double delta_ = 0.02;  // Meter per pixel

@@ -110,7 +110,7 @@ void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int do_m
     position.x += state->laser_params.offset * cos(thetarad);
     position.y += state->laser_params.offset * sin(thetarad);
     sd->position[state->direction] = position = 
-        ts_monte_carlo_search(&state->randomizer, &state->scan, state->map, &position, state->sigma_xy, state->sigma_theta, 1000, NULL);
+        ts_monte_carlo_search(&state->randomizer, &state->scan, state->map, &position, state->sigma_xy, state->sigma_theta, 100, NULL);
     sd->position[state->direction].x -= state->laser_params.offset * cos(position.theta * M_PI / 180);
     sd->position[state->direction].y -= state->laser_params.offset * sin(position.theta * M_PI / 180);
     d = sqrt((state->position.x - sd->position[state->direction].x) * (state->position.x - sd->position[state->direction].x) +
