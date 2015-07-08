@@ -241,6 +241,16 @@ int processSM(void) {
     // Create the factory
     rsb::Factory &factory = rsb::getFactory();
 
+    //////////////////// REGISTRATION OF OTHER TYPES //////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    // Register new converter for Pose2D
+    boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D> > converterlocalization(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>());
+    rsb::converter::converterRepository<std::string>()->registerConverter(converterlocalization);
+
+    /////////////////// LOCAL SCOPES //////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+
 /*    // Object Detection: Listener and Informer
     rsb::ListenerPtr listenerObjectDetAnswerScope = factory.createListener(sObjectDetAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueObjectDetAnswerScope(
