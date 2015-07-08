@@ -68,7 +68,6 @@ enum states {
 	init,
 	explorationStart,
 	exploration,
-	blobDetectionStart,
 	blobDetection,
 	objectDetectionStart,
 	objectDetectionMain,
@@ -90,7 +89,6 @@ std::string statesString[] {
 	"initialization",
 	"starting exploration",
 	"exploration",
-	"starting blob detection",
 	"blob detection",
 	"starting object detection",
 	"object detection",
@@ -103,22 +101,6 @@ std::string statesString[] {
 	"object transport",
         "object transport finished"
 };
-
-// object detection states
-enum states_od {
-	localPlannerStart,
-	localPlanner,
-	objectDetection
-};
-
-states_od objectDetectionState = localPlannerStart;
-states_od objectDetectionStateL = localPlanner;
-
-std::string statesODString[] {
-	"starting local planner",
-	"local planner",
-	"detecting"
-};
 	
 
 
@@ -130,12 +112,9 @@ std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4
 
 // RSB informer
 rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informerObjectDetScope;
-//rsb::Informer<std::string>::Ptr                informerObjectDetScope;
 rsb::Informer<std::string>::Ptr                informerLocalPlannerScope;
 rsb::Informer<std::string>::Ptr                informerExplorationScope;
-rsb::Informer<std::string>::Ptr                informerBlobScope;
 rsb::Informer<twbTracking::proto::Pose2D>::Ptr informerDeliveryScope;
-//rsb::Informer<std::string>::Ptr                informerDeliveryScope;
 rsb::Informer<std::string>::Ptr                informerTransportScope;
 rsb::Informer<std::string>::Ptr                informerOutsideScope;
 
@@ -146,10 +125,6 @@ std::string mapServerScope = "/mapGenerator";
 // Exploration
 std::string sExplorationCmdScope("/exploration/command");
 std::string sExplorationAnswerScope("/exploration/answer");
-
-// Blob detection
-std::string sBlobCmdScope("/blobDetection/command");
-std::string sBlobAnswerScope("/blobDetection/answer");
 
 // Delivery
 std::string sDeliveryCmdScope("/objectDelivery/command");
@@ -175,10 +150,6 @@ std::string sOutScopeTobi2nd = "tobi";
 // Output for debugging
 std::string sOutScopeState = "/amiroState";
 
-// Sensor scopes
-std::string sInScopeLidar = "/lidar";
-std::string sInScopeOdometry = "/odo";
-
 
 // RSB content
 std::string outputRSBOutsideInitDone = "initdone";
@@ -190,8 +161,6 @@ std::string inputRSBOutsideDelivery = "object";
 std::string inputRSBOutsideTransport = "transport";
 std::string outputRSBExploration = "start";
 std::string inputRSBExploration = "finish";
-std::string outputRSBBlobDetection = "start";
-std::string inputRSBBlobDetection = "finish";
 std::string outputRSBObjectDetection = "COMP";
 std::string inputRSBObjectDetection = "finish";
 std::string outputRSBLocalPlanner = "start";
@@ -213,7 +182,6 @@ bool rsbInputOutsideInit = false;
 bool rsbInputOutsideDeliver = false;
 bool rsbInputOutsideTransport = false;
 bool rsbInputExploration = false;
-bool rsbInputBlobDetection = false;
 bool rsbInputDelivery = false;
 bool rsbInputTransport = false;
 bool rsbInputObjectDetection = false;
@@ -260,12 +228,12 @@ int main(int argc, char **argv) {
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
-        ("spread,s", po::value < std::string > (&sRemoteServer), "IP of remote spread server.")
-        ("spreadPort,p", po::value < std::string > (&sRemoteServerPort), "Port of remote spread server.")
-        ("outscopeTobi,o", po::value < std::string > (&sOutScopeTobi), "Scope for sending the current state to tobi.")
-        ("outscopeState,s", po::value < std::string > (&sOutScopeState), "Scope for sending the current state internaly.")
-        ("inscopeTobi,i", po::value < std::string > (&sInScopeTobi), "Scope for recieving Tobis messages.")
-        ("robotID,d", po::value < int > (&robotID), "Robot ID.")
+        ("spread,s", po::value <std::string> (&sRemoteServer), "IP of remote spread server.")
+        ("spreadPort,p", po::value <std::string> (&sRemoteServerPort), "Port of remote spread server.")
+        ("outscopeTobi,o", po::value <std::string> (&sOutScopeTobi), "Scope for sending the current state to tobi.")
+        ("outscopeState,s", po::value <std::string> (&sOutScopeState), "Scope for sending the current state internaly.")
+        ("inscopeTobi,i", po::value <std::string> (&sInScopeTobi), "Scope for recieving Tobis messages.")
+        ("robotID,d", po::value <int> (&robotID), "Robot ID.")
         ("testWithAnswerer", "Prepares some constants for test with answerer.");
 
 
@@ -298,8 +266,6 @@ int main(int argc, char **argv) {
     INFO_MSG(" - State debugging: " << sOutScopeState);
     INFO_MSG(" - Exploration cmd: " << sExplorationCmdScope);
     INFO_MSG(" - Exploration ans: " << sExplorationAnswerScope);
-    INFO_MSG(" - BlobDetect cmd:  " << sBlobCmdScope);
-    INFO_MSG(" - BlobDetect ans:  " << sBlobAnswerScope);
     INFO_MSG(" - Detection cmd:   " << sObjectDetCmdScope);
     INFO_MSG(" - Detection ans:   " << sObjectDetAnswerScope);
     INFO_MSG(" - Delivery cmd:    " << sDeliveryCmdScope);
@@ -401,14 +367,6 @@ int processSM(void) {
 
     informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
 
-    // Blob detection: Listener and Informer
-    rsb::ListenerPtr listenerBlobScope = factory.createListener(sBlobAnswerScope);
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueBlobAnswerScope(
-            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerBlobScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueBlobAnswerScope)));
-
-    informerBlobScope = factory.createInformer< std::string > (sBlobCmdScope);
-
     // Object delivery: Listener and Informer
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueDeliveryAnswerScope(
@@ -424,9 +382,6 @@ int processSM(void) {
     listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueTransportAnswerScope)));
 
     informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
-
-    // mapGenertor server
-    RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
 
     /////////////////// REMOTE SCOPES///////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -450,7 +405,7 @@ int processSM(void) {
     ///////////////////////////////////////////////////////////////////////////////
 
     // core slam server
-    //RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
+    RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
 
 
     INFO_MSG("All RSB connections built. Starting statemachine now.");
@@ -465,7 +420,6 @@ int processSM(void) {
         rsbInputOutsideDeliver = false;
         rsbInputOutsideTransport = false;
         rsbInputExploration = false;
-        rsbInputBlobDetection = false;
         rsbInputObjectDetection = false;
         rsbInputDelivery = false;
         rsbInputTransport = false;
@@ -511,12 +465,6 @@ int processSM(void) {
                 rsbInputLocalPlanner = true;
             }
         }
-        if (!queueBlobAnswerScope->empty()) {
-            sRSBInput = *queueBlobAnswerScope->pop();
-            if (sRSBInput.compare(inputRSBBlobDetection) == 0) {
-                rsbInputBlobDetection = true;
-            }
-        }
         if (!queueDeliveryAnswerScope->empty()) {
             sRSBInput = *queueDeliveryAnswerScope->pop();
             if (sRSBInput.compare(inputRSBDelivery) == 0) {
@@ -531,13 +479,10 @@ int processSM(void) {
         }
 
         // print actual state
-        if (amiroState == objectDetectionMain && objectDetectionState != objectDetectionStateL) {
-            INFO_MSG("STATE: " << statesString[amiroState] << " -> " << statesODString[objectDetectionState]);
-            objectDetectionStateL = objectDetectionState;
-        } else if (amiroState != amiroStateL) {
+        if (amiroState != amiroStateL) {
             INFO_MSG("STATE: " << statesString[amiroState]);
+            amiroStateL = amiroState;
         }
-        amiroStateL = amiroState;
 
         // check states
         switch (amiroState) {
@@ -562,25 +507,24 @@ int processSM(void) {
             case exploration:
                 if (rsbInputExploration) {
                     //informerOutsideScope->publish(???);
-                    amiroState = blobDetectionStart;
+                    amiroState = blobDetection;
                 }
                 break;
-            case blobDetectionStart:
-                //objects = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
-/*                *stringPublisher = outputRSBBlobDetection;
-                informerBlobScope->publish(stringPublisher);*/
-                objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
-                amiroState = blobDetection;
-                break;
             case blobDetection:
-/*                if (rsbInputBlobDetection) {
-                    //informerOutsideScope->publish(???);*/
-                    amiroState = objectDetectionStart;
-                    objectCount = objectPosList->pose_size();
-/*                    if (testWithAnswerer) {
-                        objectCount = 2;
+                if (!testWithAnswerer) {
+                    objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
+                } else {
+                    for(int i = 1; i <= 2; ++i) {
+                        // Add object as pose
+                        twbTracking::proto::Pose2D *pose2D1 = objectPosList->add_pose();
+                        pose2D1->set_x(i*200000);
+                        pose2D1->set_y(i*200000);
+                        pose2D1->set_orientation(i*50000);
+                        pose2D1->set_id(i);
                     }
-                }*/
+		}
+        	objectCount = objectPosList->pose_size();
+                amiroState = objectDetectionStart;
                 break;
             case objectDetectionStart:
 /*                if (objectCount > 0) {
@@ -622,7 +566,7 @@ int processSM(void) {
                         objOutput.append(outputRSBOutsideObjectDet).append(std::to_string(objectDetectionAnswer->id()));
                         *stringPublisher = objOutput;
                         informerOutsideScope->publish(stringPublisher);
-                        amiroState = objectDetectionStart;
+//                        amiroState = objectDetectionStart;
 //                    }
                 }
                 if (objectCount > 0) {
@@ -644,8 +588,7 @@ int processSM(void) {
                 }
                 break;
             case objectDeliveryStart:
-                INFO_MSG(" -> Delivering object " << deliverObjectId)
-                // TODO choose correct object ID
+                INFO_MSG(" -> Delivering object " << deliverObjectId);
                 if (deliverObjectId > objectOffsetForToBI && objectDetected[deliverObjectId-objectOffsetForToBI-1]) {
                     positionPublisher->set_x(objectPos[deliverObjectId-objectOffsetForToBI-1][0]);
                     positionPublisher->set_y(objectPos[deliverObjectId-objectOffsetForToBI-1][1]);
@@ -817,52 +760,5 @@ void idleBlink(void) {
         }
     }
 }
-
-/*
-int ssmObjectDetection(void) {
-    switch (objectDetectionState) {
-        case localPlannerStart:
-            *stringPublisher = outputRSBLocalPlanner;
-            informerLocalPlannerScope->publish(stringPublisher);
-            objectDetectionState = localPlanner;
-            break;
-        case localPlanner:
-            if (rsbInputLocalPlanner) {
-                *stringPublisher = outputRSBObjectDetection;
-                informerObjectDetScope->publish(stringPublisher);
-                objectDetectionState = objectDetection;
-            }
-            break;
-        case objectDetection:
-            if (rsbInputObjectDetection) {
-                // TODO check if object has been detected and reduce #object afterwards
-//                if (testWithAnswerer) {
-//                    objectCount--;
-//                } else 
-                if (objectDetectionAnswer.compare("null") == 0) {
-                    WARNING_MSG(" -> Doesn't know the object.");
-                } else {
-                    INFO_MSG(" -> Object " << objectDetectionAnswer << " found!");
-                    objectCount--;
-                    objectDetected[std::stoi(objectDetectionAnswer)-objectOffsetForToBI-1] = true;
-                    std::string objOutput = "";
-                    objOutput.append(outputRSBOutsideObjectDet).append(objectDetectionAnswer);
-                    *stringPublisher = objOutput;
-                    informerOutsideScope->publish(stringPublisher);
-                }
-                objectDetectionState = localPlannerStart;
-            }
-            break;
-        default:
-            ERROR_MSG("Unknown state in statemachine!");
-            return -1;
-    }
-    if (objectDetectionState == localPlannerStart) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-*/
 
 

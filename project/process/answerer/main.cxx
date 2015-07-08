@@ -33,6 +33,7 @@ ControllerAreaNetwork myCAN;
 #include <boost/program_options.hpp>
 
 // RSB
+#include <rsb/Informer.h>
 #include <converter/matConverter/matConverter.hpp>
 #include <converter/vecIntConverter/main.hpp>
 #include <boost/shared_ptr.hpp>
@@ -98,9 +99,8 @@ std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4
 std::string sExplorationCmdScope("/exploration/answer");
 std::string sExplorationAnswerScope("/exploration/command");
 
-// Blob detection
-std::string sBlobCmdScope("/blobDetection/answer");
-std::string sBlobAnswerScope("/blobDetection/command");
+// Server Scope
+std::string serverScope = "/mapGenerator";
 
 // Delivery
 std::string sDeliveryCmdScope("/objectDelivery/answer");
@@ -162,7 +162,6 @@ int objectCount = 0;
 bool objectDetected[] = {false, false};
 
 bool skipExplo = false;
-bool skipBlob = false;
 bool skipLP = false;
 bool skipDet = false;
 bool skipTrans = false;
@@ -175,6 +174,25 @@ double endPosition = 0.20;
 // Object detection
 double minimalAngle = 0;
 double minimalValue = 99999;
+
+/*
+class objectsCallback: public LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
+	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string&, boost::shared_ptr<bool> draw_debug) {
+
+		boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList(new twbTracking::proto::Pose2DList);
+
+		for(int i = 1; i <= 2; ++i) {
+			// Add object as pose
+			twbTracking::proto::Pose2D *pose2D1 = pose2DList->add_pose();
+			pose2D1->set_x(i*0.2);
+			pose2D1->set_y(i*0.2);
+			pose2D1->set_orientation(i*5);
+			pose2D1->set_id(i);
+		}
+		return pose2DList;
+	}
+};
+*/
 
 int main(int argc, char **argv) {
     namespace po = boost::program_options;
@@ -212,7 +230,6 @@ int main(int argc, char **argv) {
 
     // save skipping flags
     skipExplo = vm.count("skipExploration");
-    skipBlob = vm.count("skipBlobbing");
     skipLP = vm.count("skipLocalPlanner");
     skipDet = vm.count("skipDetection");
     skipTrans = vm.count("skipTransport");
@@ -222,8 +239,6 @@ int main(int argc, char **argv) {
     INFO_MSG("List of all RSB scopes:");
     INFO_MSG(" - Exploration cmd: " << sExplorationCmdScope);
     INFO_MSG(" - Exploration ans: " << sExplorationAnswerScope);
-    INFO_MSG(" - BlobDetect cmd:  " << sBlobCmdScope);
-    INFO_MSG(" - BlobDetect ans:  " << sBlobAnswerScope);
     INFO_MSG(" - Detection cmd:   " << sObjectDetCmdScope);
     INFO_MSG(" - Detection ans:   " << sObjectDetAnswerScope);
     INFO_MSG(" - Delivery cmd:    " << sDeliveryCmdScope);
@@ -275,14 +290,6 @@ int processSM(void) {
 
     rsb::Informer< std::string >::Ptr informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
 
-    // Blob detection: Listener and Informer
-    rsb::ListenerPtr listenerBlobScope = factory.createListener(sBlobAnswerScope);
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueBlobAnswerScope(
-            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerBlobScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueBlobAnswerScope)));
-
-    rsb::Informer< std::string >::Ptr informerBlobScope = factory.createInformer< std::string > (sBlobCmdScope);
-
     // Object delivery: Listener and Informer
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>> queueDeliveryAnswerScope(
@@ -298,6 +305,15 @@ int processSM(void) {
     listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueTransportAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
+
+/*    /////////////////////// RSB SERVER ////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    LocalServerPtr server = factory.createLocalServer(serverScope);
+
+    // Register method with name and implementing callback object.
+    server->registerMethod("getObjectsList", LocalServer::CallbackPtr(new objectsCallback()));
+*/
 
     INFO_MSG("All RSB connections built. Starting statemachine now.");
 
@@ -335,12 +351,6 @@ int processSM(void) {
                 rsbInputLocalPlanner = true;
             }
         }
-        if (!skipBlob && !queueBlobAnswerScope->empty()) {
-            sRSBInput = *queueBlobAnswerScope->pop();
-            if (sRSBInput.compare(outputRSBBlobDetection) == 0) {
-                rsbInputBlobDetection = true;
-            }
-        }
         if (!skipDeli && !queueDeliveryAnswerScope->empty()) {
             rsbInputDelivery = true;
             objectPos = *queueDeliveryAnswerScope->pop();
@@ -361,8 +371,6 @@ int processSM(void) {
             case idle:
                 if (rsbInputExploration && !skipExplo) {
                     amiroState = exploration;
-                } else if (rsbInputBlobDetection && !skipBlob) {
-                    amiroState = blobDetection;
                 } else if (rsbInputLocalPlanner && !skipLP) {
                     amiroState = localPlanner;
                 } else if (rsbInputObjectDetection && !skipDet) {
@@ -378,13 +386,6 @@ int processSM(void) {
                 sleep(3);
                 *stringPublisher = inputRSBExploration;
                 informerExplorationScope->publish(stringPublisher);
-                amiroState = idle;
-                break;
-            case blobDetection:
-                INFO_MSG("BLOBBING");
-                sleep(3);
-                *stringPublisher = inputRSBBlobDetection;
-                informerBlobScope->publish(stringPublisher);
                 amiroState = idle;
                 break;
             case localPlanner:
