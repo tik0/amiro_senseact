@@ -28,14 +28,14 @@ sleep 5
 ./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.01 --hole_width 0.05 --mapAsImageOutScope /image --samples 100 &
 
 # start all primary moving programs
-./localPlanner -p /localization -i /path -r /pathResponse &
+./localPlanner -p /localization -i /path -r /pathResponse > /dev/null &
 ./exploDriveEdge -l > /dev/null &
 
 # start all secondary moving programs
 ./drivingObjectDetection --skipPathPlanner --skipLocalPlanner --skipDetection &
 
 # start only listening statemachines
-./answerer --skipExploration --skipDetection > /dev/null &
+./answerer --skipExploration --skipDetection &
 ./openChallengeGEPTRO_2nd --robotID ${ID} --testWithAnswerer &
 
 sleep 1
