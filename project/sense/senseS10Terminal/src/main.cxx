@@ -30,29 +30,14 @@
 
 // Serial interface
 #include "rs232.h"
-#include <cstring>
 #include "nmea/nmea.h"
-
-#include <stdint.h>
 
 #define BUFSIZE 255
 
 static std::string rsbOutScope = "/sense/Nmea";
 static uint32_t rsbPeriod = 0;
-static int32_t cport_nr = 0;
+static int32_t cport_nr = 3;
 static int32_t bdrate = 19200;
-
-void getGPGSA(std::vector<char*>& vec ){
-	//std::string status(reinterpret_cast<char*>(buf));
-	std::cout<<"GSA :"<< vec.at(0)<< "\n";
-	std::cout<<"AutoSelection :"<< vec.at(1)<< "\n";
-	std::cout<<"3D :"<< vec.at(2)<< "\n";
-	std::cout<<"PDOP :"<< vec.at(14)<< "\n";
-	std::cout<<"HDilution:"<< vec.at(15)<< "\n";
-	std::cout<<"VDilution:"<< vec.at(16)<< "\n";
-	std::cout<<"Checksum:"<< vec.at(17)<< "\n";
-}
-
 
 int main(int argc, char **argv) {
 
@@ -66,7 +51,6 @@ int main(int argc, char **argv) {
     ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
     ("port,p", po::value < int32_t > (&cport_nr), "Portnumber of ttyS<0-15> (Standardvalue: 0)")
     ("bdrate,b", po::value < int32_t > (&bdrate), "Baudrate (Standardvalue: 19200)");
-
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
