@@ -100,6 +100,9 @@ int main(int argc, char **argv) {
   boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPVTG> > converter_GPVTG(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPVTG>);
   rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPVTG);
 
+  boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGLL> > converter_GPGLL(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGLL>);
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPGLL);
+
   // Prepare RSB informer
   rsb::Factory& factory = rsb::getFactory();
   rsb::Informer<rst::claas::Nmea_GPGGA>::Ptr informer_GPGGA = factory.createInformer<rst::claas::Nmea_GPGGA> (rsbOutScope);
@@ -107,6 +110,7 @@ int main(int argc, char **argv) {
   rsb::Informer<rst::claas::Nmea_GPGSV>::Ptr informer_GPGSV = factory.createInformer<rst::claas::Nmea_GPGSV> (rsbOutScope);
   rsb::Informer<rst::claas::Nmea_GPRMC>::Ptr informer_GPRMC = factory.createInformer<rst::claas::Nmea_GPRMC> (rsbOutScope);
   rsb::Informer<rst::claas::Nmea_GPVTG>::Ptr informer_GPVTG = factory.createInformer<rst::claas::Nmea_GPVTG> (rsbOutScope);
+  rsb::Informer<rst::claas::Nmea_GPGLL>::Ptr informer_GPGLL = factory.createInformer<rst::claas::Nmea_GPGLL> (rsbOutScope);
 
   // Datastructure for the nmea messages
   rsb::Informer<rst::claas::Nmea_GPGGA>::DataPtr msg_GPGGA(new rst::claas::Nmea_GPGGA);
@@ -114,6 +118,7 @@ int main(int argc, char **argv) {
   rsb::Informer<rst::claas::Nmea_GPGSV>::DataPtr msg_GPGSV(new rst::claas::Nmea_GPGSV);
   rsb::Informer<rst::claas::Nmea_GPRMC>::DataPtr msg_GPRMC(new rst::claas::Nmea_GPRMC);
   rsb::Informer<rst::claas::Nmea_GPVTG>::DataPtr msg_GPVTG(new rst::claas::Nmea_GPVTG);
+  rsb::Informer<rst::claas::Nmea_GPGLL>::DataPtr msg_GPGLL(new rst::claas::Nmea_GPGLL);
   
   // Set up the serial connection
   int n;
@@ -139,7 +144,6 @@ int main(int argc, char **argv) {
 
 	n = RS232_PollComport(cport_nr, buf, 1);
 	INFO_MSG("Bytes: " << n)
-	//std::cout << "Buf0: " << buf[0] << "\n";
 
 	// Syncronization to get the start of an NMEA string
 	if ((buf[0]) != '$') {
@@ -153,15 +157,12 @@ int main(int argc, char **argv) {
 			n = RS232_PollComport(cport_nr, buf, 1);
 			buffer[idx] = buf[0];
 			//std::cout << buffer[idx];
-
 			idx++;
 			if(buf[0] == '\n'){
 				int type = nmea_parse(&parser, &buffer[0], (int)strlen(buffer), &info);
 				idx = 0;
-
 				switch (type){
 					case GPGGA:
-						//std::cout << "RESULT: " << res << std::endl;
 						msg_GPGGA->mutable_time()->set_year(0);
 						msg_GPGGA->mutable_time()->set_mon(0);
 						msg_GPGGA->mutable_time()->set_day(0);
@@ -239,6 +240,21 @@ int main(int argc, char **argv) {
 						msg_GPVTG->set_spk(info.speed);
 						msg_GPVTG->set_spk_k(info.spk_k);
 						informer_GPVTG->publish(msg_GPVTG);
+						break;
+					case GPGLL:
+						msg_GPGLL->mutable_pos()->set_lat(nmea_ndeg2degree(info.lat));
+						msg_GPGLL->mutable_pos()->set_northsouth(info.northsouth);
+						msg_GPGLL->mutable_pos()->set_lon(nmea_ndeg2degree(info.lon));
+						msg_GPGLL->mutable_pos()->set_eastwest(info.eastwest);
+						msg_GPGLL->mutable_time()->set_year(0);
+						msg_GPGLL->mutable_time()->set_mon(0);
+						msg_GPGLL->mutable_time()->set_day(0);
+						msg_GPGLL->mutable_time()->set_hour(info.utc.hour);
+						msg_GPGLL->mutable_time()->set_min(info.utc.min);
+						msg_GPGLL->mutable_time()->set_sec(info.utc.sec);
+						msg_GPGLL->mutable_time()->set_hsec(info.utc.hsec);
+						msg_GPGLL->set_active(info.mode);
+						informer_GPGLL->publish(msg_GPGLL);
 						break;
 				}
 			}

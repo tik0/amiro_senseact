@@ -20,8 +20,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-//#include <rsb/Factory.h>
-
 typedef struct _nmeaParserNODE
 {
     int packType;
@@ -85,7 +83,6 @@ int nmea_parse(nmeaPARSER *parser, const char *buff, int buff_sz, nmeaINFO *info
     NMEA_ASSERT(parser && parser->buffer);
 
     nmea_parser_push(parser, buff, buff_sz);
-
     while(GPNON != (ptype = nmea_parser_pop(parser, &pack)))
     {
         nread++;
@@ -93,30 +90,29 @@ int nmea_parse(nmeaPARSER *parser, const char *buff, int buff_sz, nmeaINFO *info
         switch(ptype)
         {
         case GPGGA:
-        	//printf("GPGGA: %d\n" , ptype);
         	returnType = ptype;
         	nmea_GPGGA2info((nmeaGPGGA *)pack, info);
             break;
         case GPGSA:
-            //printf("GPGSA: %d\n" , ptype);
             returnType = ptype;
             nmea_GPGSA2info((nmeaGPGSA *)pack, info);
             break;
         case GPGSV:
-        	//printf("GPGSV: %d\n" , ptype);
         	returnType = ptype;
             nmea_GPGSV2info((nmeaGPGSV *)pack, info);
             break;
         case GPRMC:
-        	//printf("GPGSV: %d\n" , ptype);
         	returnType = ptype;
             nmea_GPRMC2info((nmeaGPRMC *)pack, info);
             break;
         case GPVTG:
-        	//printf("GPGSV: %d\n" , ptype);
         	returnType = ptype;
             nmea_GPVTG2info((nmeaGPVTG *)pack, info);
             break;
+        case GPGLL:
+        	returnType = ptype;
+        	nmea_GPGLL2info((nmeaGPGLL *)pack, info);
+        	break;
         };
 
         free(pack);
@@ -177,7 +173,6 @@ int nmea_parser_real_push(nmeaPARSER *parser, const char *buff, int buff_sz)
                 goto mem_fail;
 
             node->pack = 0;
-
             switch(ptype)
             {
             case GPGGA:
@@ -240,6 +235,18 @@ int nmea_parser_real_push(nmeaPARSER *parser, const char *buff, int buff_sz)
                     node = 0;
                 }
                 break;
+            case GPGLL:
+                if(0 == (node->pack = malloc(sizeof(nmeaGPGLL))))
+                    goto mem_fail;
+                node->packType = GPGLL;
+                if(!nmea_parse_GPGLL(
+                    (const char *)parser->buffer + nparsed,
+                    sen_sz, (nmeaGPGLL *)node->pack))
+                {
+                    free(node);
+                    node = 0;
+                }
+            	break;
             default:
                 free(node);
                 node = 0;
@@ -323,7 +330,6 @@ int nmea_parser_pop(nmeaPARSER *parser, void **pack_ptr)
 {
     int retval = GPNON;
     nmeaParserNODE *node = (nmeaParserNODE *)parser->top_node;
-
     NMEA_ASSERT(parser && parser->buffer);
 
     if(node)

@@ -29,7 +29,8 @@ enum nmeaPACKTYPE
     GPGSA   = 0x0002,   /**< GSA - GPS receiver operating mode, SVs used for navigation, and DOP values. */
     GPGSV   = 0x0004,   /**< GSV - Number of SVs in view, PRN numbers, elevation, azimuth & SNR values. */
     GPRMC   = 0x0008,   /**< RMC - Recommended Minimum Specific GPS/TRANSIT Data. */
-    GPVTG   = 0x0010    /**< VTG - Actual track made good and speed over ground. */
+    GPVTG   = 0x0010,   /**< VTG - Actual track made good and speed over ground. */
+	GPGLL	= 0x0012	/** Geographic Latitude and Longitude */
 };
 
 /**
@@ -115,11 +116,23 @@ typedef struct _nmeaGPVTG
 
 } nmeaGPVTG;
 
+typedef struct _nmeaGPGLL
+{
+	double  lat;        /**< Latitude in NDEG - [degree][min].[sec/60] */
+    char    ns;         /**< [N]orth or [S]outh */
+	double  lon;        /**< Longitude in NDEG - [degree][min].[sec/60] */
+    char    ew;         /**< [E]ast or [W]est */
+    nmeaTIME utc;       /**< UTC of position */
+    char data;
+} nmeaGPGLL;
+
 void nmea_zero_GPGGA(nmeaGPGGA *pack);
 void nmea_zero_GPGSA(nmeaGPGSA *pack);
 void nmea_zero_GPGSV(nmeaGPGSV *pack);
 void nmea_zero_GPRMC(nmeaGPRMC *pack);
 void nmea_zero_GPVTG(nmeaGPVTG *pack);
+void nmea_zero_GPGLL(nmeaGPGLL *pack);
+
 
 #ifdef  __cplusplus
 }

@@ -108,6 +108,7 @@ int nmea_pack_type(const char *buff, int buff_sz)
         "GPGSV",
         "GPRMC",
         "GPVTG",
+		"GPGLL",
     };
 
     NMEA_ASSERT(buff);
@@ -124,6 +125,8 @@ int nmea_pack_type(const char *buff, int buff_sz)
         return GPRMC;
     else if(0 == memcmp(buff, pheads[4], 5))
         return GPVTG;
+    else if(0 == memcmp(buff, pheads[5], 5))
+        return GPGLL;
 
     return GPNON;
 }
@@ -358,15 +361,41 @@ int nmea_parse_GPVTG(const char *buff, int buff_sz, nmeaGPVTG *pack)
         return 0;
     }
 
-    if( pack->dir_t != 'T' ||
-        pack->dec_m != 'M' ||
-        pack->spn_n != 'N' ||
-        pack->spk_k != 'K')
+//    if( pack->dir_t != 'T' ||
+//        pack->dec_m != 'M' ||
+//        pack->spn_n != 'N' ||
+//        pack->spk_k != 'K')
+//    {
+//        nmea_error("GPVTG parse error (format error)!");
+//        return 0;
+//    }
+    return 1;
+}
+
+int nmea_parse_GPGLL(const char *buff, int buff_sz, nmeaGPGLL *pack){
+
+	char time_buff[NMEA_TIMEPARSE_BUF];
+
+	NMEA_ASSERT(buff && pack);
+
+	memset(pack, 0, sizeof(nmeaGPGLL));
+
+	nmea_trace_buff(buff, buff_sz);
+
+    if(6 != nmea_scanf(buff, buff_sz,
+        "$GPGLL,%f,%C,%f,%C,%s,%C*",
+        &(pack->lat), &(pack->ns), &(pack->lon), &(pack->ew),
+		&(time_buff[0]),&(pack->data)))
     {
-        nmea_error("GPVTG parse error (format error)!");
+        nmea_error("GPGLL parse error!");
         return 0;
     }
 
+    if(0 != _nmea_parse_time(&time_buff[0], (int)strlen(&time_buff[0]), &(pack->utc)))
+    {
+        nmea_error("GPGLL time parse error!");
+        return 0;
+    }
     return 1;
 }
 
@@ -394,13 +423,6 @@ void nmea_GPGGA2info(nmeaGPGGA *pack, nmeaINFO *info)
     info->eastwest = pack->ew;
     info->diff = pack->diff;
     info->diff_units = pack->diff_units;
-
-    //nmeaPOS dpos;
-    //nmea_info2pos(info, &dpos);
-
-    //printf("GPGGA: %d %d %d %d %d %f %f %f %f %d, Lat: %f, Long: %f\n", pack->utc.hour, pack->utc.min, pack->utc.sec, pack->utc.hsec, pack->sig
-    //		, pack->HDOP, pack->elv, info->lat, info->lon, info->smask, nmea_ndeg2degree(info->lat), nmea_ndeg2degree(info->lon));
-
 }
 
 /**
@@ -418,7 +440,7 @@ void nmea_GPGSA2info(nmeaGPGSA *pack, nmeaINFO *info)
     info->PDOP = pack->PDOP;
     info->HDOP = pack->HDOP;
     info->VDOP = pack->VDOP;
-    //printf("Fix_Mode: %c, Fix_type: %d, ", pack->fix_mode, pack->fix_type);
+
     for(i = 0; i < NMEA_MAXSAT; ++i)
     {
         for(j = 0; j < info->satinfo.inview; ++j)
@@ -472,7 +494,6 @@ void nmea_GPGSV2info(nmeaGPGSV *pack, nmeaINFO *info)
     info->smask |= GPGSV;
     info->pack_count = pack->pack_count;
     info->pack_index = pack->pack_index;
-
 }
 
 /**
@@ -529,4 +550,20 @@ void nmea_GPVTG2info(nmeaGPVTG *pack, nmeaINFO *info)
     info->spn = pack->spn;
     info->spn_n = pack->spn_n;
     info->spk_k = pack->spk_k;
+}
+
+void nmea_GPGLL2info(nmeaGPGLL *pack, nmeaINFO *info)
+{
+    NMEA_ASSERT(pack && info);
+
+    info->utc.hour = pack->utc.hour;
+    info->utc.min = pack->utc.min;
+    info->utc.sec = pack->utc.sec;
+    info->utc.hsec = pack->utc.hsec;
+    info->lat = ((pack->ns == 'N')?pack->lat:-(pack->lat));
+    info->lon = ((pack->ew == 'E')?pack->lon:-(pack->lon));
+    info->smask |= GPGLL;
+    info->northsouth = pack->ns;
+    info->eastwest = pack->ew;
+    info->mode = pack->data;
 }
