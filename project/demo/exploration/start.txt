@@ -1,0 +1,107 @@
+This is the demonstration for mapbuilding with frontier exploration.
+
+To build this project with all subprojects use:
+    cmake -G"Ninja"
+    ninja
+
+To copy it to an AMiRo:
+    ./scpall.sh root@[AMiRoAdress]:~
+
+To run it on an AMiRo:
+    start a local spread on the AMiRo
+    start another spread (global spread) on the AMiRo that connects to the spread from the tracking
+    make sure that there is an rsb.conf that refers to the local spread
+    Adapt the port in the startscript to match the global spread
+    Adapt the id in the startscript to match the marker id of the robot
+    ./startExplo.sh
+
+To stop it:
+    ./stopExplo.sh
+    note: this does not kill the spreads
+
+To view a map:
+    start a spread that connects to the global spread
+    make sure the rsb.conf refers to the global spread
+    start project/AMiRo/showMap0 -> ./showMap0
+    note: showMap0 has to be started before the exploration
+
+
+Components:
+
+edgeAvoidanceBehavior
+    This programm reads the floorproximity sensors and steers away if they detect an edge.
+    
+    inscopes: 
+        /prox/floor     prox sensors
+    outscopes:
+        /motor/00       steering
+
+
+mapGenerator
+    This programm takes the position and the current ring prox values and builds a map from them.
+    It also receives signals from the frontier exploration to draw edges in the map.
+    During the mapbuilding MapUpdates are published, to update the map of other robots and showMap0.
+    It also sets up an server to which other programms can send requests to get the map or to plan
+    paths in the map.
+
+    To load a map used -l [filename] option.
+    Set host --host and port  --port.
+    Set tracking id --id
+
+    inscopes:
+        /murox/roboterlocation tracking ("in program spread" --port, --host) (id: --id)
+        --irin [option]    prox sensors
+        /edgePose
+        /mapUpdate from other robots
+        /saveMap save the map to a file (string = filename)
+        /enableMapGenerator boolean enables/disables map building
+
+    outscopes:
+        /mapUpdate
+
+    server:
+        /mapGenerator methods: getMap, getObstacleMap, getFrontierPath, getPath, getPushingPath
+
+frontierExploration
+    This program requests frontier paths from the mapGenerator and publishes them to the localPlanner.
+    It also implements an edge following that works in cooperation with the edgeAvoidance
+
+    inscopes
+        /prox/floor
+        /murox/roboterlocation tracking
+        /pathResponse
+        /rir_prox (Ring prox sensors TODO change for new rirReader)
+
+    outscopes
+        /path
+        /motor/04 steering
+        /edgePose position of edges relativ to robot
+
+    server access
+        /mapGenerator
+
+localPlanner
+    The localPlanner receives paths and steers the robot along these. It sends a rsb signal when a path is finished.
+    
+    inscopes
+        /path
+        /murox/roboterlocation tracking
+
+    outscopes
+        /pathResponse (send when a path is finished)
+        /motor/05   steering
+
+motorControl
+    Receives control commands with priority and sets the wheel velocitys over can.
+
+rirReader
+    reads and publishes proximity informations.
+
+senseFloorProximity
+    reads and publishes floor proximity values.
+  
+  outscope
+        /prox/floor     prox sensors
+
+stopMotor
+    Stops the motor.
