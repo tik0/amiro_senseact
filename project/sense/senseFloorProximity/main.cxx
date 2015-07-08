@@ -33,70 +33,71 @@ using namespace std;
 using namespace muroxConverter;
 
 int main(int argc, char **argv) {
-  
-  // Handle program options
-  namespace po = boost::program_options;
-  
-  std::string rsbOutScope = "/proxFloor";
-  uint32_t rsbPeriod = 0;
 
-  po::options_description options("Allowed options");
-  options.add_options()("help,h", "Display a help message.")
-    ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending proximity values")
-    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)");
+	// Handle program options
+	namespace po = boost::program_options;
 
-  // allow to give the value as a positional argument
-  po::positional_options_description p;
-  p.add("value", 1);
+	std::string rsbOutScope = "/prox/floor";
+	uint32_t rsbPeriod = 0;
 
-  po::variables_map vm;
-  po::store( po::command_line_parser(argc, argv).options(options).positional(p).run(), vm);
+	po::options_description options("Allowed options");
+	options.add_options()("help,h", "Display a help message.")("verbose,v", "Print values.")("outscope,o",
+			po::value<std::string>(&rsbOutScope), "Scope for sending proximity values")("period,t",
+			po::value<uint32_t>(&rsbPeriod), "Update interval (0 for maximum rate)");
 
-  // first, process the help option
-  if (vm.count("help")) {
-      std::cout << options << "\n";
-      exit(1);
-  }
+	// allow to give the value as a positional argument
+	po::positional_options_description p;
+	p.add("value", 1);
 
-  // afterwards, let program options handle argument errors
-  po::notify(vm);
+	po::variables_map vm;
+	po::store(po::command_line_parser(argc, argv).options(options).positional(p).run(), vm);
 
-  // Register new converter for std::vector<int>
-  boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
-  converterRepository<std::string>()->registerConverter(converter);
-  
-  // Prepare RSB informer
-  rsb::Factory& factory = rsb::Factory::getInstance();
-  rsb::Informer< std::vector<int> >::Ptr informer_vec = factory.createInformer< std::vector<int> > (rsbOutScope);
+	// first, process the help option
+	if (vm.count("help")) {
+		std::cout << options << "\n";
+		exit(1);
+	}
 
-  // Init the CAN interface
-  ControllerAreaNetwork CAN;    
+	// afterwards, let program options handle argument errors
+	po::notify(vm);
 
-  // Datastructure for the CAN messages
-  std::vector< uint16_t > proximityFloorValue(4,0);
-  
-  int fail = 1;
-  uint8_t sensorIdx = 0;
-  for(;;) {
-    // Read the proximity data
-    fail = CAN.getProximityFloorValue(proximityFloorValue);
-      if (fail == 0) {
-        for (sensorIdx = 0; sensorIdx < proximityFloorValue.size(); sensorIdx++) {
-          INFO_MSG( (int) sensorIdx << ": " << proximityFloorValue[sensorIdx])
-        }
-        // Copy the data
-        // Datastructure for the RSB messages
-        boost::shared_ptr< std::vector<int> > vecData = boost::shared_ptr<std::vector<int> >(new std::vector<int>(proximityFloorValue.begin(),proximityFloorValue.end()));
-//         copy(proximityFloorValue.begin(), proximityFloorValue.end(), back_inserter(*vecData));
-        // Send proximity data
-        informer_vec->publish(vecData);
-      } else {
-        WARNING_MSG( "Fail" )
-      }
-      
-      // Sleep for a while
-      boost::this_thread::sleep( boost::posix_time::milliseconds(rsbPeriod) );
-  }
+	// Register new converter for std::vector<int>
+	boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
+	converterRepository<std::string>()->registerConverter(converter);
 
-  return EXIT_SUCCESS;
+	// Prepare RSB informer
+	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Informer<std::vector<int> >::Ptr floorProxInformer = factory.createInformer<std::vector<int> >(rsbOutScope);
+
+	// Init the CAN interface
+	ControllerAreaNetwork CAN;
+
+	// Datastructure for the CAN messages
+	std::vector<uint16_t> floorProxValues(4, 0);
+
+	while (true) {
+		// Read the proximity data
+		if (CAN.getProximityFloorValue(floorProxValues) == 0) {
+			// Datastructure for the RSB messages
+			boost::shared_ptr<std::vector<int> > floorProxData = boost::shared_ptr<std::vector<int> >(
+					new std::vector<int>(floorProxValues.begin(), floorProxValues.end()));
+
+			// Send proximity data
+			floorProxInformer->publish(floorProxData);
+
+			// Print proximity data
+			if (vm.count("verbose")) {
+				for (int i : *floorProxData) {
+					cout << i << " ";
+				}
+				cout << endl;
+			}
+
+			// Sleep for a while
+			boost::this_thread::sleep(boost::posix_time::milliseconds(rsbPeriod));
+		} else
+			WARNING_MSG("Reading floor proximity data from CAN failed.");
+	}
+
+	return EXIT_SUCCESS;
 }
