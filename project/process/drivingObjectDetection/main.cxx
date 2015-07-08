@@ -75,14 +75,19 @@ int objOffset = 2;
 std::string progressInscope = "/objectDetectionMain/command";
 std::string progressOutscope = "/objectDetectionMain/answer";
 std::string odometryInscope = "/localization";
+std::string sPathRequestOutput = "/path/request";
+std::string sPathRequestInput = "/path/answer";
 std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";
-std::string mapServerScope = "/mapGenerator";
+std::string mapServerScope = "/CoreSlamServer";
 std::string objectOutscope = "/objectDetection/command";
 std::string objectInscope = "/objectDetection/detected";
 
 // string publisher
 boost::shared_ptr<std::string> stringPublisher(new std::string);
+
+std::string remoteHost = "localhost";
+std::string remotePort = "4823";
 
 
 // terminal flags
@@ -138,6 +143,33 @@ int main(int argc, char **argv) {
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
 
+  //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
+  ///////////////////////////////////////////////////////////////////////////////
+  // Get the global participant config as a template
+  rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
+        {
+          // disable socket transport
+          rsc::runtime::Properties tmpPropSocket  = tmpPartConf.mutableTransport("socket").getOptions();
+          tmpPropSocket["enabled"] = boost::any(std::string("0"));
+
+          // Get the options for spread transport, because we want to change them
+          rsc::runtime::Properties tmpPropSpread  = tmpPartConf.mutableTransport("spread").getOptions();
+
+          // enable socket transport
+          tmpPropSpread["enabled"] = boost::any(std::string("1"));
+
+          // Change the config
+          tmpPropSpread["host"] = boost::any(std::string(remoteHost));
+
+          // Change the Port
+          tmpPropSpread["port"] = boost::any(std::string(remotePort));
+
+          // Write the tranport properties back to the participant config
+          tmpPartConf.mutableTransport("socket").setOptions(tmpPropSocket);
+          tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
+        }
+  ///////////////////////////////////////////////////////////////////////////////
+
 	// ------------ Converters ----------------------
 
 	// Register converter for the pose list
@@ -159,6 +191,12 @@ int main(int argc, char **argv) {
 
 	// ------------ Listener ----------------------
 
+	// prepare RSB listener for path request answer
+	rsb::ListenerPtr pathRequestListener = factory.createListener(sPathRequestInput);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pathRequestQueue(
+			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+	pathRequestListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(pathRequestQueue)));
+
 	// prepare RSB listener for path responses
 	rsb::ListenerPtr pathResponseListener = factory.createListener(pathResponseInscope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>>pathResponseQueue(
@@ -177,11 +215,14 @@ int main(int argc, char **argv) {
 
 	// ---------------- Informer ---------------------
 
+	// create rsb informer to publish the robots path request
+	rsb::Informer<twbTracking::proto::Pose2D>::Ptr pathRequestInformer = factory.createInformer<twbTracking::proto::Pose2D>(sPathRequestOutput);
+
 	// create rsb informer to publish the robots path
 	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
 	// mapGenertor server
-	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
+	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope, tmpPartConf, tmpPartConf);
 
 	// create rsb informer to publish progress data
 	rsb::Informer<std::string>::Ptr progressInformer = factory.createInformer<std::string>(progressOutscope);
@@ -225,10 +266,10 @@ int main(int argc, char **argv) {
 				getOwnPosition(ownPos, *odomQueue->pop());
 				INFO_MSG("Find oneself at position " << ownPos.x << "/" << ownPos.y);
 				float angleToObject = atan2(objectPositionPtr->y()-ownPos.y, objectPositionPtr->x()-ownPos.x);
-				detectionPositionPtr->set_x(objectPositionPtr->x()-detectionDist*cos(angleToObject));
-				detectionPositionPtr->set_y(objectPositionPtr->y()-detectionDist*sin(angleToObject));
+				detectionPositionPtr->set_x(((float)(objectPositionPtr->x()-detectionDist*cos(angleToObject)))/1000000.0);
+				detectionPositionPtr->set_y(((float)(objectPositionPtr->y()-detectionDist*sin(angleToObject)))/1000000.0);
 				INFO_MSG("Final detection position is " << detectionPositionPtr->x() << "/" << detectionPositionPtr->y());
-
+/*
 				rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
 				twbTracking::proto::Pose2D *pose2D_1 = pose2DList->add_pose();
 				pose2D_1->set_x(((float)ownPos.x)/1000000.0);
@@ -248,9 +289,18 @@ int main(int argc, char **argv) {
 				INFO_MSG("Waiting for Local Planner.");
 				while(pathResponseQueue->empty());
 				INFO_MSG("Local Planner finished.");
-/*
+*/
+
 				// calculate path to final detection position
-				boost::shared_ptr<twbTracking::proto::Pose2DList> path = mapServer->call<twbTracking::proto::Pose2DList>("getPath", detectionPositionPtr);
+				if (!pathRequestQueue->empty()) {
+					pathRequestQueue->pop();
+				}
+				pathRequestInformer->publish(detectionPositionPtr);
+				while (!pathRequestQueue->empty()) {
+					sleep(1);
+				}
+				pathRequestQueue->pop();
+				boost::shared_ptr<twbTracking::proto::Pose2DList> path = mapServer->call<twbTracking::proto::Pose2DList>("path", detectionPositionPtr);
 				INFO_MSG("Calculated path (#items: " << path->pose_size() << "):");
 				for (int i=0; i<path->pose_size(); i++) {
 					INFO_MSG(" -> " << path->pose(i).x() << "/" << path->pose(i).y());
@@ -258,14 +308,14 @@ int main(int argc, char **argv) {
 
 				// drive to final detection position
 				pathInformer->publish(path);
+				usleep(500000);
 				if (!pathResponseQueue->empty()) {
 					pathResponseQueue->pop();
 				}
-				usleep(500000);
 				while (pathResponseQueue->empty());
 				pathResponseQueue->pop();
 				INFO_MSG("Finished driving.");
-*/
+
 
 
 /*

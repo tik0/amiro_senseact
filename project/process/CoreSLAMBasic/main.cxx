@@ -1,6 +1,6 @@
 
 #define INFO_MSG_
-#define DEBUG_MSG_
+//#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
  #define ERROR_MSG_
@@ -130,6 +130,8 @@ static rst::geometry::Rotation odomRot;
 static double pathObstacleErosion = 0.1; // m
 static double detectionObstacleErosion = 0.1; // m
 
+rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
+
 // Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
 void mapErosion(int erosion_size, cv::Mat &map) {
   cv::Mat element = cv::getStructuringElement( cv::MORPH_ELLIPSE,
@@ -159,28 +161,22 @@ void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
   cv::moveWindow(winname, x, y);
 }
 
-///////////// JUST COPIED FROM ISYPROJECT ///////////////////////
-/////////////////////////////////////////////////////////////////
-
-/* TODO Things to change:
- *  1. Generating a cv::Mat
- *  2. Get own position, input is just the target position - done
- */
-
 // callBack for path to point
 class pathCallback: public rsb::patterns::LocalServer::Callback<twbTracking::proto::Pose2D, twbTracking::proto::Pose2DList> {
 	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
 			boost::shared_ptr<twbTracking::proto::Pose2D> pose) {
-
+/*
+		INFO_MSG("Path to " << pose.get()->x() << "/" << pose.get()->y() << " requested.");
 		// generate the obstacle map
 		cv::Mat obstacleMap(getObstacleMap());
 		const int erosion_size = pathObstacleErosion / delta_;
 		mapErosion(erosion_size, obstacleMap);
-// 1. TODO	mapGenerator.generateObstacleMap(combinedMap, obstacleMap);
+		int xSize = obstacleMap.size().width*delta_;
+		int ySize = obstacleMap.size().height*delta_;
 
 		// convert pose to cv::point2f
 		// note: 3. coordinate is ignored
-		Point2f target(pose.get()->x(), pose.get()->y());
+		Point2f target(pose.get()->x()+xSize/2, pose.get()->y()+ySize/2);
 
 		// convert robot position to cv::point3f
 		mtxOdom.lock();
@@ -189,22 +185,60 @@ class pathCallback: public rsb::patterns::LocalServer::Callback<twbTracking::pro
 
 		// calculate a path
 		// Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
+		INFO_MSG("Starting path calculation.");
 		std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, robotPose, target);
 
 		// convert that path to a pose2DList
+		INFO_MSG("Send path.");
 		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
 		for (Point2f p : path) {
 			twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
-			pose2D->set_x(p.x);
-			pose2D->set_y(p.y);
+			pose2D->set_x(p.x-xSize/2);
+			pose2D->set_y(p.y-ySize/2);
 			pose2D->set_orientation(0);
 			pose2D->set_id(0);
 		}
-		return pose2DList;
+		return pose2DList;*/
+
+		return pose2DListPublish;
 	}
 };
 
-/////////////////////////////////////////////////////////////////
+
+void pathRequestFunction(twbTracking::proto::Pose2D pose) {
+		INFO_MSG("Path to " << pose.x() << "/" << pose.y() << " requested.");
+		// generate the obstacle map
+		cv::Mat obstacleMap(getObstacleMap());
+		const int erosion_size = pathObstacleErosion / delta_;
+		mapErosion(erosion_size, obstacleMap);
+		int xSize = obstacleMap.size().width*delta_;
+		int ySize = obstacleMap.size().height*delta_;
+
+		// convert pose to cv::point2f
+		// note: 3. coordinate is ignored
+		Point2f target(pose.x()+xSize/2, pose.y()+ySize/2);
+
+		// convert robot position to cv::point3f
+		mtxOdom.lock();
+		Point3f robotPose(odomData->mutable_translation()->x(), odomData->mutable_translation()->y(), odomData->mutable_rotation()->yaw());
+		mtxOdom.unlock();
+
+		// calculate a path
+		// Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
+		INFO_MSG("Starting path calculation.");
+		std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, robotPose, target);
+
+		// convert that path to a pose2DList
+		INFO_MSG("Send path.");
+		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
+		for (Point2f p : path) {
+			twbTracking::proto::Pose2D *pose2D = pose2DListPublish->add_pose();
+			pose2D->set_x(p.x-xSize/2);
+			pose2D->set_y(p.y-ySize/2);
+			pose2D->set_orientation(0);
+			pose2D->set_id(0);
+		}
+}
 
 // callBack for path to point
 class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
@@ -494,6 +528,9 @@ int main(int argc, const char **argv){
   std::string sExplorationScope = "/exploration";
   std::string sExplorationCmdScope = "/command";
   std::string sExplorationAnswerScope = "/answer";
+  std::string sPathInputScope = "/path/request";
+  std::string sPathOutputScope = "/path/answer";
+  std::string pathServerReq = "path";
   std::string mapServerReq = "map";
   std::string obstacleServerReq = "getObjectsList";
   std::string remoteHost = "localhost";
@@ -506,6 +543,7 @@ int main(int argc, const char **argv){
     ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
     ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
     ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
+    ("pathServerReq", po::value < std::string > (&pathServerReq), "Path server request string (Std.: path)")
     ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
@@ -603,6 +641,12 @@ int main(int argc, const char **argv){
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>(1));
   lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LocatedLaserScan>(lidarQueue)));
+  // Prepare RSB listener for incomming path request
+  rsb::ListenerPtr pathListener = factory.createListener(sPathInputScope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>>pathQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>(1));
+  pathListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2D>(pathQueue)));
+  // Prepare RSB informer for sending the path answer
+  rsb::Informer<std::string>::Ptr pathInformer = factory.createInformer<std::string> (sPathOutputScope);
   // Prepare RSB listener for controling the programs behaviour
   rsb::ListenerPtr expListener = factory.createListener(sExplorationScope);
   expListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&controlCoreSLAMBehaviour)));
@@ -612,6 +656,7 @@ int main(int argc, const char **argv){
   informerOdometry = factory.createInformer<rst::geometry::PoseEuler> (localizationOutScope);
   // Prepare RSB server for the map server
   rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
+  server->registerMethod(pathServerReq, rsb::patterns::LocalServer::CallbackPtr(new pathCallback()));
   server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
   server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
 
@@ -625,6 +670,12 @@ int main(int argc, const char **argv){
     if (slamState == idle) {
       usleep(50000); // Sleep for 50 ms
       continue;
+    }
+
+    if (!pathQueue->empty()) {
+      pathRequestFunction(*pathQueue->pop());
+      boost::shared_ptr<std::string> stringPublisher(new std::string("Fin"));
+      pathInformer->publish(stringPublisher);
     }
 
     ++laser_count_;

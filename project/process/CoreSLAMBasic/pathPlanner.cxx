@@ -158,6 +158,7 @@ void PathPlanner::dijstraToTarget(cv::Point2i robotCell, cv::Point2i targetCell,
 	// initialize goal with value out of the map
 	Point2i goal(-1, -1);
 
+	cerr << "Search target cell" << endl;
 	// try to find a route until there are no free cells left
 	while (!qs.empty()) {
 
@@ -201,6 +202,7 @@ void PathPlanner::dijstraToTarget(cv::Point2i robotCell, cv::Point2i targetCell,
 		}
 	}
 
+	cerr << "Search path to target cell" << endl;
 	// check if a frontier was found
 	if (goal == Point2i(-1, -1)) {
 		//cout << "No Frontier found" << endl;
