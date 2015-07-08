@@ -1,4 +1,4 @@
-Outside					Main Statemachine		Ext Prog
+Outside	(only strings)			Main Statemachine		Ext Prog
 (D: polling)
 (RS: resend answer if D)
 				-?->	idle

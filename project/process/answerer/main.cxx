@@ -9,6 +9,7 @@
 // CAN
 #include <ControllerAreaNetwork.h>
 #include <Types.h>
+#include <types/twbTracking.pb.h>
 #include <Constants.h>
 types::position homingPosition;
 ControllerAreaNetwork myCAN;
@@ -155,6 +156,7 @@ bool rsbInputLocalPlanner = false;
 int processSM(void);
 
 int robotID = 0;
+twbTracking::proto::Pose2D objectPos;
 
 int objectCount = 0;
 bool objectDetected[] = {false, false};
@@ -271,11 +273,11 @@ int processSM(void) {
 
     rsb::Informer< std::string >::Ptr informerBlobScope = factory.createInformer< std::string > (sBlobCmdScope);
 
-    // Object seperation and delivery: Listener and Informer
+    // Object delivery: Listener and Informer
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueDeliveryAnswerScope(
-            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>> queueDeliveryAnswerScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>(1));
+    listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<twbTracking::proto::Pose2D>(queueDeliveryAnswerScope)));
 
     rsb::Informer< std::string >::Ptr informerDeliveryScope = factory.createInformer< std::string > (sDeliveryCmdScope);
 
@@ -330,10 +332,8 @@ int processSM(void) {
             }
         }
         if (!skipDeli && !queueDeliveryAnswerScope->empty()) {
-            sRSBInput = *queueDeliveryAnswerScope->pop();
-            if (sRSBInput.compare(outputRSBDelivery) == 0) {
-                rsbInputDelivery = true;
-            }
+            rsbInputDelivery = true;
+            objectPos = *queueDeliveryAnswerScope->pop();
         }
         if (!skipTrans && !queueTransportAnswerScope->empty()) {
             sRSBInput = *queueTransportAnswerScope->pop();
@@ -394,7 +394,7 @@ int processSM(void) {
                 amiroState = idle;
                 break;
             case objectDelivery:
-                INFO_MSG("DELIVERING");
+                INFO_MSG("DELIVERING of object at " << objectPos.x() << "/" << objectPos.y() << " with radius " << objectPos.orientation());
                 sleep(3);
                 *stringPublisher = inputRSBDelivery;
                 informerDeliveryScope->publish(stringPublisher);

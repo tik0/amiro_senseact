@@ -133,7 +133,8 @@ rsb::Informer<twbTracking::proto::Pose2D>::Ptr informerObjectDetScope;
 rsb::Informer<std::string>::Ptr                informerLocalPlannerScope;
 rsb::Informer<std::string>::Ptr                informerExplorationScope;
 rsb::Informer<std::string>::Ptr                informerBlobScope;
-rsb::Informer<std::string>::Ptr                informerDeliveryScope;
+rsb::Informer<twbTracking::proto::Pose2D>::Ptr informerDeliveryScope;
+//rsb::Informer<std::string>::Ptr                informerDeliveryScope;
 rsb::Informer<std::string>::Ptr                informerTransportScope;
 rsb::Informer<std::string>::Ptr                informerOutsideScope;
 
@@ -403,13 +404,13 @@ int processSM(void) {
 
     informerBlobScope = factory.createInformer< std::string > (sBlobCmdScope);
 
-    // Object seperation and delivery: Listener and Informer
+    // Object delivery: Listener and Informer
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueDeliveryAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
     listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
 
-    informerDeliveryScope = factory.createInformer< std::string > (sDeliveryCmdScope);
+    informerDeliveryScope = factory.createInformer<twbTracking::proto::Pose2D> (sDeliveryCmdScope);
 
     // Object transport: Listener and Informer
     rsb::ListenerPtr listenerTransportScope = factory.createListener(sTransportAnswerScope);
@@ -575,7 +576,7 @@ int processSM(void) {
                 if (objectCount > 0) {
                     positionPublisher->set_x(0);
                     positionPublisher->set_y(0);
-                    positionPublisher->set_orientation(100000);
+                    positionPublisher->set_orientation(0.1);
                     informerObjectDetScope->publish(positionPublisher);
                 }
                 amiroState = objectDetectionMain;
@@ -630,8 +631,11 @@ int processSM(void) {
                 break;
             case objectDeliveryStart:
                 INFO_MSG(" -> Delivering object " << deliverObjectId)
-                *stringPublisher = outputRSBDelivery;
-                informerDeliveryScope->publish(stringPublisher);
+                // TODO choose correct object ID
+                positionPublisher->set_x(0);
+                positionPublisher->set_y(0);
+                positionPublisher->set_orientation(100000);
+                informerDeliveryScope->publish(positionPublisher);
                 amiroState = objectDelivery;
                 break;
             case objectDelivery:
