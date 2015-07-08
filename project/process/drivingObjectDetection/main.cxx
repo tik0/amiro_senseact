@@ -75,11 +75,13 @@ int objOffset = 2;
 std::string progressInscope = "/objectDetectionMain/command";
 std::string progressOutscope = "/objectDetectionMain/answer";
 std::string odometryInscope = "/localization";
+std::string trackingInscope = "/murox/roboterlocation";
 std::string sPathRequestOutput = "/path/request";
 std::string sPathRequestInput = "/path/answer";
 std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";
 std::string mapServerScope = "/CoreSlamServer";
+std::string pathRequestFunc = "getPath";
 std::string objectOutscope = "/objectDetection/command";
 std::string objectInscope = "/objectDetection/detected";
 
@@ -98,10 +100,13 @@ bool skipLP = false;
 bool skipFR = false;
 bool skipOD = false;
 bool skipVC = false;
+bool skipLocal = false;
+bool useTrackingData = false;
 
 
 // method prototypes
 void getOwnPosition(types::position& ts_pose, rst::geometry::PoseEuler odomInput);
+void readTracking(types::position& pose, boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID);
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN);
 float normAngle(float angle);
 int mymcm(int mym);
@@ -114,11 +119,25 @@ int main(int argc, char **argv) {
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
-			     ("skipPathPlanner", "Skipping Path Planner.")
-			     ("skipLocalPlanner", "Skipping Local Planner.")
-			     ("skipFinalRotation", "Skipping Final Rotation towards the object.")
-			     ("skipDetection", "Skipping Object Detection.")
-			     ("skipCorrection", "Skipping View Correction after detection failure.");
+			("progressInscope", po::value <std::string> (&progressInscope), "Inscope for progress data.")
+			("progressOutscope", po::value <std::string> (&progressOutscope), "Outscope for progress data.")
+			("positionInscope", po::value <std::string> (&odometryInscope), "Inscope for position data of SLAM localization.")
+			("trackingInscope", po::value <std::string> (&trackingInscope), "Inscope for tracking data.")
+			("pathResponseInscope", po::value <std::string> (&pathResponseInscope), "Inscope for Local Planner response.")
+			("pathOutScope", po::value <std::string> (&pathOutScope), "Outscope for Local Planner.")
+			("mapServerScope", po::value <std::string> (&mapServerScope), "Scope for Map Server.")
+			("pathRequest", po::value <std::string> (&pathRequestFunc), "Function name for path request.")
+			("objectOutscope", po::value <std::string> (&objectOutscope), "Outscope for object detection.")
+			("objectInscope", po::value <std::string> (&objectInscope), "Inscope for object detection.")
+			("trackingID", po::value <int> (&trackingMarkerID), "ID of tracking data (default: 0).")
+			("meterPerPixel", po::value <float> (&meterPerPixel), "Meter per pixel of tracking data (default: 0.01).")
+			("useTrackingData", "Use Tracking Data instead of PoseEuler for incomming position data.")
+			("skipPathPlanner", "Skipping Path Planner.")
+			("skipLocalPlanner", "Skipping Local Planner.")
+			("skipFinalRotation", "Skipping Final Rotation towards the object.")
+			("skipDetection", "Skipping Object Detection.")
+			("skipCorrection", "Skipping View Correction after detection failure.")
+			("skipLocalization", "Skipping Localization. The robot then will be always at 0/0.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -141,6 +160,8 @@ int main(int argc, char **argv) {
 	skipFR = vm.count("skipFinalRotation");
 	skipOD = vm.count("skipDetection");
 	skipVC = vm.count("skipCorrection");
+	skipLocal = vm.count("skipLocalization");
+	useTrackingData = vm.count("useTrackingData");
 
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
@@ -210,7 +231,12 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>progressQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
 	progressListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(progressQueue)));
 
-	// Prepare RSB async listener for odometry messages
+	// prepare rsb listener for tracking data
+	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, tmpPartConf);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
+	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
+
+	// Prepare RSB async listener for localization messages
 	rsb::ListenerPtr odomListener = factory.createListener(odometryInscope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>>odomQueue(new rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>(1));
 	odomListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::PoseEuler>(odomQueue)));
@@ -262,14 +288,24 @@ int main(int argc, char **argv) {
          */
         INFO_MSG("Start progress");
 
+	if (skipLocal) {
+		ownPos.x = 0;
+		ownPos.y = 0;
+		ownPos.f_z = 0;
+	}
+
 	while (true) {
 		if (!progressQueue->empty()) {
 			objectPositionsPtr = progressQueue->pop();
 
-			getOwnPosition(ownPos, *odomQueue->pop()); // u[m, rad]
-			float maxDist = 0;
-			int maxIdx = 0;
+/*			if (useTrackingData && !skipLocal) {
+				readTracking(ownPos, boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()), trackingMarkerID); // u[m, rad]
+			} else if (!skipLocal) {
+				getOwnPosition(ownPos, *odomQueue->pop()); // u[m, rad]
+			}
 			while (objectPositionsPtr->pose_size() > 0) {
+				float maxDist = 0;
+				int maxIdx = 0;
 				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
 					float diffY = objectPositionsPtr->pose(i).y()-((float)ownPos.y)/1000000.0;
 					float diffX = objectPositionsPtr->pose(i).x()-((float)ownPos.x)/1000000.0;
@@ -284,24 +320,38 @@ int main(int argc, char **argv) {
 				pose2D->set_y(objectPositionsPtr->pose(maxIdx).y());
 				pose2D->set_orientation(objectPositionsPtr->pose(maxIdx).orientation());
 				pose2D->set_id(objectPositionsPtr->pose(maxIdx).id());
-				
+				objectPositionsPtr->pop_pose(maxIdx);
+			}*/
+
+			INFO_MSG("Object position list with " << objectPositionsPtr->pose_size() << " objects:");
+			for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
+				twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
+				pose2D->set_x(objectPositionsPtr->pose(i).x());
+				pose2D->set_y(objectPositionsPtr->pose(i).y());
+				pose2D->set_orientation(objectPositionsPtr->pose(i).orientation());
+				pose2D->set_id(objectPositionsPtr->pose(i).id());
+				INFO_MSG(" - obj " << pose2D->id() << " at " << pose2D->x() << "/" << pose2D->y() << " with r=" << pose2D->orientation());
 			}
 
 			// check all objects
 			for (int i=0; i<objectPositions->pose_size(); i++) {
 
 				// load object position
-				twbTracking::proto::Pose2D objectPosition = objectPositionsPtr->pose(i); // in u[m, rad]
+				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // in u[m, rad]
 
         	                bool objectDetected = false;
 				float detectionDist = robotRadius + robotObjectDist + objectPosition.orientation(); // um
-				INFO_MSG("Focusing on object at position " << objectPosition.x() << "/" << objectPosition.y() << " with a radius of " << objectPosition.orientation() << " um");
+				INFO_MSG("Focussing on object at position " << objectPosition.x() << "/" << objectPosition.y() << " with a radius of " << objectPosition.orientation() << " um");
 
 				// if the object hasn't been detected yet
         	                while(!objectDetected) {
 
 					// calculate final detection position
-					getOwnPosition(ownPos, *odomQueue->pop()); // u[m, rad]
+					if (useTrackingData && !skipLocal) {
+						readTracking(ownPos, boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()), trackingMarkerID); // u[m, rad]
+					} else if (!skipLocal) {
+						getOwnPosition(ownPos, *odomQueue->pop()); // u[m, rad]
+					}
 					INFO_MSG("Find oneself at position " << ownPos.x << "/" << ownPos.y);
 					float angleToObject = atan2(objectPosition.y()-ownPos.y, objectPosition.x()-ownPos.x); // rad
 					detectionPositionPtr->set_x(((float)(objectPosition.x()-detectionDist*cos(angleToObject)))/1000000.0); // m
@@ -340,25 +390,34 @@ int main(int argc, char **argv) {
 					}
 					pathRequestQueue->pop();*/
 
-					boost::shared_ptr<twbTracking::proto::Pose2DList> path = mapServer->call<twbTracking::proto::Pose2DList>("getPath", detectionPositionPtr);
-					INFO_MSG("Calculated path (#items: " << path->pose_size() << "):");
-					for (int i=0; i<path->pose_size(); i++) {
-						INFO_MSG(" -> " << path->pose(i).x() << "/" << path->pose(i).y());
+					boost::shared_ptr<twbTracking::proto::Pose2DList> path;
+					if (!skipPP) {
+						path = mapServer->call<twbTracking::proto::Pose2DList>(pathRequestFunc, detectionPositionPtr);
+						INFO_MSG("Calculated path (#items: " << path->pose_size() << "):");
+						for (int i=0; i<path->pose_size(); i++) {
+							INFO_MSG(" -> " << path->pose(i).x() << "/" << path->pose(i).y());
+						}
 					}
 
-					// drive to final detection position
-					pathInformer->publish(path);
-					usleep(500000);
-					if (!pathResponseQueue->empty()) {
+					if (!skipLP) {
+						// drive to final detection position
+						pathInformer->publish(path);
+						usleep(500000);
+						if (!pathResponseQueue->empty()) {
+							pathResponseQueue->pop();
+						}
+						while (pathResponseQueue->empty());
 						pathResponseQueue->pop();
+						INFO_MSG("Finished driving.");
 					}
-					while (pathResponseQueue->empty());
-					pathResponseQueue->pop();
-					INFO_MSG("Finished driving.");
 
 					// rotate towards object
 					if (!skipFR) {
-						getOwnPosition(ownPos, *odomQueue->pop()); // um
+						if (useTrackingData && !skipLocal) {
+							readTracking(ownPos, boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()), trackingMarkerID); // u[m, rad]
+						} else if (!skipLocal) {
+							getOwnPosition(ownPos, *odomQueue->pop()); // u[m, rad]
+						}
 						float ownAngle = normAngle(((float)ownPos.f_z)/1000000.0); // rad
         		                        DEBUG_MSG("Own Position is " << ownPos.x << "/" << ownPos.y << " (" << ownAngle << " rad)");
 						float angle = atan2(objectPosition.y()-ownPos.y, objectPosition.x()-ownPos.x); // rad
@@ -379,49 +438,64 @@ int main(int argc, char **argv) {
 						sendMotorCmd(0, 0, myCAN);
 						usleep(500000);
 					}
-	
-					// do object detection
-					if (!objDetQueue->empty()) {
-						objDetQueue->pop();
-					}
-					*stringPublisher = outputRSBObjectDetection;
-					objDetInformer->publish(stringPublisher);
-					while (!objDetQueue->empty()) {
-						usleep(500000);
-					}
-					std::string objInput = *objDetQueue->pop();
 
-					// progress input
-					if (!objInput.compare("null") == 0) {
-						// object has been detected
-						int objNum = std::stoi(objInput);
-						INFO_MSG("Object " << objNum << " has been detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
+					if (!skipOD) {
+						// do object detection
+						if (!objDetQueue->empty()) {
+							objDetQueue->pop();
+						}
+						*stringPublisher = outputRSBObjectDetection;
+						objDetInformer->publish(stringPublisher);
+						while (!objDetQueue->empty()) {
+							usleep(500000);
+						}
+						std::string objInput = *objDetQueue->pop();
+	
+						// progress input
+						if (!objInput.compare("null") == 0) {
+							// object has been detected
+							int objNum = std::stoi(objInput);
+							INFO_MSG("Object " << objNum << " has been detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
+							objectDetected = true;
+							detectionPositionPtr->set_x(objectPosition.x());
+							detectionPositionPtr->set_y(objectPosition.y());
+							detectionPositionPtr->set_orientation(objectPosition.orientation());
+							detectionPositionPtr->set_id(objNum);
+							progressInformer->publish(detectionPositionPtr);
+
+						} else if (!skipVC) {
+							// correct object view if not detected
+							WARNING_MSG("Object couldn't be detected -> do correction movement.");
+
+							// turn left for 90 degrees
+							float movement = M_PI/2.0;
+							int waiting_us = (int)(((movement*1000.0) / ((float)VEL_TURNING*10.0)) * 1000000.0);
+							INFO_MSG(" -> Turning for " << movement << " rad for " << (waiting_us/1000) << " ms with a speed of " << VEL_TURNING/100 << " rad/s");
+							sendMotorCmd(0, mymcm(VEL_TURNING), myCAN);
+							usleep(waiting_us);
+							sendMotorCmd(0, 0, myCAN);
+
+							// drive forward for 5 cm
+							movement = 5;
+							waiting_us = (int)((movement / ((float)VEL_FORWARD)) * 1000000.0);
+							INFO_MSG(" -> Moving for " << movement << " cm for " << (waiting_us/1000) << " ms with a speed of " << VEL_FORWARD << " cm/s");
+							sendMotorCmd(mymcm(VEL_FORWARD), 0, myCAN);
+							usleep(waiting_us);
+							sendMotorCmd(0, 0, myCAN);
+						}
+					} else {
+						// object has been detected (fake detection)
+						INFO_MSG("DETECTING (FAKE)");
+						sleep(2);
+						int objNum = objCount+objOffset+1;
+						objCount++;
+						INFO_MSG("Object " << objNum << " has been fake detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
 						objectDetected = true;
 						detectionPositionPtr->set_x(objectPosition.x());
 						detectionPositionPtr->set_y(objectPosition.y());
 						detectionPositionPtr->set_orientation(objectPosition.orientation());
 						detectionPositionPtr->set_id(objNum);
 						progressInformer->publish(detectionPositionPtr);
-
-					} else {
-						// correct object view if not detected
-						INFO_MSG("Object couldn't be detected -> do correction movement.");
-
-						// turn left for 90 degrees
-						float movement = M_PI/2.0;
-						int waiting_us = (int)(((movement*1000.0) / ((float)VEL_TURNING*10.0)) * 1000000.0);
-						INFO_MSG(" -> Turning for " << movement << " rad for " << (waiting_us/1000) << " ms with a speed of " << VEL_TURNING/100 << " rad/s");
-						sendMotorCmd(0, mymcm(VEL_TURNING), myCAN);
-						usleep(waiting_us);
-						sendMotorCmd(0, 0, myCAN);
-
-						// drive forward for 5 cm
-						movement = 5;
-						waiting_us = (int)((movement / ((float)VEL_FORWARD)) * 1000000.0);
-						INFO_MSG(" -> Moving for " << movement << " cm for " << (waiting_us/1000) << " ms with a speed of " << VEL_FORWARD << " cm/s");
-						sendMotorCmd(mymcm(VEL_FORWARD), 0, myCAN);
-						usleep(waiting_us);
-						sendMotorCmd(0, 0, myCAN);
 					}
 				} // end while not detected
 			} // end for each object	
@@ -441,6 +515,20 @@ void getOwnPosition(types::position& pose, rst::geometry::PoseEuler odomInput) {
 	pose.y = odomInput.mutable_translation()->y()*1000000;
 	pose.f_z = odomInput.mutable_rotation()->yaw()*1000000;
 }
+
+void readTracking(types::position& pose, boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
+	twbTracking::proto::Pose2D poseSave;
+	for (int i = 0; i < data->pose_size(); i++) {
+		if (trackingMarkerID == data->pose(i).id()) {
+			poseSave = data->pose(i);
+			break;
+		}
+	}
+	pose.x = poseSave.x() * meterPerPixel * 1000000;
+	pose.y = poseSave.y() * meterPerPixel * 1000000;
+	pose.f_z = poseSave.orientation() * M_PI/180.0 * 1000000;
+}
+
 
 float normAngle(float angle) {
 	while (angle >= 2*M_PI) {
