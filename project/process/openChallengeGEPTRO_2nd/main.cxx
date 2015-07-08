@@ -60,6 +60,7 @@ using namespace cv;
 using namespace rsb;
 using namespace muroxConverter;
 using namespace rsb::converter;
+using namespace rsb::patterns;
 
 // State machine states
 enum states {
@@ -128,7 +129,7 @@ enum objects { object1 , object2 , object3 , object4 , object5 , object6 };
 std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4","object5","object6"};
 
 // RSB informer
-rsb::Informer<twbTracking::proto::Pose2D>::Ptr informerObjectDetScope;
+rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informerObjectDetScope;
 //rsb::Informer<std::string>::Ptr                informerObjectDetScope;
 rsb::Informer<std::string>::Ptr                informerLocalPlannerScope;
 rsb::Informer<std::string>::Ptr                informerExplorationScope;
@@ -139,7 +140,8 @@ rsb::Informer<std::string>::Ptr                informerTransportScope;
 rsb::Informer<std::string>::Ptr                informerOutsideScope;
 
 // Localization
-std::string mapServerScope = "/CoreSlamServer";
+//std::string mapServerScope = "/CoreSlamServer";
+std::string mapServerScope = "/mapGenerator";
 
 // Exploration
 std::string sExplorationCmdScope("/exploration/command");
@@ -224,10 +226,11 @@ bool rsbRecObjectDelivery = false;
 bool rsbRecTransport = false;
 
 int objectCount = 0;
-int objectCountMax = 6;
+const int objectCountMax = 6;
 int objectOffsetForToBI = 2;
 bool objectDetected[] = {false, false, false, false, false, false};
-std::string objectDetectionAnswer = "";
+boost::shared_ptr<twbTracking::proto::Pose2D> objectDetectionAnswer;
+float objectPos[objectCountMax][3];
 
 int deliverObjectId = 0;
 
@@ -239,6 +242,8 @@ std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
 
 bool testWithAnswerer = false;
+
+boost::shared_ptr<twbTracking::proto::Pose2DList> objectPosList(new twbTracking::proto::Pose2DList());
 
 // functions
 bool readInitInput(std::string inputData);
@@ -373,11 +378,11 @@ int processSM(void) {
 
     // Object Detection: Listener and Informer
     rsb::ListenerPtr listenerObjectDetAnswerScope = factory.createListener(sObjectDetAnswerScope);
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueObjectDetAnswerScope(
-            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueObjectDetAnswerScope)));
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D> > > queueObjectDetAnswerScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D> >(1));
+    listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<twbTracking::proto::Pose2D>(queueObjectDetAnswerScope)));
 
-    informerObjectDetScope = factory.createInformer<twbTracking::proto::Pose2D> (sObjectDetCmdScope);
+    informerObjectDetScope = factory.createInformer<twbTracking::proto::Pose2DList> (sObjectDetCmdScope);
 //    informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
 
     // Local Planner: Listener and Informer
@@ -419,6 +424,9 @@ int processSM(void) {
     listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueTransportAnswerScope)));
 
     informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
+
+    // mapGenertor server
+    RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
 
     /////////////////// REMOTE SCOPES///////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -494,7 +502,7 @@ int processSM(void) {
             }
         }
         if (!queueObjectDetAnswerScope->empty()) {
-            objectDetectionAnswer = *queueObjectDetAnswerScope->pop();
+            objectDetectionAnswer = queueObjectDetAnswerScope->pop();
             rsbInputObjectDetection = true;
         }
         if (!queueLocalPlannerAnswerScope->empty()) {
@@ -559,26 +567,29 @@ int processSM(void) {
                 break;
             case blobDetectionStart:
                 //objects = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
-                *stringPublisher = outputRSBBlobDetection;
-                informerBlobScope->publish(stringPublisher);
+/*                *stringPublisher = outputRSBBlobDetection;
+                informerBlobScope->publish(stringPublisher);*/
+                objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
                 amiroState = blobDetection;
                 break;
             case blobDetection:
-                if (rsbInputBlobDetection) {
-                    //informerOutsideScope->publish(???);
+/*                if (rsbInputBlobDetection) {
+                    //informerOutsideScope->publish(???);*/
                     amiroState = objectDetectionStart;
-                    if (testWithAnswerer) {
+                    objectCount = objectPosList->pose_size();
+/*                    if (testWithAnswerer) {
                         objectCount = 2;
                     }
-                }
+                }*/
                 break;
             case objectDetectionStart:
-                if (objectCount > 0) {
+/*                if (objectCount > 0) {
                     positionPublisher->set_x(0);
                     positionPublisher->set_y(0);
                     positionPublisher->set_orientation(100000);
                     informerObjectDetScope->publish(positionPublisher);
-                }
+                }*/
+                informerObjectDetScope->publish(objectPosList);
                 amiroState = objectDetectionMain;
                 break;
             case objectDetectionMain:
@@ -598,18 +609,21 @@ int processSM(void) {
 //                    if (testWithAnswerer) {
 //                        objectCount--;
 //                    } else 
-                    if (objectDetectionAnswer.compare("null") == 0) {
-                        WARNING_MSG(" -> Doesn't know the object.");
-                    } else {
-                        INFO_MSG(" -> Object " << objectDetectionAnswer << " found!");
+//                    if (objectDetectionAnswer.compare("null") == 0) {
+//                        WARNING_MSG(" -> Doesn't know the object.");
+//                    } else {
+                        INFO_MSG(" -> Object " << objectDetectionAnswer->id() << " found!");
                         objectCount--;
-                        objectDetected[std::stoi(objectDetectionAnswer)-objectOffsetForToBI-1] = true;
+                        objectDetected[objectDetectionAnswer->id()-objectOffsetForToBI-1] = true;
+                        objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][0] = objectDetectionAnswer->x();
+                        objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][1] = objectDetectionAnswer->y();
+                        objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][2] = objectDetectionAnswer->orientation();
                         std::string objOutput = "";
-                        objOutput.append(outputRSBOutsideObjectDet).append(objectDetectionAnswer);
+                        objOutput.append(outputRSBOutsideObjectDet).append(std::to_string(objectDetectionAnswer->id()));
                         *stringPublisher = objOutput;
                         informerOutsideScope->publish(stringPublisher);
                         amiroState = objectDetectionStart;
-                    }
+//                    }
                 }
                 if (objectCount > 0) {
 //                    ssmObjectDetection();
@@ -632,11 +646,16 @@ int processSM(void) {
             case objectDeliveryStart:
                 INFO_MSG(" -> Delivering object " << deliverObjectId)
                 // TODO choose correct object ID
-                positionPublisher->set_x(0);
-                positionPublisher->set_y(0);
-                positionPublisher->set_orientation(100000);
-                informerDeliveryScope->publish(positionPublisher);
-                amiroState = objectDelivery;
+                if (deliverObjectId > objectOffsetForToBI && objectDetected[deliverObjectId-objectOffsetForToBI-1]) {
+                    positionPublisher->set_x(objectPos[deliverObjectId-objectOffsetForToBI-1][0]);
+                    positionPublisher->set_y(objectPos[deliverObjectId-objectOffsetForToBI-1][1]);
+                    positionPublisher->set_orientation(objectPos[deliverObjectId-objectOffsetForToBI-1][2]);
+                    informerDeliveryScope->publish(positionPublisher);
+                    amiroState = objectDelivery;
+                } else {
+                    ERROR_MSG("Object " << deliverObjectId << " hasn't been found by the robot yet!");
+                    amiroState = waiting;
+                }
                 break;
             case objectDelivery:
                 if (rsbInputOutsideDeliver) {
