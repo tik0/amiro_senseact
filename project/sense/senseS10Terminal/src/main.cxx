@@ -35,7 +35,7 @@
 #define BUFSIZE 255
 
 static std::string rsbOutScope = "/sense/Nmea";
-static uint32_t rsbPeriod = 0;
+//static uint32_t rsbPeriod = 0;
 static int32_t cport_nr = 3;
 static int32_t bdrate = 19200;
 
@@ -48,8 +48,8 @@ int main(int argc, char **argv) {
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending odometry values")
-    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
-    ("port,p", po::value < int32_t > (&cport_nr), "Portnumber of ttyS<0-15> (Standardvalue: 0)")
+    //("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
+    ("port,p", po::value < int32_t > (&cport_nr), "Portnumber of ttyS<0-15> (Standardvalue: 3)")
     ("bdrate,b", po::value < int32_t > (&bdrate), "Baudrate (Standardvalue: 19200)");
 
   // allow to give the value as a positional argument
