@@ -46,6 +46,7 @@ export VDEMO_component_PeakCan="PeakCan,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_LASE_2000D_226="LASE_2000D_226,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_Sick_LD_MRS_1="Sick_LD_MRS_1,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_Sick_LD_MRS_2="Sick_LD_MRS_2,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_S10Terminal="S10Terminal,$car, -c  -g sense -L 1 -w 2:"
 
 export VDEMO_component_rsb_webserver="rsb_webserver,$car, -c  -g webserver -L 2 -w 2:"
 
@@ -82,6 +83,7 @@ $VDEMO_component_Sick_LD_MRS_1\
 $VDEMO_component_Sick_LD_MRS_2\
 $VDEMO_component_Sick_LD_MRS\
 $VDEMO_component_gigEvisionManta\
+$VDEMO_component_S10Terminal\
 "
 
 export VDEMO_component_group_util="\
