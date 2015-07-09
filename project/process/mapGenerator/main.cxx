@@ -650,3 +650,4 @@ cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data,
 	return cv::Point3f(rpose.x() * meterPerPixel, rpose.y() * meterPerPixel, rpose.orientation() * M_PI / 180.0);
 }
 
+
