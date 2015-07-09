@@ -240,7 +240,7 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, const cv::Mat &om,
 
 	float repellDistance = 15.0;
 	float repellStrength = 10.0;
-	float repellMax =4*( om.cols + om.rows);
+	float repellMax =6*( om.cols + om.rows);
 	float repellSigma = repellDistance / sqrt(-2.0 * log(repellStrength / repellMax));
 
 	// distance from end to path to the goal cell in cm
@@ -331,16 +331,23 @@ void PathPlanner::dijstra(cv::Point2i robotCell, float theta, const cv::Mat &om,
 
 			// update the distance to the connected cell
 			// distance is the estimated time to move from u to v
+			float distanceFromStart = cv::norm(vCell - robotCell);
 			float repell = 0;
 			for (cv::Point2i o : otherPoses) {
+
 				float robotDistance = cv::norm(vCell - o);
+
+				if (abs(distanceFromStart - robotDistance) < 1) {
+					repell += om.cols + om.rows;
+				} else if (distanceFromStart > robotDistance) {
 //				cout << " Repell " <<  repellMax * exp(-0.5 * pow(robotDistance/ repellSigma,2)) << endl;
-				repell += repellMax * exp(-0.5 * pow(robotDistance/ repellSigma,2));
+					repell += repellMax * exp(-0.5 * pow(robotDistance/ repellSigma,2));
+				}
 			}
 //			cout << repell << endl;
 
 			float distance = (float) 0.01*cv::norm(vCell-uCell)/vT + repell ;
-			if (distanceToCell < preciseDistance || cv::norm(uCell - robotCell) < preciseDistance){
+			if (distanceToCell < preciseDistance || distanceFromStart  < preciseDistance){
 				distance +=min(abs(u.z - v.z),abs(u.z - v.z-8))* M_PI / 4.0 / vR;
 			} else {
 				distance +=M_PI / 4.0 / vR;
