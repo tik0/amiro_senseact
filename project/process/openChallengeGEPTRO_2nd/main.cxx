@@ -521,9 +521,9 @@ int processSM(void) {
                     for(int i = 1; i <= 2; ++i) {
                         // Add object as pose
                         twbTracking::proto::Pose2D *pose2D1 = objectPosList->add_pose();
-                        pose2D1->set_x(i*200000);
-                        pose2D1->set_y(i*200000);
-                        pose2D1->set_orientation(i*50000);
+                        pose2D1->set_x(i*0.2);
+                        pose2D1->set_y(i*0.2);
+                        pose2D1->set_orientation(i*0.05);
                         pose2D1->set_id(i);
                     }
 		}

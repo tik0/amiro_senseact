@@ -298,43 +298,50 @@ int main(int argc, char **argv) {
 		if (!progressQueue->empty()) {
 			objectPositionsPtr = progressQueue->pop();
 
-/*			if (useTrackingData && !skipLocal) {
+			if (useTrackingData && !skipLocal) {
 				readTracking(ownPos, boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()), trackingMarkerID); // u[m, rad]
 			} else if (!skipLocal) {
 				getOwnPosition(ownPos, *odomQueue->pop()); // u[m, rad]
 			}
-			while (objectPositionsPtr->pose_size() > 0) {
+			bool allObjectsChoosen = false;
+			bool objectChoosen[objectPositionsPtr->pose_size()];
+			for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
+				objectChoosen[i] = false;
+			}
+			INFO_MSG("Object position list with " << objectPositionsPtr->pose_size() << " objects:");
+			while (!allObjectsChoosen) {
 				float maxDist = 0;
 				int maxIdx = 0;
 				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
-					float diffY = objectPositionsPtr->pose(i).y()-((float)ownPos.y)/1000000.0;
-					float diffX = objectPositionsPtr->pose(i).x()-((float)ownPos.x)/1000000.0;
-					float dist = sqrt(diffY*diffY + diffX*diffX);
-					if (dist > maxDist) {
-						maxDist = dist;
-						maxIdx = i;
+					if (!objectChoosen[i]) {
+						float diffY = objectPositionsPtr->pose(i).y()-((float)ownPos.y)/1000000.0;
+						float diffX = objectPositionsPtr->pose(i).x()-((float)ownPos.x)/1000000.0;
+						float dist = sqrt(diffY*diffY + diffX*diffX);
+						if (dist > maxDist) {
+							maxDist = dist;
+							maxIdx = i;
+						}
 					}
 				}
-				twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
-				pose2D->set_x(objectPositionsPtr->pose(maxIdx).x());
-				pose2D->set_y(objectPositionsPtr->pose(maxIdx).y());
-				pose2D->set_orientation(objectPositionsPtr->pose(maxIdx).orientation());
-				pose2D->set_id(objectPositionsPtr->pose(maxIdx).id());
-				objectPositionsPtr->pop_pose(maxIdx);
-			}*/
+				objectChoosen[maxIdx] = true;
+				allObjectsChoosen = true;
+				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
+					if (!objectChoosen[i]) {
+						allObjectsChoosen = false;
+					}
+				}
 
-			INFO_MSG("Object position list with " << objectPositionsPtr->pose_size() << " objects:");
-			for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
+//			for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
 				twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
-				pose2D->set_x(objectPositionsPtr->pose(i).x());
-				pose2D->set_y(objectPositionsPtr->pose(i).y());
-				pose2D->set_orientation(objectPositionsPtr->pose(i).orientation());
-				pose2D->set_id(objectPositionsPtr->pose(i).id());
-				INFO_MSG(" - obj " << pose2D->id() << " at " << pose2D->x() << "/" << pose2D->y() << " with r=" << pose2D->orientation());
+				pose2D->set_x(objectPositionsPtr->pose(maxIdx).x() * 1000000); // um
+				pose2D->set_y(objectPositionsPtr->pose(maxIdx).y() * 1000000); // um
+				pose2D->set_orientation(objectPositionsPtr->pose(maxIdx).orientation() * 1000000); // um (radius)
+				pose2D->set_id(objectPositionsPtr->pose(maxIdx).id());
+				INFO_MSG(" - obj " << pose2D->id() << " at " << pose2D->x() << "/" << pose2D->y() << " with r=" << pose2D->orientation() << " um");
 			}
 
 			// check all objects
-			for (int i=0; i<objectPositions->pose_size(); i++) {
+			for (int i=objectPositions->pose_size()-1; i >= 0; i--) {
 
 				// load object position
 				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // in u[m, rad]
