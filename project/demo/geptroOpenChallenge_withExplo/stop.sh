@@ -10,7 +10,6 @@ killall -9 answerer
 # kill all secondary moving programs
 killall -9 drivingObjectDetection
 killall -9 localPlannerISY
-#killall -9 edgeAvoidanceBehavior
 
 # kill all primary moving programs
 killall -9 motorControl

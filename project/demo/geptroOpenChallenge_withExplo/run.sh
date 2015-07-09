@@ -30,6 +30,7 @@ sleep 5
 
 # start all sensing programs
 ./objectSavingAMiRo -d 6 -s --loadingDirectly &
+sleep 80
 ./rirReader -l > /dev/null &
 ./senseFloorProximity &
 
@@ -41,11 +42,10 @@ sleep 5
 ./motorControl > /dev/null &
 
 # start all secondary moving programs
-#./edgeAvoidanceBehavior > /dev/null &
 ./localPlannerISY --id $trackingID --host $host --port $port &
 
 # start all thrid level moving programs
-./drivingObjectDetection --useTrackingData --skipDetection --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
+./drivingObjectDetection --useTrackingData --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
 
 # start only listening statemachines
 ./answerer --skipExploration --skipDetection --skipBlobbing --skipLocalPlanner &
@@ -55,10 +55,6 @@ sleep 1
 
 # start commanding statemachine
 ./answerer_tobi --robotID $robotID &
-
-# just to start exploration
-#sleep 2
-#./rsbsend.sh /exploration start
 
 wait
 cpufreq-set -g ondemand
