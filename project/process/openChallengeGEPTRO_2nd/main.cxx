@@ -205,6 +205,7 @@ int deliverObjectId = 0;
 int robotID = 0;
 std::string colorInit = "";
 bool blinkerRight = false;
+amiro::Color mainColor = amiro::Color::WHITE;
 
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
@@ -218,6 +219,7 @@ bool readInitInput(std::string inputData);
 bool readRecObjectDetection(std::string inputData);
 bool readDeliveryFinished(std::string inputData);
 bool readTransportFinished(std::string inputData);
+void setMainLight(void);
 void setLightcolor(void);
 void idleBlink(void);
 int processSM(void);
@@ -495,6 +497,7 @@ int processSM(void) {
             case init:
                 // TODO initalization parts
                 setLightcolor();
+                setMainLight();
                 *stringPublisher = inputRSBOutsideInit;
                 informerOutsideScope->publish(stringPublisher);
                 amiroState = explorationStart;
@@ -507,6 +510,7 @@ int processSM(void) {
             case exploration:
                 if (rsbInputExploration) {
                     //informerOutsideScope->publish(???);
+                    setMainLight();
                     amiroState = blobDetection;
                 }
                 break;
@@ -576,6 +580,7 @@ int processSM(void) {
                 }
                 break;
             case initDone:
+                setMainLight();
                 *stringPublisher = outputRSBOutsideInitDone;
                 informerOutsideScope->publish(stringPublisher);
                 amiroState = waiting;
@@ -613,6 +618,7 @@ int processSM(void) {
                 break;
             case objectDeliveryFinish:
                 if (rsbRecObjectDelivery) {
+                    setMainLight();
                     amiroState = waiting;
                 } else {
                     std::string sOutput = "";
@@ -639,6 +645,7 @@ int processSM(void) {
                 break;
             case objectTransportFinish:
                 if (rsbRecTransport) {
+                    setMainLight();
                     amiroState = waiting;
                 } else {
                     std::string sOutput = "";
@@ -714,39 +721,41 @@ bool readTransportFinished(std::string inputData) {
     return false;
 }
 
+void setMainLight(void) {
+    for (int ledIdx=0; ledIdx<8; ledIdx++) {
+        myCAN.setLightColor(ledIdx, mainColor);
+    }
+}
+
 void setLightcolor(void) {
-    amiro::Color color;
     if (robotID < colorInit.size()) {
         switch (colorInit[robotID]) {
             case 'r':
 //                INFO_MSG("Chosen color is red.");
-                color = amiro::Color::RED;
+                mainColor = amiro::Color::RED;
                 break;
             case 'b':
 //                INFO_MSG("Chosen color is blue.");
-                color = amiro::Color::BLUE;
+                mainColor = amiro::Color::BLUE;
                 break;
             case 'g':
 //                INFO_MSG("Chosen color is green.");
-                color = amiro::Color::GREEN;
+                mainColor = amiro::Color::GREEN;
                 break;
             case 'y':
 //                INFO_MSG("Chosen color is yellow.");
-                color = amiro::Color::YELLOW;
+                mainColor = amiro::Color::YELLOW;
                 break;
             default:
                 WARNING_MSG("Color '" << colorInit[robotID] << "' is unknown!");
-                color = amiro::Color::WHITE;
+                mainColor = amiro::Color::WHITE;
         }
     } else if (colorInit.size() > 0) {
         WARNING_MSG("For id " << robotID << " isn't any color defined, only for ids until " << colorInit.size()-1);
-        color = amiro::Color::WHITE;
+        mainColor = amiro::Color::WHITE;
     } else {
         WARNING_MSG("There aren't any colors defined.");
-        color = amiro::Color::WHITE;
-    }
-    for (int ledIdx=0; ledIdx<8; ledIdx++) {
-        myCAN.setLightColor(ledIdx, color);
+        mainColor = amiro::Color::WHITE;
     }
 }
 
