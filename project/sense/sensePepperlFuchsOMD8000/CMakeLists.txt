@@ -31,7 +31,12 @@ include_directories(
 )
 
 # Define the source
-SET (SOURCE main.cxx $ENV{MUROX_INCLUDE_DIRS}/types/PepperlFuchsOMD8000.pb.cc ./rs232.c )
+SET (SOURCE 
+	main.cxx 
+	$ENV{MUROX_INCLUDE_DIRS}/types/PepperlFuchsOMD8000.pb.cc
+	$ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
+	$ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc
+	./rs232.c )
 
 LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}

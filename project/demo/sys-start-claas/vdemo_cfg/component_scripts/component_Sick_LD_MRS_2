@@ -2,8 +2,8 @@
 
 function component {
   SICK_IP=192.168.100.151
-  SETUP="40 40 40 40 40 40"
-  echo "starting senseSick_LD_MRS -s ${SICK_IP} -q ${SETUP}"
+  SETUP="-2819.423, 2082.716, 308.71, 0, 0, 33.885"
+  echo "starting senseSick_LD_MRS FL -s ${SICK_IP} -q ${SETUP}"
   senseSick_LD_MRS -s ${SICK_IP} -q ${SETUP}
 }
 

@@ -2,8 +2,8 @@
 
 function component {
   LASE_IP=192.168.100.160
-  SETUP="20 20 20 20 20 20"
-  echo "starting senseLASE_2000D_226 -s ${LASE_IP} -q ${SETUP}"
+  SETUP="-2822.938, 2080.804, 0, 0, 0, 29.597"
+  echo "starting senseLASE_2000D_226 FU -s ${LASE_IP} -q ${SETUP}"
   senseLASE_2000D_226 -s ${LASE_IP} -q ${SETUP}
 }
 

@@ -22,6 +22,8 @@ execute_process(COMMAND echo ${GXX_OUTPUT} COMMAND grep "^\ " COMMAND sed "s#\ #
 set(source_files
   sick_interface.cpp
   $ENV{MUROX_INCLUDE_DIRS}/types/SickLdMRS4002.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc
 )
 
 # Set the include path

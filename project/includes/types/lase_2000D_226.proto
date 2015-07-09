@@ -17,6 +17,6 @@ repeated fixed32 pulsewidth = 5 [packed=true];	//1 .. 1000 Points a 4 Byte = 400
 
 required string uniqueIdentifier = 6;
 
-optional geometry.Pose pose = 7; 
+optional geometry.PoseEuler pose = 7; 
 }
 
