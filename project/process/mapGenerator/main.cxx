@@ -58,6 +58,9 @@ const float YM_2_M = 1000000.0;
 // camera parameter
 float meterPerPixel = 1.0 / 400.0;
 
+// radius of the robot
+float robotRadius = 0.05;
+
 // obect used to update the map from sensorvalues
 MapGenerator mapGenerator(cellSize);
 
@@ -247,16 +250,12 @@ class pushingPathCallback: public LocalServer::Callback<twbTracking::proto::Pose
 };
 
 void insertObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
-	cv::circle(gridmap, cv::Point2f(objectPtr->x() / cellSize, objectPtr->y() / cellSize),
-			objectPtr->orientation() / cellSize, cv::Scalar(0), -1);
+	cv::circle(gridmap, cv::Point2f(objectPtr->x()/cellSize,objectPtr->y()/cellSize), (objectPtr->orientation()-robotRadius)/cellSize, cv::Scalar(-255),-1);
 	combinedMap = gridmap + edgeMap + edgeMap;
 }
 
 void deleteObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
-	cv::Point2f center(objectPtr->x() / cellSize, objectPtr->y() / cellSize);
-	cout << "object: " << center.x << ", " << center.y << endl;
-	cout << "radius: " << objectPtr->orientation() / cellSize << endl;
-	cv::circle(gridmap, center, objectPtr->orientation() / cellSize, cv::Scalar(255), -1);
+	cv::circle(gridmap, cv::Point2f(objectPtr->x()/cellSize,objectPtr->y()/cellSize), (objectPtr->orientation()-robotRadius)/cellSize, cv::Scalar(255),-1);
 	combinedMap = gridmap + edgeMap + edgeMap;
 }
 
@@ -447,13 +446,11 @@ int main(int argc, char **argv) {
 
 	// prepare RSB listener for commands to insert an object in the map
 	rsb::ListenerPtr insertObjectListener = factory.createListener(insertObjectInscope);
-	insertObjectListener->addHandler(
-			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&insertObject)));
+	insertObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&insertObject)));
 
 	// prepare RSB listener for commands to delete an object from the map
 	rsb::ListenerPtr deleteObjectListener = factory.createListener(deleteObjectInscope);
-	deleteObjectListener->addHandler(
-			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&deleteObject)));
+	deleteObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&deleteObject)));
 
 	// ---------------- Informer ---------------------
 
