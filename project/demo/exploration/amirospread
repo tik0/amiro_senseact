@@ -17,13 +17,16 @@
 #	localhost		127.0.0.1
 #}
 
-
 Spread_Segment  192.168.255.255:4823 {    
-	amiro15		192.168.2.15     
+	amiro15		192.168.2.15
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-	amiro19		192.168.2.19     
+	amiro15_I	192.168.2.16
+}
+
+Spread_Segment  192.168.255.255:4823 {    
+	amiro19		192.168.2.19
 }
 
 Spread_Segment  192.168.255.255:4823 {
@@ -43,28 +46,35 @@ Spread_Segment  192.168.255.255:4823 {
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-	amiro37		192.168.2.37     
+	amiro37		192.168.2.37
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-    muthrext     192.168.2.100     
+    muthrext     192.168.2.100
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-    multivacext     192.168.2.101    
+    multivacext	192.168.2.101
 }
 
-Spread_Segment 192.168.255.255:4823 {
-    mac_flo     192.168.2.201
+Spread_Segment  192.168.255.255:4823 {    
+    murax	192.168.2.199
 }
 
-Spread_Segment 192.168.255.255:4823 {
-    tracking 192.168.2.199
+Spread_Segment  192.168.255.255:4823 {    
+    macflo	192.168.2.201
 }
 
-Spread_Segment 192.168.255.255:4823 {
-    skynet 192.168.2.202
+Spread_Segment  192.168.255.255:4823 {    
+    skynet	192.168.2.202
 }
+
+Spread_Segment  192.168.255.255:4823 {    
+    alfie	192.168.2.203
+}
+
+
+
 
 # Spread options
 #---------------------------------------------------------------------------

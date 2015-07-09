@@ -27,6 +27,7 @@ spread -c amirospread &
 sleep 5
 
 # start all sensing programs
+#./objectSavingAMiRo -d 6 -s --loadingDirectly &
 ./rirReader -l > /dev/null &
 ./senseFloorProximity &
 
@@ -43,7 +44,7 @@ sleep 5
 ./drivingObjectDetection --useTrackingData --trackingID ${trackingID} --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --skipPathPlanner --skipLocalPlanner --skipFinalRotation --skipDetection --skipCorrection --skipLocalization &
 
 # start only listening statemachines
-./answerer --skipDetection &
+./answerer --skipExploration --skipDetection &
 ./openChallengeGEPTRO_2nd --robotID ${robotID} --testWithAnswerer &
 
 sleep 1

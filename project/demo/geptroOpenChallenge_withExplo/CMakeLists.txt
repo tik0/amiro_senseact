@@ -16,3 +16,4 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/frontierExploration frontierExplor
 add_subdirectory ($ENV{MUROX_PROJECT}/process/localPlannerISY localPlannerISY)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/motorControl motorControl)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseFloorProximity senseFloorProximity)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/objectDetection/objectSavingAMiRo objectSavingAMiRo)
