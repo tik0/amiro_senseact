@@ -80,7 +80,7 @@ std::string sPathRequestOutput = "/path/request";
 std::string sPathRequestInput = "/path/answer";
 std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";
-std::string mapServerScope = "/CoreSlamServer";
+std::string mapServerScope = "/mapGenerator";
 std::string pathRequestFunc = "getPath";
 std::string objectOutscope = "/objectDetection/command";
 std::string objectInscope = "/objectDetection/detected";
@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
 	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
 	// mapGenertor server
-	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope, tmpPartConf, tmpPartConf);
+	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
 
 	// create rsb informer to publish progress data
 	rsb::Informer<twbTracking::proto::Pose2D>::Ptr progressInformer = factory.createInformer<twbTracking::proto::Pose2D>(progressOutscope);
@@ -342,6 +342,8 @@ int main(int argc, char **argv) {
 
 			// check all objects
 			for (int i=objectPositions->pose_size()-1; i >= 0; i--) {
+
+				INFO_MSG("Try to categorize object number "  << i);
 
 				// load object position
 				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // in u[m, rad]
@@ -441,9 +443,9 @@ int main(int argc, char **argv) {
 						int waitingTime_us = (int)(((turnAngle*1000.0) / ((float)VEL_TURNING*10.0*fac)) * 1000000.0); // us
 						INFO_MSG("Turning for " << turnAngle << " rad for " << (waitingTime_us/1000) << " ms with a speed of " << fac*VEL_TURNING/100 << " rad/s");
 						sendMotorCmd(0, mymcm(fac*VEL_TURNING), myCAN);
-						usleep(waitingTime_us);
+						usleep(waitingTime_us + 500000);
 						sendMotorCmd(0, 0, myCAN);
-						usleep(500000);
+						sleep(3);
 					}
 
 					if (!skipOD) {

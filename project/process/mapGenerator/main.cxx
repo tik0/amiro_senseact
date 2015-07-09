@@ -136,7 +136,6 @@ class pathCallback: public LocalServer::Callback<twbTracking::proto::Pose2D, twb
 		Point2f target(pose.get()->x(), pose.get()->y());
 
 		// calculate a path
-		robotPose = cv::Point3f(129 * cellSize, 57 * cellSize, 0);
 		std::vector<cv::Point2f> path = pathPlanner.getPathToTarget(obstacleMap, robotPose, target);
 
 		// convert that path to a pose2DList
@@ -156,6 +155,7 @@ class pathCallback: public LocalServer::Callback<twbTracking::proto::Pose2D, twb
 class objectsCallback: public LocalServer::Callback<void, twbTracking::proto::Pose2DList> {
 	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/) {
 
+		std::cout << "Path request received." << std::endl;
 		vector<vector<cv::Point2i> > contours;
 		cv::Mat map, mask, thresholded;
 
