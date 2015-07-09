@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 	//Scope for sending the data
 	std::string laseOutScope = "/sense/LASE2000D/1";
 
-	std::vector<double> coordinates{-2822.938, 2080.804, 0, 0, 0, 29,742};
+	std::vector<double> coordinates{-2822.938, 2080.804, 0, 0, 0, 29.742};
 
 	INFO_MSG("")
 	// Handle program options
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 	("LASE_SERVER_IP_ADDRESS,s", po::value <std::string> (&laseServerIP), "Lase server ip address, default = 192.168.100.160")
 	("LASE_SERVER_PORT,t", po::value <uint16_t> (&laseServerPort), "Lase server port, default = 1024")
 	("outscope,o", po::value <std::string> (&laseOutScope), "Scope for sending lase data, default = /sense/LASE2000D/1")
-	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = -2822.938, 2080.804, 0, 0, 0, 29,742");
+	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = -2822.938, 2080.804, 0, 0, 0, 29.742");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -134,10 +134,9 @@ int main(int argc, char* argv[])
 	lase_2000D_226->mutable_pose()->mutable_translation()->set_x(coordinates.at(0));
 	lase_2000D_226->mutable_pose()->mutable_translation()->set_y(coordinates.at(1));
 	lase_2000D_226->mutable_pose()->mutable_translation()->set_z(coordinates.at(2));
-	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qx(coordinates.at(3));
-	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qy(coordinates.at(4));
-	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qz(coordinates.at(5));
-	lase_2000D_226->mutable_pose()->mutable_rotation()->set_qw(coordinates.at(6));
+	lase_2000D_226->mutable_pose()->mutable_rotation()->set_roll(coordinates.at(3));
+	lase_2000D_226->mutable_pose()->mutable_rotation()->set_pitch(coordinates.at(4));
+	lase_2000D_226->mutable_pose()->mutable_rotation()->set_yaw(coordinates.at(5));
 
 	struct hostent *client_hPtr;
 	struct hostent *server_hPtr;

@@ -92,10 +92,9 @@ int main(int argc, char **argv) {
   msg->mutable_pose()->mutable_translation()->set_x(coordinates.at(0));
   msg->mutable_pose()->mutable_translation()->set_y(coordinates.at(1));
   msg->mutable_pose()->mutable_translation()->set_z(coordinates.at(2));
-  msg->mutable_pose()->mutable_rotation()->set_qx(coordinates.at(3));
-  msg->mutable_pose()->mutable_rotation()->set_qy(coordinates.at(4));
-  msg->mutable_pose()->mutable_rotation()->set_qz(coordinates.at(5));
-  msg->mutable_pose()->mutable_rotation()->set_qw(coordinates.at(6));
+  msg->mutable_pose()->mutable_rotation()->set_roll(coordinates.at(3));
+  msg->mutable_pose()->mutable_rotation()->set_pitch(coordinates.at(4));
+  msg->mutable_pose()->mutable_rotation()->set_yaw(coordinates.at(5));
   
   // Set up the serial connection
   int n;

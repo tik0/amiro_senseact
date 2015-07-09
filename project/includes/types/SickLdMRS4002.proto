@@ -50,7 +50,7 @@ message SickLdMRS400102 {
 	//addtional Values
 	required string uniqueIdentifier = 31;
 
-	optional geometry.Pose pose = 32;  
+	optional geometry.PoseEuler pose = 32;  
 }
 
 message SickLdMRS400102_coord

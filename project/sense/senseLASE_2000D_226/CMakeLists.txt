@@ -23,6 +23,8 @@ execute_process(COMMAND echo ${GXX_OUTPUT} COMMAND grep "^\ " COMMAND sed "s#\ #
 set(source_files
   lase_interface.cpp
   $ENV{MUROX_INCLUDE_DIRS}/types/lase_2000D_226.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc
 )
 
 # Set the include pathe

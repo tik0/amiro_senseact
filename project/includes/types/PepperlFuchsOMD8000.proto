@@ -9,5 +9,5 @@ repeated uint32 distance_mm = 1; // Distance in mm
 repeated uint32     echo    = 2; // Echo
 repeated bool   noTarget    = 3; // No target detected
 
-optional geometry.Pose pose = 4;
+optional geometry.PoseEuler pose = 4;
 }
