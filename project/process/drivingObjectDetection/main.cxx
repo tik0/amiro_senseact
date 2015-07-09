@@ -445,7 +445,7 @@ int main(int argc, char **argv) {
 						sendMotorCmd(0, mymcm(fac*VEL_TURNING), myCAN);
 						usleep(waitingTime_us + 500000);
 						sendMotorCmd(0, 0, myCAN);
-						sleep(3);
+						sleep(5);
 					}
 
 					if (!skipOD) {
@@ -469,7 +469,7 @@ int main(int argc, char **argv) {
 							detectionPositionPtr->set_x(objectPosition.x());
 							detectionPositionPtr->set_y(objectPosition.y());
 							detectionPositionPtr->set_orientation(objectPosition.orientation());
-							detectionPositionPtr->set_id(objNum);
+							detectionPositionPtr->set_id((float)objNum+objOffset);
 							progressInformer->publish(detectionPositionPtr);
 
 						} else if (!skipVC) {

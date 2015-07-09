@@ -42,9 +42,7 @@ message(STATUS " RST ${RST_INCLUDE_DIRS}")
 if (NOT TARGET vecIntConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
 endif()
-#add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
 
-# Add folders to build and run CMakeLists.txt in it
 if (NOT TARGET matConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
 endif()
