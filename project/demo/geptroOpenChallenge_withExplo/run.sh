@@ -25,34 +25,36 @@ cpufreq-set -g performance
 # start spread
 spread -c amirospread &
 sleep 5
+spread &
+sleep 5
 
 # start all sensing programs
-#./objectSavingAMiRo -d 6 -s --loadingDirectly &
+./objectSavingAMiRo -d 6 -s --loadingDirectly &
 ./rirReader -l > /dev/null &
 ./senseFloorProximity &
 
 # start localization programs
-./mapGenerator -r --id $id --host $host --port $port --irin $prox_obstacle &
-./frontierExploration --id $id --host $host --port $port --irin $prox_obstacle &
+./mapGenerator -r --id $trackingID --host $host --port $port --irin $prox_obstacle -l finalmap1.jpg -e finalmap_edge1.jpg &
+./frontierExploration --id $trackingID --host $host --port $port --irin $prox_obstacle &
 
 # start all primary moving programs
 ./motorControl > /dev/null &
 
 # start all secondary moving programs
 #./edgeAvoidanceBehavior > /dev/null &
-./localPlannerISY --id $id --host $host --port $port &
+./localPlannerISY --id $trackingID --host $host --port $port &
 
 # start all thrid level moving programs
-./drivingObjectDetection --useTrackingData --trackingID ${trackingID} --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse &
+./drivingObjectDetection --useTrackingData --skipDetection --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
 
 # start only listening statemachines
-./answerer --skipExploration --skipDetection &
-./openChallengeGEPTRO_2nd --robotID ${robotID} --testWithAnswerer &
+./answerer --skipExploration --skipDetection --skipBlobbing --skipLocalPlanner &
+./openChallengeGEPTRO_2nd --robotID $robotID &
 
 sleep 1
 
 # start commanding statemachine
-./answerer_tobi --robotID ${robotID} &
+./answerer_tobi --robotID $robotID &
 
 # just to start exploration
 #sleep 2
