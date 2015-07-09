@@ -1,27 +1,34 @@
 cmake_minimum_required (VERSION 2.6)
 
 # Set the project name to the name of the folder
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
+string (REGEX MATCH "[^/]+$" PROJECT_NAME "${CMAKE_CURRENT_BINARY_DIR}")
+message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
+
+project ("${PROJECT_NAME}")
+
+# Get modules
+SET (BOOST_COMPONENTS regex date_time program_options system thread)
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-if ("$ENV{ARCH}" MATCHES arm)
+#if ("$ENV{ARCH}" MATCHES arm)
 
-pkg_check_modules(OPENCV OpenCV)
+pkg_check_modules(OpenCV OpenCV)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(RST rst0.11)
 pkg_check_modules(RSTSANDBOX rstsandbox0.11)
 
-else("$ENV{ARCH}" MATCHES arm)
+#else("$ENV{ARCH}" MATCHES arm)
 
-find_package(OpenCV REQUIRED)
-find_package(RSB REQUIRED)
-find_package(RSC REQUIRED)
-find_package(RST REQUIRED COMPONENTS sandbox)
+#find_package(OpenCV REQUIRED)
+#find_package(RSB REQUIRED)
+#find_package(RSC REQUIRED)
+#find_package(RST REQUIRED COMPONENTS sandbox)
 
-endif("$ENV{ARCH}" MATCHES arm)
+#endif("$ENV{ARCH}" MATCHES arm)
 
 # Need to add, because rst manual said so:
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
@@ -41,7 +48,8 @@ include_directories(
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
-    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
+    "$ENV{MUROX_INCLUDE_DIRS}/extspread"			    # Programatik spread
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
@@ -51,12 +59,10 @@ include_directories(
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
-# Add folders to build and run CMakeLists.txt in it
 if (NOT TARGET vecIntConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
 endif()
 
-# Add folders to build and run CMakeLists.txt in it
 if (NOT TARGET matConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
 endif()
@@ -65,7 +71,7 @@ file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.hpp $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.cxx)
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
@@ -77,7 +83,7 @@ link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
 
-if ("$ENV{ARCH}" MATCHES arm)
+#if ("$ENV{ARCH}" MATCHES arm)
 
 target_link_libraries (
     "${PROJECT_NAME}"
@@ -113,26 +119,26 @@ target_link_libraries (
     vecIntConverter
     matConverter
     ${PROTO_LIBRARIES}
-
 )
 
-else("$ENV{ARCH}" MATCHES arm)
-target_link_libraries (
-    "${PROJECT_NAME}"
-    ${RSB_LIBRARIES}
-    ${RSC_LIBRARIES}
-    ${RST_LIBRARIES}
-    ${RSTSANDBOX_LIBRARIES}
-    ${PROTO_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-    # Boost
-    ${Boost_LIBRARIES}
-    # -- Own libraries
-    vecIntConverter
-    matConverter
+#else("$ENV{ARCH}" MATCHES arm)
 
-)
-endif("$ENV{ARCH}" MATCHES arm)
+#target_link_libraries (
+#    "${PROJECT_NAME}"
+#    ${RSB_LIBRARIES}
+#    ${RSC_LIBRARIES}
+#    ${RST_LIBRARIES}
+#    ${RSTSANDBOX_LIBRARIES}
+#    ${PROTO_LIBRARIES}
+#    ${OpenCV_LIBRARIES}
+#    # Boost
+#    ${Boost_LIBRARIES}
+#    # -- Own libraries
+#    vecIntConverter
+#    matConverter
+#)
+
+#endif("$ENV{ARCH}" MATCHES arm)
 
 # Get rid of depricated warnings
 
