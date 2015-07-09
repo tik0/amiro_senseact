@@ -1,11 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 
 # Set the project name to the name of the folder
-string (REGEX MATCH "[^/]+$" PROJECT_NAME "${CMAKE_CURRENT_BINARY_DIR}")
-message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
-
-project ("${PROJECT_NAME}")
-
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
@@ -45,9 +41,7 @@ include_directories(
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
-    "../../includes"                                                # Other includes like converters and stuff
-    "../extspread"						    # Programatik spread
-    "$ENV{MUROX_INCLUDE_DIRS}"
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
@@ -58,17 +52,20 @@ include_directories(
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
-
+if (NOT TARGET matConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
+endif()
 
 file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc ../extspread/extspread.hpp ../extspread/extspread.cxx)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
