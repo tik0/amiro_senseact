@@ -41,7 +41,9 @@ sleep 5
 # start all secondary moving programs
 #./edgeAvoidanceBehavior > /dev/null &
 ./localPlannerISY --id $id --host $host --port $port &
-./drivingObjectDetection --useTrackingData --trackingID ${trackingID} --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --skipPathPlanner --skipLocalPlanner --skipFinalRotation --skipDetection --skipCorrection --skipLocalization &
+
+# start all thrid level moving programs
+./drivingObjectDetection --useTrackingData --trackingID ${trackingID} --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse &
 
 # start only listening statemachines
 ./answerer --skipExploration --skipDetection &
