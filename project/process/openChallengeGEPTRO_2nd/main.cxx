@@ -544,7 +544,7 @@ int processSM(void) {
                 rsbRecAllObjects = true;
                 for (int objIdx=0; objIdx<objectCountMax; objIdx++) {
                     if (objectDetected[objIdx] && !rsbRecObjectDet[objIdx]) {
-                        INFO_MSG("Object " << objIdx << " detected, but not recognized yet.");
+//                        INFO_MSG("Object " << objIdx << " detected, but not recognized yet.");
                         rsbRecAllObjects = false;
                         std::string objOutput = "";
                         objOutput.append(outputRSBOutsideObjectDet).append(std::to_string(objIdx+1+objectOffsetForToBI));
@@ -560,8 +560,8 @@ int processSM(void) {
 //                    if (objectDetectionAnswer.compare("null") == 0) {
 //                        WARNING_MSG(" -> Doesn't know the object.");
 //                    } else {
-                        INFO_MSG(" -> Object " << objectDetectionAnswer->id() << " found!");
                         objectCount--;
+                        INFO_MSG(" -> Object " << objectDetectionAnswer->id() << " found! " << objectCount << " objects left.");
                         objectDetected[objectDetectionAnswer->id()-objectOffsetForToBI-1] = true;
                         objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][0] = objectDetectionAnswer->x();
                         objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][1] = objectDetectionAnswer->y();
