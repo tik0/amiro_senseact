@@ -42,15 +42,14 @@ sleep 80
 ./motorControl > /dev/null &
 
 # start all secondary moving programs
-#./edgeAvoidanceBehavior > /dev/null &
 ./localPlannerISY --id $trackingID --host $host --port $port &
 
 # start all thrid level moving programs
-./drivingObjectDetection --useTrackingData --skipDetection --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
+./drivingObjectDetection --useTrackingData --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
 ./objectDelivery --host $host --port $port
 
 # start only listening statemachines
-./answerer --skipExploration --skipDetection --skipBlobbing --skipLocalPlanner &
+./answerer --skipExploration --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
 ./openChallengeGEPTRO_2nd --robotID $robotID &
 
 sleep 1

@@ -13,7 +13,6 @@ killall -9 objectDelivery
 
 # kill all secondary moving programs
 killall -9 localPlannerISY
-#killall -9 edgeAvoidanceBehavior
 
 # kill all primary moving programs
 killall -9 motorControl
