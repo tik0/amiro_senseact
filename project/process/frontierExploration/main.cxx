@@ -557,9 +557,9 @@ int main(int argc, char **argv) {
 	pathInformer->publish(boost::shared_ptr<twbTracking::proto::Pose2DList>(new twbTracking::proto::Pose2DList()));
 
 	// send rsb signal to state that the exploration is finished
-	boost::shared_ptr<string> finishedResponse(new string("finished"));
+	boost::shared_ptr<string> finishedResponse(new string("finish"));
 	finishedInformer->publish(finishedResponse);
 
-	boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+	boost::this_thread::sleep(boost::posix_time::milliseconds(10000));
 	return EXIT_SUCCESS;
 }
