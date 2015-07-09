@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 	//Scope for sending the data
 	std::string laseOutScope = "/sense/LASE2000D/1";
 
-	std::vector<double> coordinates(7, 0);
+	std::vector<double> coordinates{-2822.938, 2080.804, 0, 0, 0, 29,742};
 
 	INFO_MSG("")
 	// Handle program options
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 	("LASE_SERVER_IP_ADDRESS,s", po::value <std::string> (&laseServerIP), "Lase server ip address, default = 192.168.100.160")
 	("LASE_SERVER_PORT,t", po::value <uint16_t> (&laseServerPort), "Lase server port, default = 1024")
 	("outscope,o", po::value <std::string> (&laseOutScope), "Scope for sending lase data, default = /sense/LASE2000D/1")
-	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma w");
+	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = -2822.938, 2080.804, 0, 0, 0, 29,742");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;

@@ -69,7 +69,7 @@ void sensorRequest()
 }
 
 int main(int argc, char **argv) {
-  std::vector<double> coordinates(7, 0);
+  std::vector<double> coordinates{0, 0, 0, 0, 0, 0};
   INFO_MSG("")
   // Handle program options
   namespace po = boost::program_options;
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval in ms ( 20 for maximum rate)")
     ("port,p", po::value < int32_t > (&cport_nr), "Portnumber of ttyS<0-15> (Standardvalue: 0)")
     ("bdrate,b", po::value < int32_t > (&bdrate), "Baudrate (Standardvalue: 115200)")
-	("position,q", po::value <std::vector<double> > (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma w");
+	("position,q", po::value <std::vector<double> > (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = 0, 0, 0, 0, 0, 0");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

@@ -1,6 +1,6 @@
 package rst.claas;
 
-import "rst/geometry/Pose.proto";
+import "PoseEuler.proto";
 
 option java_outer_classname = "LeuzODS9ODS96BType";
 

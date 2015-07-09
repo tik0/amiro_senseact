@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 	//Scope for sending the data
 	std::string sickOutScope = "/sense/SickLDMRS/1";
 
-	std::vector<double> coordinates(7, 0);
+	std::vector<double> coordinates{-2819.493, 2082.838, -206.29, 0, 0, 14,597};
 
 	INFO_MSG("")
 	// Handle program options
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	("TcpServerIP,s", po::value <std::string> (&tcpServerIP), "Server ip address, default = 192.168.100.150")
 	("TcpServerPort,p", po::value <uint16_t> (&tcpServerPort), "Server port, default = 12002")
 	("outscope,o", po::value <std::string> (&sickOutScope), "Scope for sending sick data, default = /sense/SickLDMRS/1")
-	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Position values for the sensor: x y z alpha beta gamma w");
+	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = -2819.493, 2082.838, -206.29, 0, 0, 14,597");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
