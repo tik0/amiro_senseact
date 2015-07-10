@@ -117,7 +117,7 @@ void drawArrows(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList)
 	for (int i = 0; i < waypointsList->pose_size() - 2; ++i) {
 		cv::Point2f start(waypointsList->pose(i).x() / cellSize, waypointsList->pose(i).y() / cellSize);
 		cv::Point2f end(waypointsList->pose(i + 1).x() / cellSize, waypointsList->pose(i + 1).y() / cellSize);
-		cv::arrowedLine(gridmap, start, end, color, 1, 8, 0, 0.2);
+		cv::line(gridmap, start, end, color, 1);//, 8, 0, 0.2);
 
 	}
 	replot = true;
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
 		cv::Mat loadMap = cv::imread(mapFileName, -1);
 		loadMap.convertTo(loadMap, CV_16SC1);
 		loadMap -= 128;
-		loadMap.convertTo(gridmap, CV_8SC1);
+		loadMap(Rect(0,0,size,size)).convertTo(gridmap, CV_8SC1);
 		combinedMap = gridmap + edgeMap + edgeMap;
 	}
 
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
 		cv::Mat loadMap = cv::imread(edgeMapFileName, -1);
 		loadMap.convertTo(loadMap, CV_16SC1);
 		loadMap -= 128;
-		loadMap.convertTo(edgeMap, CV_8SC1);
+		loadMap(Rect(0,0,size,size)).convertTo(edgeMap, CV_8SC1);
 		combinedMap = gridmap + edgeMap + edgeMap;
 	}
 
