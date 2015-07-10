@@ -70,50 +70,55 @@ void readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, cv::Po
 // --- Methods for drawing different things (to be called by listener's handler's) ---
 
 void drawObjects(boost::shared_ptr<twbTracking::proto::Pose2DList> objectsList) {
-	if (objectsList->pose_size()==0) return;
-	twbTracking::proto::Pose2D color_pose2D = objectsList->pose(objectsList->pose_size()-1);
+	if (objectsList->pose_size() == 0)
+		return;
+	twbTracking::proto::Pose2D color_pose2D = objectsList->pose(objectsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < objectsList->pose_size()-1; ++i) {
-		cv::Point2f center(objectsList->pose(i).x()/cellSize, objectsList->pose(i).y()/cellSize);
-		cv::circle(gridmap, center, 3, color,-1);
-		cv::circle(gridmap, center, objectsList->pose(i).orientation()/cellSize, color,1);
+	for (int i = 0; i < objectsList->pose_size() - 1; ++i) {
+		cv::Point2f center(objectsList->pose(i).x() / cellSize, objectsList->pose(i).y() / cellSize);
+		cv::circle(gridmap, center, 3, color, -1);
+		cv::circle(gridmap, center, objectsList->pose(i).orientation() / cellSize, color, 1);
 	}
 	replot = true;
 }
 
 void drawPoints(boost::shared_ptr<twbTracking::proto::Pose2DList> pointsList) {
-	if (pointsList->pose_size()==0) return;
-	twbTracking::proto::Pose2D color_pose2D = pointsList->pose(pointsList->pose_size()-1);
+	if (pointsList->pose_size() == 0)
+		return;
+	twbTracking::proto::Pose2D color_pose2D = pointsList->pose(pointsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < pointsList->pose_size()-1; ++i) {
-		cv::Point2f center(pointsList->pose(i).x()/cellSize, pointsList->pose(i).y()/cellSize);
-		cv::circle(gridmap, center, pointsList->pose(i).orientation()/cellSize, color,-1);
+	for (int i = 0; i < pointsList->pose_size() - 1; ++i) {
+		cv::Point2f center(pointsList->pose(i).x() / cellSize, pointsList->pose(i).y() / cellSize);
+		cv::circle(gridmap, center, pointsList->pose(i).orientation() / cellSize, color, -1);
 	}
 	replot = true;
 }
 
 void drawPath(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
-	if (waypointsList->pose_size()==0) return;
-	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size()-1);
+	if (waypointsList->pose_size() == 0)
+		return;
+	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < waypointsList->pose_size()-2; ++i) {
-		cv::Point2f     waypoint(waypointsList->pose(i  ).x()/cellSize, waypointsList->pose(i  ).y()/cellSize);
-		cv::Point2f nextWaypoint(waypointsList->pose(i+1).x()/cellSize, waypointsList->pose(i+1).y()/cellSize);
-		cv::circle(gridmap, waypoint, 3, color,-1);
-		cv::circle(gridmap, nextWaypoint, 3, color,-1);
+	for (int i = 0; i < waypointsList->pose_size() - 2; ++i) {
+		cv::Point2f waypoint(waypointsList->pose(i).x() / cellSize, waypointsList->pose(i).y() / cellSize);
+		cv::Point2f nextWaypoint(waypointsList->pose(i + 1).x() / cellSize, waypointsList->pose(i + 1).y() / cellSize);
+		cv::circle(gridmap, waypoint, 3, color, -1);
+		cv::circle(gridmap, nextWaypoint, 3, color, -1);
 		cv::line(gridmap, waypoint, nextWaypoint, color, 1);
 	}
 	replot = true;
 }
 
 void drawArrows(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
-	if (waypointsList->pose_size()==0) return;
-	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size()-1);
+	if (waypointsList->pose_size() == 0)
+		return;
+	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < waypointsList->pose_size()-2; ++i) {
-		cv::Point2f start(waypointsList->pose(i  ).x()/cellSize, waypointsList->pose(i  ).y()/cellSize);
-		cv::Point2f   end(waypointsList->pose(i+1).x()/cellSize, waypointsList->pose(i+1).y()/cellSize);
+	for (int i = 0; i < waypointsList->pose_size() - 2; ++i) {
+		cv::Point2f start(waypointsList->pose(i).x() / cellSize, waypointsList->pose(i).y() / cellSize);
+		cv::Point2f end(waypointsList->pose(i + 1).x() / cellSize, waypointsList->pose(i + 1).y() / cellSize);
 		cv::arrowedLine(gridmap, start, end, color, 1, 8, 0, 0.2);
+
 	}
 	replot = true;
 }
@@ -128,6 +133,9 @@ int main(int argc, char **argv) {
 	std::string drawPathInscope = "/draw/path";
 	std::string drawArrowsInscope = "/draw/arrows";
 
+	std::string mapFileName = "";
+	std::string edgeMapFileName = "";
+
 	int offset = 0;
 	int size = 400;
 	float scale = 1.0;
@@ -140,7 +148,9 @@ int main(int argc, char **argv) {
 			"Inscope for tracking pose")("meterPerPixel,mpp", po::value<float>(&meterPerPixel),
 			"Camera parameter: Meter per Pixel")("size,", po::value<int>(&size), "width/height of the map")("offset,o",
 			po::value<int>(&offset), "offset from the left side of the screen.")("scale,", po::value<float>(&scale),
-			"scale factor");
+			"scale factor")("loadMap,l",
+					po::value<std::string>(&mapFileName), "Load map from file with the given name.")("loadEdgeMap,e",
+					po::value<std::string>(&edgeMapFileName), "Load edge map from file with the given name.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -194,19 +204,23 @@ int main(int argc, char **argv) {
 
 	// prepare RSB listener for list of objects to draw
 	rsb::ListenerPtr drawObjectsListener = factory.createListener(drawObjectsInscope);
-	drawObjectsListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawObjects)));
+	drawObjectsListener->addHandler(
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawObjects)));
 
 	// prepare RSB listener for list of points to draw
 	rsb::ListenerPtr drawPointsListener = factory.createListener(drawPointsInscope);
-	drawPointsListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawPoints)));
+	drawPointsListener->addHandler(
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawPoints)));
 
 	// prepare RSB listener for path to draw
 	rsb::ListenerPtr drawPathListener = factory.createListener(drawPathInscope);
-	drawPathListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawPath)));
+	drawPathListener->addHandler(
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawPath)));
 
 	// prepare RSB listener for arrows to draw
 	rsb::ListenerPtr drawPArrowsListener = factory.createListener(drawArrowsInscope);
-	drawPArrowsListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawArrows)));
+	drawPArrowsListener->addHandler(
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawArrows)));
 
 	// initialize array of poses
 	cv::Point2i poses[12];
@@ -227,7 +241,24 @@ int main(int argc, char **argv) {
 
 	std::vector<cv::Point2i> paths[12];
 
-	replot = false;
+	replot = true;
+
+	// load a map
+	if (mapFileName != "") {
+		cv::Mat loadMap = cv::imread(mapFileName, -1);
+		loadMap.convertTo(loadMap, CV_16SC1);
+		loadMap -= 128;
+		loadMap.convertTo(gridmap, CV_8SC1);
+		combinedMap = gridmap + edgeMap + edgeMap;
+	}
+
+	if (edgeMapFileName != "") {
+		cv::Mat loadMap = cv::imread(edgeMapFileName, -1);
+		loadMap.convertTo(loadMap, CV_16SC1);
+		loadMap -= 128;
+		loadMap.convertTo(edgeMap, CV_8SC1);
+		combinedMap = gridmap + edgeMap + edgeMap;
+	}
 
 	while (true) {
 
@@ -242,7 +273,6 @@ int main(int argc, char **argv) {
 			// wait for a rsb message
 			EventPtr event = pathQueue->pop();
 			int pathid = atoi(event->getScope().getComponents()[1].c_str());
-
 
 			boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList = boost::static_pointer_cast<
 					twbTracking::proto::Pose2DList>(event->getData());
