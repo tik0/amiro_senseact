@@ -41,6 +41,11 @@ bool replot = false;
 
 cv::Mat obstacleMap1;
 
+boost::shared_ptr<twbTracking::proto::Pose2DList> objects2draw(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> points2draw(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> path2draw(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> arrows2draw(new twbTracking::proto::Pose2DList);
+
 // Show an image in a window with the given name.
 // The image will be flipped along its x-axis.
 // The window will appear at (x,y).
@@ -67,11 +72,32 @@ void readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, cv::Po
 	}
 }
 
-// --- Methods for drawing different things (to be called by listener's handler's) ---
+// --- Handlers of listeners for buffering things to draw ---
+
+void bufferObjects(boost::shared_ptr<twbTracking::proto::Pose2DList> objectsList) {
+	objects2draw->CopyFrom(*objectsList);
+	replot = true;
+}
+
+void bufferPoints(boost::shared_ptr<twbTracking::proto::Pose2DList> pointList) {
+	points2draw->CopyFrom(*pointList);
+	replot = true;
+}
+
+void bufferPath(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
+	path2draw->CopyFrom(*waypointsList);
+	replot = true;
+}
+
+void bufferArrows(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
+	arrows2draw->CopyFrom(*waypointsList);
+	replot = true;
+}
+
+// --- Methods for drawing different things ---
 
 void drawObjects(boost::shared_ptr<twbTracking::proto::Pose2DList> objectsList) {
-	if (objectsList->pose_size() == 0)
-		return;
+	if (objectsList->pose_size() == 0) return;
 	twbTracking::proto::Pose2D color_pose2D = objectsList->pose(objectsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
 	for (int i = 0; i < objectsList->pose_size()-1; ++i) {
@@ -79,19 +105,16 @@ void drawObjects(boost::shared_ptr<twbTracking::proto::Pose2DList> objectsList) 
 		cv::circle(obstacleMap1, center, 3, color,-1);
 		cv::circle(obstacleMap1, center, objectsList->pose(i).orientation()/cellSize, color,1);
 	}
-	replot = true;
 }
 
 void drawPoints(boost::shared_ptr<twbTracking::proto::Pose2DList> pointsList) {
-	if (pointsList->pose_size() == 0)
-		return;
+	if (pointsList->pose_size() == 0) return;
 	twbTracking::proto::Pose2D color_pose2D = pointsList->pose(pointsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
 	for (int i = 0; i < pointsList->pose_size()-1; ++i) {
 		cv::Point2f center(pointsList->pose(i).x()/cellSize, pointsList->pose(i).y()/cellSize);
 		cv::circle(obstacleMap1, center, pointsList->pose(i).orientation()/cellSize, color,-1);
 	}
-	replot = true;
 }
 
 void drawPath(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
@@ -106,12 +129,10 @@ void drawPath(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
 		cv::circle(obstacleMap1, nextWaypoint, 3, color,-1);
 		cv::line(obstacleMap1, waypoint, nextWaypoint, color, 1);
 	}
-	replot = true;
 }
 
 void drawArrows(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
-	if (waypointsList->pose_size() == 0)
-		return;
+	if (waypointsList->pose_size() == 0) return;
 	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
 	for (int i = 0; i < waypointsList->pose_size()-2; ++i) {
@@ -119,7 +140,6 @@ void drawArrows(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList)
 		cv::Point2f   end(waypointsList->pose(i+1).x()/cellSize, waypointsList->pose(i+1).y()/cellSize);
 		cv::arrowedLine(obstacleMap1, start, end, color, 1, 8, 0, 0.2);
 	}
-	replot = true;
 }
 
 int main(int argc, char **argv) {
@@ -204,22 +224,22 @@ int main(int argc, char **argv) {
 	// prepare RSB listener for list of objects to draw
 	rsb::ListenerPtr drawObjectsListener = factory.createListener(drawObjectsInscope);
 	drawObjectsListener->addHandler(
-			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawObjects)));
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&bufferObjects)));
 
 	// prepare RSB listener for list of points to draw
 	rsb::ListenerPtr drawPointsListener = factory.createListener(drawPointsInscope);
 	drawPointsListener->addHandler(
-			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawPoints)));
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&bufferPoints)));
 
 	// prepare RSB listener for path to draw
 	rsb::ListenerPtr drawPathListener = factory.createListener(drawPathInscope);
 	drawPathListener->addHandler(
-			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawPath)));
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&bufferPath)));
 
 	// prepare RSB listener for arrows to draw
 	rsb::ListenerPtr drawPArrowsListener = factory.createListener(drawArrowsInscope);
 	drawPArrowsListener->addHandler(
-			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&drawArrows)));
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2DList>(&bufferArrows)));
 
 	// initialize array of poses
 	cv::Point2i poses[12];
@@ -321,6 +341,12 @@ int main(int argc, char **argv) {
 					}
 				}
 			}
+			// plot objects, points, paths, arrows
+			drawObjects(objects2draw);
+			drawPoints(points2draw);
+			drawPath(path2draw);
+			drawArrows(arrows2draw);
+
 			cv::resize(combinedMap1, combinedMap1, Size(0, 0), scale, scale);
 			cv::resize(obstacleMap1, obstacleMap1, Size(0, 0), scale, scale);
 			usleep(125000);
