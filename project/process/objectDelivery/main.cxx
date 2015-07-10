@@ -1,19 +1,9 @@
-//============================================================================
-// Name        : main.cxx
-// Author      : fpatzelt <fpatzelt@techfak.uni-bielefeld.de>
-// Description : Central control of the robots map building and exploration.
-//============================================================================
-
 // std includes
 #include <iostream>
 using namespace std;
 
-
 // opencv
 #include <opencv2/core/core.hpp>
-//#include <opencv2/highgui/highgui.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
 
 // boost
 #include <boost/shared_ptr.hpp>
@@ -27,7 +17,6 @@ namespace po = boost::program_options;
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
 #include <rsb/util/QueuePushHandler.h>
-#include <rsb/Handler.h>
 #include <rsc/threading/SynchronizedQueue.h>
 
 using namespace rsb;
@@ -43,29 +32,41 @@ using namespace muroxConverter;
 #include <extspread.hpp>
 #include <ControllerAreaNetwork.h>
 
+// keyboard
 #include <kbhit.hpp>
 
 // camera parameter
 float meterPerPixel = 1.0 / 400.0;
 const float cellSize = 0.01;
 
-/*// Constants
-enum SENSOR_POS {
-	MIDDLE_RIGHT = 0, RIGHT = 1, LEFT = 2, MIDDLE_LEFT = 3
-};
-enum EDGE_SIDE {
-	UNKNOWN, LEFTSIDE, RIGHTSIDE
-};
+float objectRadius = 0;
+int pathIdx = -2;
+bool debug = false;
 
-// Datastructure for the CAN messages
+boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPosTmp(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPos(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> pushingPath(new twbTracking::proto::Pose2DList);
+cv::Point2f destObjectPos(164, 52), nextDestObjectPos = destObjectPos, currObjectPos, startOwnPos, destOwnPos;
+rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer;
 
-int floorProxMinValues[4] = { 3200, 3100, 3300, 4900 };
-int floorProxMaxValues[4] = { 31000, 22200, 28200, 34200 };
-bool lineBelow[4] = { false, false, false, false };
-const boost::shared_ptr<std::vector<int>> vecSteering(new std::vector<int>(3));
+//debug
+boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList4PathRequest(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> pushingPath4Drawing(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> path4Drawing(new twbTracking::proto::Pose2DList);
+boost::shared_ptr<twbTracking::proto::Pose2DList> pushingArrow4Drawing(new twbTracking::proto::Pose2DList);
 
-rsb::Informer<std::vector<int>>::Ptr steeringInformer;
-float floorProxValuesNormalized[4];*/
+rsb::Informer<twbTracking::proto::Pose2DList>::Ptr drawObjectsInformer, drawPathInformer, drawArrowsInformer;
+boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr(new twbTracking::proto::Pose2D());
+rsb::Informer<twbTracking::proto::Pose2D>::Ptr insertObjectInformer, deleteObjectInformer;
+cv::Point3i color_blue(255,0,0), color_red(0,0,255), color_green(0,255,0), color_orange(36,127,255);
+twbTracking::proto::Pose2D object;
+cv::Point2f currOwnPos;
+RemoteServerPtr mapServer;
+
+// for motor control
+rsb::Informer< std::vector<int> >::Ptr motorCmdInformer;
+std::vector<int> motorCmd(3,0);
+ControllerAreaNetwork myCAN;
 
 // search the pose-list received from tracking for the robots id and get the corresponding pose.
 cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
@@ -78,42 +79,6 @@ cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data,
 	}
 	return cv::Point3f(pose.x() * meterPerPixel, pose.y() * meterPerPixel, pose.orientation() * M_PI / 180.0);
 }
-
-boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPosTmp(new twbTracking::proto::Pose2DList);
-boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPos(new twbTracking::proto::Pose2DList);
-boost::shared_ptr<twbTracking::proto::Pose2DList> pushingPath(new twbTracking::proto::Pose2DList);
-int pathIdx = -2;
-cv::Point2f destObjectPos(164, 52), nextDestObjectPos = destObjectPos, currObjectPos, startOwnPos, destOwnPos;
-bool pathToStartPosSent = false, startPushing = true;
-rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer;
-rsb::Informer< std::vector<int> >::Ptr motorCmdInformer;
-float objectRadius = 0;
-int robotRadius = 5; // check!
-std::vector<int> motorCmd(3,0);
-ControllerAreaNetwork myCAN;
-
-bool debug = false;
-
-//debug
-boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList4PathRequest(new twbTracking::proto::Pose2DList);
-//	boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList4Drawing(new twbTracking::proto::Pose2DList);
-boost::shared_ptr<twbTracking::proto::Pose2DList> pushingPath4Drawing(new twbTracking::proto::Pose2DList);
-boost::shared_ptr<twbTracking::proto::Pose2DList> path4Drawing(new twbTracking::proto::Pose2DList);
-boost::shared_ptr<twbTracking::proto::Pose2DList> pushingArrow4Drawing(new twbTracking::proto::Pose2DList);
-
-rsb::Informer<twbTracking::proto::Pose2DList>::Ptr drawObjectsInformer, drawPathInformer, drawArrowsInformer;
-
-boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr(new twbTracking::proto::Pose2D());
-
-RemoteServerPtr mapServer;
-
-cv::Point3i color_blue(255,0,0), color_red(0,0,255), color_green(0,255,0), color_orange(36,127,255);
-
-twbTracking::proto::Pose2D object;
-
-rsb::Informer<twbTracking::proto::Pose2D>::Ptr insertObjectInformer, deleteObjectInformer;
-
-cv::Point2f currOwnPos;
 
 void addPos2PoseList(boost::shared_ptr<twbTracking::proto::Pose2DList> &pose2DList, cv::Point2f pos2D, float orientation=0) {
 	twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
@@ -129,8 +94,9 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 		return;
 	}
 	if (pathIdx<0) {
-		//for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
+		for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
 		cout << "Pushing finished!" << endl;
+		stateMachineInformer->publish(finishStr);
 		return;
 	}
 
@@ -196,74 +162,27 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	cout << "Path to starting position published." << endl;
 
 	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
-
-//	if (!startPushing) {
-//		if (pathIdx==0) {
-//			for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
-//			cout << "Pushing finished!" << endl;
-//			return;
-//		}
-//		motorCmd[0] = -40000;
-//		motorCmd[1] = 0;
-//		motorCmd[2] = 2000000;
-//		boost::shared_ptr< std::vector<int> > motorCmdData = boost::shared_ptr<std::vector<int> >(new std::vector<int>(motorCmd.begin(),motorCmd.end()));
-//		for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
-//		motorCmdInformer->publish(motorCmdData);
-//		usleep(3000000);
-//
-//		currObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x(),pushingPath->pose(pathIdx).y());
-//		pathIdx--;
-//		cout << pathIdx << endl;
-//		nextDestObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x()/cellSize,pushingPath->pose(pathIdx).y()/cellSize);
-//		cv::Point2f objectShiftVector = nextDestObjectPos - currObjectPos;
-//		cv::Point2f objectRobotVector = objectShiftVector * ((objectRadius*0.9+robotRadius)/cv::norm(objectShiftVector));
-//		startOwnPos = currObjectPos - objectRobotVector;
-//		destOwnPos = nextDestObjectPos - objectRobotVector*0.5f;
-//	}
-//	rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
-//	twbTracking::proto::Pose2D *destPose = pose2DList->add_pose();
-//	destPose->set_x(destOwnPos.x);
-//	destPose->set_y(destOwnPos.y);
-//	destPose->set_orientation(0);
-//	destPose->set_id(0);
-//	if (startPushing) {
-//		startPushing = false;
-//	} else {
-//		twbTracking::proto::Pose2D *startPose = pose2DList->add_pose();
-//		startPose->set_x(startOwnPos.x);
-//		startPose->set_y(startOwnPos.y);
-//		startPose->set_orientation(0);
-//		startPose->set_id(0);
-//	}
-//	pathInformer->publish(pose2DList);
-//	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::RED));
-//	cout << "Next path segment sent." << endl;
 }
 
 int main(int argc, char **argv) {
 
 	// scopenames for rsb
-	std::string proxSensorInscope = "/rir_prox";
 	std::string trackingInscope = "/murox/roboterlocation";
-	std::string floorInscope = "/prox/floor";
-//	std::string pathResponseInscope = "/pathResponse";
 	std::string pathOutScope = "/path";
-	std::string edgeOutscope = "/edge";
-	std::string steeringOutScope = "/motor/04";
 	std::string mapServerScope = "/mapGenerator";
 	std::string pathResponseInScope = "/pathResponse";
 	std::string rsbMotoOutScope = "/motor/03";
 	std::string stateMachineCmdScope = "/objectDelivery/command";
 	std::string stateMachineAnswerScope = "/objectDelivery/answer";
+	std::string insertObjectOutscope = "/mapGenerator/insertObject";
+	std::string deleteObjectOutscope = "/mapGenerator/deleteObject";
 	std::string drawObjectsOutscope = "/draw/objects";
 	std::string drawPointsOutscope = "/draw/points";
 	std::string drawPathOutscope = "/draw/path";
 	std::string drawArrowsOutscope = "/draw/arrows";
-	std::string insertObjectOutscope = "/mapGenerator/insertObject";
-	std::string deleteObjectOutscope = "/mapGenerator/deleteObject";
 
 	std::string spreadhost = "127.0.0.1";
-	std::string spreadport = "4803";
+	std::string spreadport = "4823";
 
 	// id of the tracking marker
 	int trackingMarkerID = 0;
@@ -328,26 +247,10 @@ int main(int argc, char **argv) {
 
 	// ---------- Listener ---------------
 
-	/*// prepare RSB listener for the floor prox data
-	rsb::ListenerPtr floorListener = factory.createListener(floorInscope);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >floorQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
-	floorListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(floorQueue)));
-
-	// prepare RSB listener for the IR data
-	rsb::ListenerPtr proxListener = factory.createListener(proxSensorInscope);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
-	proxListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(proxQueue)));
-*/
 	// prepare rsb listener for tracking data
 	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, extspreadconfig);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
-
-//	// prepare RSB listener for path responses
-//	rsb::ListenerPtr pathResponseListener = factory.createListener(pathResponseInscope);
-//	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>>pathResponseQueue(
-//			new rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>(1));
-//	pathResponseListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<bool>(pathResponseQueue)));
 
 	// prepare RSB listener for localPlanner responses
 	rsb::ListenerPtr pathPlannerListener = factory.createListener(pathResponseInScope);
@@ -379,6 +282,7 @@ int main(int argc, char **argv) {
 
 	mapServer = factory.createRemoteServer(mapServerScope);
 
+	// constants
 	boost::shared_ptr<bool> truePtr(new bool(true));
 	boost::shared_ptr<std::string> finishStr(new string("finish"));
 
@@ -398,12 +302,6 @@ int main(int argc, char **argv) {
 		cv::Point3f destObjectPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
 		destObjectPos = cv::Point2f(destObjectPose.x, destObjectPose.y);
 	}
-
-/*	if (!debug) {
-		cout << "Waiting for destination position." << endl;
-		cv::Point3f markerPos = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
-		destObjectPos = cv::Point2f(markerPos.x, markerPos.y);
-	}*/
 
 	while(true) {
 

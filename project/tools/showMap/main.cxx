@@ -118,7 +118,6 @@ void drawPoints(boost::shared_ptr<twbTracking::proto::Pose2DList> pointsList) {
 }
 
 void drawPath(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
-	cout << "draw path" << endl;
 	if (waypointsList->pose_size()==0) return;
 	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size()-1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
