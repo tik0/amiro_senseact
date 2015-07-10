@@ -391,25 +391,10 @@ int processSM(void) {
                     objectDetectedRec[1] = true;
                 }
                 if (objectDetectedRec[0] && objectDetectedRec[1]) {
-                    amiroState = objectDeliveryStart;
+                    amiroState = initDoneWait;
                 }
                 break;
             case initDoneWait:
-                if (objectDetectedRec[0] && objectDetectedRec[1]) {
-                    INFO_MSG("Sending rec message of object 4.");
-                    sOutput = "";
-                    sOutput.append(inputRSBObject).append("4rec");
-                    *stringPublisher = sOutput;
-                    informerOutsideScope->publish(stringPublisher);
-                    objectDetected[1] = false;
-                    sleep(3);
-                    INFO_MSG("Sending rec message of object 3.");
-                    sOutput = "";
-                    sOutput.append(inputRSBObject).append("3rec");
-                    *stringPublisher = sOutput;
-                    informerOutsideScope->publish(stringPublisher);
-                    objectDetected[0] = false;
-                }
                 if (rsbInputInitDone) {
                     amiroState = objectDeliveryStart;
                 }
