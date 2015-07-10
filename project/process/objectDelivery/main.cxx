@@ -133,6 +133,15 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 		cout << "Pushing finished!" << endl;
 		return;
 	}
+
+	motorCmd[0] = -40000;
+	motorCmd[1] = 0;
+	motorCmd[2] = 2000000;
+	boost::shared_ptr< std::vector<int> > motorCmdData = boost::shared_ptr<std::vector<int> >(new std::vector<int>(motorCmd.begin(),motorCmd.end()));
+	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
+	motorCmdInformer->publish(motorCmdData);
+	usleep(3000000);
+
 	currObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x(),pushingPath->pose(pathIdx).y());
 	pathIdx--;
 	nextDestObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x(),pushingPath->pose(pathIdx).y());
@@ -354,7 +363,7 @@ int main(int argc, char **argv) {
 	pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
 	// Prepare RSB informer
-//	motorCmdInformer = factory.createInformer< std::vector<int> > (rsbMotoOutScope);
+	motorCmdInformer = factory.createInformer< std::vector<int> > (rsbMotoOutScope);
 
 	if(debug){
 		drawObjectsInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawObjectsOutscope, extspreadconfig);

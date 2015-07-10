@@ -39,7 +39,7 @@ float meterPerPixel = 1.0 / 400.0;
 
 bool replot = false;
 
-cv::Mat gridmap;
+cv::Mat obstacleMap1;
 
 // Show an image in a window with the given name.
 // The image will be flipped along its x-axis.
@@ -74,10 +74,10 @@ void drawObjects(boost::shared_ptr<twbTracking::proto::Pose2DList> objectsList) 
 		return;
 	twbTracking::proto::Pose2D color_pose2D = objectsList->pose(objectsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < objectsList->pose_size() - 1; ++i) {
-		cv::Point2f center(objectsList->pose(i).x() / cellSize, objectsList->pose(i).y() / cellSize);
-		cv::circle(gridmap, center, 3, color, -1);
-		cv::circle(gridmap, center, objectsList->pose(i).orientation() / cellSize, color, 1);
+	for (int i = 0; i < objectsList->pose_size()-1; ++i) {
+		cv::Point2f center(objectsList->pose(i).x()/cellSize, objectsList->pose(i).y()/cellSize);
+		cv::circle(obstacleMap1, center, 3, color,-1);
+		cv::circle(obstacleMap1, center, objectsList->pose(i).orientation()/cellSize, color,1);
 	}
 	replot = true;
 }
@@ -87,24 +87,24 @@ void drawPoints(boost::shared_ptr<twbTracking::proto::Pose2DList> pointsList) {
 		return;
 	twbTracking::proto::Pose2D color_pose2D = pointsList->pose(pointsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < pointsList->pose_size() - 1; ++i) {
-		cv::Point2f center(pointsList->pose(i).x() / cellSize, pointsList->pose(i).y() / cellSize);
-		cv::circle(gridmap, center, pointsList->pose(i).orientation() / cellSize, color, -1);
+	for (int i = 0; i < pointsList->pose_size()-1; ++i) {
+		cv::Point2f center(pointsList->pose(i).x()/cellSize, pointsList->pose(i).y()/cellSize);
+		cv::circle(obstacleMap1, center, pointsList->pose(i).orientation()/cellSize, color,-1);
 	}
 	replot = true;
 }
 
 void drawPath(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList) {
-	if (waypointsList->pose_size() == 0)
-		return;
-	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size() - 1);
+	cout << "draw path" << endl;
+	if (waypointsList->pose_size()==0) return;
+	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size()-1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < waypointsList->pose_size() - 2; ++i) {
-		cv::Point2f waypoint(waypointsList->pose(i).x() / cellSize, waypointsList->pose(i).y() / cellSize);
-		cv::Point2f nextWaypoint(waypointsList->pose(i + 1).x() / cellSize, waypointsList->pose(i + 1).y() / cellSize);
-		cv::circle(gridmap, waypoint, 3, color, -1);
-		cv::circle(gridmap, nextWaypoint, 3, color, -1);
-		cv::line(gridmap, waypoint, nextWaypoint, color, 1);
+	for (int i = 0; i < waypointsList->pose_size()-2; ++i) {
+		cv::Point2f     waypoint(waypointsList->pose(i  ).x()/cellSize, waypointsList->pose(i  ).y()/cellSize);
+		cv::Point2f nextWaypoint(waypointsList->pose(i+1).x()/cellSize, waypointsList->pose(i+1).y()/cellSize);
+		cv::circle(obstacleMap1, waypoint, 3, color,-1);
+		cv::circle(obstacleMap1, nextWaypoint, 3, color,-1);
+		cv::line(obstacleMap1, waypoint, nextWaypoint, color, 1);
 	}
 	replot = true;
 }
@@ -114,11 +114,10 @@ void drawArrows(boost::shared_ptr<twbTracking::proto::Pose2DList> waypointsList)
 		return;
 	twbTracking::proto::Pose2D color_pose2D = waypointsList->pose(waypointsList->pose_size() - 1);
 	cv::Scalar color(color_pose2D.x(), color_pose2D.y(), color_pose2D.orientation());
-	for (int i = 0; i < waypointsList->pose_size() - 2; ++i) {
-		cv::Point2f start(waypointsList->pose(i).x() / cellSize, waypointsList->pose(i).y() / cellSize);
-		cv::Point2f end(waypointsList->pose(i + 1).x() / cellSize, waypointsList->pose(i + 1).y() / cellSize);
-		cv::line(gridmap, start, end, color, 1);//, 8, 0, 0.2);
-
+	for (int i = 0; i < waypointsList->pose_size()-2; ++i) {
+		cv::Point2f start(waypointsList->pose(i  ).x()/cellSize, waypointsList->pose(i  ).y()/cellSize);
+		cv::Point2f   end(waypointsList->pose(i+1).x()/cellSize, waypointsList->pose(i+1).y()/cellSize);
+		cv::arrowedLine(obstacleMap1, start, end, color, 1, 8, 0, 0.2);
 	}
 	replot = true;
 }
@@ -234,10 +233,10 @@ int main(int argc, char **argv) {
 	MapGenerator mapGenerator(cellSize);
 
 	// initialize maps
-	gridmap = cv::Mat::zeros(mapSize, CV_8SC1);
+	cv::Mat gridmap = cv::Mat::zeros(mapSize, CV_8SC1);
 	cv::Mat edgeMap(mapSize, CV_8SC1, Scalar(0));
 	cv::Mat combinedMap(mapSize, CV_8SC1, Scalar(0));
-	cv::Mat obstacleMap, obstacleMap0, obstacleMap1, combinedMap0, combinedMap1;
+	cv::Mat obstacleMap, obstacleMap0, combinedMap0, combinedMap1;
 
 	std::vector<cv::Point2i> paths[12];
 
@@ -324,6 +323,7 @@ int main(int argc, char **argv) {
 			}
 			cv::resize(combinedMap1, combinedMap1, Size(0, 0), scale, scale);
 			cv::resize(obstacleMap1, obstacleMap1, Size(0, 0), scale, scale);
+			usleep(125000);
 			imshowf("input", combinedMap1, offset);
 			imshowf("obstacle", obstacleMap1, combinedMap1.rows + offset);
 			replot = false;
