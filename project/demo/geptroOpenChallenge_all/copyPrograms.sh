@@ -15,3 +15,4 @@ scp amirospread root@${IP}:~/${NAME}
 scp rsb.conf root@${IP}:~/${NAME}
 
 scp -r ${MUROX_PROJECT}/process/objectDetection/objectSavingAMiRo/objectPics root@${IP}:~/${NAME}
+scp maps/* root@${IP}:~/${NAME}

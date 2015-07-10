@@ -443,7 +443,7 @@ int main(int argc, char **argv) {
 						int waitingTime_us = (int)(((turnAngle*1000.0) / ((float)VEL_TURNING*10.0*fac)) * 1000000.0); // us
 						INFO_MSG("Turning for " << turnAngle << " rad for " << (waitingTime_us/1000) << " ms with a speed of " << fac*VEL_TURNING/100 << " rad/s");
 						sendMotorCmd(0, mymcm(fac*VEL_TURNING), myCAN);
-						usleep(waitingTime_us + 500000);
+						usleep(waitingTime_us);
 						sendMotorCmd(0, 0, myCAN);
 						sleep(5);
 					}
@@ -466,9 +466,9 @@ int main(int argc, char **argv) {
 							int objNum = std::stoi(objInput);
 							INFO_MSG("Object " << objNum << " has been detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
 							objectDetected = true;
-							detectionPositionPtr->set_x(objectPosition.x());
-							detectionPositionPtr->set_y(objectPosition.y());
-							detectionPositionPtr->set_orientation(objectPosition.orientation());
+							detectionPositionPtr->set_x(((float)objectPosition.x())/1000000.0);
+							detectionPositionPtr->set_y(((float)objectPosition.y())/1000000.0);
+							detectionPositionPtr->set_orientation(((float)objectPosition.orientation())/1000000.0);
 							detectionPositionPtr->set_id((float)objNum+objOffset);
 							progressInformer->publish(detectionPositionPtr);
 
@@ -500,9 +500,9 @@ int main(int argc, char **argv) {
 						objCount++;
 						INFO_MSG("Object " << objNum << " has been fake detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
 						objectDetected = true;
-						detectionPositionPtr->set_x(objectPosition.x());
-						detectionPositionPtr->set_y(objectPosition.y());
-						detectionPositionPtr->set_orientation(objectPosition.orientation());
+						detectionPositionPtr->set_x(((float)objectPosition.x())/1000000.0);
+						detectionPositionPtr->set_y(((float)objectPosition.y())/1000000.0);
+						detectionPositionPtr->set_orientation(((float)objectPosition.orientation())/1000000.0);
 						detectionPositionPtr->set_id(objNum);
 						progressInformer->publish(detectionPositionPtr);
 					}

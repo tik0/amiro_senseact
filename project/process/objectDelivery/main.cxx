@@ -82,7 +82,7 @@ cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data,
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPosTmp(new twbTracking::proto::Pose2DList);
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPos(new twbTracking::proto::Pose2DList);
 boost::shared_ptr<twbTracking::proto::Pose2DList> pushingPath(new twbTracking::proto::Pose2DList);
-int pathIdx = -1;
+int pathIdx = -2;
 cv::Point2f destObjectPos(164, 52), nextDestObjectPos = destObjectPos, currObjectPos, startOwnPos, destOwnPos;
 bool pathToStartPosSent = false, startPushing = true;
 rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer;
@@ -129,7 +129,7 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 		return;
 	}
 	if (pathIdx<0) {
-		for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
+		//for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
 		cout << "Pushing finished!" << endl;
 		return;
 	}
@@ -258,12 +258,14 @@ int main(int argc, char **argv) {
 
 	// id of the tracking marker
 	int trackingMarkerID = 0;
+	int destinationMarkerID = 4;
 
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()
 			("help,h", "Display a help message.")
 			("id", po::value<int>(&trackingMarkerID), "ID of the tracking marker")
+			("destId", po::value<int>(&destinationMarkerID), "ID of the destination marker")
 			("edgeout", po::value<std::string>(&edgeOutscope), "Outscope for edge found signals")
 			("pathRe", po::value<std::string>(&pathOutScope), "Inscope for path responses.")
 			("pathOut", po::value<std::string>(&pathOutScope), "Outscope for the robots path.")
@@ -355,10 +357,10 @@ int main(int argc, char **argv) {
 //	motorCmdInformer = factory.createInformer< std::vector<int> > (rsbMotoOutScope);
 
 	if(debug){
-		drawObjectsInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawObjectsOutscope);
+		drawObjectsInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawObjectsOutscope, extspreadconfig);
 		//	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr  drawPointsInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawPointsOutscope);
-		drawPathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawPathOutscope);
-		drawArrowsInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawArrowsOutscope);
+		drawPathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawPathOutscope, extspreadconfig);
+		drawArrowsInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawArrowsOutscope, extspreadconfig);
 	}
 
 	boost::shared_ptr<twbTracking::proto::Pose2DList> objectsList;
@@ -383,10 +385,16 @@ int main(int argc, char **argv) {
 		cout << "Objects list retrieved: " << objectsList->pose_size() << " objects found." << endl;
 	} else {
 		cout << "Waiting for tracking for dumping ground..." << endl;
-//		while(trackingQueue->empty()) usleep(250000);
-//		cv::Point3f destObjectPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),9);
-//		destObjectPos = cv::Point2f(destObjectPose.x, destObjectPose.y);
+		while(trackingQueue->empty()) usleep(250000);
+		cv::Point3f destObjectPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
+		destObjectPos = cv::Point2f(destObjectPose.x, destObjectPose.y);
 	}
+
+/*	if (!debug) {
+		cout << "Waiting for destination position." << endl;
+		cv::Point3f markerPos = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
+		destObjectPos = cv::Point2f(markerPos.x, markerPos.y);
+	}*/
 
 	while(true) {
 
@@ -400,9 +408,9 @@ int main(int argc, char **argv) {
 				drawArrowsInformer->publish(pushingArrow4Drawing);
 			}
 			usleep(125000);
-			if (pathIdx == 0) {
+			if (pathIdx == -1) {
 				stateMachineInformer->publish(finishStr);
-				pathIdx = -1;
+				pathIdx = -2;
 			}
 		}
 		if(debug){
@@ -425,10 +433,10 @@ int main(int argc, char **argv) {
 		if(debug){
 			currOwnPos = cv::Point2f(129,57)*cellSize;
 		} else {
-//			cout << "Waiting for tracking for robot..." << endl;
-//			while(trackingQueue->empty()) usleep(250000);
-//			cv::Point3f robotPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),trackingMarkerID);
-//			currOwnPos = cv::Point2f(robotPose.x, robotPose.y);
+			cout << "Waiting for tracking for robot..." << endl;
+			while(trackingQueue->empty()) usleep(250000);
+			cv::Point3f robotPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),trackingMarkerID);
+			currOwnPos = cv::Point2f(robotPose.x, robotPose.y);
 		}
 
 		pose2DList4PathRequest->Clear();
@@ -437,6 +445,7 @@ int main(int argc, char **argv) {
 		*pose2DList4PathRequest->add_pose() = object;
 
 		try {
+			cout << "Deliver object from " << currObjectPos.x << "/" << currObjectPos.y << " to position " << destObjectPos.x << "/" << destObjectPos.y << endl;
 			pushingPath = mapServer->call<twbTracking::proto::Pose2DList>("getPushingPath", pose2DList4PathRequest);
 		} catch (const rsc::threading::FutureTimeoutException & e) {
 			cerr << "Error: MapGenerator not responding when trying to retrieve pushing path! Exiting deliverObject." << endl;

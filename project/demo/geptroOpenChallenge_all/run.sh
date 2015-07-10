@@ -23,20 +23,20 @@ sleep 1
 cpufreq-set -g performance
 
 # start spread
-spread -c amirospread &
-sleep 5
-spread &
-sleep 5
+#spread -c amirospread &
+#sleep 5
+#spread &
+#sleep 5
 
 # start all sensing programs
-./objectSavingAMiRo -d 6 -s --loadingDirectly &
-sleep 80
+#./objectSavingAMiRo -d 6 -s --loadingDirectly &
+#sleep 80
 ./rirReader -l > /dev/null &
 ./senseFloorProximity &
 
 # start localization programs
 ./mapGenerator -r --id $trackingID --host $host --port $port --irin $prox_obstacle -l finalmap1.jpg -e finalmap_edge1.jpg &
-./frontierExploration --id $trackingID --host $host --port $port --irin $prox_obstacle &
+#./frontierExploration --id $trackingID --host $host --port $port --irin $prox_obstacle &
 
 # start all primary moving programs
 ./motorControl > /dev/null &
@@ -46,10 +46,10 @@ sleep 80
 
 # start all thrid level moving programs
 ./drivingObjectDetection --useTrackingData --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
-./objectDelivery --host $host --port $port
+./objectDelivery --host $host --port $port &
 
 # start only listening statemachines
-./answerer --skipExploration --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
+./answerer --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
 ./openChallengeGEPTRO_2nd --robotID $robotID &
 
 sleep 1

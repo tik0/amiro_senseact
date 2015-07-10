@@ -517,18 +517,27 @@ int processSM(void) {
             case blobDetection:
                 if (!testWithAnswerer) {
                     objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
+        	    objectCount = objectPosList->pose_size();
+                    amiroState = objectDetectionStart;
                 } else {
-                    for(int i = 1; i <= 2; ++i) {
+/*                    for(int i = 0; i < 2; ++i) {
                         // Add object as pose
                         twbTracking::proto::Pose2D *pose2D1 = objectPosList->add_pose();
-                        pose2D1->set_x(i*0.2);
-                        pose2D1->set_y(i*0.2);
+                        pose2D1->set_x(1.2893);
+                        pose2D1->set_y();
                         pose2D1->set_orientation(i*0.05);
                         pose2D1->set_id(i);
-                    }
+                    }*/
+                    objectPos[0][0] = 1.25638;
+                    objectPos[0][1] = 1.42867;
+                    objectPos[0][2] = 0.139431;
+                    objectPos[1][0] = 1.2893;
+                    objectPos[1][1] = 0.536911;
+                    objectPos[1][2] = 0.137255;
+                    objectDetected[0] = true;
+                    objectDetected[1] = true;
+                    amiroState = initDone;
 		}
-        	objectCount = objectPosList->pose_size();
-                amiroState = objectDetectionStart;
                 break;
             case objectDetectionStart:
 /*                if (objectCount > 0) {

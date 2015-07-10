@@ -138,6 +138,7 @@ int robotID = 0;
 int objectCount = 2;
 int objectOffsetForToBI = 2;
 bool objectDetected[] = {false, false};
+bool objectDetectedRec[] = {false, false};
 
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
@@ -371,12 +372,30 @@ int processSM(void) {
                 }
                 break;
             case objectWait:
-                if (objectDetected[0] && objectDetected[1]) {
-                    amiroState = initDoneWait;
+                if (objectDetected[0]) {
+                    INFO_MSG("Sending rec message of object 3.");
+                    sOutput = "";
+                    sOutput.append(inputRSBObject).append("3rec");
+                    *stringPublisher = sOutput;
+                    informerOutsideScope->publish(stringPublisher);
+                    objectDetected[0] = false;
+                    objectDetectedRec[0] = true;
+                }
+                if (objectDetected[1]) {
+                    INFO_MSG("Sending rec message of object 4.");
+                    sOutput = "";
+                    sOutput.append(inputRSBObject).append("4rec");
+                    *stringPublisher = sOutput;
+                    informerOutsideScope->publish(stringPublisher);
+                    objectDetected[1] = false;
+                    objectDetectedRec[1] = true;
+                }
+                if (objectDetectedRec[0] && objectDetectedRec[1]) {
+                    amiroState = objectDeliveryStart;
                 }
                 break;
             case initDoneWait:
-                if (objectDetected[0] && objectDetected[1]) {
+                if (objectDetectedRec[0] && objectDetectedRec[1]) {
                     INFO_MSG("Sending rec message of object 4.");
                     sOutput = "";
                     sOutput.append(inputRSBObject).append("4rec");
