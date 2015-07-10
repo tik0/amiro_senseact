@@ -46,7 +46,7 @@ cpufreq-set -g performance
 
 # start all thrid level moving programs
 ./drivingObjectDetection --useTrackingData --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
-./objectDelivery --host $host --port $port &
+./objectDelivery --host $host --port $port --destId 2 &
 
 # start only listening statemachines
 ./answerer --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
