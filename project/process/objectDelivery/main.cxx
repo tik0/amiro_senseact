@@ -89,6 +89,7 @@ void addPos2PoseList(boost::shared_ptr<twbTracking::proto::Pose2DList> &pose2DLi
 }
 
 void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
+	cout << "Steps left: " << pathIdx << endl;
 	if (!pathResponse) {
 		cout << "Path error!" << endl;
 		return;
