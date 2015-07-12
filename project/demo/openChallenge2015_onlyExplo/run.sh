@@ -25,18 +25,18 @@ sleep 5
 # start localization programs
 # ./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.01 --hole_width 0.05 &
 # FAULTY # ./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.005 --hole_width 0.02 --mapAsImageOutScope /image &
-./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.01 --hole_width 0.05 --mapAsImageOutScope /image --samples 100 &
+./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.01 --hole_width 0.03 --mapAsImageOutScope /image --samples 100 &
 
 # start all primary moving programs
 ./localPlanner -p /localization -i /path -r /pathResponse > /dev/null &
-./exploDriveEdge -l > /dev/null &
+./exploDriveEdge -l &
 
 # start all secondary moving programs
-./drivingObjectDetection --skipPathPlanner --skipLocalPlanner --skipDetection &
+./drivingObjectDetection --bigMap --mapServerIsRemote --skipDetection --mapServerScope /CoreSlamServer --pathRequest path &
 
 # start only listening statemachines
 ./answerer --skipExploration --skipDetection &
-./openChallengeGEPTRO_2nd --robotID ${ID} --testWithAnswerer &
+./openChallengeGEPTRO_2nd --robotID ${ID} --mapServerIsRemote --mapServerScope /CoreSlamServer --obstacleServerReq getObjectsList &
 
 sleep 1
 
