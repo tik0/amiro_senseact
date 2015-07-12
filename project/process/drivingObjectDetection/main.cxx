@@ -7,7 +7,7 @@
 #define INFO_MSG_
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
-// #define WARNING_MSG_
+#define WARNING_MSG_
 // #define ERROR_MSG_
 #include <MSG.h>
 #include <functional>
@@ -84,6 +84,7 @@ std::string mapServerScope = "/mapGenerator";
 std::string pathRequestFunc = "getPath";
 std::string objectOutscope = "/objectDetection/command";
 std::string objectInscope = "/objectDetection/detected";
+std::string rectInscope = "/rectangledata";
 
 std::string outputRSBObjectDetection = "COMP";
 
@@ -102,6 +103,8 @@ bool skipOD = false;
 bool skipVC = false;
 bool skipLocal = false;
 bool useTrackingData = false;
+bool isBigMap = false;
+bool mapServerIsRemote = false;
 
 
 // method prototypes
@@ -129,9 +132,12 @@ int main(int argc, char **argv) {
 			("pathRequest", po::value <std::string> (&pathRequestFunc), "Function name for path request.")
 			("objectOutscope", po::value <std::string> (&objectOutscope), "Outscope for object detection.")
 			("objectInscope", po::value <std::string> (&objectInscope), "Inscope for object detection.")
+			("rectInscope", po::value <std::string> (&rectInscope), "Inscope for rectangle data.")
 			("trackingID", po::value <int> (&trackingMarkerID), "ID of tracking data (default: 0).")
 			("meterPerPixel", po::value <float> (&meterPerPixel), "Meter per pixel of tracking data (default: 0.01).")
 			("useTrackingData", "Use Tracking Data instead of PoseEuler for incomming position data.")
+			("bigMap", "Flag if the map is very big (the pathplanner needs more than 25 seconds).")
+			("mapServerIsRemote", "Flag, if the map server is a remote server (otherwise it uses local connection).")
 			("skipPathPlanner", "Skipping Path Planner.")
 			("skipLocalPlanner", "Skipping Local Planner.")
 			("skipFinalRotation", "Skipping Final Rotation towards the object.")
@@ -162,6 +168,8 @@ int main(int argc, char **argv) {
 	skipVC = vm.count("skipCorrection");
 	skipLocal = vm.count("skipLocalization");
 	useTrackingData = vm.count("useTrackingData");
+        isBigMap = vm.count("bigMap");
+	mapServerIsRemote = vm.count("mapServerIsRemote");
 
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
@@ -215,10 +223,10 @@ int main(int argc, char **argv) {
 	// ------------ Listener ----------------------
 
 	// prepare RSB listener for path request answer
-/*	rsb::ListenerPtr pathRequestListener = factory.createListener(sPathRequestInput);
+	rsb::ListenerPtr pathRequestListener = factory.createListener(sPathRequestInput);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pathRequestQueue(
 			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
-	pathRequestListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(pathRequestQueue)));*/
+	pathRequestListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(pathRequestQueue)));
 
 	// prepare RSB listener for path responses
 	rsb::ListenerPtr pathResponseListener = factory.createListener(pathResponseInscope);
@@ -236,6 +244,11 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
 
+	// prepare rsb listener for rectangle data
+	rsb::ListenerPtr rectListener = factory.createListener(rectInscope);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>rectQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
+	rectListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(rectQueue)));
+
 	// Prepare RSB async listener for localization messages
 	rsb::ListenerPtr odomListener = factory.createListener(odometryInscope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>>odomQueue(new rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>(1));
@@ -251,13 +264,18 @@ int main(int argc, char **argv) {
         rsb::Informer<std::string>::Ptr objDetInformer = factory.createInformer< std::string > (objectOutscope);
 
 	// create rsb informer to publish the robots path request
-//	rsb::Informer<twbTracking::proto::Pose2D>::Ptr pathRequestInformer = factory.createInformer<twbTracking::proto::Pose2D>(sPathRequestOutput);
+	rsb::Informer<twbTracking::proto::Pose2D>::Ptr pathRequestInformer = factory.createInformer<twbTracking::proto::Pose2D>(sPathRequestOutput);
 
 	// create rsb informer to publish the robots path
 	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
-	// mapGenertor server
-	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
+	// map server
+	RemoteServerPtr mapServer;
+	if (mapServerIsRemote) {
+		mapServer = factory.createRemoteServer(mapServerScope, tmpPartConf, tmpPartConf);
+	} else {
+		mapServer = factory.createRemoteServer(mapServerScope);
+	}
 
 	// create rsb informer to publish progress data
 	rsb::Informer<twbTracking::proto::Pose2D>::Ptr progressInformer = factory.createInformer<twbTracking::proto::Pose2D>(progressOutscope);
@@ -269,6 +287,7 @@ int main(int argc, char **argv) {
 
         // do algorithm
 	rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::PoseEuler);
+	boost::shared_ptr<twbTracking::proto::Pose2DList> rectPositionsPtr(new twbTracking::proto::Pose2DList());
 	boost::shared_ptr<twbTracking::proto::Pose2DList> objectPositionsPtr(new twbTracking::proto::Pose2DList());
 	boost::shared_ptr<twbTracking::proto::Pose2DList> objectPositions(new twbTracking::proto::Pose2DList());
 	boost::shared_ptr<twbTracking::proto::Pose2D> detectionPositionPtr(new twbTracking::proto::Pose2D());
@@ -294,6 +313,23 @@ int main(int argc, char **argv) {
 		ownPos.f_z = 0;
 	}
 
+	while (rectQueue->empty()) {
+		usleep(500000);
+	}
+	rectPositionsPtr = rectQueue->pop();
+	float angle = M_PI/2.0 - atan2(rectPositionsPtr->pose(1).y(), rectPositionsPtr->pose(1).x());
+	INFO_MSG("Table turned for " << angle << " rad.");
+/*	for (int i=1; i<rectPositionsPtr->pose_size(); i++) {
+		rectPositionsPtr->mutable_pose(i)->set_x(rectPositionsPtr->pose(i).x()*cos(angle));
+		rectPositionsPtr->mutable_pose(i)->set_y(rectPositionsPtr->pose(i).y()*sin(angle));
+	}*/
+	float borders[5];
+	borders[0] = angle;
+	borders[1] = rectPositionsPtr->pose(0).x()*cos(angle) - rectPositionsPtr->pose(0).y()*sin(angle);
+	borders[2] = rectPositionsPtr->pose(2).x()*cos(angle) - rectPositionsPtr->pose(2).y()*sin(angle);
+	borders[3] = rectPositionsPtr->pose(0).x()*sin(angle) + rectPositionsPtr->pose(0).y()*cos(angle);
+	borders[4] = rectPositionsPtr->pose(1).x()*sin(angle) + rectPositionsPtr->pose(1).y()*cos(angle);
+
 	while (true) {
 		if (!progressQueue->empty()) {
 			objectPositionsPtr = progressQueue->pop();
@@ -311,33 +347,49 @@ int main(int argc, char **argv) {
 			INFO_MSG("Object position list with " << objectPositionsPtr->pose_size() << " objects:");
 			while (!allObjectsChoosen) {
 				float maxDist = 0;
-				int maxIdx = 0;
+				int maxIdx = -1;
 				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
 					if (!objectChoosen[i]) {
-						float diffY = objectPositionsPtr->pose(i).y()-((float)ownPos.y)/1000000.0;
-						float diffX = objectPositionsPtr->pose(i).x()-((float)ownPos.x)/1000000.0;
-						float dist = sqrt(diffY*diffY + diffX*diffX);
-						if (dist > maxDist) {
-							maxDist = dist;
-							maxIdx = i;
+						float px = objectPositionsPtr->pose(i).x();
+						float py = objectPositionsPtr->pose(i).y();
+						INFO_MSG("Original position: " << px << "/" << py);
+						float pxA = px * cos(borders[0]) - py * sin(borders[0]);
+						float pyA = px * sin(borders[0]) + py * cos(borders[0]);
+						if (borders[1] <= pxA && pxA <= borders[2] && borders[3] <= pyA && pyA <= borders[4]) {
+							float diffY = py - ((float)ownPos.y)/1000000.0;
+							float diffX = px - ((float)ownPos.x)/1000000.0;
+							float dist = sqrt(diffY*diffY + diffX*diffX);
+							if (dist > maxDist) {
+								maxDist = dist;
+								maxIdx = i;
+							}
+						} else {
+							objectChoosen[i] = true;
+							WARNING_MSG("Object " << i << " is not on the table (" << borders[1] << " <= " << pxA << " <= " << borders[2] << ", " << borders[3] << " <= " << pyA << " <= " << borders[4] << ").");
 						}
 					}
 				}
-				objectChoosen[maxIdx] = true;
+				if (maxIdx < 0) {
+					WARNING_MSG("No objects found!");
+				} else {
+
+					objectChoosen[maxIdx] = true;
+
+//				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
+					twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
+					pose2D->set_x(objectPositionsPtr->pose(maxIdx).x() * 1000000); // um
+					pose2D->set_y(objectPositionsPtr->pose(maxIdx).y() * 1000000); // um
+					pose2D->set_orientation(objectPositionsPtr->pose(maxIdx).orientation() * 1000000); // um (radius)
+					pose2D->set_id(objectPositionsPtr->pose(maxIdx).id());
+					INFO_MSG(" - obj " << pose2D->id() << " at " << pose2D->x() << "/" << pose2D->y() << " with r=" << pose2D->orientation() << " um");
+				}
+
 				allObjectsChoosen = true;
 				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
 					if (!objectChoosen[i]) {
 						allObjectsChoosen = false;
 					}
 				}
-
-//			for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
-				twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
-				pose2D->set_x(objectPositionsPtr->pose(maxIdx).x() * 1000000); // um
-				pose2D->set_y(objectPositionsPtr->pose(maxIdx).y() * 1000000); // um
-				pose2D->set_orientation(objectPositionsPtr->pose(maxIdx).orientation() * 1000000); // um (radius)
-				pose2D->set_id(objectPositionsPtr->pose(maxIdx).id());
-				INFO_MSG(" - obj " << pose2D->id() << " at " << pose2D->x() << "/" << pose2D->y() << " with r=" << pose2D->orientation() << " um");
 			}
 
 			// check all objects
@@ -390,17 +442,23 @@ int main(int argc, char **argv) {
 */
 
 					// calculate path to final detection position
-/*					if (!pathRequestQueue->empty()) {
-						pathRequestQueue->pop();
-					}
-					pathRequestInformer->publish(detectionPositionPtr);
-					while (!pathRequestQueue->empty()) {
-						sleep(1);
-					}
-					pathRequestQueue->pop();*/
+
 
 					boost::shared_ptr<twbTracking::proto::Pose2DList> path;
 					if (!skipPP) {
+						detectionPositionPtr->set_x(0.0);
+						detectionPositionPtr->set_y(0.0);
+						detectionPositionPtr->set_orientation(0.0);
+						if (isBigMap) {
+							if (!pathRequestQueue->empty()) {
+								pathRequestQueue->pop();
+							}
+							pathRequestInformer->publish(detectionPositionPtr);
+							while (!pathRequestQueue->empty()) {
+								sleep(1);
+							}
+							pathRequestQueue->pop();
+						}
 						path = mapServer->call<twbTracking::proto::Pose2DList>(pathRequestFunc, detectionPositionPtr);
 						INFO_MSG("Calculated path (#items: " << path->pose_size() << "):");
 						for (int i=0; i<path->pose_size(); i++) {
