@@ -211,17 +211,19 @@ void pathRequestFunction(twbTracking::proto::Pose2D pose) {
 		cv::Mat obstacleMap(getObstacleMap());
 		const int erosion_size = pathObstacleErosion / delta_;
 		mapErosion(erosion_size, obstacleMap);
-		int xSize = obstacleMap.size().width*delta_;
-		int ySize = obstacleMap.size().height*delta_;
+		float xSize = ((float)obstacleMap.size().width) * delta_;
+		float ySize = ((float)obstacleMap.size().height) * delta_;
 
 		// convert pose to cv::point2f
 		// note: 3. coordinate is ignored
-		Point2f target(pose.x()+xSize/2, pose.y()+ySize/2);
+		Point2f target(pose.x()+xSize/2.0, pose.y()+ySize/2.0);
 
 		// convert robot position to cv::point3f
 		mtxOdom.lock();
 		Point3f robotPose(odomData->mutable_translation()->x(), odomData->mutable_translation()->y(), odomData->mutable_rotation()->yaw());
 		mtxOdom.unlock();
+		robotPose.x = robotPose.x + xSize/2.0;
+		robotPose.y = robotPose.y + ySize/2.0;
 
 		// calculate a path
 		// Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
@@ -230,11 +232,12 @@ void pathRequestFunction(twbTracking::proto::Pose2D pose) {
 
 		// convert that path to a pose2DList
 		INFO_MSG("Send path.");
-		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
+		//rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
+		pose2DListPublish->clear_pose();
 		for (Point2f p : path) {
 			twbTracking::proto::Pose2D *pose2D = pose2DListPublish->add_pose();
-			pose2D->set_x(p.x-xSize/2);
-			pose2D->set_y(p.y-ySize/2);
+			pose2D->set_x(p.x - xSize/2.0);
+			pose2D->set_y(p.y - ySize/2.0);
 			pose2D->set_orientation(0);
 			pose2D->set_id(0);
 		}
@@ -250,6 +253,8 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
     // Expand them
     const int erosion_size = detectionObstacleErosion / delta_;
     mapErosion(erosion_size, map);
+    float xSize = ((float)obstacleMap.size().width) * delta_;
+    float ySize = ((float)obstacleMap.size().height) * delta_;
 
     // Obstacle list
     vector<vector<cv::Point2i> > contours;
@@ -300,8 +305,8 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
 
       // Add object as pose
       twbTracking::proto::Pose2D *pose2D1 = pose2DList->add_pose();
-      pose2D1->set_x(centers[i].x * delta_);
-      pose2D1->set_y(centers[i].y * delta_);
+      pose2D1->set_x(centers[i].x * delta_ - xSize/2.0);
+      pose2D1->set_y(centers[i].y * delta_ - ySize/2.0);
       pose2D1->set_orientation(objectRadius[i]);
       pose2D1->set_id(0);
 

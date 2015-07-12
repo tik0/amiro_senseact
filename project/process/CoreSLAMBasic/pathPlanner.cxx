@@ -29,6 +29,9 @@ std::vector<cv::Point2f> PathPlanner::getPathToTarget(cv::Mat& map, cv::Point3f 
 	std::vector<cv::Point2f> path;
 	std::vector<cv::Point2i> cellPath;
 
+	cout << "Path request received from " << pose.x << "/" << pose.y << " (" << pose.z << ") to " << target.x << "/" << target.y << endl;
+	cout << "Given map: Cellsize=" << cellSize << ", cols=" << map.cols << ", rows=" << map.rows << " => max Map size: " << map.cols*cellSize << "x" << map.rows*cellSize << endl;
+
 	// calculate path to frontier
 	dijstraToTarget(Point2i((int) (pose.x / cellSize), (int) (pose.y / cellSize)),
 			Point2i((int) (target.x / cellSize), (int) (target.y / cellSize)), pose.z, map, cellPath);
