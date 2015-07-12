@@ -43,7 +43,7 @@ file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
 
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"

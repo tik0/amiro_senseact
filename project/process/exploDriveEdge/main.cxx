@@ -49,6 +49,7 @@ using namespace std;
 #include <Types.h>
 
 #include <types/twbTracking.pb.h>
+#include <types/PoseEuler.pb.h>
 
 #include <stdint.h>  // int32
 
@@ -79,8 +80,11 @@ using namespace rsb::patterns;
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 std::string proxSensorInscopeGround = "/rir_prox/ground";
+std::string odometryInscope = "/localization";
 std::string commandInscope = "/exploration/command";
 std::string answerOutscope = "/exploration/answer";
+std::string positionInscope = "/rectposition/command";
+std::string positionOutscope = "/rectposition/answer";
 
 // rsb messages
 std::string cmdStart = "start";
@@ -94,6 +98,7 @@ int edgeCount = 2;
 enum stateType {
   STturnEdge,
   STfindDirection,
+  STroundScan,
   STdriveEdge,
   STcheckEdge,
   STcorrectEdge,
@@ -104,6 +109,7 @@ enum stateType {
 std::string stateTypeString[] {
   "turn ortho to edge",
   "find direction",
+  "round scan",
   "driving edge",
   "check edge",
   "correct edge",
@@ -134,6 +140,7 @@ int main(int argc, char **argv) {
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
       ("edgeCount,e", po::value <int> (&edgeCount), "Count of edges the robot should drive (default = 2).")
+      ("positionInscope", po::value <std::string> (&odometryInscope), "Inscope for position data of SLAM localization.")
       ("loadOffsets,l", "Loads offset from the file 'irConfig.conf'.");
 
   // allow to give the value as a positional argument
@@ -167,6 +174,18 @@ int main(int argc, char **argv) {
   boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
   rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
+  // Register converter for the pose list
+  boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList> > pose2DListConverter(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(pose2DListConverter);
+
+  // Register converter for Pose2D
+  boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D> > converterlocalization(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converterlocalization);
+
+  // Register converter for PoseEuler
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler > > odomEulerConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler >());
+  rsb::converter::converterRepository<std::string>()->registerConverter(odomEulerConverter);
+
   // ------------ Listener ----------------------
 
   // prepare RSB listener for the IR data
@@ -183,14 +202,30 @@ int main(int argc, char **argv) {
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> cmdQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
   cmdListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(cmdQueue)));
 
+  // prepare RSB listener for position requests
+  rsb::ListenerPtr posListener = factory.createListener(positionInscope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> positionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+  posListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(positionQueue)));
+
+  // Prepare RSB async listener for localization messages
+  rsb::ListenerPtr odomListener = factory.createListener(odometryInscope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>>odomQueue(new rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>(1));
+  odomListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::PoseEuler>(odomQueue)));
+
   // prepare RSB informer for answers
   rsb::Informer<std::string>::Ptr informerAnswer = factory.createInformer<std::string> (answerOutscope);
+
+  // prepare RSB informer for position requests
+  rsb::Informer<twbTracking::proto::Pose2DList>::Ptr positionInformer = factory.createInformer<twbTracking::proto::Pose2DList>(positionOutscope);
 
   // Init the CAN interface
   ControllerAreaNetwork CAN;
 
-  boost::shared_ptr<std::string> stringPublisher(new std::string);          
-  
+  boost::shared_ptr<std::string> stringPublisher(new std::string);
+  boost::shared_ptr<twbTracking::proto::Pose2DList> rectPositionsPtr(new twbTracking::proto::Pose2DList());        
+  twbTracking::proto::Pose2D *pose2D;
+  rst::geometry::PoseEuler odomInput;
+
   uint8_t sensorIdx = 0;
   bool ok = true;
   bool turn = 0;
@@ -199,137 +234,171 @@ int main(int argc, char **argv) {
   int counter = 0;
   while(true) {
 
-    // Read command
-    std::string cmd = *cmdQueue->pop();
+    if (!cmdQueue->empty()) {
+      // Read command
+      std::string cmd = *cmdQueue->pop();
 
-    ok = true;
+      ok = true;
 
-    stateType state = STturnEdge;
-    stateType stateL = STturn;
+      stateType state = STturnEdge;
+      stateType stateL = STturn;
 
-    edgeNum = 0;
+      edgeNum = 0;
 
-    while(ok) {
-      if (!proxQueueObstacle->empty() && !proxQueueGround->empty()) {
-        counter = 0;
+      while(ok) {
+        if (!proxQueueObstacle->empty() && !proxQueueGround->empty()) {
+          counter = 0;
       
-        // Read the proximity data
-        boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
-        boost::shared_ptr<std::vector<int>> sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
+          // Read the proximity data
+          boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
+          boost::shared_ptr<std::vector<int>> sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
 
-        if (state != stateL) {
-          INFO_MSG("Switched to new state '" << stateTypeString[state] << "'");
-          stateL = state;
-        }
+          if (state != stateL) {
+            INFO_MSG("Switched to new state '" << stateTypeString[state] << "'");
+            stateL = state;
+          }
 
-        float edgeDistL, edgeDistR;
-        int minEdgeIdx = 0;
-        float minEdgeDist = 10;
-        switch (state) {
-          case STturnEdge:
-            for (int senIdx=0; senIdx<8; senIdx++) {
-              float ed = edgeDist(sensorValuesGround->at(senIdx));
-              if (ed < minEdgeDist) {
-                minEdgeIdx = senIdx;
-                minEdgeDist = ed;
+          float edgeDistL, edgeDistR;
+          int minEdgeIdx = 0;
+          float minEdgeDist = 10;
+          int waitingTime_us = 0;
+          switch (state) {
+            case STturnEdge:
+              // Save position
+              pose2D = rectPositionsPtr->add_pose();
+              pose2D->set_x(0);
+              pose2D->set_y(0);
+              pose2D->set_orientation(0);
+              pose2D->set_id(0);
+              // Search table edge
+              for (int senIdx=0; senIdx<8; senIdx++) {
+                float ed = edgeDist(sensorValuesGround->at(senIdx));
+                if (ed < minEdgeDist) {
+                  minEdgeIdx = senIdx;
+                  minEdgeDist = ed;
+                }
               }
-            }
-            if (turn == 0 && minEdgeIdx < 7 && minEdgeIdx > 3) {
-              turn = 1;
-              sendMotorCmd(0, mymcm(VEL_TURNING_SLOW), CAN);
-            } else if (turn == 0 && minEdgeIdx > 0 && minEdgeIdx < 4) {
-              turn = 2;
-              sendMotorCmd(0, mymcm(-VEL_TURNING_SLOW), CAN);
-            }
-            state = STfindDirection;
-            break;
-          case STfindDirection:
-            edgeDistL = edgeDist(sensorValuesGround->at(7));
-            edgeDistR = edgeDist(sensorValuesGround->at(0));
-            if (turn == 0 && edgeDistL < edgeDistR - EDGE_DIFF) {
-              turn = 1;
-              sendMotorCmd(0, mymcm(VEL_TURNING_SLOW), CAN);
-            } else if (turn == 0 && edgeDistR < edgeDistL - EDGE_DIFF) {
-              turn = 2;
-              sendMotorCmd(0, mymcm(-VEL_TURNING_SLOW), CAN);
-            } else if (abs(edgeDistR-edgeDistL) <= EDGE_DIFF && edgeDistR < GROUND_MARGIN && edgeDistL < GROUND_MARGIN) {
-              turn = 0;
+              if (turn == 0 && minEdgeIdx < 7 && minEdgeIdx > 3) {
+                turn = 1;
+                sendMotorCmd(0, mymcm(VEL_TURNING_SLOW), CAN);
+              } else if (turn == 0 && minEdgeIdx > 0 && minEdgeIdx < 4) {
+                turn = 2;
+                sendMotorCmd(0, mymcm(-VEL_TURNING_SLOW), CAN);
+              }
+              state = STfindDirection;
+              break;
+            case STfindDirection:
+              edgeDistL = edgeDist(sensorValuesGround->at(7));
+              edgeDistR = edgeDist(sensorValuesGround->at(0));
+              if (turn == 0 && edgeDistL < edgeDistR - EDGE_DIFF) {
+                turn = 1;
+                sendMotorCmd(0, mymcm(VEL_TURNING_SLOW), CAN);
+              } else if (turn == 0 && edgeDistR < edgeDistL - EDGE_DIFF) {
+                turn = 2;
+                sendMotorCmd(0, mymcm(-VEL_TURNING_SLOW), CAN);
+              } else if (abs(edgeDistR-edgeDistL) <= EDGE_DIFF && edgeDistR < GROUND_MARGIN && edgeDistL < GROUND_MARGIN) {
+                turn = 0;
+//                sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
+//                state = STdriveEdge;
+                sendMotorCmd(0, 0, CAN);
+                state = STroundScan;
+              }
+              break;
+            case STroundScan:
+//              waitingTime_us = (int)(((2.0*M_PI*1000.0) / ((float)VEL_TURNING*10.0)) * 1000000.0) - 200000; // us
+//              sendMotorCmd(0, mymcm(VEL_TURNING), CAN);
+//              usleep(waitingTime_us);
               sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
               state = STdriveEdge;
-            }
-            break;
-          case STdriveEdge:
-            edgeDistL = edgeDist(sensorValuesGround->at(3));
-            edgeDistR = edgeDist(sensorValuesGround->at(4));
-            if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
-              sendMotorCmd(0, 0, CAN);
-              usleep(500000);
-              state = STcheckEdge;
-            }
-            break;
-          case STcheckEdge:
-            edgeDistL = edgeDist(sensorValuesGround->at(3));
-            edgeDistR = edgeDist(sensorValuesGround->at(4));
-            if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
-              INFO_MSG("Edge detected");
-              state = STcorrectEdge;
-            } else {
-              sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-              state = STdriveEdge;
-            }
-            break;
-          case STcorrectEdge:
-            edgeDistR = edgeDist(sensorValuesGround->at(3));
-            edgeDistL = edgeDistL*cos(M_PI/8);
-            edgeDistR = GROUND_MARGIN_DANGER - edgeDistR;
-            INFO_MSG("Distance to edge: " << edgeDistL << " cm (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
-            if (edgeDistR > 0) {
-              sendMotorCmd(mymcm(-VEL_FORWARD_SLOW), 0, CAN);
-              usleep((int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000));
-            }
-            turn = 2;
-            sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
-            if (edgeNum >= edgeCount-1) {
-              state = STfinalize;
-            } else {
+            case STdriveEdge:
+              edgeDistL = edgeDist(sensorValuesGround->at(3));
+              edgeDistR = edgeDist(sensorValuesGround->at(4));
+              if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
+                sendMotorCmd(0, 0, CAN);
+                usleep(500000);
+                state = STcheckEdge;
+              }
+              break;
+            case STcheckEdge:
+              edgeDistL = edgeDist(sensorValuesGround->at(3));
+              edgeDistR = edgeDist(sensorValuesGround->at(4));
+              if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
+                INFO_MSG("Edge detected");
+                state = STcorrectEdge;
+              } else {
+                sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
+                state = STdriveEdge;
+              }
+              break;
+            case STcorrectEdge:
+              edgeDistR = edgeDist(sensorValuesGround->at(3));
+              edgeDistL = edgeDistL*cos(M_PI/8);
+              edgeDistR = GROUND_MARGIN_DANGER - edgeDistR;
+              INFO_MSG("Distance to edge: " << edgeDistL << " cm (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
+              if (edgeDistR > 0) {
+                sendMotorCmd(mymcm(-VEL_FORWARD_SLOW), 0, CAN);
+                usleep((int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000));
+              }
+              turn = 2;
+              sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
+              if (edgeNum >= edgeCount-1) {
+                state = STfinalize;
+              } else {
+                state = STturn;
+              }
               edgeNum++;
-              state = STturn;
-            }
-            DEBUG_MSG("#Edges driven: " << (edgeNum) << " of " << edgeCount);
-            break;
-          case STturn:
-            edgeDistL = edgeDist(sensorValuesGround->at(1));
-            edgeDistR = edgeDist(sensorValuesGround->at(2));
-            if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) <= EDGE_DIFF) {
-              turn = 0;
-              sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-              state = STdriveEdge;
-            }
-            break;
-          case STfinalize:
-            sendMotorCmd(0, 0, CAN);
-            INFO_MSG("All steps done.");
-            ok = false;
-            *stringPublisher = ansFinish;
-            informerAnswer->publish(stringPublisher);
-            break;
-          default:
-            WARNING_MSG("Unknown state!");
-            *stringPublisher = ansProblem;
-            informerAnswer->publish(stringPublisher);
-            return -1;
-        }
+              odomInput = *odomQueue->pop();
+              pose2D = rectPositionsPtr->add_pose();
+              pose2D->set_x(odomInput.mutable_translation()->x());
+              pose2D->set_y(odomInput.mutable_translation()->y());
+              pose2D->set_orientation(odomInput.mutable_rotation()->yaw());
+              pose2D->set_id(edgeNum);
+              DEBUG_MSG("#Edges driven: " << (edgeNum) << " of " << edgeCount);
+              DEBUG_MSG("Saved position " << pose2D->x() << "/" << pose2D->y() << " with " << pose2D->orientation() << " rad and ID " << pose2D->id());
+              break;
+            case STturn:
+              edgeDistL = edgeDist(sensorValuesGround->at(1));
+              edgeDistR = edgeDist(sensorValuesGround->at(2));
+              if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) <= EDGE_DIFF) {
+                turn = 0;
+                sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
+                state = STdriveEdge;
+              }
+              break;
+            case STfinalize:
+              waitingTime_us = (int)(((1.25*M_PI*1000.0) / ((float)VEL_TURNING*10.0)) * 1000000.0); // us
+              sendMotorCmd(0, mymcm(VEL_TURNING), CAN);
+              usleep(waitingTime_us);
+              sendMotorCmd(0, 0, CAN);
+              INFO_MSG("All steps done.");
+              ok = false;
+              *stringPublisher = ansFinish;
+              informerAnswer->publish(stringPublisher);
+              break;
+            default:
+              WARNING_MSG("Unknown state!");
+              *stringPublisher = ansProblem;
+              informerAnswer->publish(stringPublisher);
+              return -1;
+          }
 
-      } else if (counter < 4) {
-        counter++;
-        usleep(50000);
-      } else {
-        sendMotorCmd(0, 0, CAN);
-        WARNING_MSG("Didn't received any sensor data for more than 200 ms. Just stopping!");
-        *stringPublisher = ansProblem;
-        informerAnswer->publish(stringPublisher);
-        ok = false;
+        } else if (counter < 4) {
+          counter++;
+          usleep(50000);
+        } else {
+          sendMotorCmd(0, 0, CAN);
+          WARNING_MSG("Didn't received any sensor data for more than 200 ms. Just stopping!");
+          *stringPublisher = ansProblem;
+          informerAnswer->publish(stringPublisher);
+          ok = false;
+        }
       }
+
+    } else if (!positionQueue->empty()) {
+      positionQueue->pop();
+      positionInformer->publish(rectPositionsPtr);
+    } else {
+      usleep(500000);
     }
   }
 
