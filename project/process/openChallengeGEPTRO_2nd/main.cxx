@@ -112,11 +112,13 @@ std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4
 
 // RSB informer
 rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informerObjectDetScope;
-rsb::Informer<std::string>::Ptr                informerLocalPlannerScope;
-rsb::Informer<std::string>::Ptr                informerExplorationScope;
-rsb::Informer<twbTracking::proto::Pose2D>::Ptr informerDeliveryScope;
-rsb::Informer<std::string>::Ptr                informerTransportScope;
-rsb::Informer<std::string>::Ptr                informerOutsideScope;
+rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informerObjectDetRectScope;
+rsb::Informer<std::string>::Ptr                    informerLocalPlannerScope;
+rsb::Informer<std::string>::Ptr                    informerExplorationScope;
+rsb::Informer<std::string>::Ptr                    informerPositionScope;
+rsb::Informer<twbTracking::proto::Pose2D>::Ptr     informerDeliveryScope;
+rsb::Informer<std::string>::Ptr                    informerTransportScope;
+rsb::Informer<std::string>::Ptr                    informerOutsideScope;
 
 // Localization
 //std::string mapServerScope = "/CoreSlamServer";
@@ -125,6 +127,8 @@ std::string mapServerScope = "/mapGenerator";
 // Exploration
 std::string sExplorationCmdScope("/exploration/command");
 std::string sExplorationAnswerScope("/exploration/answer");
+std::string positionOutscope = "/rectposition/command";
+std::string positionInscope = "/rectposition/answer";
 
 // Delivery
 std::string sDeliveryCmdScope("/objectDelivery/command");
@@ -137,6 +141,7 @@ std::string sTransportAnswerScope("/objectTransport/answer");
 // Object detection
 std::string sObjectDetCmdScope("/objectDetectionMain/command");
 std::string sObjectDetAnswerScope("/objectDetectionMain/answer");
+std::string sObjectDetRectOutscope = "/rectangledata";
 
 // Local planner
 std::string sLocalPlannerCmdScope("/localplanner/command");
@@ -211,6 +216,7 @@ std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
 
 bool testWithAnswerer = false;
+bool mapServerIsRemote = false;
 
 boost::shared_ptr<twbTracking::proto::Pose2DList> objectPosList(new twbTracking::proto::Pose2DList());
 
@@ -235,9 +241,12 @@ int main(int argc, char **argv) {
         ("outscopeTobi,o", po::value <std::string> (&sOutScopeTobi), "Scope for sending the current state to tobi.")
         ("outscopeState,s", po::value <std::string> (&sOutScopeState), "Scope for sending the current state internaly.")
         ("inscopeTobi,i", po::value <std::string> (&sInScopeTobi), "Scope for recieving Tobis messages.")
+        ("mapServerScope", po::value <std::string> (&mapServerScope), "Scope for map server.")
+        ("obstacleServerReq", po::value <std::string> (&obstacleServerReq), "Function name of map server for obstacle map.")
+        ("sObjectDetRectOutscope", po::value <std::string> (&sObjectDetRectOutscope), "Scope for sending rectangle data.")
         ("robotID,d", po::value <int> (&robotID), "Robot ID.")
+        ("mapServerIsRemote", "Flag, if the map server is a remote server (otherwise it uses local connection).")
         ("testWithAnswerer", "Prepares some constants for test with answerer.");
-
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -256,6 +265,7 @@ int main(int argc, char **argv) {
     po::notify(vm);
 
     testWithAnswerer = vm.count("testWithAnswerer");
+    mapServerIsRemote = vm.count("mapServerIsRemote");
 
     // prepare scopes for ToBI-AMIRo communication
     sInScopeTobi.append(std::to_string(robotID));
@@ -351,6 +361,7 @@ int processSM(void) {
     listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<twbTracking::proto::Pose2D>(queueObjectDetAnswerScope)));
 
     informerObjectDetScope = factory.createInformer<twbTracking::proto::Pose2DList> (sObjectDetCmdScope);
+    informerObjectDetRectScope = factory.createInformer<twbTracking::proto::Pose2DList> (sObjectDetRectOutscope);
 //    informerObjectDetScope = factory.createInformer< std::string > (sObjectDetCmdScope);
 
     // Local Planner: Listener and Informer
@@ -368,6 +379,12 @@ int processSM(void) {
     listenerExplorationScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueExplorationAnswerScope)));
 
     informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
+
+    rsb::ListenerPtr positionListener = factory.createListener(positionInscope);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>positionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
+    positionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(positionQueue)));
+
+    informerPositionScope = factory.createInformer<std::string>(positionOutscope);
 
     // Object delivery: Listener and Informer
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
@@ -406,9 +423,13 @@ int processSM(void) {
     /////////////////// SERVER REQUESTS ///////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
-    // core slam server
-    RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);
-
+    // map server
+    RemoteServerPtr mapServer;
+    if (mapServerIsRemote) {
+        mapServer = factory.createRemoteServer(mapServerScope, tmpPartConf, tmpPartConf);
+    } else {
+        mapServer = factory.createRemoteServer(mapServerScope);
+    }
 
     INFO_MSG("All RSB connections built. Starting statemachine now.");
 
@@ -511,12 +532,20 @@ int processSM(void) {
                 if (rsbInputExploration) {
                     //informerOutsideScope->publish(???);
                     setMainLight();
+                    *stringPublisher = outputRSBExploration;
+                    if (!positionQueue->empty()) {
+                        positionQueue->pop();
+                    }
+                    informerPositionScope->publish(stringPublisher);
+                    boost::shared_ptr<twbTracking::proto::Pose2DList> rectPositionsPtr = positionQueue->pop();
+                    informerObjectDetRectScope->publish(rectPositionsPtr);
                     amiroState = blobDetection;
                 }
                 break;
             case blobDetection:
                 if (!testWithAnswerer) {
-                    objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, false);
+                    boost::shared_ptr<bool> draw_debug(new bool(false));
+                    objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, draw_debug);
         	    objectCount = objectPosList->pose_size();
                     amiroState = objectDetectionStart;
                 } else {
