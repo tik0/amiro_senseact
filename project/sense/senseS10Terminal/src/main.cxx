@@ -124,6 +124,12 @@ int main(int argc, char **argv) {
   nmea_zero_INFO(&info);
   nmea_parser_init(&parser);
 
+  if(RS232_OpenComport(cport_nr, bdrate, mode, 1))
+  {
+	ERROR_MSG("Can not open comport")
+	return(1);
+  }
+
   while(1) {
 
 	n = RS232_PollComport(cport_nr, buf, 1);
@@ -131,11 +137,7 @@ int main(int argc, char **argv) {
 
 	// Syncronization to get the start of an NMEA string
 	if ((buf[0]) != '$') {
-	  if(RS232_OpenComport(cport_nr, bdrate, mode, 1))
-	  {
-		ERROR_MSG("Can not open comport")
-		return(1);
-	  }
+	  continue;
 	}else{
 		while(1){
 			n = RS232_PollComport(cport_nr, buf, 1);
