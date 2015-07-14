@@ -23,6 +23,8 @@
 #include <iostream>
 
 #include <rsb/Factory.h>
+#include <thread>
+#include <chrono>
 
 class PeakCan {
 public:
@@ -54,13 +56,13 @@ public:
 			}
 
 			//std::cout << "ID: " << frame.can_id << std::endl;
-			uint32_t canId = frame.can_id - 0x80000000;
+			uint32_t canId = frame.can_id & 0x7FFFFFFF;
 			try{
 				canDatabase.getCanMessages().at(canId)->getSignals(&frame.data[0], factory);
 			}catch (const std::out_of_range& e) {
-				std::cerr<< "Id not found  " << std::hex << canId << std::dec <<std::endl;
+				//std::cerr<< "Id not found  " << std::hex << canId << std::dec <<std::endl;
 			}
-
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 	}
 
