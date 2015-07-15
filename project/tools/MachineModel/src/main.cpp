@@ -86,8 +86,8 @@ void getMachineModelData(rsb::EventPtr canEvent){
 			Odemetrie_U.tSample = (sendTime - lastSendTime) / 1000000;
 			machineStep();
 			lastSendTime = sendTime;
-			std::cout << "X_dis_roi: " << Odemetrie_Y.X_dis_roi << "  Y_dis_roi: " << Odemetrie_Y.Y_dis_roi << "  Phi_kon:  "<< Odemetrie_Y.Phi_kon << " Speed: " << Odemetrie_U.Machine_Speed << " EstimatedCurvature: " << Odemetrie_U.Machine_EstimatedCurvature
-			<< "   SendTime: " <<canEvent->getMetaData().getSendTime() << "  tSample: " << Odemetrie_U.tSample <<std::endl;
+			//std::cout << "X_dis_roi: " << Odemetrie_Y.X_dis_roi << "  Y_dis_roi: " << Odemetrie_Y.Y_dis_roi << "  Phi_kon:  "<< Odemetrie_Y.Phi_kon << " Speed: " << Odemetrie_U.Machine_Speed << " EstimatedCurvature: " << Odemetrie_U.Machine_EstimatedCurvature
+			//<< "   SendTime: " <<canEvent->getMetaData().getSendTime() << "  tSample: " << Odemetrie_U.tSample <<std::endl;
 		}
 	}
 	else if (canEventType.compare("ClaasCan_CombineHarvester::cAtpcBrc_AtpStatus") == 0) {

@@ -47,6 +47,7 @@ export VDEMO_component_LASE_2000D_226="LASE_2000D_226,$car, -c  -g sense -L 1 -w
 export VDEMO_component_Sick_LD_MRS_1="Sick_LD_MRS_1,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_Sick_LD_MRS_2="Sick_LD_MRS_2,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_S10Terminal="S10Terminal,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_MachineModel="MachineModel,$car, -c -g util -L 1 -w 2:"
 
 export VDEMO_component_rsb_webserver="rsb_webserver,$car, -c  -g webserver -L 2 -w 2:"
 
@@ -91,6 +92,7 @@ $VDEMO_component_rsbag\
 $VDEMO_component_rsb_logger\
 $VDEMO_component_rsb_monitor_car\
 $VDEMO_component_rsb_monitor_cam\
+$VDEMO_component_MachineModel\
 "
 
 export VDEMO_component_group_web="\
