@@ -1,0 +1,13 @@
+====== Building the Open Challenge 2015 Environment for AMiRo ======
+
+This is a demo of the braitenberg with obstacle and edge avoidence.
+IMPORTANT: Make sure that you measured IR offsets of the ground and of the air (see demo "initial"). Otherwise the robot isn't able to stop in front of edges!
+
+===== Run the simulation =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh''
+  - ''./run.sh'' on the AMiRo
+  - ''./stop.sh'' on the AMiRo for stopping
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
