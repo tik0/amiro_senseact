@@ -29,6 +29,7 @@ using namespace muroxConverter;
 
 // types
 #include <types/twbTracking.pb.h>
+#include <types/PoseEuler.pb.h>
 #include <extspread.hpp>
 #include <ControllerAreaNetwork.h>
 
@@ -43,6 +44,9 @@ float objectRadius = 0;
 int pathIdx = -2;
 bool debug = false;
 
+bool useSLAMData = false;
+bool mapServerIsRemote = false;
+
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPosTmp(new twbTracking::proto::Pose2DList);
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPos(new twbTracking::proto::Pose2DList);
 boost::shared_ptr<twbTracking::proto::Pose2DList> pushingPath(new twbTracking::proto::Pose2DList);
@@ -55,6 +59,8 @@ boost::shared_ptr<twbTracking::proto::Pose2DList> pushingPath4Drawing(new twbTra
 boost::shared_ptr<twbTracking::proto::Pose2DList> path4Drawing(new twbTracking::proto::Pose2DList);
 boost::shared_ptr<twbTracking::proto::Pose2DList> pushingArrow4Drawing(new twbTracking::proto::Pose2DList);
 
+rsb::Informer<std::string>::Ptr stateMachineInformer;
+
 rsb::Informer<twbTracking::proto::Pose2DList>::Ptr drawObjectsInformer, drawPathInformer, drawArrowsInformer;
 boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr(new twbTracking::proto::Pose2D());
 rsb::Informer<twbTracking::proto::Pose2D>::Ptr insertObjectInformer, deleteObjectInformer;
@@ -62,6 +68,8 @@ cv::Point3i color_blue(255,0,0), color_red(0,0,255), color_green(0,255,0), color
 twbTracking::proto::Pose2D object;
 cv::Point2f currOwnPos;
 RemoteServerPtr mapServer;
+
+boost::shared_ptr<std::string> finishStr(new string("finish"));
 
 // for motor control
 rsb::Informer< std::vector<int> >::Ptr motorCmdInformer;
@@ -78,6 +86,13 @@ cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data,
 		}
 	}
 	return cv::Point3f(pose.x() * meterPerPixel, pose.y() * meterPerPixel, pose.orientation() * M_PI / 180.0);
+}
+
+cv::Point3f getSLAMPosition(rst::geometry::PoseEuler odomInput) {
+	// Save data
+	return cv::Point3f(odomInput.mutable_translation()->x(),
+			odomInput.mutable_translation()->y(),
+			odomInput.mutable_rotation()->yaw());
 }
 
 void addPos2PoseList(boost::shared_ptr<twbTracking::proto::Pose2DList> &pose2DList, cv::Point2f pos2D, float orientation=0) {
@@ -169,6 +184,7 @@ int main(int argc, char **argv) {
 
 	// scopenames for rsb
 	std::string trackingInscope = "/murox/roboterlocation";
+	std::string odometryInscope = "/localization";
 	std::string pathOutScope = "/path";
 	std::string mapServerScope = "/mapGenerator";
 	std::string pathResponseInScope = "/pathResponse";
@@ -195,14 +211,17 @@ int main(int argc, char **argv) {
 			("help,h", "Display a help message.")
 			("id", po::value<int>(&trackingMarkerID), "ID of the tracking marker")
 			("destId", po::value<int>(&destinationMarkerID), "ID of the destination marker")
-			("edgeout", po::value<std::string>(&edgeOutscope), "Outscope for edge found signals")
+			("positionInscope", po::value <std::string> (&odometryInscope), "Inscope for position data of SLAM localization.")
+//			("edgeout", po::value<std::string>(&edgeOutscope), "Outscope for edge found signals")
 			("pathRe", po::value<std::string>(&pathOutScope), "Inscope for path responses.")
 			("pathOut", po::value<std::string>(&pathOutScope), "Outscope for the robots path.")
 			("mapServer", po::value<std::string>(&mapServerScope), "Scope for the mapGenerator server")
 			("host", po::value<std::string>(&spreadhost), "Host for Programatik Spread.")
 			("port", po::value<std::string>(&spreadport), "Port for Programatik Spread.")
 			("meterPerPixel,mpp", po::value<float>(&meterPerPixel), "Camera parameter: Meter per Pixel")
-			("debugVis", "Debug mode: object selection via keyboard & visualization");
+			("debugVis", "Debug mode: object selection via keyboard & visualization")
+			("mapServerIsRemote", "Flag, if the map server is a remote server (otherwise it uses local connection).")
+			("useSLAMData", "Use SLAM Localization Data (PoseEuler) instead of Tracking Data for incomming position data.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -219,6 +238,9 @@ int main(int argc, char **argv) {
 
 	debug = vm.count("debugVis") > 0;
 	if(debug) cout << "Debug mode: object selection via keyboard (number as Id). Visualization data will be published for showMap." << endl;
+
+	mapServerIsRemote = vm.count("mapServerIsRemote");
+	useSLAMData = vm.count("useSLAMData");
 
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
@@ -246,12 +268,21 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
+	// Register converter for PoseEuler
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler > > odomEulerConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler >());
+	rsb::converter::converterRepository<std::string>()->registerConverter(odomEulerConverter);
+
 	// ---------- Listener ---------------
 
 	// prepare rsb listener for tracking data
 	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, extspreadconfig);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
+
+	// Prepare RSB async listener for localization messages
+	rsb::ListenerPtr odomListener = factory.createListener(odometryInscope);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>>odomQueue(new rsc::threading::SynchronizedQueue<rsb::Informer<rst::geometry::PoseEuler>::DataPtr>(1));
+	odomListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::PoseEuler>(odomQueue)));
 
 	// prepare RSB listener for localPlanner responses
 	rsb::ListenerPtr pathPlannerListener = factory.createListener(pathResponseInScope);
@@ -277,15 +308,20 @@ int main(int argc, char **argv) {
 	}
 
 	boost::shared_ptr<twbTracking::proto::Pose2DList> objectsList;
-	rsb::Informer<std::string>::Ptr stateMachineInformer = factory.createInformer< std::string > (stateMachineAnswerScope);
+	stateMachineInformer = factory.createInformer< std::string > (stateMachineAnswerScope);
 	insertObjectInformer = factory.createInformer<twbTracking::proto::Pose2D>(insertObjectOutscope);
 	deleteObjectInformer = factory.createInformer<twbTracking::proto::Pose2D>(deleteObjectOutscope);
 
-	mapServer = factory.createRemoteServer(mapServerScope);
+	// map server
+	RemoteServerPtr mapServer;
+	if (mapServerIsRemote) {
+		mapServer = factory.createRemoteServer(mapServerScope, extspreadconfig, extspreadconfig);
+	} else {
+		mapServer = factory.createRemoteServer(mapServerScope);
+	}
 
 	// constants
 	boost::shared_ptr<bool> truePtr(new bool(true));
-	boost::shared_ptr<std::string> finishStr(new string("finish"));
 
 	if(debug){
 		destObjectPos = cv::Point2f(135,139)*cellSize;
@@ -299,8 +335,14 @@ int main(int argc, char **argv) {
 		cout << "Objects list retrieved: " << objectsList->pose_size() << " objects found." << endl;
 	} else {
 		cout << "Waiting for tracking for dumping ground..." << endl;
-		while(trackingQueue->empty()) usleep(250000);
-		cv::Point3f destObjectPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
+		cv::Point3f destObjectPose;
+		if (useSLAMData) {
+			while(odomQueue->empty()) usleep(250000);
+			destObjectPose = getSLAMPosition(*odomQueue->pop());
+		} else {
+			while(trackingQueue->empty()) usleep(250000);
+			destObjectPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
+		}
 		destObjectPos = cv::Point2f(destObjectPose.x, destObjectPose.y);
 	}
 
@@ -341,9 +383,16 @@ int main(int argc, char **argv) {
 		if(debug){
 			currOwnPos = cv::Point2f(129,57)*cellSize;
 		} else {
-			cout << "Waiting for tracking for robot..." << endl;
+			cout << "Waiting for position of robot..." << endl;
 			while(trackingQueue->empty()) usleep(250000);
-			cv::Point3f robotPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),trackingMarkerID);
+			cv::Point3f robotPose;
+			if (useSLAMData) {
+				while(odomQueue->empty()) usleep(250000);
+				robotPose = getSLAMPosition(*odomQueue->pop());
+			} else {
+				while(trackingQueue->empty()) usleep(250000);
+				robotPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
+			}
 			currOwnPos = cv::Point2f(robotPose.x, robotPose.y);
 		}
 
