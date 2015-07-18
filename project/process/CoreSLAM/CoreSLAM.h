@@ -10,7 +10,6 @@
 //#define TS_MAP_SCALE 0.02
 #define TS_NO_OBSTACLE 65500
 #define TS_OBSTACLE 0
-#define TS_TABLE 42
 
 extern double TS_MAP_SCALE;
 
@@ -23,7 +22,6 @@ typedef struct {
 typedef struct {
     double x[TS_SCAN_SIZE], y[TS_SCAN_SIZE];
     int value[TS_SCAN_SIZE];
-    double depth_measured[TS_SCAN_SIZE];
     int nb_points;
 } ts_scan_t;
 
@@ -43,6 +41,7 @@ typedef struct {
 void ts_map_init(ts_map_t *map);
 void ts_map_set_scale(double scale);
 int ts_distance_scan_to_map(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos);
+void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *position, int quality, int hole_width);
 
 // Stochastic part
 typedef struct {
@@ -82,14 +81,8 @@ typedef struct {
     int scan_size;  // number of points per scan
     int angle_min;  // start angle for scan
     int angle_max;  // end angle for scan
-    double tilt_angle; // tilt angle of the laser
-    double depth; // height of the lasercenter over the ground
-    double depth_max;
-    double depth_min;
     int detection_margin; // first scan element to consider
     double distance_no_detection; // default value when the laser returns 0
-    int angle_cap_min; // min angle used for mapbuilding [deg]
-    int angle_cap_max; // max angle used for mapbuilding [deg]
 } ts_laser_parameters_t;
 
 typedef struct {
@@ -117,7 +110,6 @@ typedef struct {
 void ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta, int hole_width, int direction);
 void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span);
 void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state);
-void ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *position, int quality, int hole_width, ts_laser_parameters_t *laser_params);
 
 // Loop closing
 ts_position_t ts_close_loop_position(ts_state_t *state, ts_sensor_data_t *sensor_data, ts_map_t *loop_close_map, ts_position_t *start_position, int *q);

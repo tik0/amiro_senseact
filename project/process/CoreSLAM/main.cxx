@@ -38,9 +38,6 @@ static bool got_first_scan_ = false;
 //static bool got_map_ = false;
 static int laser_count_ = 0;
 static int throttle_scans_ = 1;
-static double height_amiro = 94;
-static double height_lidar_measurement = 57.25;
-static double radius_lidar = 25;
 // Check "http://de.wikipedia.org/wiki/Sinussatz"!
 // c ist the first ray, b the second. If beta is 90°, it means that c is hitting a surface very perpendiular.
 // Every deviation of the 90° is an incident, which means that the surface is not perpendicular to the ray.
@@ -53,7 +50,7 @@ float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 #include <Eigen/Geometry>
 
 static double transX, transY, transZ;
-static double rotX, rotY = 0, rotZ;
+static double rotX, rotY, rotZ;
 
 inline Eigen::Quaterniond
 euler2Quaternion( const double roll,
@@ -128,8 +125,8 @@ void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data ,
   DEBUG_MSG("Angle: " << rsbScan.scan_angle() * 180.0 / M_PI)
   DEBUG_MSG("Size: " << rsbScan.scan_values_size())
   DEBUG_MSG("Inc: " << rsbScan.scan_angle_increment() * 180.0 / M_PI)
-  DEBUG_MSG("Minrange: " << rsbScan.scan_values_min());
 //  rsbScan.set_scan_angle_increment(-rsbScan.scan_angle_increment);
+
 
 //  rsbScan.set_scan_angle_start(rsbScan.scan_angle_start() + M_PI / 2.0f);
 //  rsbScan.set_scan_angle_end(rsbScan.scan_angle_end() + M_PI / 2.0f);
@@ -141,21 +138,21 @@ void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data ,
   
   // Check if two adjiacent rays stand almost perpendiculat on the surface
   // and set the first one to an invalid measurement if the angle is to big
-//  for (int idx = 0; idx < rsbScan.scan_values_size()-1; idx++) {
-//    float a = rsbScan.scan_values(idx);
-//    float b = rsbScan.scan_values(idx+1);
-//    float h = a * sin(rsbScan.scan_angle_increment());
-//    float b_t = sqrt(pow(a,2) - pow(h,2));
-//    float b_tt = b - b_t;
-//    float beta_t = atan2(h, b_t);
-//    float beta_tt = atan2(h, b_tt);
-//    float beta = beta_t + beta_tt;
-//    if (sin(beta) < rayPruningAngle())
-//      rsbScan.mutable_scan_values()->Set(idx, rsbScan.scan_values_max() + 42.0f); // Increment the value, so that it becomes invalid
-//  }
-//  // Delete the last value, if the former value is invalid
-//  if (rsbScan.scan_values(rsbScan.scan_values_size() -2) > rsbScan.scan_values_max())
-//    rsbScan.mutable_scan_values()->Set(rsbScan.scan_values_size() - 1, rsbScan.scan_values_max() + 42.0f);
+  for (int idx = 0; idx < rsbScan.scan_values_size()-1; idx++) {
+    float a = rsbScan.scan_values(idx);
+    float b = rsbScan.scan_values(idx+1);
+    float h = a * sin(rsbScan.scan_angle_increment());
+    float b_t = sqrt(pow(a,2) - pow(h,2));
+    float b_tt = b - b_t;
+    float beta_t = atan2(h, b_t);
+    float beta_tt = atan2(h, b_tt);
+    float beta = beta_t + beta_tt;
+    if (sin(beta) < rayPruningAngle())
+      rsbScan.mutable_scan_values()->Set(idx, rsbScan.scan_values_max() + 42.0f); // Increment the value, so that it becomes invalid
+  }
+  // Delete the last value, if the former value is invalid
+  if (rsbScan.scan_values(rsbScan.scan_values_size() -2) > rsbScan.scan_values_max())
+    rsbScan.mutable_scan_values()->Set(rsbScan.scan_values_size() - 1, rsbScan.scan_values_max() + 42.0f);
 
 
 }
@@ -194,7 +191,7 @@ getOdomPose(ts_position_t& ts_pose)
 }
 
 bool
-initMapper(const rst::vision::LocatedLaserScan& scan, const double rotY)
+initMapper(const rst::vision::LocatedLaserScan& scan)
 {
 
   // configure previous_odom
@@ -208,13 +205,7 @@ initMapper(const rst::vision::LocatedLaserScan& scan, const double rotY)
   lparams_.angle_min = scan.scan_angle_start()  * 180/M_PI;
   lparams_.angle_max = scan.scan_angle_end()  * 180/M_PI;
   lparams_.detection_margin = 0;
-  lparams_.distance_no_detection = 300; //4000;//500 ;// scan.scan_values_max() * METERS_TO_MM;
-  lparams_.tilt_angle =  rotY * M_PI / 180;
-  lparams_.depth = sin(lparams_.tilt_angle+atan(height_lidar_measurement/radius_lidar)) * sqrt(pow(height_lidar_measurement,2)+pow(radius_lidar,2)) + height_amiro;
-  lparams_.depth_max = lparams_.depth + 50;
-  lparams_.depth_min = lparams_.depth - 15;
-  lparams_.angle_cap_min = -90;
-  lparams_.angle_cap_max = 90;
+  lparams_.distance_no_detection = scan.scan_values_max() * METERS_TO_MM;
 
   // new coreslam instance
   ts_map_init(&ts_map_);
@@ -225,22 +216,22 @@ initMapper(const rst::vision::LocatedLaserScan& scan, const double rotY)
   return true;
 }
 
-//void convertToScan(const rst::vision::LocatedLaserScan &scan , ts_scan_t &ranges) {
-//  ranges.nb_points = 0;
-//  const float delta_angle = scan.scan_angle_increment();
-//
-//    for(int i=0; i < lparams_.scan_size; i++) {
-//      // Must filter out short readings, because the mapper won't
-//      if(scan.scan_values(i) > scan.scan_values_min()&& scan.scan_values(i) < scan.scan_values_max()){
-//        // HACK "+ 120" is a workaround, and works only for startStep 44 and enStep 725!!!!
-//        ranges.x[ranges.nb_points] = cos((lparams_.angle_min + 120 )* M_PI/180.0f + i*delta_angle ) * (scan.scan_values(i)*METERS_TO_MM);
-//        ranges.y[ranges.nb_points] = sin((lparams_.angle_min + 120) * M_PI/180.0f + i*delta_angle) * (scan.scan_values(i)*METERS_TO_MM);
-//        ranges.value[ranges.nb_points] = TS_OBSTACLE;
-//        ranges.nb_points++;
-//      }
-//    }
-//
-//}
+void convertToScan(const rst::vision::LocatedLaserScan &scan , ts_scan_t &ranges) {
+  ranges.nb_points = 0;
+  const float delta_angle = scan.scan_angle_increment();
+
+    for(int i=0; i < lparams_.scan_size; i++) {
+      // Must filter out short readings, because the mapper won't
+      if(scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < scan.scan_values_max()){
+        // HACK "+ 120" is a workaround, and works only for startStep 44 and enStep 725!!!!
+        ranges.x[ranges.nb_points] = cos((lparams_.angle_min + 120 )* M_PI/180.0f + i*delta_angle ) * (scan.scan_values(i)*METERS_TO_MM);
+        ranges.y[ranges.nb_points] = sin((lparams_.angle_min + 120) * M_PI/180.0f + i*delta_angle) * (scan.scan_values(i)*METERS_TO_MM);
+        ranges.value[ranges.nb_points] = TS_OBSTACLE;
+        ranges.nb_points++;
+      }
+    }
+
+}
 
 
 
@@ -364,7 +355,7 @@ int main(int argc, const char **argv){
           tmpPropSpread["host"] = boost::any(std::string("localhost"));
 
           // Change the Port
-          tmpPropSpread["port"] = boost::any(std::string("4823"));
+          tmpPropSpread["port"] = boost::any(std::string("4803"));
 
           // Write the tranport properties back to the participant config
           tmpPartConf.mutableTransport("socket").setOptions(tmpPropSocket);
@@ -390,7 +381,7 @@ int main(int argc, const char **argv){
   rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> ("/image", tmpPartConf);
 
   // Show the map as a cv Image
-  cv::Size size(TS_MAP_SIZE,TS_MAP_SIZE);
+  cv::Size size(TS_MAP_SIZE / 2,TS_MAP_SIZE / 2);
   cv::Mat dst(size, CV_16S); // destination image for scaling
   cv::Mat dstColor(size, CV_8UC3); // Color image
 
@@ -404,7 +395,7 @@ int main(int argc, const char **argv){
     // We can't initialize CoreSLAM until we've got the first scan
     if(!got_first_scan_)
     {
-      if(!initMapper(scan,rotY))
+      if(!initMapper(scan))
         continue;
       got_first_scan_ = true;
     } else {
@@ -420,19 +411,16 @@ int main(int argc, const char **argv){
     if (sendMapAsCompressedImage) {
       cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
       cv::resize(image,dst,size);//resize image
-      // (image(cv::Rect(750,750,500,500)),dst,CV_16S);
       cv::flip(dst, dst, 0);  // horizontal flip
       dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
       cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw MCMC position
-      //cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
-      cv::circle( dstColor, robotPosition, 5, cv::Scalar( 0, 0, pow(2,8)-1) );
+      cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
       cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw odometry
-      cv::circle( dstColor, robotOdomPosition, 5, cv::Scalar( 0, 0, pow(2,8)-1));
-      //cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
+      cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
       DEBUG_MSG( "Pose " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
       #ifndef __arm__
-      cv::imshow("input", dstColor(cv::Rect(800,800,600,600)));
+      cv::imshow("input", dstColor);
       cv::waitKey(1);
       #endif
       // Send the map as image
