@@ -6,13 +6,14 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-# find_package(OpenCV REQUIRED)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(OpenCV opencv)
+pkg_check_modules(RST rst0.11)
+pkg_check_modules(PROTOBUF protobuf)
+pkg_check_modules(OPENCV opencv)
 
 # Get modules
-SET (BOOST_COMPONENTS regex date_time program_options system)
+SET (BOOST_COMPONENTS regex date_time program_options system thread)
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 
 # Get the compiler specific includes and store them in GXX_INCLUDES
@@ -22,7 +23,9 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
-    ${OpenCV_INCLUDE_DIRS}                                          # OpenCV
+    ${RST_INCLUDE_DIRS}                                             # RST
+    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
+    ${PROTOBUF_INCLUDE_DIRS}                                        # Protobuffer
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     ${GXX_INCLUDES}
@@ -30,13 +33,7 @@ include_directories(
 )
 
 # Define the source
-SET (SOURCE main.cxx)
-
-LINK_DIRECTORIES (
-    ${RSB_LIBRARY_DIRS}
-    ${RSC_LIBRARY_DIRS}
-    ${OpenCV_LIBRARY_DIRS}
-)
+SET (SOURCE main.cxx "$ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc")
 
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCE})
@@ -45,9 +42,11 @@ target_link_libraries (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${PROTOBUF_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-    jpeg
+    ${OPENCV_LIBRARIES}
+    pthread
 )
 
 # Additional compiler flags
