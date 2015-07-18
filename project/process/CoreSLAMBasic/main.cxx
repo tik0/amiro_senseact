@@ -334,6 +334,19 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
 };
 
 // RSB Server function for the mapping server which replies with a 8bit map of the environment
+class mapServerObstacles: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
+public:
+  boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
+    boost::shared_ptr<cv::Mat> dst(new cv::Mat(getObstacleMap()));
+    // Expand them
+    const int erosion_size = detectionObstacleErosion / delta_;
+    mapErosion(erosion_size, *dst);
+    INFO_MSG("Server returns obstacle map")
+    return dst;
+  }
+};
+
+// RSB Server function for the mapping server which replies with a 8bit map of the environment
 class mapServer: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
 public:
   boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
@@ -382,8 +395,11 @@ getOdomPose(ts_position_t& ts_pose)
 {
 
   // Read the odometry data (This function halts until some data was received)
+#ifdef __arm__
   types::position robotPosition = ::CAN->getOdometry();
-
+#else
+  types::position robotPosition;
+#endif
   // Set the Robot to the center of the map, independent from the first odometry message
   if(!gotFirstOdometry) {
     robotInitPosition.x = robotPosition.x;
@@ -472,26 +488,26 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 //  INFO_MSG( "Pose2st " << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
 //  INFO_MSG( "PoseOdom " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
 
-  // Mapping
-//  if(laser_count_ < 10){
-    // not much of a map, let's bootstrap for now
-    // TODO need to be fixed for arbitrary angels
-//    ts_scan_t ranges;
-//    convertToScan(scan , ranges);
-//    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
-//    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
-//  }else{
+  ts_sensor_data_t data;
+  data.position[0] = state_.position;
+  if(lparams_.angle_max < lparams_.angle_min){
+    // flip readings
+    for(int i=0; i < scan.scan_values_size(); i++)
+      data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
+  }else{
+    for(int i=0; i < scan.scan_values_size(); i++)
+      data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
+  }
 
-    ts_sensor_data_t data;
-    data.position[0] = state_.position;
-    if(lparams_.angle_max < lparams_.angle_min){
-      // flip readings
-      for(int i=0; i < scan.scan_values_size(); i++)
-        data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
-    }else{
-      for(int i=0; i < scan.scan_values_size(); i++)
-        data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
-    }
+  // Mapping
+  if(laser_count_ < 10){
+  // not much of a map, let's bootstrap for now
+    ts_scan_t ranges;
+    ts_build_scan(&data, &ranges, &state_, 3 /*widening of the ray*/);
+    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
+    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
+  }else{
+
     // Monte carlo localization is done inside
     if (slamState == slam)
       ts_iterative_map_building(&data, &state_, true /*do Map Update*/);
@@ -500,7 +516,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
     DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
     DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
-//  }
+  }
   // Set the new pose
   pose = state_.position;
 
@@ -537,6 +553,7 @@ int main(int argc, const char **argv){
   std::string sPathOutputScope = "/path/answer";
   std::string pathServerReq = "path";
   std::string mapServerReq = "map";
+  std::string mapServerObstacleReq = "mapObstacle";
   std::string obstacleServerReq = "getObjectsList";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
@@ -548,6 +565,7 @@ int main(int argc, const char **argv){
     ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
     ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
     ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
+    ("mapServerObstacleReq", po::value < std::string > (&mapServerObstacleReq), "Map server obstacle request string (Std.: mapObstacle)")
     ("pathServerReq", po::value < std::string > (&pathServerReq), "Path server request string (Std.: path)")
     ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
@@ -663,6 +681,7 @@ int main(int argc, const char **argv){
   rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
   server->registerMethod(pathServerReq, rsb::patterns::LocalServer::CallbackPtr(new pathCallback()));
   server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
+  server->registerMethod(mapServerObstacleReq, rsb::patterns::LocalServer::CallbackPtr(new mapServerObstacles()));
   server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
 
   // Init the CAN controller

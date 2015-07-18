@@ -24,7 +24,7 @@ ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,
 }
 
 void
-ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span)
+ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span /* widening of the ray*/)
 {
     int i, j;
     double angle_rad, angle_deg;
@@ -46,21 +46,6 @@ ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span
                     scan->nb_points++;
                 }*/
                 if (sd->d[i] > state->hole_width /*/ 2*/ && sd->d[i] < state->laser_params.distance_no_detection) {
-                	//TODO tilted lidar
-                	/*  double gamma = asin(sin(alpha)*cos(beta));
-						measured_height = sin(gamma)*d;
-                	    compare measured_height to min_height/ max_height
-                	    if measured_height < max_height:
-                	         // ray hit an obstacle or the ground
-                	         d' = cos(gamma)*d
-                	         if measured_height > min_height:
-                	         	 // ray hit the ground
-                	        	 set value -> hole_width = 0
-                	         else
-                	             // ray didnt hit the floor
-                	             d' = expected_height / tan(gamma)
-                	*/
-
                     scan->x[scan->nb_points] = sd->d[i] * cos(angle_rad);
                     //scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
                     scan->y[scan->nb_points] = sd->d[i] * sin(angle_rad);
