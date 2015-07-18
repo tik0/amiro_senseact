@@ -253,8 +253,8 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
     // Expand them
     const int erosion_size = detectionObstacleErosion / delta_;
     mapErosion(erosion_size, map);
-    float xSize = ((float)obstacleMap.size().width) * delta_;
-    float ySize = ((float)obstacleMap.size().height) * delta_;
+    float xSize = ((float)map.size().width) * delta_;
+    float ySize = ((float)map.size().height) * delta_;
 
     // Obstacle list
     vector<vector<cv::Point2i> > contours;
