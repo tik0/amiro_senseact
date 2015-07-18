@@ -64,9 +64,9 @@ float meterPerPixel = 1.0/400.0;
 #define VEL_TURNING 40
 #define VEL_FORWARD 8
 
-float robotRadius = 50000;
-float robotObjectDist = 10000;
-float turnThreshold = 5 * 180/M_PI;
+float robotRadius = 0.05; // m
+float robotObjectDist = 0.1; // m
+float turnThreshold = 5 * M_PI/180; // rad
 
 int objCount = 0;
 int objOffset = 2;
@@ -377,11 +377,11 @@ int main(int argc, char **argv) {
 
 //				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
 					twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
-					pose2D->set_x(objectPositionsPtr->pose(maxIdx).x() * 1000000); // um
-					pose2D->set_y(objectPositionsPtr->pose(maxIdx).y() * 1000000); // um
-					pose2D->set_orientation(objectPositionsPtr->pose(maxIdx).orientation() * 1000000); // um (radius)
+					pose2D->set_x(objectPositionsPtr->pose(maxIdx).x()); // m
+					pose2D->set_y(objectPositionsPtr->pose(maxIdx).y()); // m
+					pose2D->set_orientation(objectPositionsPtr->pose(maxIdx).orientation()); // m (radius)
 					pose2D->set_id(objectPositionsPtr->pose(maxIdx).id());
-					INFO_MSG(" - obj " << pose2D->id() << " at " << pose2D->x() << "/" << pose2D->y() << " with r=" << pose2D->orientation() << " um");
+					INFO_MSG(" - obj " << pose2D->id() << " at " << pose2D->x() << "/" << pose2D->y() << " with r=" << pose2D->orientation() << " m");
 				}
 
 				allObjectsChoosen = true;
@@ -398,11 +398,11 @@ int main(int argc, char **argv) {
 				INFO_MSG("Try to categorize object number "  << i);
 
 				// load object position
-				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // in u[m, rad]
+				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // m
 
         	                bool objectDetected = false;
-				float detectionDist = robotRadius + robotObjectDist + objectPosition.orientation(); // um
-				INFO_MSG("Focussing on object at position " << objectPosition.x() << "/" << objectPosition.y() << " with a radius of " << objectPosition.orientation() << " um");
+				float detectionDist = robotRadius + robotObjectDist + objectPosition.orientation(); // m
+				INFO_MSG("Focussing on object at position " << objectPosition.x() << "/" << objectPosition.y() << " with a radius of " << objectPosition.orientation() << " m");
 
 				// if the object hasn't been detected yet
         	                while(!objectDetected) {
@@ -413,10 +413,10 @@ int main(int argc, char **argv) {
 					} else if (!skipLocal) {
 						getOwnPosition(ownPos, *odomQueue->pop()); // u[m, rad]
 					}
-					INFO_MSG("Find oneself at position " << ownPos.x << "/" << ownPos.y);
-					float angleToObject = atan2(objectPosition.y()-ownPos.y, objectPosition.x()-ownPos.x); // rad
-					detectionPositionPtr->set_x(((float)(objectPosition.x()-detectionDist*cos(angleToObject)))/1000000.0); // m
-					detectionPositionPtr->set_y(((float)(objectPosition.y()-detectionDist*sin(angleToObject)))/1000000.0); // m
+					INFO_MSG("Find oneself at position " << (float)ownPos.x/1000000.0 << "/" << (float)ownPos.y/1000000.0);
+					float angleToObject = atan2(objectPosition.y()-((float)ownPos.y)/1000000.0, objectPosition.x()-((float)ownPos.x)/1000000.0); // rad
+					detectionPositionPtr->set_x(objectPosition.x()-detectionDist*cos(angleToObject)); // m
+					detectionPositionPtr->set_y(objectPosition.y()-detectionDist*sin(angleToObject)); // m
 					detectionPositionPtr->set_orientation(0.0); // rad
 					INFO_MSG("Final detection position is " << detectionPositionPtr->x() << "/" << detectionPositionPtr->y());
 /*
