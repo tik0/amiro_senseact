@@ -6,11 +6,11 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rst0.11)
-pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(OPENCV opencv)
+find_package(RSB)
+find_package(RSC)
+find_package(RST)
+find_package(Protobuf)
+find_package(OpenCV)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)
@@ -24,8 +24,8 @@ include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${RST_INCLUDE_DIRS}                                             # RST
-    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
-    ${PROTOBUF_INCLUDE_DIRS}                                        # Protobuffer
+    ${OpenCV_INCLUDE_DIRS}                                          # OpenCV
+    ${Protobuf_INCLUDE_DIRS}                                        # Protobuffer
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     ${GXX_INCLUDES}
@@ -43,9 +43,9 @@ target_link_libraries (
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
-    ${PROTOBUF_LIBRARIES}
+    ${Protobuf_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${OPENCV_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     pthread
 )
 
