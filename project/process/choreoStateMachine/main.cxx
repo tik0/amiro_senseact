@@ -253,7 +253,7 @@ void homing() {
     speed = 1e6;
   }
   myCAN.setTargetSpeed(0,speed);
-        usleep(abs(int(0.99f*diffAngle)));
+        usleep(abs(int(1.01f*diffAngle)));
         myCAN.setTargetSpeed(0,0);
   // drive to origin
   if (diffDist < 0) {
@@ -271,7 +271,7 @@ void homing() {
     speed = 1e6;
   }
   myCAN.setTargetSpeed(0,speed);
-        usleep(abs(int(0.99f*backAngle)));
+        usleep(abs(int(1.01f*backAngle)));
         myCAN.setTargetSpeed(0,0);
 }
 
