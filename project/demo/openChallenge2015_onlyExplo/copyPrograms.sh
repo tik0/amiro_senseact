@@ -12,3 +12,5 @@ scp stop.sh root@${IP}:~/${NAME}
 # Copy config
 scp amirospread root@${IP}:~/${NAME}
 scp rsb.conf root@${IP}:~/${NAME}
+
+scp -r sim root@${IP}:~/${NAME}/
