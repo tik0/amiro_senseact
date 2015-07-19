@@ -63,7 +63,7 @@ using namespace rsb::patterns;
 #define OBSTACLE_MARGIN 100
 #define OBSTACLE_MARGIN_SIDE 7500
 #define GROUND_MARGIN 6
-#define GROUND_MARGIN_DANGER 4
+#define GROUND_MARGIN_DANGER 7
 #define EDGE_DIFF 0.4
 
 // edge model 6cm
@@ -359,7 +359,7 @@ int main(int argc, char **argv) {
             case STturn:
               edgeDistL = edgeDist(sensorValuesGround->at(1));
               edgeDistR = edgeDist(sensorValuesGround->at(2));
-              if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) <= EDGE_DIFF) {
+              if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && edgeDistL < edgeDistR && abs(edgeDistR-edgeDistL) < EDGE_DIFF) {
                 turn = 0;
                 sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
                 state = STdriveEdge;
