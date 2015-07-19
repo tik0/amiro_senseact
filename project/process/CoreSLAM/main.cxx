@@ -104,11 +104,11 @@ std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
 static rst::geometry::Rotation odomRot;
 
-void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
+int convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
   
   laser_count_++;
   if ((laser_count_ % throttle_scans_) != 0)
-    return;
+    return 1;
 
 //  DEBUG_MSG( "Scan rec.")
 //  Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
@@ -120,41 +120,14 @@ void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data ,
   rsbScan = *data;
 
   // Shifting the rays
-  DEBUG_MSG("Startscan: " << rsbScan.scan_angle_start() * 180.0 / M_PI)
-  DEBUG_MSG("Endscan: " << rsbScan.scan_angle_end() * 180.0 / M_PI)
-  DEBUG_MSG("Angle: " << rsbScan.scan_angle() * 180.0 / M_PI)
-  DEBUG_MSG("Size: " << rsbScan.scan_values_size())
-  DEBUG_MSG("Inc: " << rsbScan.scan_angle_increment() * 180.0 / M_PI)
+//  DEBUG_MSG("Startscan: " << rsbScan.scan_angle_start() * 180.0 / M_PI)
+//  DEBUG_MSG("Endscan: " << rsbScan.scan_angle_end() * 180.0 / M_PI)
+//  DEBUG_MSG("Angle: " << rsbScan.scan_angle() * 180.0 / M_PI)
+//  DEBUG_MSG("Size: " << rsbScan.scan_values_size())
+//  DEBUG_MSG("Inc: " << rsbScan.scan_angle_increment() * 180.0 / M_PI)
 //  rsbScan.set_scan_angle_increment(-rsbScan.scan_angle_increment);
 
-
-//  rsbScan.set_scan_angle_start(rsbScan.scan_angle_start() + M_PI / 2.0f);
-//  rsbScan.set_scan_angle_end(rsbScan.scan_angle_end() + M_PI / 2.0f);
-//
-//  rsbScan.set_scan_angle_start(0);
-//  rsbScan.set_scan_angle_end(240.0f / 180.0f * M_PI);
-//  rsbScan.set_scan_angle_start(120.0f / 180.0f * M_PI);
-//    rsbScan.set_scan_angle_end(-120.0f / 180.0f * M_PI);
-  
-  // Check if two adjiacent rays stand almost perpendiculat on the surface
-  // and set the first one to an invalid measurement if the angle is to big
-  for (int idx = 0; idx < rsbScan.scan_values_size()-1; idx++) {
-    float a = rsbScan.scan_values(idx);
-    float b = rsbScan.scan_values(idx+1);
-    float h = a * sin(rsbScan.scan_angle_increment());
-    float b_t = sqrt(pow(a,2) - pow(h,2));
-    float b_tt = b - b_t;
-    float beta_t = atan2(h, b_t);
-    float beta_tt = atan2(h, b_tt);
-    float beta = beta_t + beta_tt;
-    if (sin(beta) < rayPruningAngle())
-      rsbScan.mutable_scan_values()->Set(idx, rsbScan.scan_values_max() + 42.0f); // Increment the value, so that it becomes invalid
-  }
-  // Delete the last value, if the former value is invalid
-  if (rsbScan.scan_values(rsbScan.scan_values_size() -2) > rsbScan.scan_values_max())
-    rsbScan.mutable_scan_values()->Set(rsbScan.scan_values_size() - 1, rsbScan.scan_values_max() + 42.0f);
-
-
+  return 0;
 }
 
 void storeOdomData(boost::shared_ptr<rst::geometry::Pose> event) {
@@ -388,7 +361,8 @@ int main(int argc, const char **argv){
   rst::vision::LocatedLaserScan scan;
   while( true ){
     // Fetch a new scan and store it to scan
-    convertDataToScan(lidarQueue->pop(), scan);
+    if (convertDataToScan(lidarQueue->pop(), scan))
+      continue;
     ts_position_t pose;
     ts_position_t odom_pose;
     getOdomPose(odom_pose);
