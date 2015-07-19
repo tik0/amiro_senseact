@@ -307,7 +307,7 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
       twbTracking::proto::Pose2D *pose2D1 = pose2DList->add_pose();
       pose2D1->set_x(centers[i].x * delta_ - xSize/2.0);
       pose2D1->set_y(centers[i].y * delta_ - ySize/2.0);
-      pose2D1->set_orientation(objectRadius[i]);
+      pose2D1->set_orientation(objectRadius[i] * delta_);
       pose2D1->set_id(0);
 
       if (draw_debug) {
