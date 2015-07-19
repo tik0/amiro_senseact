@@ -76,8 +76,8 @@ std::string progressInscope = "/objectDetectionMain/command";
 std::string progressOutscope = "/objectDetectionMain/answer";
 std::string odometryInscope = "/localization";
 std::string trackingInscope = "/murox/roboterlocation";
-std::string sPathRequestOutput = "/path/request";
-std::string sPathRequestInput = "/path/answer";
+std::string sPathRequestOutput = "/pathReq/request";
+std::string sPathRequestInput = "/pathReq/answer";
 std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";
 std::string mapServerScope = "/mapGenerator";
@@ -392,6 +392,15 @@ int main(int argc, char **argv) {
 				}
 			}
 
+			if (objectPositions->pose_size() == 0) {
+				WARNING_MSG("Add fake object.")
+				twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
+				pose2D->set_x(0.1);
+				pose2D->set_y(-0.2);
+				pose2D->set_orientation(0.05);
+				pose2D->set_id(0);
+			}
+
 			detectionPositionPtr->set_x(0);
 			detectionPositionPtr->set_y(0);
 			detectionPositionPtr->set_orientation(0);
@@ -460,8 +469,10 @@ int main(int argc, char **argv) {
 								pathRequestQueue->pop();
 							}
 							pathRequestInformer->publish(detectionPositionPtr);
-							while (!pathRequestQueue->empty()) {
+							INFO_MSG("Waiting for path:");
+							while (pathRequestQueue->empty()) {
 								sleep(1);
+								INFO_MSG("Still waiting ...");
 							}
 							pathRequestQueue->pop();
 						}
