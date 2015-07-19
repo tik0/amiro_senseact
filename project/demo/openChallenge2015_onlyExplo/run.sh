@@ -27,7 +27,7 @@ sleep 5
 # start localization programs
 # ./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.01 --hole_width 0.05 &
 # FAULTY # ./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.005 --hole_width 0.02 --mapAsImageOutScope /image &
-./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 1 --delta 0.005 --hole_width 0.3 --mapAsImageOutScope /image --samples 1000 --throttle_scans 1 --sigma_xy 10 --sigma_theta 0.35 &
+./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 1 --delta 0.005 --hole_width 0.1 --mapAsImageOutScope /image --samples 500 --throttle_scans 1 --sigma_xy 10.0 --sigma_theta 0.05 &
 
 # start all primary moving programs
 ./localPlanner -p /localization -i /path -r /pathResponse > /dev/null &
