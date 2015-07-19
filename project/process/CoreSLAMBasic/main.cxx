@@ -1,6 +1,6 @@
 
 #define INFO_MSG_
-#define DEBUG_MSG_
+//#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
  #define ERROR_MSG_
@@ -500,14 +500,14 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   DEBUG_MSG("Initial position step: "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta << ")")
 
   // Mapping
-  if(laser_count_ < 10){
-    INFO_MSG("BOOTSTRAP -- I assume that I stand still")
-  // not much of a map, let's bootstrap for now
-    ts_scan_t ranges;
-    ts_build_scan(&data, &ranges, &state_, 3 /*widening of the ray*/);
-    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
-    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
-  }else{
+//  if(laser_count_ < 10){
+//    INFO_MSG("BOOTSTRAP -- I assume that I stand still")
+//  // not much of a map, let's bootstrap for now
+//    ts_scan_t ranges;
+//    ts_build_scan(&data, &ranges, &state_, 3 /*widening of the ray*/);
+//    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
+//    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
+//  }else{
 
     // Monte carlo localization is done inside
     if (slamState == slam)
@@ -517,7 +517,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
     DEBUG_MSG("End postition step: "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta << ")")
     DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
-  }
+//  }
   // Set the new pose
   pose = state_.position;
 

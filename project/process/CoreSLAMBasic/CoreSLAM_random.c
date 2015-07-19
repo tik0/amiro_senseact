@@ -44,7 +44,9 @@ float ts_random_normal(ts_randomizer_t *d, float m, float s)
     d->hz = SHR3(d); 
     d->iz = d->hz & 127;
     x= ((unsigned long)abs(d->hz) < d->kn[d->iz])? d->hz * d->wn[d->iz] : ts_random_normal_fix(d); // Generic version
-    x *= .2328306e-9;  // Normalize the random numbers // printf("d->hz: %d .... x: %d\n", d->hz, x);
+//    printf("--d->hz: %d .... x: %f\n", d->hz, x);
+//    x *= .2328306e-9;  // Normalize the random numbers //
+//    printf("d->hz: %d .... x: %f\n", d->hz, x);
     return x * s + m ;
 };
 
