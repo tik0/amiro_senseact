@@ -13,7 +13,9 @@ sleep 1
 
 cpufreq-set -g performance
 
-# start spread
+# start spread for local communication
+spread &
+# start spread for remote communication
 spread -c amirospread &
 sleep 5
 
