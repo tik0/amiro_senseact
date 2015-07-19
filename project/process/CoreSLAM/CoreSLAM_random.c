@@ -44,6 +44,7 @@ double ts_random_normal(ts_randomizer_t *d, double m, double s)
     d->hz = SHR3(d); 
     d->iz = d->hz & 127;
     x= ((unsigned long)abs(d->hz) < d->kn[d->iz])? d->hz * d->wn[d->iz] : ts_random_normal_fix(d); // Generic version
+    x *= .2328306e-9;  // Normalize the random numbers // printf("d->hz: %d .... x: %d\n", d->hz, x);
     return x * s + m ;
 };
 
@@ -109,6 +110,10 @@ ts_position_t ts_monte_carlo_search(ts_randomizer_t *randomizer /* from state */
         currentpos.x = ts_random_normal(randomizer, currentpos.x, sigma_xy);
         currentpos.y = ts_random_normal(randomizer, currentpos.y, sigma_xy);
         currentpos.theta = ts_random_normal(randomizer, currentpos.theta, sigma_theta);
+//        printf("-----------------------------------------\n");
+//        printf("xy %f, theta %f, counter %d\n", sigma_xy, sigma_theta, counter);
+//        printf("x %f, y %f, theta %f, counter %d\n", lastbestpos.x, lastbestpos.y, lastbestpos.theta, counter);
+//        printf("x %f, y %f, theta %f, counter %d\n", currentpos.x, currentpos.y, currentpos.theta, counter);
 
         // Get a scan from the new sampled position
         currentdist = ts_distance_scan_to_map(scan, map, &currentpos);
