@@ -1,6 +1,6 @@
 
 #define INFO_MSG_
-//#define DEBUG_MSG_
+#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
  #define ERROR_MSG_
@@ -395,11 +395,8 @@ getOdomPose(ts_position_t& ts_pose)
 {
 
   // Read the odometry data (This function halts until some data was received)
-#ifdef __arm__
   types::position robotPosition = ::CAN->getOdometry();
-#else
-  types::position robotPosition;
-#endif
+
   // Set the Robot to the center of the map, independent from the first odometry message
   if(!gotFirstOdometry) {
     robotInitPosition.x = robotPosition.x;
@@ -410,7 +407,7 @@ getOdomPose(ts_position_t& ts_pose)
 
   const double translation_x = static_cast<double>(robotPosition.x - robotInitPosition.x) * 1e-3;
   const double translation_y = static_cast<double>(robotPosition.y - robotInitPosition.y) * 1e-3;
-  const double yaw           = static_cast<double>(robotPosition.f_z - robotInitPosition.f_z) * 1e-6;
+  const double yaw           = static_cast<double>(robotPosition.f_z) * 1e-6; // static_cast<double>(robotPosition.f_z - robotInitPosition.f_z) * 1e-6;
   ts_pose.x = translation_x + mapOffset; // convert to mm
   ts_pose.y = translation_y + mapOffset; // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
@@ -439,7 +436,7 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
 
   // new coreslam instance
   ts_map_init(&ts_map_);
-  ts_state_init(&state_, &ts_map_, &lparams_, &position_, (int)(sigma_xy_*1000), (int)(sigma_theta_*180/M_PI), (int)(hole_width_*1000), 0, samples);
+  ts_state_init(&state_, &ts_map_, &lparams_, &position_, sigma_xy_, sigma_theta_*180/M_PI, (int)(hole_width_*1000), 0, samples);
 
   INFO_MSG("Initialized with sigma_xy=" << sigma_xy_<< ", sigma_theta=" << ", hole_width=" << hole_width_ << ", delta=" << delta_);
   INFO_MSG("Initialization complete");
@@ -475,7 +472,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 
   state_.position.x += odom_pose.x - prev_odom_.x;
   state_.position.y += odom_pose.y - prev_odom_.y;
-  state_.position.theta += odom_pose.theta - prev_odom_.theta - first_odom_.theta;
+  state_.position.theta += odom_pose.theta - prev_odom_.theta; //- first_odom_.theta;
   prev_odom_ = odom_pose;
 
   ts_position_t prev = state_.position;
@@ -499,8 +496,12 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
       data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
   }
 
+//  state_.position.theta = 90;
+  DEBUG_MSG("Initial position step: "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta << ")")
+
   // Mapping
   if(laser_count_ < 10){
+    INFO_MSG("BOOTSTRAP -- I assume that I stand still")
   // not much of a map, let's bootstrap for now
     ts_scan_t ranges;
     ts_build_scan(&data, &ranges, &state_, 3 /*widening of the ray*/);
@@ -514,7 +515,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
     else /*if (slamState == localization)*/
       ts_iterative_map_building(&data, &state_, false /*do only localization*/);
 
-    DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
+    DEBUG_MSG("End postition step: "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta << ")")
     DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
   }
   // Set the new pose
@@ -529,9 +530,9 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   odomData->mutable_rotation()->set_roll(0.0f);
   odomData->mutable_rotation()->set_pitch(0.0f);
   odomData->mutable_rotation()->set_yaw(pose.theta * M_PI / 180);
+  mtxOdom.unlock();
   DEBUG_MSG("SLAM POSE: " << (pose.x - mapOffset) * 1e-3 << " m " << (pose.y - mapOffset) * 1e-3 << " m " << pose.theta * M_PI / 180 << " rad")
   informerOdometry->publish(odomData);
-  mtxOdom.unlock();
 
   return true;
 }

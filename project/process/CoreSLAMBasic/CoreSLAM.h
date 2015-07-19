@@ -6,7 +6,7 @@
 #endif
 
 #define TS_SCAN_SIZE 8192
-#define TS_MAP_SIZE 1024
+#define TS_MAP_SIZE 2048
 //#define TS_MAP_SCALE 0.02
 #define TS_NO_OBSTACLE 65500
 #define TS_OBSTACLE 0
