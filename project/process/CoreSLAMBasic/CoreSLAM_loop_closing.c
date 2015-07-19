@@ -19,10 +19,10 @@ ts_close_loop_trajectory(ts_sensor_data_t *sensor_data, int maxscans,
         ts_position_t *startpos, ts_position_t *close_loop_position)
 {
     int i, j;
-    double weight, theta[2];
+    float weight, theta[2];
     ts_position_t *final_pos;
     for (i = 0; i != maxscans; i++) {
-        weight = i / ((double)(maxscans - 1));
+        weight = i / ((float)(maxscans - 1));
         final_pos = &sensor_data[i].position[TS_FINAL_MAP];
         final_pos->x = (1 - weight) * sensor_data[i].position[TS_DIRECTION_FORWARD].x + weight * sensor_data[i].position[TS_DIRECTION_BACKWARD].x;
         final_pos->y = (1 - weight) * sensor_data[i].position[TS_DIRECTION_FORWARD].y + weight * sensor_data[i].position[TS_DIRECTION_BACKWARD].y;

@@ -3,7 +3,7 @@
 #include <math.h>
 #include "CoreSLAM.h"
 
-double
+float
 ts_distance(ts_position_t *pos1, ts_position_t *pos2)
 {
     return sqrt((pos1->x - pos2->x) * (pos1->x - pos2->x) + (pos1->y - pos2->y) * (pos1->y - pos2->y));
@@ -33,8 +33,8 @@ ts_save_map_pgm(ts_map_t *map, ts_map_t *overlay, char *filename, int width, int
 void
 ts_draw_scan(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos)
 {
-    double c, s;
-    double x2p, y2p;
+    float c, s;
+    float x2p, y2p;
     int i, x1, y1, x2, y2;
 
     c = cos(pos->theta * M_PI / 180);
@@ -59,8 +59,8 @@ ts_draw_scan(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos)
 void
 ts_draw_scan_RGB(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, unsigned char *pixmap, int scale, int reversey)
 {
-    double c, s;
-    double x2p, y2p;
+    float c, s;
+    float x2p, y2p;
     int i, x1, y1, x2, y2;
     int color;
     unsigned char *ptr;

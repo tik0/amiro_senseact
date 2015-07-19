@@ -6,13 +6,13 @@
 static unsigned long SHR3(ts_randomizer_t *d)
 { d->jz=d->jsr; d->jsr^=(d->jsr<<13); d->jsr^=(d->jsr>>17); d->jsr^=(d->jsr<<5); return d->jz+d->jsr;}
 
-static double UNI(ts_randomizer_t *d) 
+static float UNI(ts_randomizer_t *d)
 { return .5 + (signed)SHR3(d) * .2328306e-9;}
 
-double ts_random_normal_fix(ts_randomizer_t *d) 
+float ts_random_normal_fix(ts_randomizer_t *d)
 {	
-    const double r = 3.442620; 	// The starting of the right tail 	
-    static double x, y;
+    const float r = 3.442620; 	// The starting of the right tail
+    static float x, y;
     for(;;)
     {
         x=d->hz*d->wn[d->iz];
@@ -38,20 +38,21 @@ double ts_random_normal_fix(ts_randomizer_t *d)
     }   
 }
 
-double ts_random_normal(ts_randomizer_t *d, double m, double s) 
+float ts_random_normal(ts_randomizer_t *d, float m, float s)
 { 
-    double x;
+    float x;
     d->hz = SHR3(d); 
     d->iz = d->hz & 127;
     x= ((unsigned long)abs(d->hz) < d->kn[d->iz])? d->hz * d->wn[d->iz] : ts_random_normal_fix(d); // Generic version
+    x *= .2328306e-9;  // Normalize the random numbers // printf("d->hz: %d .... x: %d\n", d->hz, x);
     return x * s + m ;
 };
 
 void ts_random_init(ts_randomizer_t *d, unsigned long jsrseed) 
 {	  
-    const double m1 = 2147483648.0;
+    const float m1 = 2147483648.0;
     
-    double dn=3.442619855899, tn=dn, vn=9.91256303526217e-3, q;      
+    float dn=3.442619855899, tn=dn, vn=9.91256303526217e-3, q;
     int i;		  
     d->jsr=jsrseed;
     
@@ -71,7 +72,7 @@ void ts_random_init(ts_randomizer_t *d, unsigned long jsrseed)
     }
 }
 
-double ts_random(ts_randomizer_t *d)
+float ts_random(ts_randomizer_t *d)
 {
     return UNI(d);
 }
@@ -86,7 +87,7 @@ long ts_random_int(ts_randomizer_t *d, long min, long max)
     return r;
 }
 
-ts_position_t ts_monte_carlo_search(ts_randomizer_t *randomizer /* from state */, ts_scan_t *scan, ts_map_t *map, ts_position_t *start_pos, double sigma_xy, double sigma_theta, int stop /* number of iterations */, int *bd /* measured scan distance regarding the best position*/)
+ts_position_t ts_monte_carlo_search(ts_randomizer_t *randomizer /* from state */, ts_scan_t *scan, ts_map_t *map, ts_position_t *start_pos, float sigma_xy, float sigma_theta, int stop /* number of iterations */, int *bd /* measured scan distance regarding the best position*/)
 {
     ts_position_t currentpos, bestpos, lastbestpos;
     int currentdist;
@@ -109,6 +110,10 @@ ts_position_t ts_monte_carlo_search(ts_randomizer_t *randomizer /* from state */
         currentpos.x = ts_random_normal(randomizer, currentpos.x, sigma_xy);
         currentpos.y = ts_random_normal(randomizer, currentpos.y, sigma_xy);
         currentpos.theta = ts_random_normal(randomizer, currentpos.theta, sigma_theta);
+//        printf("-----------------------------------------\n");
+//        printf("xy %f, theta %f, counter %d\n", sigma_xy, sigma_theta, counter);
+//        printf("x %f, y %f, theta %f, counter %d\n", lastbestpos.x, lastbestpos.y, lastbestpos.theta, counter);
+//        printf("x %f, y %f, theta %f, counter %d\n", currentpos.x, currentpos.y, currentpos.theta, counter);
 
         // Get a scan from the new sampled position
         currentdist = ts_distance_scan_to_map(scan, map, &currentpos);
