@@ -117,7 +117,7 @@ std::string inputRSBTransportSufFin = "finish";
 
 std::string outputRSBInit = "init";
 std::string outputRSBColor = "rbgyx";
-std::string outputRSBDelivery = "object4";
+std::string outputRSBDelivery = "object3";
 std::string outputRSBTransport = "transport";
 std::string outputRSBRec = "rec";
 
@@ -381,7 +381,7 @@ int processSM(void) {
                     objectDetected[0] = false;
                     objectDetectedRec[0] = true;
                 }
-                if (objectDetected[1]) {
+/*                if (objectDetected[1]) {
                     INFO_MSG("Sending rec message of object 4.");
                     sOutput = "";
                     sOutput.append(inputRSBObject).append("4rec");
@@ -389,8 +389,8 @@ int processSM(void) {
                     informerOutsideScope->publish(stringPublisher);
                     objectDetected[1] = false;
                     objectDetectedRec[1] = true;
-                }
-                if (objectDetectedRec[0] && objectDetectedRec[1]) {
+                }*/
+                if (objectDetectedRec[0]) { // && objectDetectedRec[1]) {
                     amiroState = initDoneWait;
                 }
                 break;
