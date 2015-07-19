@@ -46,7 +46,7 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${RST_INCLUDE_DIRS}                                             # RST types
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
-    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
+    ${OpenCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "$ENV{MUROX_INCLUDE_DIRS}/extspread"			    # Programatik spread
@@ -59,9 +59,12 @@ include_directories(
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
-if (NOT TARGET vecIntConverter)
-    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-endif()
+# Add sources to build
+#INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
+
+#if (NOT TARGET vecIntConverter)
+#    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+#endif()
 
 if (NOT TARGET matConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)

@@ -23,7 +23,7 @@ using namespace rsb;
 using namespace rsb::patterns;
 
 // converters
-#include <converter/vecIntConverter/main.hpp>
+//#include <converter/vecIntConverter/main.hpp>
 #include <converter/matConverter/matConverter.hpp>
 using namespace muroxConverter;
 
@@ -32,6 +32,7 @@ using namespace muroxConverter;
 #include <types/PoseEuler.pb.h>
 #include <extspread.hpp>
 #include <ControllerAreaNetwork.h>
+ControllerAreaNetwork myCAN;
 
 // keyboard
 #include <kbhit.hpp>
@@ -46,6 +47,7 @@ bool debug = false;
 
 bool useSLAMData = false;
 bool mapServerIsRemote = false;
+bool isBigMap = false;
 
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPosTmp(new twbTracking::proto::Pose2DList);
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPos(new twbTracking::proto::Pose2DList);
@@ -72,9 +74,8 @@ RemoteServerPtr mapServer;
 boost::shared_ptr<std::string> finishStr(new string("finish"));
 
 // for motor control
-rsb::Informer< std::vector<int> >::Ptr motorCmdInformer;
+//rsb::Informer< std::vector<int> >::Ptr motorCmdInformer;
 std::vector<int> motorCmd(3,0);
-ControllerAreaNetwork myCAN;
 
 // search the pose-list received from tracking for the robots id and get the corresponding pose.
 cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
@@ -104,7 +105,7 @@ void addPos2PoseList(boost::shared_ptr<twbTracking::proto::Pose2DList> &pose2DLi
 }
 
 void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
-	cout << "Steps left: " << pathIdx << endl;
+	cout << "ObjectDelivery: Steps left: " << pathIdx << endl;
 	if (!pathResponse) {
 		cout << "Path error!" << endl;
 		return;
@@ -121,7 +122,8 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	motorCmd[2] = 2000000;
 	boost::shared_ptr< std::vector<int> > motorCmdData = boost::shared_ptr<std::vector<int> >(new std::vector<int>(motorCmd.begin(),motorCmd.end()));
 	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
-	motorCmdInformer->publish(motorCmdData);
+//	motorCmdInformer->publish(motorCmdData);
+	myCAN.setTargetSpeed(motorCmd[0], motorCmd[1]);
 	usleep(3000000);
 
 	currObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x(),pushingPath->pose(pathIdx).y());
@@ -139,7 +141,7 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 		addPos2PoseList(pushingArrow4Drawing, cv::Point2f(color_red.x, color_red.y), color_red.z);
 	}
 
-	cout << "Starting position calculated. Retrieving path thereto." << endl;
+	cout << "ObjectDelivery: Starting position calculated. Retrieving path thereto." << endl;
 
 	boost::shared_ptr<twbTracking::proto::Pose2D> startOwnPose2D(new twbTracking::proto::Pose2D());
 	startOwnPose2D->set_x(startOwnPos.x);
@@ -152,7 +154,7 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	try {
 		pathToStartPosTmp = mapServer->call<twbTracking::proto::Pose2DList>("getPath", startOwnPose2D);
 	} catch (const rsc::threading::FutureTimeoutException & e) {
-		cerr << "MapGenerator not responding when trying to retrieve path to start position! CleanUpTask shutting down." << endl;
+		cerr << "ObjectDelivery: MapGenerator not responding when trying to retrieve path to start position! CleanUpTask shutting down." << endl;
 		return;
 	}
 
@@ -164,7 +166,7 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 
 	deleteObjectInformer->publish(objectPtr);
 
-	cout << "Path to starting position retrieved (length: " << pathToStartPos->pose_size() << ")" << endl;
+	cout << "ObjectDelivery: Path to starting position retrieved (length: " << pathToStartPos->pose_size() << ")" << endl;
 
 	if(debug){
 		path4Drawing->Clear();
@@ -175,7 +177,7 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	}
 
 	pathInformer->publish(pathToStartPos);
-	cout << "Path to starting position published." << endl;
+	cout << "ObjectDelivery: Path to starting position published." << endl;
 
 	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
 }
@@ -197,6 +199,8 @@ int main(int argc, char **argv) {
 	std::string drawPointsOutscope = "/draw/points";
 	std::string drawPathOutscope = "/draw/path";
 	std::string drawArrowsOutscope = "/draw/arrows";
+	std::string sPathRequestOutput = "/pushPath/request";
+	std::string sPathRequestInput = "/pushPath/answer";
 
 	std::string spreadhost = "127.0.0.1";
 	std::string spreadport = "4823";
@@ -220,6 +224,7 @@ int main(int argc, char **argv) {
 			("port", po::value<std::string>(&spreadport), "Port for Programatik Spread.")
 			("meterPerPixel,mpp", po::value<float>(&meterPerPixel), "Camera parameter: Meter per Pixel")
 			("debugVis", "Debug mode: object selection via keyboard & visualization")
+			("bigMap", "Flag if the map is very big (the pathplanner needs more than 25 seconds).")
 			("mapServerIsRemote", "Flag, if the map server is a remote server (otherwise it uses local connection).")
 			("useSLAMData", "Use SLAM Localization Data (PoseEuler) instead of Tracking Data for incomming position data.");
 
@@ -237,10 +242,11 @@ int main(int argc, char **argv) {
 	po::notify(vm);
 
 	debug = vm.count("debugVis") > 0;
-	if(debug) cout << "Debug mode: object selection via keyboard (number as Id). Visualization data will be published for showMap." << endl;
+	if(debug) cout << "ObjectDelivery: Debug mode: object selection via keyboard (number as Id). Visualization data will be published for showMap." << endl;
 
 	mapServerIsRemote = vm.count("mapServerIsRemote");
 	useSLAMData = vm.count("useSLAMData");
+        isBigMap = vm.count("bigMap");
 
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
@@ -264,15 +270,21 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<MatConverter> matConverter(new MatConverter());
 	rsb::converter::converterRepository<std::string>()->registerConverter(matConverter);
 
-	// Register new converter for std::vector<int>
+/*	// Register new converter for std::vector<int>
 	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
-	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);*/
 
 	// Register converter for PoseEuler
 	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler > > odomEulerConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler >());
 	rsb::converter::converterRepository<std::string>()->registerConverter(odomEulerConverter);
 
 	// ---------- Listener ---------------
+
+	// prepare RSB listener for path request answer
+	rsb::ListenerPtr pathRequestListener = factory.createListener(sPathRequestInput);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pathRequestQueue(
+			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+	pathRequestListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(pathRequestQueue)));
 
 	// prepare rsb listener for tracking data
 	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, extspreadconfig);
@@ -297,8 +309,11 @@ int main(int argc, char **argv) {
 	// create rsb informer to publish the robots path
 	pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
+	// create rsb informer to publish the robots path request
+	rsb::Informer<twbTracking::proto::Pose2D>::Ptr pathRequestInformer = factory.createInformer<twbTracking::proto::Pose2D>(sPathRequestOutput);
+
 	// Prepare RSB informer
-	motorCmdInformer = factory.createInformer< std::vector<int> > (rsbMotoOutScope);
+//	motorCmdInformer = factory.createInformer< std::vector<int> > (rsbMotoOutScope);
 
 	if(debug){
 		drawObjectsInformer = factory.createInformer<twbTracking::proto::Pose2DList>(drawObjectsOutscope, extspreadconfig);
@@ -328,13 +343,13 @@ int main(int argc, char **argv) {
 		try {
 			objectsList = mapServer->call<twbTracking::proto::Pose2DList>("getObjectsList");
 		} catch (const rsc::threading::FutureTimeoutException & e) {
-			cerr << "Error: MapGenerator not responding when trying to retrieve objects list! Exiting deliverObject." << endl;
+			cerr << "ObjectDelivery: ERROR - MapGenerator not responding when trying to retrieve objects list! Exiting deliverObject." << endl;
 			return EXIT_FAILURE;
 		}
 		addPos2PoseList(objectsList, cv::Point2f(color_green.x, color_green.y), color_green.z);
-		cout << "Objects list retrieved: " << objectsList->pose_size() << " objects found." << endl;
+		cout << "ObjectDelivery: Objects list retrieved: " << objectsList->pose_size() << " objects found." << endl;
 	} else {
-		cout << "Waiting for tracking for dumping ground..." << endl;
+		cout << "ObjectDelivery: Waiting for destination position." << endl;
 		cv::Point3f destObjectPose;
 		if (useSLAMData) {
 			while(odomQueue->empty()) usleep(250000);
@@ -344,11 +359,12 @@ int main(int argc, char **argv) {
 			destObjectPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
 		}
 		destObjectPos = cv::Point2f(destObjectPose.x, destObjectPose.y);
+		cout << "ObjectDelivery: Destination position set on " << destObjectPos.x << "/" << destObjectPos.y << endl;
 	}
 
 	while(true) {
 
-		cout << "Waiting for next object request..." << endl;
+		cout << "ObjectDelivery: Waiting for next object request ..." << endl;
 
 		while((!debug && stateMachineCmdQueue->empty()) || (debug && !kbhit())){
 			if(debug){
@@ -378,13 +394,12 @@ int main(int argc, char **argv) {
 		objectPtr->set_orientation(object.orientation());
 		objectPtr->set_id(0);
 
-		cout << "Deliver command received. Start delivering object... " << endl;
+		cout << "ObjectDelivery: Deliver command received. Start delivering object ..." << endl;
 
 		if(debug){
 			currOwnPos = cv::Point2f(129,57)*cellSize;
 		} else {
-			cout << "Waiting for position of robot..." << endl;
-			while(trackingQueue->empty()) usleep(250000);
+			cout << "ObjectDelivery: Waiting for position of robot ..." << endl;
 			cv::Point3f robotPose;
 			if (useSLAMData) {
 				while(odomQueue->empty()) usleep(250000);
@@ -402,16 +417,27 @@ int main(int argc, char **argv) {
 		*pose2DList4PathRequest->add_pose() = object;
 
 		try {
-			cout << "Deliver object from " << currObjectPos.x << "/" << currObjectPos.y << " to position " << destObjectPos.x << "/" << destObjectPos.y << endl;
+			cout << "ObjectDelivery: Deliver object from " << currObjectPos.x << "/" << currObjectPos.y << " to position " << destObjectPos.x << "/" << destObjectPos.y << endl;
+
+			if (isBigMap) {
+				if (!pathRequestQueue->empty()) {
+					pathRequestQueue->pop();
+				}
+				pathRequestInformer->publish(detectionPositionPtr);
+				while (!pathRequestQueue->empty()) {
+					sleep(1);
+				}
+				pathRequestQueue->pop();
+			}
 			pushingPath = mapServer->call<twbTracking::proto::Pose2DList>("getPushingPath", pose2DList4PathRequest);
 		} catch (const rsc::threading::FutureTimeoutException & e) {
-			cerr << "Error: MapGenerator not responding when trying to retrieve pushing path! Exiting deliverObject." << endl;
+			cerr << "ObjectDelivery: ERROR - MapGenerator not responding when trying to retrieve pushing path! Exiting deliverObject." << endl;
 			return EXIT_FAILURE;
 		}
 		addPos2PoseList(pushingPath, currObjectPos, 0);
 
 		if(debug){
-			cout << "Pushing path retrieved (length: " << pushingPath->pose_size() << ")." << endl;
+			cout << "ObjectDelivery: Pushing path retrieved (length: " << pushingPath->pose_size() << ")." << endl;
 			pushingPath4Drawing->CopyFrom(*pushingPath);
 			addPos2PoseList(pushingPath4Drawing, cv::Point2f(color_blue.x, color_blue.y), color_blue.z);
 		}
@@ -419,7 +445,7 @@ int main(int argc, char **argv) {
 		if (pushingPath->pose_size() > 1) {
 			pathIdx = pushingPath->pose_size()-1;
 			calcAndPublishNextPathSegment(truePtr);
-		} else cout << "No pushing path found!" << endl;
+		} else cout << "ObjectDelivery: ERROR - No pushing path found!" << endl;
 	}
 
 	return EXIT_SUCCESS;

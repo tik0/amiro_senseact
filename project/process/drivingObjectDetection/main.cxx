@@ -392,6 +392,12 @@ int main(int argc, char **argv) {
 				}
 			}
 
+			detectionPositionPtr->set_x(0);
+			detectionPositionPtr->set_y(0);
+			detectionPositionPtr->set_orientation(0);
+			detectionPositionPtr->set_id(objectPositions->pose_size());
+			progressInformer->publish(detectionPositionPtr);
+
 			// check all objects
 			for (int i=objectPositions->pose_size()-1; i >= 0; i--) {
 
@@ -401,7 +407,7 @@ int main(int argc, char **argv) {
 				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // m
 
         	                bool objectDetected = false;
-				float detectionDist = robotRadius + robotObjectDist + objectPosition.orientation(); // m
+				float detectionDist = robotObjectDist + objectPosition.orientation(); // m
 				INFO_MSG("Focussing on object at position " << objectPosition.x() << "/" << objectPosition.y() << " with a radius of " << objectPosition.orientation() << " m");
 
 				// if the object hasn't been detected yet
@@ -524,8 +530,8 @@ int main(int argc, char **argv) {
 							int objNum = std::stoi(objInput);
 							INFO_MSG("Object " << objNum << " has been detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
 							objectDetected = true;
-							detectionPositionPtr->set_x(((float)objectPosition.x())/1000000.0);
-							detectionPositionPtr->set_y(((float)objectPosition.y())/1000000.0);
+							detectionPositionPtr->set_x(objectPosition.x());
+							detectionPositionPtr->set_y(objectPosition.y());
 							detectionPositionPtr->set_orientation(((float)objectPosition.orientation())/1000000.0);
 							detectionPositionPtr->set_id((float)objNum+objOffset);
 							progressInformer->publish(detectionPositionPtr);
@@ -558,9 +564,9 @@ int main(int argc, char **argv) {
 						objCount++;
 						INFO_MSG("Object " << objNum << " has been fake detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
 						objectDetected = true;
-						detectionPositionPtr->set_x(((float)objectPosition.x())/1000000.0);
-						detectionPositionPtr->set_y(((float)objectPosition.y())/1000000.0);
-						detectionPositionPtr->set_orientation(((float)objectPosition.orientation())/1000000.0);
+						detectionPositionPtr->set_x(objectPosition.x());
+						detectionPositionPtr->set_y(objectPosition.y());
+						detectionPositionPtr->set_orientation(objectPosition.orientation());
 						detectionPositionPtr->set_id(objNum);
 						progressInformer->publish(detectionPositionPtr);
 					}

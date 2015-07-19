@@ -70,6 +70,7 @@ enum states {
 	exploration,
 	blobDetection,
 	objectDetectionStart,
+	objectDetectionInit,
 	objectDetectionMain,
 	initDone,
 	waiting,
@@ -91,6 +92,7 @@ std::string statesString[] {
 	"exploration",
 	"blob detection",
 	"starting object detection",
+	"init object detection",
 	"object detection",
 	"initialization done",
 	"waiting",
@@ -546,7 +548,7 @@ int processSM(void) {
                 if (!testWithAnswerer) {
                     boost::shared_ptr<bool> draw_debug(new bool(false));
                     objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, draw_debug);
-        	    objectCount = objectPosList->pose_size();
+                    INFO_MSG(" -> Object count of Blob Detection: " << objectPosList->pose_size());
                     amiroState = objectDetectionStart;
                 } else {
 /*                    for(int i = 0; i < 2; ++i) {
@@ -576,7 +578,14 @@ int processSM(void) {
                     informerObjectDetScope->publish(positionPublisher);
                 }*/
                 informerObjectDetScope->publish(objectPosList);
-                amiroState = objectDetectionMain;
+                amiroState = objectDetectionInit;
+                break;
+            case objectDetectionInit:
+                if (rsbInputObjectDetection) {
+                    objectCount = objectDetectionAnswer->id();
+                    INFO_MSG(" -> Object count set to " << objectCount);
+                    amiroState = objectDetectionMain;
+                }
                 break;
             case objectDetectionMain:
                 rsbRecAllObjects = true;
