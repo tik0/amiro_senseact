@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "CoreSLAM.h"
 
-double TS_MAP_SCALE;
+float TS_MAP_SCALE;
 
 void 
 ts_map_init(ts_map_t *map)
@@ -20,14 +20,14 @@ ts_map_init(ts_map_t *map)
 }
 
 void 
-ts_map_set_scale(double scale){
+ts_map_set_scale(float scale){
     TS_MAP_SCALE = scale;
 }
 
 int
 ts_distance_scan_to_map(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos)
 {
-    double c, s;
+    float c, s;
     int i, x, y, nb_points = 0;
     int64_t sum;
 
@@ -137,10 +137,10 @@ ts_map_laser_ray(ts_map_t *map, int x1, int y1, int x2, int y2,
 void
 ts_map_update(ts_scan_t *scan, ts_map_t *map, ts_position_t *pos, int quality, int hole_width)
 {
-    double c, s;
-    double x2p, y2p;
+    float c, s;
+    float x2p, y2p;
     int i, x1, y1, x2, y2, xp, yp, value, q;
-    double add, dist;
+    float add, dist;
 
     c = cos(pos->theta * M_PI / 180);
     s = sin(pos->theta * M_PI / 180);

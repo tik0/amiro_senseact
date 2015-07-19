@@ -3,7 +3,7 @@
 #include "CoreSLAM.h"
 
 void
-ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta, int hole_width, int direction, int samples)
+ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, float sigma_xy, float sigma_theta, int hole_width, int direction, int samples)
 {
     ts_random_init(&state->randomizer, 0xdead);
     state->map = map;
@@ -27,27 +27,27 @@ void
 ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span /* widening of the ray*/)
 {
     int i, j;
-    double angle_rad, angle_deg;
+    float angle_rad, angle_deg;
     
     scan->nb_points = 0;
     // Span the laser scans to better cosd->ver the space
     for (i = 0; i < state->laser_params.scan_size; i++) {
         for (j = 0; j != span; j++) {
-            angle_deg = state->laser_params.angle_min + ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1);
-            //angle_deg += sd->psidot / 3600.0 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1);
+            angle_deg = state->laser_params.angle_min + ((float)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1);
+            //angle_deg += sd->psidot / 3600.0 * ((float)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1);
 
             angle_rad = angle_deg * M_PI / 180;
             if (i > state->laser_params.detection_margin && i < state->laser_params.scan_size - state->laser_params.detection_margin) {
                 /*if (sd->d[i] == 0) {
                     scan->x[scan->nb_points] = state->laser_params.distance_no_detection * cos(angle_rad);
-                    //scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
+                    //scan->x[scan->nb_points] -= sd->v * 1000 * ((float)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
                     scan->y[scan->nb_points] = state->laser_params.distance_no_detection * sin(angle_rad);
                     scan->value[scan->nb_points] = TS_NO_OBSTACLE;
                     scan->nb_points++;
                 }*/
                 if (sd->d[i] > state->hole_width /*/ 2*/ && sd->d[i] < state->laser_params.distance_no_detection) {
                     scan->x[scan->nb_points] = sd->d[i] * cos(angle_rad);
-                    //scan->x[scan->nb_points] -= sd->v * 1000 * ((double)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
+                    //scan->x[scan->nb_points] -= sd->v * 1000 * ((float)(i * span + j)) * (state->laser_params.angle_max - state->laser_params.angle_min) / (state->laser_params.scan_size * span - 1) / 3600.0;
                     scan->y[scan->nb_points] = sd->d[i] * sin(angle_rad);
                     scan->value[scan->nb_points] = TS_OBSTACLE;
                     scan->nb_points++;
@@ -59,9 +59,9 @@ ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span
 
 void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int do_map_update)
 {
-    double d; //psidot, v, d;
+    float d; //psidot, v, d;
     ts_scan_t scan2map;
-    double m, thetarad;
+    float m, thetarad;
     ts_position_t position;
 
     // Manage robot position
