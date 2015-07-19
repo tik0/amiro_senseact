@@ -446,9 +446,9 @@ int main(int argc, char **argv) {
 
 					boost::shared_ptr<twbTracking::proto::Pose2DList> path;
 					if (!skipPP) {
-						detectionPositionPtr->set_x(0.0);
-						detectionPositionPtr->set_y(0.0);
-						detectionPositionPtr->set_orientation(0.0);
+//						detectionPositionPtr->set_x(0.0);
+//						detectionPositionPtr->set_y(0.0);
+//						detectionPositionPtr->set_orientation(0.0);
 						if (isBigMap) {
 							if (!pathRequestQueue->empty()) {
 								pathRequestQueue->pop();
