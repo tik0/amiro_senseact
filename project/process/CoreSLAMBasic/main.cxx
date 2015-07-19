@@ -576,6 +576,7 @@ int main(int argc, const char **argv){
     ("mapAsImageOutScope", po::value < std::string > (&mapAsImageOutScope), "Scope for sending the map as compressed image to a remote spread daemon")
     ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
     ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
+    ("throttle_scans", po::value < int > (&throttle_scans_), "Only take every n'th scan")
     ("samples", po::value < int > (&samples), "Sampling steps of the marcov localization sampler")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
     ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
