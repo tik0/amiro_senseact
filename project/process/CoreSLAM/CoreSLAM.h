@@ -6,7 +6,7 @@
 #endif
 
 #define TS_SCAN_SIZE 8192
-#define TS_MAP_SIZE 2048
+#define TS_MAP_SIZE 2048 /* 1024 */
 //#define TS_MAP_SCALE 0.02
 #define TS_NO_OBSTACLE 65500
 #define TS_OBSTACLE 0
@@ -101,15 +101,16 @@ typedef struct {
     ts_scan_t scan;
     double sigma_xy;
     double sigma_theta;
+    int samples;
 } ts_state_t;
 
 #define TS_DIRECTION_FORWARD   0
 #define TS_DIRECTION_BACKWARD  1
 #define TS_FINAL_MAP 2
 
-void ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta, int hole_width, int direction);
+void ts_state_init(ts_state_t *state, ts_map_t *map, /*ts_robot_parameters_t *params,*/ ts_laser_parameters_t *laser_params, ts_position_t *position, double sigma_xy, double sigma_theta, int hole_width, int direction, int samples);
 void ts_build_scan(ts_sensor_data_t *sd, ts_scan_t *scan, ts_state_t *state, int span);
-void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state);
+void ts_iterative_map_building(ts_sensor_data_t *sd, ts_state_t *state, int do_map_update);
 
 // Loop closing
 ts_position_t ts_close_loop_position(ts_state_t *state, ts_sensor_data_t *sensor_data, ts_map_t *loop_close_map, ts_position_t *start_position, int *q);

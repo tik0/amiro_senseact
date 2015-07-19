@@ -2,7 +2,7 @@
 #define INFO_MSG_
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
-// #define WARNING_MSG_
+#define WARNING_MSG_
 // #define ERROR_MSG_
 #include "../../includes/MSG.h"
 
@@ -24,6 +24,7 @@ extern "C"{
 // Parameters needed for Marcov sampling
 static double sigma_xy_ = 0.01;  // m
 static double sigma_theta_ = 0.35;  // rad
+static int samples = 100; // Number of resampling steps
 // parameters for coreslam
 static double hole_width_ = 0.1;  // m
 static double delta_ = 0.02;  // Meter per pixel
@@ -182,7 +183,7 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
 
   // new coreslam instance
   ts_map_init(&ts_map_);
-  ts_state_init(&state_, &ts_map_, &lparams_, &position_, (int)(sigma_xy_*1000), (int)(sigma_theta_*180/M_PI), (int)(hole_width_*1000), 0);
+  ts_state_init(&state_, &ts_map_, &lparams_, &position_, sigma_xy_, sigma_theta_*180/M_PI , (int)(hole_width_*1000), 0, samples);
 
   INFO_MSG("Initialized with sigma_xy=" << sigma_xy_<< ", sigma_theta=" << ", hole_width=" << hole_width_ << ", delta=" << delta_);
   INFO_MSG("Initialization complete");
@@ -230,28 +231,33 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 //  INFO_MSG( "Pose2st " << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
 //  INFO_MSG( "PoseOdom " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
 
+  ts_sensor_data_t data;
+  data.position[0] = state_.position;
+  if(lparams_.angle_max < lparams_.angle_min){
+    // flip readings
+    for(int i=0; i < scan.scan_values_size(); i++)
+      data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
+  }else{
+    for(int i=0; i < scan.scan_values_size(); i++)
+      data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
+  }
+
   // Mapping
   if(laser_count_ < 10){
-    // not much of a map, let's bootstrap for now
-    // TODO need to be fixed for arbitrary angels
-//    ts_scan_t ranges;
-//    convertToScan(scan , ranges);
-//    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
-//    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
+    WARNING_MSG("BOOTSTRAP")
+  // not much of a map, let's bootstrap for now
+    ts_scan_t ranges;
+    ts_build_scan(&data, &ranges, &state_, 3 /*widening of the ray*/);
+    ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
+    DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
   }else{
 
-    ts_sensor_data_t data;
-    data.position[0] = state_.position;
-    if(lparams_.angle_max < lparams_.angle_min){
-      // flip readings
-      for(int i=0; i < scan.scan_values_size(); i++)
-        data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
-    }else{
-      for(int i=0; i < scan.scan_values_size(); i++)
-        data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
-    }
     // Monte carlo localization is done inside
-    ts_iterative_map_building(&data, &state_);
+//    if (slamState == slam)
+      ts_iterative_map_building(&data, &state_, true /*do Map Update*/);
+//    else /*if (slamState == localization)*/
+//      ts_iterative_map_building(&data, &state_, false /*do only localization*/);
+
     DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
     DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
   }
@@ -268,17 +274,42 @@ int main(int argc, const char **argv){
   
   std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
   std::string odomInScope = "/AMiRo_Hokuyo/gps";
+  std::string localizationOutScope = "/localization";
+  std::string serverScope = "/AMiRo_Hokuyo/server/slam";
+  std::string mapAsImageOutScope = "/AMiRo_Hokuyo/image";
+  std::string sExplorationScope = "/exploration";
+  std::string sExplorationCmdScope = "/command";
+  std::string sExplorationAnswerScope = "/answer";
+  std::string sPathInputScope = "/path/request";
+  std::string sPathOutputScope = "/path/answer";
+  std::string pathServerReq = "path";
+  std::string mapServerReq = "map";
+  std::string mapServerObstacleReq = "mapObstacle";
+  std::string obstacleServerReq = "getObjectsList";
+  std::string remoteHost = "localhost";
+  std::string remotePort = "4803";
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
     ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
+    ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
+    ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
+    ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
+    ("mapServerObstacleReq", po::value < std::string > (&mapServerObstacleReq), "Map server obstacle request string (Std.: mapObstacle)")
+    ("pathServerReq", po::value < std::string > (&pathServerReq), "Path server request string (Std.: path)")
+    ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
+    ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
+    ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
+    ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
+    ("mapAsImageOutScope", po::value < std::string > (&mapAsImageOutScope), "Scope for sending the map as compressed image to a remote spread daemon")
     ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
     ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
+    ("throttle_scans", po::value < int > (&throttle_scans_), "Only take every n'th scan")
+    ("samples", po::value < int > (&samples), "Sampling steps of the marcov localization sampler")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
     ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
-    ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
     ("transX", po::value < double > (&transX),"Translation of the lidar in x [m]")
     ("transY", po::value < double > (&transY),"Translation of the lidar in y [m]")
     ("transZ", po::value < double > (&transZ),"Translation of the lidar in z [m]")
@@ -306,8 +337,11 @@ int main(int argc, const char **argv){
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
 
-  // Get the RSB factory
+#if RSB_VERSION_NUMERIC<1200
   rsb::Factory& factory = rsb::Factory::getInstance();
+#else
+  rsb::Factory& factory = rsb::getFactory();
+#endif
   
   //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
   ///////////////////////////////////////////////////////////////////////////////
@@ -325,10 +359,10 @@ int main(int argc, const char **argv){
           tmpPropSpread["enabled"] = boost::any(std::string("1"));
 
           // Change the config
-          tmpPropSpread["host"] = boost::any(std::string("localhost"));
+          tmpPropSpread["host"] = boost::any(std::string(remoteHost));
 
           // Change the Port
-          tmpPropSpread["port"] = boost::any(std::string("4803"));
+          tmpPropSpread["port"] = boost::any(std::string(remotePort));
 
           // Write the tranport properties back to the participant config
           tmpPartConf.mutableTransport("socket").setOptions(tmpPropSocket);
