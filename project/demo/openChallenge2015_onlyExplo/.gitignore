@@ -9,4 +9,6 @@ senseHokuyo
 senseOdometry
 stopAMiRo
 localPlanner
+objectSavingAMiRo
+objectDelivery
 

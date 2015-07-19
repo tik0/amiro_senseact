@@ -18,6 +18,8 @@ spread &
 # start spread for remote communication
 spread -c amirospread &
 sleep 5
+spread &
+sleep 5
 
 # start all sensing programs
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar --publishNthScan 1 > /dev/null &
@@ -35,9 +37,10 @@ sleep 5
 
 # start all secondary moving programs
 ./drivingObjectDetection --bigMap --mapServerIsRemote --skipDetection --mapServerScope /CoreSlamServer --pathRequest path &
+./objectDelivery --useSLAMData --bigMap --positionInscope /localization --pathOut /path --pathRe /pathResponse --mapServer /CoreSlamServer --mapServerIsRemote &
 
 # start only listening statemachines
-./answerer --skipExploration --skipDetection &
+./answerer --skipExploration --skipDetection --skipDelivery &
 ./openChallengeGEPTRO_2nd --robotID ${ID} --mapServerIsRemote --mapServerScope /CoreSlamServer --obstacleServerReq getObjectsList &
 
 sleep 1

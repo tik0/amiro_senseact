@@ -9,6 +9,7 @@ killall -9 answerer
 
 # kill all secondary moving programs
 killall -9 drivingObjectDetection
+killall -9 objectDelivery
 
 # kill all primary moving programs
 killall -9 exploDriveEdge

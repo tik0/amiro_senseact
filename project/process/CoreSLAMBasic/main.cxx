@@ -131,6 +131,7 @@ static double pathObstacleErosion = 0.1; // m
 static double detectionObstacleErosion = 0.1; // m
 
 rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
+rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPushPublish(new twbTracking::proto::Pose2DList);
 
 // Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
 void mapErosion(int erosion_size, cv::Mat &map) {
@@ -165,6 +166,7 @@ void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
 class pathCallback: public rsb::patterns::LocalServer::Callback<twbTracking::proto::Pose2D, twbTracking::proto::Pose2DList> {
 	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
 			boost::shared_ptr<twbTracking::proto::Pose2D> pose) {
+		INFO_MSG("Path Callback received.");
 /*
 		INFO_MSG("Path to " << pose.get()->x() << "/" << pose.get()->y() << " requested.");
 		// generate the obstacle map
@@ -242,6 +244,60 @@ void pathRequestFunction(twbTracking::proto::Pose2D pose) {
 			pose2D->set_id(0);
 		}
 }
+
+// callBack for path to point
+class pushingPathCallback: public rsb::patterns::LocalServer::Callback<twbTracking::proto::Pose2DList, twbTracking::proto::Pose2DList> {
+	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
+			boost::shared_ptr<twbTracking::proto::Pose2DList> inputPointList) {
+
+/*		// convert pose to cv::point2f
+		Point3f startPos(inputPointList->pose(0).x(), inputPointList->pose(0).y(), 0);
+		Point2f target(inputPointList->pose(1).x(), inputPointList->pose(1).y());
+
+		// generate the obstacle map
+		cv::Mat obstacleMap(getObstacleMap());
+
+		// calculate a path
+		std::vector<cv::Point2f> path = pathPlanner.getPathToTarget(obstacleMap, startPos, target);
+
+		// convert that path to a pose2DList
+		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
+		for (Point2f p : path) {
+			twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
+			pose2D->set_x(p.x);
+			pose2D->set_y(p.y);
+			pose2D->set_orientation(0);
+			pose2D->set_id(0);
+		}*/
+		return pose2DListPushPublish;
+	}
+};
+
+// callBack for path to point
+void pushingPathRequestFunction(twbTracking::proto::Pose2DList inputPointList) {
+
+	// generate the obstacle map
+	cv::Mat obstacleMap(getObstacleMap());
+	float xSize = ((float)obstacleMap.size().width) * delta_;
+	float ySize = ((float)obstacleMap.size().height) * delta_;
+
+	// convert pose to cv::point2f
+	Point3f startPos(inputPointList.pose(0).x()+xSize/2.0, inputPointList.pose(0).y()+ySize/2.0, 0);
+	Point2f target(inputPointList.pose(1).x()+xSize/2.0, inputPointList.pose(1).y()+ySize/2.0);
+
+	// calculate a path
+	std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, startPos, target);
+
+	// convert that path to a pose2DList
+	pose2DListPushPublish->clear_pose();
+	for (Point2f p : path) {
+		twbTracking::proto::Pose2D *pose2D = pose2DListPushPublish->add_pose();
+		pose2D->set_x(p.x-xSize/2.0);
+		pose2D->set_y(p.y-ySize/2.0);
+		pose2D->set_orientation(0);
+		pose2D->set_id(0);
+	}
+};
 
 // callBack for path to point
 class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
@@ -332,6 +388,7 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
     return pose2DList;
   }
 };
+
 
 // RSB Server function for the mapping server which replies with a 8bit map of the environment
 class mapServerObstacles: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
@@ -550,9 +607,12 @@ int main(int argc, const char **argv){
   std::string sExplorationScope = "/exploration";
   std::string sExplorationCmdScope = "/command";
   std::string sExplorationAnswerScope = "/answer";
-  std::string sPathInputScope = "/path/request";
-  std::string sPathOutputScope = "/path/answer";
+  std::string sPathInputScope = "/pathReq/request";
+  std::string sPathOutputScope = "/pathReq/answer";
+  std::string sPushPathInputScope = "/pushPathServer/request";
+  std::string sPushPathOutputScope = "/pushPathServer/answer";
   std::string pathServerReq = "path";
+  std::string pushingPathServerReq = "getPushingPath";
   std::string mapServerReq = "map";
   std::string mapServerObstacleReq = "mapObstacle";
   std::string obstacleServerReq = "getObjectsList";
@@ -670,8 +730,14 @@ int main(int argc, const char **argv){
   rsb::ListenerPtr pathListener = factory.createListener(sPathInputScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>>pathQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>(1));
   pathListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2D>(pathQueue)));
+  // Prepare RSB listener for incomming pushing path request
+  rsb::ListenerPtr pushPathListener = factory.createListener(sPushPathInputScope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>pushPathQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
+  pushPathListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(pushPathQueue)));
   // Prepare RSB informer for sending the path answer
   rsb::Informer<std::string>::Ptr pathInformer = factory.createInformer<std::string> (sPathOutputScope);
+  // Prepare RSB informer for sending the pushing path answer
+  rsb::Informer<std::string>::Ptr pushPathInformer = factory.createInformer<std::string> (sPushPathOutputScope);
   // Prepare RSB listener for controling the programs behaviour
   rsb::ListenerPtr expListener = factory.createListener(sExplorationScope);
   expListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&controlCoreSLAMBehaviour)));
@@ -682,6 +748,7 @@ int main(int argc, const char **argv){
   // Prepare RSB server for the map server
   rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
   server->registerMethod(pathServerReq, rsb::patterns::LocalServer::CallbackPtr(new pathCallback()));
+  server->registerMethod(pushingPathServerReq, rsb::patterns::LocalServer::CallbackPtr(new pushingPathCallback()));
   server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
   server->registerMethod(mapServerObstacleReq, rsb::patterns::LocalServer::CallbackPtr(new mapServerObstacles()));
   server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
@@ -699,9 +766,18 @@ int main(int argc, const char **argv){
     }
 
     if (!pathQueue->empty()) {
+      INFO_MSG("Checking path requests.");
       pathRequestFunction(*pathQueue->pop());
       boost::shared_ptr<std::string> stringPublisher(new std::string("Fin"));
       pathInformer->publish(stringPublisher);
+      INFO_MSG("Path request check finished.");
+    }
+    if (!pushPathQueue->empty()) {
+      INFO_MSG("Checking pushing path requests.");
+      pushingPathRequestFunction((twbTracking::proto::Pose2DList)*pushPathQueue->pop());
+      boost::shared_ptr<std::string> stringPublisher(new std::string("Fin"));
+      pushPathInformer->publish(stringPublisher);
+      INFO_MSG("Pushing path request check finished.");
     }
 
     ++laser_count_;

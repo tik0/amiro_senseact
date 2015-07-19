@@ -73,6 +73,9 @@ RemoteServerPtr mapServer;
 
 boost::shared_ptr<std::string> finishStr(new string("finish"));
 
+rsb::Informer<twbTracking::proto::Pose2D>::Ptr pathRequestInformer;
+boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pathRequestQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+
 // for motor control
 //rsb::Informer< std::vector<int> >::Ptr motorCmdInformer;
 std::vector<int> motorCmd(3,0);
@@ -124,7 +127,8 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
 //	motorCmdInformer->publish(motorCmdData);
 	myCAN.setTargetSpeed(motorCmd[0], motorCmd[1]);
-	usleep(3000000);
+	usleep(2000000);
+	myCAN.setTargetSpeed(0, 0);
 
 	currObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x(),pushingPath->pose(pathIdx).y());
 	pathIdx--;
@@ -149,14 +153,28 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	startOwnPose2D->set_orientation(0);
 	startOwnPose2D->set_id(0);
 
-	insertObjectInformer->publish(objectPtr);
+//	insertObjectInformer->publish(objectPtr);
 
-	try {
-		pathToStartPosTmp = mapServer->call<twbTracking::proto::Pose2DList>("getPath", startOwnPose2D);
-	} catch (const rsc::threading::FutureTimeoutException & e) {
-		cerr << "ObjectDelivery: MapGenerator not responding when trying to retrieve path to start position! CleanUpTask shutting down." << endl;
-		return;
-	}
+//	try {
+		if (isBigMap) {
+			if (!pathRequestQueue->empty()) {
+				pathRequestQueue->pop();
+			}
+			pathRequestInformer->publish(startOwnPose2D);
+			cout << "ObjectDelivery: Waiting for path answer ..." << endl;
+			while (pathRequestQueue->empty()) {
+				cout << "ObjectDelivery: Still waiting ..." << endl;
+				sleep(1);
+			}
+			cout << "ObjectDelivery: Planner for path seems to be ready." << endl;
+			pathRequestQueue->pop();
+		}
+		pathToStartPosTmp = mapServer->call<twbTracking::proto::Pose2DList>("path", startOwnPose2D);
+		cout << "Try Block finished." << endl;
+//	} catch (const rsc::threading::FutureTimeoutException & e) {
+//		cerr << "ObjectDelivery: MapGenerator not responding when trying to retrieve path to start position! CleanUpTask shutting down." << endl;
+//		return;
+//	}
 
 	pathToStartPos->Clear();
 	addPos2PoseList(pathToStartPos, destOwnPos, 0);
@@ -164,7 +182,7 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 		addPos2PoseList(pathToStartPos, cv::Point2f(pathToStartPosTmp->pose(i).x(),pathToStartPosTmp->pose(i).y()), 0);
 	}
 
-	deleteObjectInformer->publish(objectPtr);
+//	deleteObjectInformer->publish(objectPtr);
 
 	cout << "ObjectDelivery: Path to starting position retrieved (length: " << pathToStartPos->pose_size() << ")" << endl;
 
@@ -199,10 +217,12 @@ int main(int argc, char **argv) {
 	std::string drawPointsOutscope = "/draw/points";
 	std::string drawPathOutscope = "/draw/path";
 	std::string drawArrowsOutscope = "/draw/arrows";
-	std::string sPathRequestOutput = "/pushPath/request";
-	std::string sPathRequestInput = "/pushPath/answer";
+	std::string sPathRequestOutput = "/pathReq/request";
+	std::string sPathRequestInput = "/pathReq/answer";
+	std::string sPushingPathRequestOutput = "/pushPathServer/request";
+	std::string sPushingPathRequestInput = "/pushPathServer/answer";
 
-	std::string spreadhost = "127.0.0.1";
+	std::string spreadhost = "localhost";
 	std::string spreadport = "4823";
 
 	// id of the tracking marker
@@ -254,6 +274,33 @@ int main(int argc, char **argv) {
 	// Generate the programatik Spreadconfig for extern communication
 	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
 
+  //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
+  ///////////////////////////////////////////////////////////////////////////////
+  // Get the global participant config as a template
+  rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
+        {
+          // disable socket transport
+          rsc::runtime::Properties tmpPropSocket  = tmpPartConf.mutableTransport("socket").getOptions();
+          tmpPropSocket["enabled"] = boost::any(std::string("0"));
+
+          // Get the options for spread transport, because we want to change them
+          rsc::runtime::Properties tmpPropSpread  = tmpPartConf.mutableTransport("spread").getOptions();
+
+          // enable socket transport
+          tmpPropSpread["enabled"] = boost::any(std::string("1"));
+
+          // Change the config
+          tmpPropSpread["host"] = boost::any(std::string(spreadhost));
+
+          // Change the Port
+          tmpPropSpread["port"] = boost::any(std::string(spreadport));
+
+          // Write the tranport properties back to the participant config
+          tmpPartConf.mutableTransport("socket").setOptions(tmpPropSocket);
+          tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
+        }
+  ///////////////////////////////////////////////////////////////////////////////
+
 	// ------------ Converters ----------------------
 
 	// register converter for twbTracking::proto::Pose2D
@@ -282,9 +329,14 @@ int main(int argc, char **argv) {
 
 	// prepare RSB listener for path request answer
 	rsb::ListenerPtr pathRequestListener = factory.createListener(sPathRequestInput);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pathRequestQueue(
-			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+//	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pathRequestQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
 	pathRequestListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(pathRequestQueue)));
+
+	// prepare RSB listener for pushing path request answer
+	rsb::ListenerPtr pushingPathRequestListener = factory.createListener(sPushingPathRequestInput);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pushingPathRequestQueue(
+			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+	pushingPathRequestListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(pushingPathRequestQueue)));
 
 	// prepare rsb listener for tracking data
 	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, extspreadconfig);
@@ -310,7 +362,10 @@ int main(int argc, char **argv) {
 	pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
 	// create rsb informer to publish the robots path request
-	rsb::Informer<twbTracking::proto::Pose2D>::Ptr pathRequestInformer = factory.createInformer<twbTracking::proto::Pose2D>(sPathRequestOutput);
+	pathRequestInformer = factory.createInformer<twbTracking::proto::Pose2D>(sPathRequestOutput);
+
+	// create rsb informer to publish the robots pushing path request
+	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pushingPathRequestInformer = factory.createInformer<twbTracking::proto::Pose2DList>(sPushingPathRequestOutput);
 
 	// Prepare RSB informer
 //	motorCmdInformer = factory.createInformer< std::vector<int> > (rsbMotoOutScope);
@@ -328,9 +383,9 @@ int main(int argc, char **argv) {
 	deleteObjectInformer = factory.createInformer<twbTracking::proto::Pose2D>(deleteObjectOutscope);
 
 	// map server
-	RemoteServerPtr mapServer;
+//	RemoteServerPtr mapServer;
 	if (mapServerIsRemote) {
-		mapServer = factory.createRemoteServer(mapServerScope, extspreadconfig, extspreadconfig);
+		mapServer = factory.createRemoteServer(mapServerScope, tmpPartConf, tmpPartConf);
 	} else {
 		mapServer = factory.createRemoteServer(mapServerScope);
 	}
@@ -420,18 +475,21 @@ int main(int argc, char **argv) {
 			cout << "ObjectDelivery: Deliver object from " << currObjectPos.x << "/" << currObjectPos.y << " to position " << destObjectPos.x << "/" << destObjectPos.y << endl;
 
 			if (isBigMap) {
-				if (!pathRequestQueue->empty()) {
-					pathRequestQueue->pop();
+				if (!pushingPathRequestQueue->empty()) {
+					pushingPathRequestQueue->pop();
 				}
-				pathRequestInformer->publish(detectionPositionPtr);
-				while (!pathRequestQueue->empty()) {
+				pushingPathRequestInformer->publish(pose2DList4PathRequest);
+				cout << "ObjectDelivery: Waiting for pushing path answer ..." << endl;
+				while (pushingPathRequestQueue->empty()) {
+					cout << "ObjectDelivery: Still waiting ..." << endl;
 					sleep(1);
 				}
-				pathRequestQueue->pop();
+				cout << "ObjectDelivery: Planner for pushing path seems to be ready." << endl;
+				pushingPathRequestQueue->pop();
 			}
 			pushingPath = mapServer->call<twbTracking::proto::Pose2DList>("getPushingPath", pose2DList4PathRequest);
 		} catch (const rsc::threading::FutureTimeoutException & e) {
-			cerr << "ObjectDelivery: ERROR - MapGenerator not responding when trying to retrieve pushing path! Exiting deliverObject." << endl;
+			cerr << "ObjectDelivery: ERROR - Map Server not responding when trying to retrieve pushing path! Exiting deliverObject." << endl;
 			return EXIT_FAILURE;
 		}
 		addPos2PoseList(pushingPath, currObjectPos, 0);
