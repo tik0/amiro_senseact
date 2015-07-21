@@ -14,15 +14,16 @@ find_package(RST)
 
 pkg_check_modules(PROTOBUF protobuf)
 
-find_library(CANINTERPRETER 
-libCANInterpreter.so
-../../includes
-)
+#find_library(CANINTERPRETER 
+#libCANInterpreter.so
+#../../includes
+#)
 
 # Get modules
 #find_package(Boost REQUIRED regex date_time program_options system thread)
 
 set(source_files
+	../../includes/types/CanMessage.pb.cc
 	src/Odemetrie_data.cpp
 	src/Odemetrie.cpp
 	../../includes/types/MachineModel.pb.cc
@@ -51,7 +52,7 @@ target_link_libraries (
     ${RST_LIBRARIES}    
     ${Boost_LIBRARIES}
     ${PROTO_LIBRARIES}
-    ${CANINTERPRETER}
+    #${CANINTERPRETER}
 )
 
 # Additional compiler flags

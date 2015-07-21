@@ -19,18 +19,20 @@
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
 #include <MachineModel.pb.h>
+#include <CanMessage.pb.h>
 
 #include <boost/program_options.hpp>
 #include <boost/make_shared.hpp>
 
-#include <Converter_ClaasCan_CombineHarvester.hpp>
+//#include <Converter_ClaasCan_CombineHarvester.hpp>
 #include <rsb/MetaData.h>
 
 #include "Odemetrie.h" // Model's header file
+#include <ClaasCan_CombineHarvester_mac.h>
 
 std::string rsbOutScope = "/plan/Fahrzeugdaten";
 rsb::Informer<rst::claas::MachineModel_Odemetrie>::DataPtr msgOdemetrie;
-rsb::Informer< rst::claas::MachineModel_Odemetrie >::Ptr informerMachineModel;
+rsb::Informer<rst::claas::MachineModel_Odemetrie >::Ptr informerMachineModel;
 
 void machineStep(){
 	static boolean_T OverrunFlag = 0;
@@ -73,12 +75,18 @@ void machineStep(){
 
 void getMachineModelData(rsb::EventPtr canEvent){
 
-	std::string canEventType = canEvent->getType();
+	boost::shared_ptr<rst::claas::CanMessage> sample_data =
+			boost::static_pointer_cast<rst::claas::CanMessage>(canEvent->getData());
 
-	if (canEventType.compare("ClaasCan_CombineHarvester::cVdtcShlcVehicleSpeedMta") == 0){
-		boost::shared_ptr<ClaasCan_CombineHarvester::cVdtcShlcVehicleSpeedMta> sample_data = boost::static_pointer_cast<ClaasCan_CombineHarvester::cVdtcShlcVehicleSpeedMta>(canEvent->getData());
+	unsigned char canData[8];
+	for(unsigned int i = 0; i< sample_data->candlc(); ++i){
+		canData[i] = sample_data->canmessage(i);
+	}
+	uint32_t canId = sample_data->canid();
 
-		Odemetrie_U.Machine_Speed = sample_data->vehiclespeed__km_h();
+	if (canId ==  cVdtcShlcVehicleSpeedMta_ID){
+
+		Odemetrie_U.Machine_Speed = cVdtcShlcVehicleSpeedMta_VehicleSpeed_GETP(canData);
 		double sendTime = canEvent->getMetaData().getSendTime();
 		static double lastSendTime = sendTime;
 
@@ -90,10 +98,9 @@ void getMachineModelData(rsb::EventPtr canEvent){
 			//<< "   SendTime: " <<canEvent->getMetaData().getSendTime() << "  tSample: " << Odemetrie_U.tSample <<std::endl;
 		}
 	}
-	else if (canEventType.compare("ClaasCan_CombineHarvester::cAtpcBrc_AtpStatus") == 0) {
-		boost::shared_ptr<ClaasCan_CombineHarvester::cAtpcBrc_AtpStatus> sample_data = boost::static_pointer_cast<ClaasCan_CombineHarvester::cAtpcBrc_AtpStatus>(canEvent->getData());
+	else if (canId == cAtpcBrc_AtpStatus_ID) {
 
-		Odemetrie_U.Machine_EstimatedCurvature = sample_data->estimatedcurvature__1_km();
+		Odemetrie_U.Machine_EstimatedCurvature = cAtpcBrc_AtpStatus_EstimatedCurvature_GETP(canData);
 	}
 }
 
@@ -141,7 +148,9 @@ int main(int argc, char **argv) {
 	informerMachineModel = factory.createInformer< rst::claas::MachineModel_Odemetrie > (rsbOutScope);
 	msgOdemetrie =  boost::make_shared<rst::claas::MachineModel_Odemetrie>();
 
-	Converter_ClaasCan_CombineHarvester claas_converter;
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::claas::CanMessage> >
+	  converter_CanMsg(new rsb::converter::ProtocolBufferConverter<rst::claas::CanMessage>());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_CanMsg);
 
 	rsb::ListenerPtr listener = factory.createListener(rsbInScope);
 	listener->addHandler(rsb::HandlerPtr(new rsb::EventFunctionHandler(&getMachineModelData)));
