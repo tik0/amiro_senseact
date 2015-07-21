@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <fcntl.h>
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -20,11 +21,17 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
-#include <iostream>
+
 
 #include <rsb/Factory.h>
-#include <thread>
-#include <chrono>
+
+
+#include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
+// Include own converter
+#include <vecConverter/main.hpp>
+
+#include <CanMessage.pb.h>
 
 class PeakCan {
 public:
@@ -39,38 +46,45 @@ public:
 	 */
 	int setUpSocket(std::string& interface, int& socketHandle);
 
-	template< typename R>
-	void readCanFrame(int socketHandle){
-
-		struct can_frame frame;
-		rsb::Factory& factory = rsb::getFactory();
-		//T converter;
-		R canDatabase;
-
-		while(true){
-
-			int bytes_read = read( socketHandle, &frame, sizeof(frame) );
-
-			if(bytes_read < 0){
-				return;
-			}
-
-			//std::cout << "ID: " << frame.can_id << std::endl;
-			uint32_t canId = frame.can_id & 0x7FFFFFFF;
-			try{
-				canDatabase.getCanMessages().at(canId)->getSignals(&frame.data[0], factory);
-			}catch (const std::out_of_range& e) {
-				//std::cerr<< "Id not found  " << std::hex << canId << std::dec <<std::endl;
-			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
-		}
-	}
+//	template< typename R>
+//	void readCanFrame(int socketHandle){
+//
+//		struct can_frame frame;
+//		rsb::Factory& factory = rsb::getFactory();
+//		//T converter;
+//		R canDatabase;
+//
+//		while(true){
+//
+//			int bytes_read = read( socketHandle, &frame, sizeof(frame) );
+//
+//			if(bytes_read < 0){
+//				return;
+//			}
+//			clock_t start, end;
+//			start = clock();
+//			//std::cout << "ID: " << frame.can_id << "  " << bytes_read <<std::endl;
+//			uint32_t canId = frame.can_id & 0x7FFFFFFF;
+//			try{
+//				canDatabase.getCanMessages().at(canId)->getSignals(&frame.data[0], factory);
+//			}catch (const std::out_of_range& e) {
+//				//std::cerr<< "Id not found  " << std::hex << canId << std::dec <<std::endl;
+//			}
+//
+//			end = clock();
+//			float z = (end- start) / CLOCKS_PER_SEC;
+//			std::cout << "clocks: " << end - start << " Seconds: " << z << "\n";
+//		}
+//	}
 
 	/**
 	 * ToDo
 	 */
 	//void writeCanFrame(int socketHandle);
-
+	void readCanFrame_1(int socketHandle);
+	void readCanFrame_2(int socketHandle);
+	void readCanFrame_3(int socketHandle);
+	void readCanFrame_4(int socketHandle);
 	int socketHandle_1;
 	int socketHandle_2;
 	int socketHandle_3;

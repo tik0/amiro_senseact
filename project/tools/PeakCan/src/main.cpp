@@ -4,26 +4,13 @@
 #include "PeakCan.hpp"
 #include "ClaasCan_CombineHarvester_Listener.hpp"
 
-#include "ClaasCan_CombineHarvester.hpp"
-#include "J1939Can_CombineHarvester.hpp"
-#include "FrontAttachmentCan_CombineHarvester.hpp"
-#include "SteeringCan.hpp"
-
-#include "Converter_ClaasCan_CombineHarvester.hpp"
-#include "Converter_J1939Can_CombineHarvester.hpp"
-#include "Converter_FrontAttachmentCan_CombineHarvester.hpp"
-#include "Converter_SteeringCan.hpp"
-
-
 int main(int argc, char **argv) {
 
 	/**
 	 * Register all converters for CAN interface
 	 */
-	Converter_ClaasCan_CombineHarvester claas_converter;
-	Converter_J1939Can_CombineHarvester j1939_converter;
-	Converter_FrontAttachmentCan_CombineHarvester front_converter;
-	Converter_SteeringCan seetring_converter;
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::CanMessage>> converter(new rsb::converter::ProtocolBufferConverter<rst::claas::CanMessage>());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
 	std::string interface_1 = "can0";
 	std::string interface_2 = "can1";
@@ -37,32 +24,32 @@ int main(int argc, char **argv) {
 	 * Open socket connections to the PeakCans
 	 */
 	if(peakcan.setUpSocket(interface_1, peakcan.socketHandle_1) < 0){
-		std::cerr<< "Socket: " << interface_1 << " could not be created"<< "\n";
+		std::cerr<< "Socket: " << interface_1 << " could not be created"<< std::endl;
 		return -2;
 	}
 
 	if(peakcan.setUpSocket(interface_2, peakcan.socketHandle_2) < 0){
-		std::cerr<< "Socket: " << interface_2 << " could not be created"<< "\n";
+		std::cerr<< "Socket: " << interface_2 << " could not be created"<< std::endl;
 		return -2;
 	}
 
 	if(peakcan.setUpSocket(interface_3, peakcan.socketHandle_3) < 0){
-		std::cerr<< "Socket: " << interface_3 << " could not be created"<< "\n";
+		std::cerr<< "Socket: " << interface_3 << " could not be created"<< std::endl;
 		return -2;
 	}
 
 	if(peakcan.setUpSocket(interface_4, peakcan.socketHandle_4) < 0){
-		std::cerr<< "Socket: " << interface_4 << " could not be created"<< "\n";
+		std::cerr<< "Socket: " << interface_4 << " could not be created"<< std::endl;
 		return -2;
 	}
 
 	/**
 	 * Start for every CAN interface a thread that reads the CAN messages and publishes them to rsb
 	 */
-	std::thread can0(&PeakCan::readCanFrame<ClaasCan_CombineHarvesterDBC>, peakcan, peakcan.socketHandle_4);
-	std::thread can1(&PeakCan::readCanFrame<J1939Can_CombineHarvesterDBC>, peakcan, peakcan.socketHandle_3);
-	std::thread can2(&PeakCan::readCanFrame<FrontAttachmentCan_CombineHarvesterDBC>, peakcan, peakcan.socketHandle_2);
-	std::thread can3(&PeakCan::readCanFrame<SteeringCanDBC>, peakcan, peakcan.socketHandle_1);
+	std::thread can0(&PeakCan::readCanFrame_1, peakcan, peakcan.socketHandle_4);
+	std::thread can1(&PeakCan::readCanFrame_2, peakcan, peakcan.socketHandle_3);
+	std::thread can2(&PeakCan::readCanFrame_3, peakcan, peakcan.socketHandle_2);
+	std::thread can3(&PeakCan::readCanFrame_4, peakcan, peakcan.socketHandle_1);
 
 	m_socketHandle_1 = peakcan.socketHandle_1;
 	m_socketHandle_2 = peakcan.socketHandle_2;
@@ -77,26 +64,6 @@ int main(int argc, char **argv) {
 	can2.join();
 	can3.join();
 
-	int exit = close(peakcan.socketHandle_4);
-	if(exit < 0){
-		std::cerr<< "Error closing socket: " << interface_4 << "\n";
-	}
-
-	exit = close(peakcan.socketHandle_3);
-	if(exit < 0){
-		std::cerr<< "Error closing socket: " << interface_3 << "\n";
-	}
-
-	exit = close(peakcan.socketHandle_2);
-	if(exit < 0){
-		std::cerr<< "Error closing socket: " << interface_2 << "\n";
-	}
-
-	exit = close(peakcan.socketHandle_1);
-	if(exit < 0){
-		std::cerr<< "Error closing socket: " << interface_1 << "\n";
-	}
-
-	std::cout<< "All socket connections closed" << "\n";
+	std::cout<< "Closing PeakCan Connection" << "\n";
 }
 

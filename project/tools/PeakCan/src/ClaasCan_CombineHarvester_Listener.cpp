@@ -5,8 +5,9 @@
  *      Author: itsowl
  */
 
-#include "ClaasCan_CombineHarvester_Listener.hpp"
-#include <ClaasCan_CombineHarvester.pb.h>
+#include <src/ClaasCan_CombineHarvester_Listener.hpp>
+#include <CanMessage.pb.h>
+#include <ClaasCan_CombineHarvester_mac.h>
 
 //RSC
 #include <rsc/misc/SignalWaiter.h>
@@ -35,17 +36,21 @@ void writeCanFrame(struct can_frame& frame, int socketHandle){
 }
 
 void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
-	//std::cout << "Event: "  << canEvent->getClassName() << " " << canEvent->getSequenceNumber() << " " << canEvent->getType() << std::endl;
-	std::string canEventType = canEvent->getType();
 
-	if(canEventType.compare("ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData1") == 0){
+	boost::shared_ptr<rst::claas::CanMessage> sample_data =
+			boost::static_pointer_cast<rst::claas::CanMessage>(canEvent->getData());
 
-		boost::shared_ptr<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData1> sample_data = boost::static_pointer_cast<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData1>(canEvent->getData());
+	unsigned char canData[8];
+	for(unsigned int i = 0; i< sample_data->candlc(); ++i){
+		canData[i] = sample_data->canmessage(i);
+	}
 
-		uint16_t dig = bswap_16(sample_data->laserscnleft_dig__digit());
-		uint8_t hbar = sample_data->laserscnleft_hbar__();
-		uint8_t vbar = sample_data->laserscnleft_vbar__();
-		uint16_t avgdistance = bswap_16(sample_data->laserscnleft_avgdistance__cm());
+	if(sample_data->canid() == cCascBrc_LaserScnLeftData1_ID){
+
+		uint16_t dig = cCascBrc_LaserScnLeftData1_LaserScnLeft_dig_GETP(canData);
+		uint8_t hbar = cCascBrc_LaserScnLeftData1_LaserScnLeft_Hbar_GETP(canData);
+		uint8_t vbar = cCascBrc_LaserScnLeftData1_LaserScnLeft_Vbar_GETP(canData);
+		uint16_t avgdistance = cCascBrc_LaserScnLeftData1_LaserScnLeft_AvgDistance_GETP(canData);
 
 		struct can_frame frame= {0};
 		frame.can_id = 0x94230090;
@@ -58,10 +63,9 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 
 		writeCanFrame(frame, m_socketHandle_4);
 	}
-	else if (canEventType.compare("ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData2") == 0) {
+	else if (sample_data->canid() == cCascBrc_LaserScnLeftData2_ID) {
 
-		boost::shared_ptr<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData2> sample_data = boost::static_pointer_cast<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData2>(canEvent->getData());
-		uint8_t laserScnLeftStatus = sample_data->laserscnleft_status__();
+		uint8_t laserScnLeftStatus = cCascBrc_LaserScnLeftData2_LaserScnLeft_Status_GETP(canData);
 
 		struct can_frame frame= {0};
 		frame.can_id = 0x94240090;
@@ -71,14 +75,12 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 
 		writeCanFrame(frame, m_socketHandle_4);
 	}
-	else if(canEventType.compare("ClaasCan_CombineHarvester::cCascBrc_LaserScnRightData1") == 0){
+	else if(sample_data->canid() == cCascBrc_LaserScnRightData1_ID){
 
-		boost::shared_ptr<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData1> sample_data = boost::static_pointer_cast<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData1>(canEvent->getData());
-
-		uint16_t dig = bswap_16(sample_data->laserscnleft_dig__digit());
-		uint8_t hbar = sample_data->laserscnleft_hbar__();
-		uint8_t vbar = sample_data->laserscnleft_vbar__();
-		uint16_t avgdistance = bswap_16(sample_data->laserscnleft_avgdistance__cm());
+		uint16_t dig = cCascBrc_LaserScnRightData1_LaserScnRight_dig_GETP(canData);
+		uint8_t hbar = cCascBrc_LaserScnRightData1_LaserScnRight_Hbar_GETP(canData);
+		uint8_t vbar = cCascBrc_LaserScnRightData1_LaserScnRight_Vbar_GETP(canData);
+		uint16_t avgdistance = cCascBrc_LaserScnRightData1_LaserScnRight_AvgDistance_GETP(canData);
 
 		struct can_frame frame= {0};
 		frame.can_id = 0x94260090;
@@ -91,34 +93,25 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 
 		writeCanFrame(frame, m_socketHandle_4);
 	}
-	else if (canEventType.compare("ClaasCan_CombineHarvester::cCascBrc_LaserScnRightData2") == 0) {
+	else if (sample_data->canid() == cCascBrc_LaserScnRightData2_ID) {
 
-		boost::shared_ptr<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData2> sample_data = boost::static_pointer_cast<ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData2>(canEvent->getData());
-		uint8_t laserScnLeftStatus = sample_data->laserscnleft_status__();
+		uint8_t laserScnRightStatus = cCascBrc_LaserScnRightData2_LaserScnRight_Status_GETP(canData);
 
 		struct can_frame frame= {0};
 		frame.can_id = 0x94270090;
 		frame.can_dlc = 8;
 
-		memcpy(&frame.data[0], &laserScnLeftStatus, sizeof(laserScnLeftStatus));
+		memcpy(&frame.data[0], &laserScnRightStatus, sizeof(laserScnRightStatus));
 
 		writeCanFrame(frame, m_socketHandle_4);
 	}
 
 }
 
-//ClaasCan_CombineHarvester_Listener::ClaasCan_CombineHarvester_Listener(){
-//
-//}
-//
-//ClaasCan_CombineHarvester_Listener::~ClaasCan_CombineHarvester_Listener() {
-//	// TODO Auto-generated destructor stub
-//}
-
 int ClaasCan_CombineHarvester_Listener::setUpListener(){
 
 	rsc::misc::initSignalWaiter();
-	std::string scope = "/ClaasCan/tx";
+	std::string scope = "/act/ClaasCan/tx";
 	rsb::Factory& factory = rsb::getFactory();
 	rsb::ListenerPtr listener = factory.createListener(scope);
 	listener->addHandler(rsb::HandlerPtr(new rsb::EventFunctionHandler(&get_cCascBrc_LaserScnLeftData1)));

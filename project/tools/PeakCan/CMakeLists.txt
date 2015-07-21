@@ -11,13 +11,28 @@ find_package(PkgConfig)
 find_package(RSB)
 find_package(RSC)
 
-find_library(CANINTERPRETER 
-libCANInterpreter.so
-$ENV{MUROX_INCLUDE_DIRS})
+#find_library(CANINTERPRETER 
+#libCANInterpreter.so
+#../../includes)
+
+#pkg_check_modules(RSB rsb0.11)
+#pkg_check_modules(RSC rsc0.11)
+#pkg_check_modules(PROTO protobuf)
+
+# Get modules
+#find_package(Boost REQUIRED regex date_time program_options system thread)
+
 
 set(source_files
-  src/ClaasCan_CombineHarvester_Listener.cpp
-  src/PeakCan.cpp)
+	#../CANInterpreter/src/ClaasCan_CombineHarvester.cpp
+	#../CANInterpreter/src/J1939Can_CombineHarvester.cpp
+	#../CANInterpreter/src/FrontAttachmentCan_CombineHarvester.cpp
+	#../CANInterpreter/src/SteeringCan.cpp
+	src/PeakCan.cpp
+	#../../includes/converter/vecDoubleConverter/main.cpp
+	../../includes/types/CanMessage.pb.cc
+	src/ClaasCan_CombineHarvester_Listener.cpp
+	)
 
 # Set the include path
 include_directories(
@@ -25,9 +40,10 @@ include_directories(
     ${RSB_INCLUDE_DIRS}
     ${RSC_INCLUDE_DIRS}
     ${PROTO_INCLUDE_DIRS}
-    "$ENV{MUROX_PROJECT}/tools/DBCParser/src"
-    "$ENV{MUROX_INCLUDE_DIRS}/types"
-    "$ENV{MUROX_PROJECT}/tools/CANInterpreter/src"
+    "../DBCParser/src"
+	"../../includes/types"
+	"../../includes/converter"
+	"../CANInterpreter/src"
     "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
@@ -40,8 +56,8 @@ target_link_libraries (
     ${RSC_LIBRARIES}    
     ${Boost_LIBRARIES}
     ${PROTO_LIBRARIES}
-    ${CANINTERPRETER}
+    #${CANINTERPRETER}
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O3 -Wno-write-strings -std=c++11)

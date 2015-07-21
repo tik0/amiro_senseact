@@ -17,8 +17,6 @@ extern int m_socketHandle_6;
 
 class ClaasCan_CombineHarvester_Listener {
 public:
-	//ClaasCan_CombineHarvester_Listener();
-	//virtual ~ClaasCan_CombineHarvester_Listener();
 
 	int setUpListener();
 
