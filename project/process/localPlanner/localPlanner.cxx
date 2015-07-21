@@ -69,7 +69,7 @@ void LocalPlanner::stopRobot() {
 // calculate and publish a steering from currentPose to nextPose
 void LocalPlanner::driveToPoint(cv::Point3f currentPose, cv::Point2f nextPose) {
 
-	DEBUG_MSG("Focussing at position " << nextPose.x << "/" << nextPose.y);
+	DEBUG_MSG("Focussing: " << currentPose.x << "/" << currentPose.y << " to position " << nextPose.x << "/" << nextPose.y);
 	// calculate the pose difference
 	float diffX = nextPose.x - currentPose.x;
 	float diffY = nextPose.y - currentPose.y;
