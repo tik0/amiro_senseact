@@ -379,6 +379,7 @@ int main(int argc, char **argv) {
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
             ("outscope,o", po::value < std::string > (&g_sOutScope),"Scope for sending images")
+            ("continue", "Reads the picture the whole time")
             ("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving commands")
             ("loadingDirectory,l", po::value < std::string > (&directory),"Directory from where the data can be loaded.")
             ("device,d", po::value < int > (&g_iDevice),"Number of device")
@@ -453,7 +454,10 @@ int main(int argc, char **argv) {
     for (; ;) {
 
       // Save the actual picture to the frame object
-      cam >> frame;
+      if (sendingPic) {
+        cam >> frame;
+      }
+
       if (vm.count("printPic")) {
         printf("New image taken.\n");
       }
@@ -481,6 +485,9 @@ int main(int argc, char **argv) {
           break;
         // check for save site command
         } else if (command == COMMAND_SAVE) {
+          if (!sendingPic) {
+            cam >> frame;
+          }
           savingObject(frame, objectCount, siteId, true);
           siteId++;
           saving = true;
@@ -497,6 +504,9 @@ int main(int argc, char **argv) {
           printf("All objects unlearned (old pictures will be overwritten with next learning)!\n");
         // check for compare commandCOMMAND_STORE
         } else if (command == COMMAND_COMPARE) {
+          if (!sendingPic) {
+            cam >> frame;
+          }
           if (objectCount > 0 && !saving) {
             printf("Comparing:\n");
             int detObj = searchObjectsInScene(frame);
