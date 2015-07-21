@@ -15,3 +15,6 @@ scp rsb.conf root@${IP}:~/${NAME}
 
 # Copy simulation folder
 scp -r sim root@${IP}:~/${NAME}/
+
+# Copy the website
+scp -r ${MUROX_PROJECT}/tools/rsb_ws_bridge_amiro/www root@${IP}:~/${NAME}

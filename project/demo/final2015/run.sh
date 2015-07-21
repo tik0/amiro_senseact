@@ -20,18 +20,25 @@ spread -c amirospread &
 
 sleep 5
 
+# sensing camera from 'project/sense/senseCamJpg/'
+v4l2-ctl -d/dev/v4l-subdev8 --set-ctrl=vertical_flip=1
+./senseCamJpg -d /dev/video6 -o /cam &
+
 # sensing lidar from 'project/sense/senseHokuyo/'
-./senseHokuyo -d /dev/ttyACM0 -o /AMiRo_Hokuyo/lidar &
+./senseHokuyo -d /dev/ttyACM0 -o /lidar &
 
 # following from 'project/process/followToBI/'
-./followToBI --lidarinscope /AMiRo_Hokuyo/lidar &
+./followToBI --lidarinscope /lidar &
 
 # waypoint program from 'project/sandbox/waypoint/'
-./waypoint --lidarinscope /AMiRo_Hokuyo/lidar &
+./waypoint --lidarinscope /lidar &
 
 # start state machine
 ./final2015 --id ${ID} --turnAfterFollow 90 &
 #--moveAfterFollow -300 &
+
+# webserver running on port 80
+./rsb_ws_bridge_amiro &
 
 wait
 cpufreq-set -g ondemand
