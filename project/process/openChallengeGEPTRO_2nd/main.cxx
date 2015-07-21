@@ -116,6 +116,7 @@ std::string objectsString[NUM_OBJECTS] = {"object1","object2","object3","object4
 rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informerObjectDetScope;
 rsb::Informer<twbTracking::proto::Pose2DList>::Ptr informerObjectDetRectScope;
 rsb::Informer<std::string>::Ptr                    informerLocalPlannerScope;
+rsb::Informer<std::string>::Ptr                    informerBlobDetectionScope;
 rsb::Informer<std::string>::Ptr                    informerExplorationScope;
 rsb::Informer<std::string>::Ptr                    informerPositionScope;
 rsb::Informer<twbTracking::proto::Pose2D>::Ptr     informerDeliveryScope;
@@ -148,6 +149,10 @@ std::string sObjectDetRectOutscope = "/rectangledata";
 // Local planner
 std::string sLocalPlannerCmdScope("/localplanner/command");
 std::string sLocalPlannerAnswerScope("/localplanner/answer");
+
+// Blob Detection
+std::string sBlobDetectionCmdScope("/objectsReq/request");
+std::string sBlobDetectionAnswerScope("/objectsReq/answer");
 
 // Communication with ToBI
 std::string sInScopeTobi = "/tobiamiro";
@@ -219,6 +224,7 @@ std::string sRemoteServer = "localhost";
 
 bool testWithAnswerer = false;
 bool mapServerIsRemote = false;
+bool isBigMap = false;
 
 boost::shared_ptr<twbTracking::proto::Pose2DList> objectPosList(new twbTracking::proto::Pose2DList());
 
@@ -247,6 +253,7 @@ int main(int argc, char **argv) {
         ("obstacleServerReq", po::value <std::string> (&obstacleServerReq), "Function name of map server for obstacle map.")
         ("sObjectDetRectOutscope", po::value <std::string> (&sObjectDetRectOutscope), "Scope for sending rectangle data.")
         ("robotID,d", po::value <int> (&robotID), "Robot ID.")
+	("bigMap", "Flag if the map is very big (the pathplanner needs more than 25 seconds).")
         ("mapServerIsRemote", "Flag, if the map server is a remote server (otherwise it uses local connection).")
         ("testWithAnswerer", "Prepares some constants for test with answerer.");
 
@@ -268,10 +275,14 @@ int main(int argc, char **argv) {
 
     testWithAnswerer = vm.count("testWithAnswerer");
     mapServerIsRemote = vm.count("mapServerIsRemote");
+    isBigMap = vm.count("bigMap");
 
     // prepare scopes for ToBI-AMIRo communication
     sInScopeTobi.append(std::to_string(robotID));
     sOutScopeTobi.append(std::to_string(robotID)).append(sOutScopeTobi2nd);
+    if (vm.count("robotID")) {
+        mapServerScope.append(std::to_string(robotID));
+    }
 
     // print all scopes
     INFO_MSG("List of all RSB scopes:");
@@ -374,6 +385,14 @@ int processSM(void) {
 
     informerLocalPlannerScope = factory.createInformer< std::string > (sLocalPlannerCmdScope);
 
+    // Blob Detection: Listener and Informer
+    rsb::ListenerPtr listenerBlobDetectionAnswerScope = factory.createListener(sBlobDetectionAnswerScope);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueBlobDetectionAnswerScope(
+            new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+    listenerBlobDetectionAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueBlobDetectionAnswerScope)));
+
+    informerBlobDetectionScope = factory.createInformer< std::string > (sBlobDetectionCmdScope);
+
     // Exploration: Listener and Informer
     rsb::ListenerPtr listenerExplorationScope = factory.createListener(sExplorationAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueExplorationAnswerScope(
@@ -403,6 +422,7 @@ int processSM(void) {
     listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueTransportAnswerScope)));
 
     informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
+
 
     /////////////////// REMOTE SCOPES///////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
@@ -547,6 +567,17 @@ int processSM(void) {
             case blobDetection:
                 if (!testWithAnswerer) {
                     boost::shared_ptr<bool> draw_debug(new bool(false));
+                    if (isBigMap) {
+                        if (!queueBlobDetectionAnswerScope->empty()) {
+                            queueBlobDetectionAnswerScope->pop();
+                        }
+                        informerBlobDetectionScope->publish(stringPublisher);
+                        while(queueBlobDetectionAnswerScope->empty()) {
+                            INFO_MSG("Waiting for Blob Detection Answer.");
+                            sleep(1);
+                        }
+                        queueBlobDetectionAnswerScope->pop();
+                    }
                     objectPosList = mapServer->call<twbTracking::proto::Pose2DList>(obstacleServerReq, draw_debug);
                     INFO_MSG(" -> Object count of Blob Detection: " << objectPosList->pose_size());
                     amiroState = objectDetectionStart;
