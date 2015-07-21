@@ -22,16 +22,13 @@
 #include <string>
 #include <cstring>
 
-
 #include <rsb/Factory.h>
-
-
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
-// Include own converter
-#include <vecConverter/main.hpp>
-
 #include <CanMessage.pb.h>
+
+#include <thread>
+#include <chrono>
 
 class PeakCan {
 public:
@@ -61,8 +58,6 @@ public:
 //			if(bytes_read < 0){
 //				return;
 //			}
-//			clock_t start, end;
-//			start = clock();
 //			//std::cout << "ID: " << frame.can_id << "  " << bytes_read <<std::endl;
 //			uint32_t canId = frame.can_id & 0x7FFFFFFF;
 //			try{
@@ -70,17 +65,14 @@ public:
 //			}catch (const std::out_of_range& e) {
 //				//std::cerr<< "Id not found  " << std::hex << canId << std::dec <<std::endl;
 //			}
-//
-//			end = clock();
-//			float z = (end- start) / CLOCKS_PER_SEC;
-//			std::cout << "clocks: " << end - start << " Seconds: " << z << "\n";
 //		}
 //	}
 
-	/**
-	 * ToDo
-	 */
-	//void writeCanFrame(int socketHandle);
+	void writeCanFrame_ClaasCan(int socketHandle);
+	void writeCanFrame_ClaasCan_cCoecCaccDevStat1(int socketHandle);
+	void writeCanFrame_ClaasCan_feedingHeight(int socketHandle);
+	void writeCanFrame_ClaasCan_feedingHeight_Offset(int socketHandle);
+
 	void readCanFrame_1(int socketHandle);
 	void readCanFrame_2(int socketHandle);
 	void readCanFrame_3(int socketHandle);

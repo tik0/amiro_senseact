@@ -159,23 +159,70 @@ void PeakCan::readCanFrame_4(int socketHandle){
 	}
 }
 
-/**
- * ToDo
- */
-//void PeakCan::writeCanFrame(int socketHandle){
-//	struct can_frame frame;
-//	frame.can_id  = 0x123;
-//	frame.can_dlc = 2;
-//	frame.data[0] = 0x11;
-//	frame.data[1] = 0x22;
-//
-//	for(auto data : frame.data){
-//		std::cout << (int)data << std::endl;
-//	}
-//
-//	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
-//	if(bytes_write < 1){
-//		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
-//	}
-//
-//}
+void PeakCan::writeCanFrame_ClaasCan(int socketHandle){
+
+	while(true){
+		writeCanFrame_ClaasCan_cCoecCaccDevStat1(socketHandle);
+		writeCanFrame_ClaasCan_feedingHeight(socketHandle);
+		writeCanFrame_ClaasCan_feedingHeight_Offset(socketHandle);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	}
+}
+
+void PeakCan::writeCanFrame_ClaasCan_cCoecCaccDevStat1(int socketHandle){
+	struct can_frame frame;
+	frame.can_id  = 0x9CF13FF0;
+	frame.can_dlc = 8;
+	frame.data[0] = 0x01;
+	frame.data[1] = 0x00;
+	frame.data[2] = 0x00;
+	frame.data[3] = 0x00;
+	frame.data[4] = 0x00;
+	frame.data[5] = 0x00;
+	frame.data[6] = 0x00;
+	frame.data[7] = 0x00;
+
+	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
+	if(bytes_write < 1){
+		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
+	}
+}
+
+void PeakCan::writeCanFrame_ClaasCan_feedingHeight(int socketHandle){
+	struct can_frame frame;
+	frame.can_id  = 0x9DF10AF0;
+	frame.can_dlc = 8;
+	frame.data[0] = 0xB8;
+	frame.data[1] = 0x00;
+	frame.data[2] = 0x10;
+	frame.data[3] = 0x01;
+	frame.data[4] = 0x00;
+	frame.data[5] = 0x00;
+	frame.data[6] = 0x00;
+	frame.data[7] = 0x00;
+
+	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
+	if(bytes_write < 1){
+		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
+	}
+}
+
+void PeakCan::writeCanFrame_ClaasCan_feedingHeight_Offset(int socketHandle){
+	struct can_frame frame;
+	frame.can_id  = 0x9DF10AF0;
+	frame.can_dlc = 8;
+	frame.data[0] = 0xB8;
+	frame.data[1] = 0x02;
+	frame.data[2] = 0x10;
+	frame.data[3] = 0x01;
+	frame.data[4] = 0x00;
+	frame.data[5] = 0x00;
+	frame.data[6] = 0x00;
+	frame.data[7] = 0x00;
+
+	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
+	if(bytes_write < 1){
+		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
+	}
+}

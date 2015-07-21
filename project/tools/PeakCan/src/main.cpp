@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 
 #include "PeakCan.hpp"
 #include "ClaasCan_CombineHarvester_Listener.hpp"
@@ -46,10 +45,12 @@ int main(int argc, char **argv) {
 	/**
 	 * Start for every CAN interface a thread that reads the CAN messages and publishes them to rsb
 	 */
-	std::thread can0(&PeakCan::readCanFrame_1, peakcan, peakcan.socketHandle_4);
-	std::thread can1(&PeakCan::readCanFrame_2, peakcan, peakcan.socketHandle_3);
-	std::thread can2(&PeakCan::readCanFrame_3, peakcan, peakcan.socketHandle_2);
-	std::thread can3(&PeakCan::readCanFrame_4, peakcan, peakcan.socketHandle_1);
+	std::thread can0_Read(&PeakCan::readCanFrame_1, peakcan, peakcan.socketHandle_4);
+	std::thread can1_Read(&PeakCan::readCanFrame_2, peakcan, peakcan.socketHandle_3);
+	std::thread can2_Read(&PeakCan::readCanFrame_3, peakcan, peakcan.socketHandle_2);
+	std::thread can3_Read(&PeakCan::readCanFrame_4, peakcan, peakcan.socketHandle_1);
+
+	std::thread can0_Write(&PeakCan::writeCanFrame_ClaasCan, peakcan, peakcan.socketHandle_4);
 
 	m_socketHandle_1 = peakcan.socketHandle_1;
 	m_socketHandle_2 = peakcan.socketHandle_2;
@@ -59,10 +60,12 @@ int main(int argc, char **argv) {
 	ClaasCan_CombineHarvester_Listener claasCan_CombineHarvester_Listener;
 	claasCan_CombineHarvester_Listener.setUpListener();
 
-	can0.join();
-	can1.join();
-	can2.join();
-	can3.join();
+	can0_Read.join();
+	can1_Read.join();
+	can2_Read.join();
+	can3_Read.join();
+
+	can0_Write.join();
 
 	std::cout<< "Closing PeakCan Connection" << "\n";
 }
