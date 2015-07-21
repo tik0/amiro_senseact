@@ -1,13 +1,31 @@
 ====== Building the Open Challenge 2015 Environment for AMiRo ======
 
 This is a simulation of the statemachine of the AMiRo for the Open Challenge.
-The scenario is the delivery of goods from a table to a position from where Tobi can grab them.
+The scenario is the delivery of goods from a table to a position from where ToBI can grab them. Here the AMiRo won't do real object detection!
 
-===== Run the simulation =====
 
-  - ''. ./build.sh .''
-  - ''./copyPrograms.sh''
-  - ''./run.sh'' on the AMiRo
-  - ''./stop.sh'' on the AMiRo for stopping
+===== Build and copying the simulation =====
+
+  - ''. ./build.sh''
+  - ''./copyPrograms.sh <IP>''
+
+
+===== Run the simulation on the AMiRo =====
+
+Start all programs with a specific robot ID
+  - ''./run.sh <robot ID>''
+
+If you like to stop
+  - ''./stop.sh''
+
+
+===== Run it for real =====
+
+Comment the programm start of "answerer_tobi" at the end of the start script "run.sh". This program simulates the communication of ToBI and shouldn't run, if you are using the real ToBI.
+
+
+===== Other tips =====
 
 One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+
+
