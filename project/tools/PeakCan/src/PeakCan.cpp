@@ -14,7 +14,7 @@
 #define AF_CAN PF_CAN
 #endif
 
-#include <src/PeakCan.hpp>
+#include "PeakCan.hpp"
 
 PeakCan::PeakCan() : socketHandle_1(0), socketHandle_2(0), socketHandle_3(0),socketHandle_4(0),socketHandle_5(0),socketHandle_6(0){
 
