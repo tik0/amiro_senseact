@@ -51,9 +51,8 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-#define NUM_STATES 5
-enum states                          { idle , init , following , waypoint, stopped};
-std::string statesString[NUM_STATES] {"idle","init","following","waypoint","stopped"};
+enum states                  { idle , turn, init , following , waypoint, stopped};
+std::string statesString[] = {"idle","turn","init","following","waypoint","stopped"};
 states amiroState;
 
 bool personEntered = false;
@@ -69,8 +68,10 @@ const std::string sWaypointAnswerScope("/waypoint/state");
 int processSM(void);
 void setAMiRoColor(int r, int g, int b);
 void set_state_idle();
+void set_state_turn();
 void set_state_init();
 void set_state_following();
+void stop_following();
 void set_state_waypoint();
 void set_state_waypoint_entered();
 void set_state_stopped();
@@ -79,22 +80,28 @@ void motorActionMilli(int speed, int turn);
 
 std::string g_sInScopeTobi = "/tobiamiro";
 std::string g_sOutScopeStateTobi = "/amiro";
+std::string g_sSubscopeState = "/state";
+std::string g_sSubscopeWaypoint = "/waypoint";
 std::string g_sRemoteServerPort = "4823";
 std::string g_sRemoteServer = "localhost";
 std::string amiro_id = "0";
 int turn_degree = 180;
+int turn_follow = 0;
+int move_follow = 0;
 
 int main(int argc, char **argv) {
 	namespace po = boost::program_options;
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
-    				("spread,s", po::value < std::string > (&g_sRemoteServer), "IP of remote spread server.")
-    				("spreadPort", po::value < std::string > (&g_sRemoteServerPort), "Port of remote spread server.")
-    				("outscopeStateTobi", po::value < std::string > (&g_sOutScopeStateTobi), "Scope for sending the current state to Tobi.")
-    				("inscopeTobi,i", po::value < std::string > (&g_sInScopeTobi), "Scope for receiving Tobi's messages.")
-    				("id", po::value < std::string > (&amiro_id), "ID of AMiRo.")
-				("turn", po::value < int > (&turn_degree), "Angle to turn when switching from 'following' to 'waypoint' (deg).");
+    				("spread,s", po::value<std::string> (&g_sRemoteServer), "IP of remote spread server.")
+    				("spreadPort", po::value<std::string> (&g_sRemoteServerPort), "Port of remote spread server.")
+    				("outscopeStateTobi", po::value<std::string> (&g_sOutScopeStateTobi), "Scope for sending the current state to Tobi.")
+    				("inscopeTobi,i", po::value<std::string> (&g_sInScopeTobi), "Scope for receiving Tobi's messages.")
+    				("id", po::value<std::string> (&amiro_id), "ID of AMiRo.")
+				("turn", po::value<int> (&turn_degree), "Angle to turn in turning state.")
+				("turnAfterFollow", po::value<int> (&turn_follow), "Angle to turn after following (in grad, positiv: counter clockwise).")
+				("moveAfterFollow", po::value<int> (&move_follow), "Distance to move after following after turning (in mm, positiv: forward).");
 
 	// Allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -111,14 +118,31 @@ int main(int argc, char **argv) {
 
 	// Afterwards, let program options handle argument errors
 	po::notify(vm);
-	
-	g_sInScopeTobi.append(amiro_id);
-	g_sOutScopeStateTobi.append(amiro_id).append("tobi");
 
 	return processSM();
 }
 
 int processSM(void) {
+
+	// Build scopes
+	g_sInScopeTobi.append(amiro_id);
+	g_sOutScopeStateTobi.append(amiro_id).append("tobi");
+	std::string g_sStateInScope = "";
+	g_sStateInScope.append(g_sInScopeTobi).append(g_sSubscopeState);
+	std::string g_sStateOutScope = "";
+	g_sStateOutScope.append(g_sOutScopeStateTobi).append(g_sSubscopeState);
+	std::string g_sWaypointOutScope = "";
+	g_sWaypointOutScope.append(g_sOutScopeStateTobi).append(g_sSubscopeWaypoint);
+
+	INFO_MSG("Scopes of remote RSB communication to ToBI:")
+	INFO_MSG(" - Inscope for internal states: " << g_sStateInScope)
+	INFO_MSG(" - Outscope for internal states: " << g_sStateOutScope)
+	INFO_MSG(" - Outscope for waypoint status: " << g_sWaypointOutScope)
+	INFO_MSG("Scopes of local communication:")
+	INFO_MSG(" - Inscope for Following: " << sFollowingAnswerScope)
+	INFO_MSG(" - Outscope for Following: " << sFollowingCmdScope)
+	INFO_MSG(" - Inscope for Waypoint: " << sWaypointAnswerScope)
+	INFO_MSG(" - Outscope for Waypoint: " << sWaypointCmdScope)
 
 	// Create the factory
 	rsb::Factory &factory = rsb::getFactory();
@@ -183,14 +207,16 @@ int processSM(void) {
 	////////////////////////////////////////////////////////////////////////////////
 
 	// Prepare RSB informer and listener
-	rsb::Informer< std::string >::Ptr informerRemoteState[NUM_STATES];
-
-	// Create the listener
-	rsb::ListenerPtr listenerRemoteTobiState;
+	rsb::ListenerPtr listenerRemoteTobiState = factory.createListener(g_sStateInScope, tmpPartConf);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueRemoteTobiState(
 			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+	listenerRemoteTobiState->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueRemoteTobiState)));
 
-	try {
+	rsb::Informer< std::string >::Ptr informerRemoteState = factory.createInformer< std::string > (g_sStateOutScope, tmpPartConf);
+
+	rsb::Informer< std::string >::Ptr informerRemoteWaypoint = factory.createInformer< std::string > (g_sWaypointOutScope, tmpPartConf);
+
+/*	try {
 		for (int idx = 0; idx < NUM_STATES; ++idx) {
 			std::string sOutScopeStateTobiTmp(g_sOutScopeStateTobi);
 			informerRemoteState[idx] = factory.createInformer< std::string > (sOutScopeStateTobiTmp.append("/").append(statesString[idx]), tmpPartConf);
@@ -203,19 +229,18 @@ int processSM(void) {
 	catch(std::exception& e) {
 		ERROR_MSG("Remote connection not established!");
 		return -1;
-	}
+	}*/
 
 	// When we reached this point, everything should be fine
 
-	// Local variables
+/*	// Local variables
 	bool bGotFromTobi_something = false;
 	bool bGotFromTobi_init = false;  // True if a state from tobi was received
 	bool bGotFromTobi_initfollowing = false;
 	bool bGotFromTobi_stopfollowing = false;
 	bool bGotFromTobi_initwaypoint = false;
 	bool bGotFromTobi_stopwaypoint = false;
-//	bool bGotFromWaypoint_entered = false; // True if something entered the waypoint's area
-//	bool bGotFromWaypoint_left = false; // True if something left the waypoint's area
+	bool bGotFromTobi_turn = false;*/
 
 //	// Variables for the keypress
 //	// Check for keypress in window
@@ -224,6 +249,7 @@ int processSM(void) {
 //	int KB_code = 0;
 
 	boost::shared_ptr<std::string> signal_state(new std::string);
+	boost::shared_ptr<std::string> stringPublisher(new std::string);
 	boost::shared_ptr<std::string> signal_init(new std::string("init"));
 	boost::shared_ptr<std::string> signal_stop(new std::string("stop"));
 
@@ -231,6 +257,15 @@ int processSM(void) {
 
 	// Process the behavior
 	while (true) {
+
+		// Local variables
+		bool bGotFromTobi_something = false;
+		bool bGotFromTobi_init = false;  // True if a state from tobi was received
+		bool bGotFromTobi_initfollowing = false;
+		bool bGotFromTobi_stopfollowing = false;
+		bool bGotFromTobi_initwaypoint = false;
+		bool bGotFromTobi_stopwaypoint = false;
+		bool bGotFromTobi_turn = false;
 
 		bool bGotFromWaypoint_entered = false; // True if something entered the waypoint's area
 		bool bGotFromWaypoint_left = false; // True if something left the waypoint's area
@@ -241,22 +276,40 @@ int processSM(void) {
 		if (!queueRemoteTobiState->empty()) {
 			bGotFromTobi_something = true;
 			INFO_MSG("Received a state from Tobi.")
-		    std::string msg(*queueRemoteTobiState->pop());
+			std::string msg(*queueRemoteTobiState->pop());
 			if (msg.compare("init") == 0) {
 				INFO_MSG("Initialising...")
 				bGotFromTobi_init = true;
 			} else if (msg.compare("initfollow")== 0) {
-				INFO_MSG("Init following...")
+				INFO_MSG("Init following")
 				bGotFromTobi_initfollowing = true;
+				std::string output = "initfollowrec";
+				*stringPublisher = output;
+				informerRemoteState->publish(stringPublisher);
 			} else if (msg.compare("stopfollow") == 0) {
-				INFO_MSG("Stop following...")
+				INFO_MSG("Stop following")
 				bGotFromTobi_stopfollowing = true;
+				std::string output = "stopfollowrec";
+				*stringPublisher = output;
+				informerRemoteState->publish(stringPublisher);
 			} else if (msg.compare("initwaypoint") == 0) {
-				INFO_MSG("Init waypoint...")
+				INFO_MSG("Init waypoint")
 				bGotFromTobi_initwaypoint = true;
+				std::string output = "initwaypointrec";
+				*stringPublisher = output;
+				informerRemoteState->publish(stringPublisher);
 			} else if (msg.compare("stopwaypoint") == 0) {
-				INFO_MSG("Stop waypoint...")
+				INFO_MSG("Stop waypoint")
 				bGotFromTobi_stopwaypoint = true;
+				std::string output = "stopwaypointrec";
+				*stringPublisher = output;
+				informerRemoteState->publish(stringPublisher);
+			} else if (msg.compare("turn") == 0) {
+				INFO_MSG("Turn")
+				bGotFromTobi_turn = true;
+				std::string output = "turnrec";
+				*stringPublisher = output;
+				informerRemoteState->publish(stringPublisher);
 			}
 			queueRemoteTobiState->clear();
 		} else {
@@ -321,8 +374,13 @@ int processSM(void) {
 				set_state_init();
 //			}
 			break;
+		case turn:
+			motorActionMilli(0,-M_PI/4*1000);
+			sleep(2);
+			motorActionMilli(0,0);
+			set_state_stopped();
+			break;
 		case init:
-			setAMiRoColor(255,255,255);
 			// Clear all variables
 			bGotFromTobi_init = false;
 			bGotFromTobi_stopfollowing = false;
@@ -337,63 +395,72 @@ int processSM(void) {
 				informerWaypoint->publish(signal_init);
 				set_state_waypoint();
 			}
-			bGotFromTobi_initfollowing = false;
-			bGotFromTobi_initwaypoint = false;
+//			bGotFromTobi_initfollowing = false;
+//			bGotFromTobi_initwaypoint = false;
 			break;
 		case following:
 			if (bGotFromTobi_stopfollowing) {
 				informerFollowing->publish(signal_stop);
+				stop_following();
 				set_state_stopped();
-			} else if(bGotFromTobi_initwaypoint) {
+			} else if (bGotFromTobi_initwaypoint) {
 				informerFollowing->publish(signal_stop);
 				informerWaypoint->publish(signal_init);
+				stop_following();
 				set_state_waypoint();
-			}
+			} else if (bGotFromTobi_turn) {
+				informerFollowing->publish(signal_stop);
+				stop_following();
+				set_state_turn();
+			}				
 			break;
 
 		case waypoint:
 			DEBUG_MSG("Entered=" << bGotFromWaypoint_entered << ", Left=" << bGotFromWaypoint_left << ", personEntered=" << personEntered);
 			if(bGotFromTobi_stopwaypoint) {
 				informerWaypoint->publish(signal_stop);
-				stopWaypoint();
 				set_state_stopped();
-			} else if(bGotFromWaypoint_entered && !personEntered) {
+			} else if (bGotFromWaypoint_entered && !personEntered) {
 				DEBUG_MSG("Switched to entered in waypoint!");
 				set_state_waypoint_entered();
 				boost::shared_ptr<std::string> tmp(new std::string("entered"));
-				//informerRemoteState[amiroState]->publish(tmp);
-			} else if(bGotFromWaypoint_left && personEntered) {
+				informerRemoteWaypoint->publish(tmp);
+			} else if (bGotFromWaypoint_left && personEntered) {
 				DEBUG_MSG("Switched to left in waypoint!");
 				set_state_waypoint();
 				boost::shared_ptr<std::string> tmp(new std::string("left"));
-				informerRemoteState[amiroState]->publish(tmp);
-			} else if(bGotFromTobi_initfollowing) {
+				informerRemoteWaypoint->publish(tmp);
+			} else if (bGotFromTobi_initfollowing) {
 				informerWaypoint->publish(signal_stop);
-				stopWaypoint();
 				informerFollowing->publish(signal_init);
 				set_state_following();
+			} else if (bGotFromTobi_turn) {
+				informerWaypoint->publish(signal_stop);
+				set_state_turn();
 			}
 			break;
 		case stopped:
-			setAMiRoColor(0,0,255);
-			if(bGotFromTobi_initwaypoint) {
+			if (bGotFromTobi_initwaypoint) {
 				informerWaypoint->publish(signal_init);
 				set_state_waypoint();
-			} else if(bGotFromTobi_initfollowing) {
+			} else if (bGotFromTobi_initfollowing) {
 				informerFollowing->publish(signal_init);
 				set_state_following();
+			} else if (bGotFromTobi_turn) {
+				set_state_turn();
 			}
 			break;
 		default:
 			WARNING_MSG("Unknown state of AMiRo's state machine.");
 		}
 
-		*signal_state = statesString[amiroState];
+//		*signal_state = statesString[amiroState];
 //		INFO_MSG("SENDING STATE SCOPE: " << g_sOutScopeStateTobi << "/" << *signal_state)
 
 //		informerRemoteState[amiroState]->publish(signal_state);
 		// informerAmiroState->publish(signal_state);
-		boost::this_thread::sleep(boost::posix_time::seconds(1));
+//		boost::this_thread::sleep(boost::posix_time::seconds(1));
+		usleep(500000);
 
 	}
 	return 0;
@@ -407,12 +474,17 @@ void setAMiRoColor(int r, int g, int b) {
 
 void set_state_idle() {
 	amiroState = idle;
-	setAMiRoColor(255,255,255);
+	setAMiRoColor(0,0,0);
+}
+
+void set_state_turn() {
+	amiroState = turn;
+	setAMiRoColor(127,127,255);
 }
 
 void set_state_init() {
 	amiroState = init;
-	setAMiRoColor(255,255,255);
+	setAMiRoColor(127,127,127);
 }
 
 void set_state_following() {
@@ -420,10 +492,39 @@ void set_state_following() {
 	setAMiRoColor(255,255,0);
 }
 
+void stop_following() {
+	if (turn_follow != 0 || move_follow != 0) {
+		usleep(500000);
+	}
+	if (turn_follow != 0) {
+		float vel = M_PI/4.0;
+		float angle = turn_follow * M_PI/180.0;
+		if (angle < 0) {
+			vel *= -1;
+		}
+		float waiting_us = angle/vel * 1000000.0;
+		motorActionMilli(0, (int)(vel*1000.0));
+		usleep((int)waiting_us);
+		motorActionMilli(0, 0);
+	}
+	if (move_follow != 0) {
+		float vel = 0.1;
+		float dist = move_follow / 1000.0;
+		if (dist < 0) {
+			vel *= -1;
+		}
+		float waiting_us = dist/vel * 1000000.0;
+		motorActionMilli((int)(vel*1000.0), 0);
+		usleep((int)waiting_us);
+		motorActionMilli(0, 0);
+	}
+}
+
 void set_state_waypoint() {
 	personEntered = false;
 	amiroState = waypoint;
-	setAMiRoColor(255,0,127);
+//	setAMiRoColor(255,0,127);
+	setAMiRoColor(255,0,0);
 }
 
 void set_state_waypoint_entered() {
@@ -434,13 +535,7 @@ void set_state_waypoint_entered() {
 
 void set_state_stopped() {
 	amiroState = stopped;
-	setAMiRoColor(255,255,255);
-}
-
-void stopWaypoint() {
-	motorActionMilli(0,-M_PI/4*1000);
-	sleep(2);
-	motorActionMilli(0,0);
+	setAMiRoColor(0,0,255);
 }
 
 void motorActionMilli(int speed, int turn) {
