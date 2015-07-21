@@ -72,6 +72,7 @@ int objCount = 0;
 int objOffset = 2;
 
 // scopenames for rsb
+std::string slamLocalizationScope = "/exploration";
 std::string progressInscope = "/objectDetectionMain/command";
 std::string progressOutscope = "/objectDetectionMain/answer";
 std::string odometryInscope = "/localization";
@@ -87,6 +88,8 @@ std::string objectInscope = "/objectDetection/detected";
 std::string rectInscope = "/rectangledata";
 
 std::string outputRSBObjectDetection = "COMP";
+std::string SLIdle = "idle";
+std::string SLActive = "localization";
 
 // string publisher
 boost::shared_ptr<std::string> stringPublisher(new std::string);
@@ -113,6 +116,7 @@ void readTracking(types::position& pose, boost::shared_ptr<twbTracking::proto::P
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN);
 float normAngle(float angle);
 int mymcm(int mym);
+int robotID = 0;
 
 
 int main(int argc, char **argv) {
@@ -122,6 +126,7 @@ int main(int argc, char **argv) {
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
+			("robotID", po::value <int> (&robotID), "ID of robot for communication (default=0)")
 			("progressInscope", po::value <std::string> (&progressInscope), "Inscope for progress data.")
 			("progressOutscope", po::value <std::string> (&progressOutscope), "Outscope for progress data.")
 			("positionInscope", po::value <std::string> (&odometryInscope), "Inscope for position data of SLAM localization.")
@@ -170,6 +175,9 @@ int main(int argc, char **argv) {
 	useTrackingData = vm.count("useTrackingData");
         isBigMap = vm.count("bigMap");
 	mapServerIsRemote = vm.count("mapServerIsRemote");
+	if (vm.count("robotID")) {
+		mapServerScope.append(std::to_string(robotID));
+	}
 
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
@@ -260,6 +268,8 @@ int main(int argc, char **argv) {
         objDetListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(objDetQueue)));
 
 	// ---------------- Informer ---------------------
+
+	rsb::Informer<std::string>::Ptr informerSlamLocalization = factory.createInformer< std::string > (slamLocalizationScope);
 
         rsb::Informer<std::string>::Ptr objDetInformer = factory.createInformer< std::string > (objectOutscope);
 
@@ -396,8 +406,8 @@ int main(int argc, char **argv) {
 				WARNING_MSG("Add fake object.")
 				twbTracking::proto::Pose2D *pose2D = objectPositions->add_pose();
 				pose2D->set_x(0.1);
-				pose2D->set_y(-0.2);
-				pose2D->set_orientation(0.05);
+				pose2D->set_y(-0.1);
+				pose2D->set_orientation(0.0);
 				pose2D->set_id(0);
 			}
 
@@ -416,7 +426,7 @@ int main(int argc, char **argv) {
 				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // m
 
         	                bool objectDetected = false;
-				float detectionDist = robotObjectDist + objectPosition.orientation(); // m
+				float detectionDist = robotRadius + robotObjectDist + objectPosition.orientation()/2.0; // m
 				INFO_MSG("Focussing on object at position " << objectPosition.x() << "/" << objectPosition.y() << " with a radius of " << objectPosition.orientation() << " m");
 
 				// if the object hasn't been detected yet
@@ -485,12 +495,13 @@ int main(int argc, char **argv) {
 
 					if (!skipLP) {
 						// drive to final detection position
-						pathInformer->publish(path);
-						usleep(500000);
 						if (!pathResponseQueue->empty()) {
 							pathResponseQueue->pop();
 						}
-						while (pathResponseQueue->empty());
+						pathInformer->publish(path);
+						while (pathResponseQueue->empty()) {
+							usleep(500);
+						}
 						pathResponseQueue->pop();
 						INFO_MSG("Finished driving.");
 					}
@@ -523,6 +534,9 @@ int main(int argc, char **argv) {
 						sleep(5);
 					}
 
+					boost::shared_ptr<std::string> stringPublisher(new std::string);
+					*stringPublisher = SLIdle;
+					informerSlamLocalization->publish(stringPublisher);
 					if (!skipOD) {
 						// do object detection
 						if (!objDetQueue->empty()) {
@@ -569,9 +583,9 @@ int main(int argc, char **argv) {
 						}
 					} else {
 						// object has been detected (fake detection)
-						INFO_MSG("DETECTING (FAKE)");
-						sleep(2);
-						int objNum = objCount+objOffset+1;
+						INFO_MSG("DETECTING");
+						sleep(10);
+						int objNum = objCount+objOffset+robotID+1;
 						objCount++;
 						INFO_MSG("Object " << objNum << " has been fake detected (position " << objectPosition.x() << "/" << objectPosition.y() << " and radius " << objectPosition.orientation() << ").");
 						objectDetected = true;
@@ -581,6 +595,9 @@ int main(int argc, char **argv) {
 						detectionPositionPtr->set_id(objNum);
 						progressInformer->publish(detectionPositionPtr);
 					}
+					*stringPublisher = SLActive;
+					informerSlamLocalization->publish(stringPublisher);
+					
 				} // end while not detected
 			} // end for each object	
 		} else {
