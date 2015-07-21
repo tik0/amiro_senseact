@@ -48,6 +48,7 @@ bool debug = false;
 bool useSLAMData = false;
 bool mapServerIsRemote = false;
 bool isBigMap = false;
+bool isPushing = false;
 
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPosTmp(new twbTracking::proto::Pose2DList);
 boost::shared_ptr<twbTracking::proto::Pose2DList> pathToStartPos(new twbTracking::proto::Pose2DList);
@@ -75,6 +76,9 @@ boost::shared_ptr<std::string> finishStr(new string("finish"));
 
 rsb::Informer<twbTracking::proto::Pose2D>::Ptr pathRequestInformer;
 boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>pathRequestQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+
+
+boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>>pathResponseQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>(1));
 
 // for motor control
 //rsb::Informer< std::vector<int> >::Ptr motorCmdInformer;
@@ -113,23 +117,32 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 		cout << "Path error!" << endl;
 		return;
 	}
-	if (pathIdx<0) {
+
+	if (pathIdx < pushingPath->pose_size()-1 && pathIdx >= 0) {
+		motorCmd[0] = -40000;
+		motorCmd[1] = 0;
+		motorCmd[2] = 2000000;
+		boost::shared_ptr< std::vector<int> > motorCmdData = boost::shared_ptr<std::vector<int> >(new std::vector<int>(motorCmd.begin(),motorCmd.end()));
+//	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::YELLOW));
+//	motorCmdInformer->publish(motorCmdData);
+		myCAN.setTargetSpeed(motorCmd[0], motorCmd[1]);
+		if (pathIdx == 0) {
+			usleep(5000000);
+		} else {
+			usleep(3000000);
+		}
+		myCAN.setTargetSpeed(0, 0);
+	}
+	if (pathIdx<0 || (isPushing && pathIdx==0)) {
 		for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
 		cout << "Pushing finished!" << endl;
 		stateMachineInformer->publish(finishStr);
+		pathIdx=-2;
+		isPushing = false;
 		return;
 	}
 
-	motorCmd[0] = -40000;
-	motorCmd[1] = 0;
-	motorCmd[2] = 2000000;
-	boost::shared_ptr< std::vector<int> > motorCmdData = boost::shared_ptr<std::vector<int> >(new std::vector<int>(motorCmd.begin(),motorCmd.end()));
-	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
-//	motorCmdInformer->publish(motorCmdData);
-	myCAN.setTargetSpeed(motorCmd[0], motorCmd[1]);
-	usleep(2000000);
-	myCAN.setTargetSpeed(0, 0);
-
+	cout << "ObjectDelivery: Length Pushing Path List: " << pushingPath->pose_size() << endl;
 	currObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x(),pushingPath->pose(pathIdx).y());
 	pathIdx--;
 	nextDestObjectPos = cv::Point2f(pushingPath->pose(pathIdx).x(),pushingPath->pose(pathIdx).y());
@@ -138,12 +151,12 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	startOwnPos = currObjectPos - objectRobotVector;
 	destOwnPos = nextDestObjectPos - objectRobotVector*0.5f;
 
-	if(debug){
+/*	if(debug){
 		pushingArrow4Drawing->Clear();
 		addPos2PoseList(pushingArrow4Drawing, startOwnPos, 3);
 		addPos2PoseList(pushingArrow4Drawing, destOwnPos, 3);
 		addPos2PoseList(pushingArrow4Drawing, cv::Point2f(color_red.x, color_red.y), color_red.z);
-	}
+	}*/
 
 	cout << "ObjectDelivery: Starting position calculated. Retrieving path thereto." << endl;
 
@@ -153,7 +166,7 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 	startOwnPose2D->set_orientation(0);
 	startOwnPose2D->set_id(0);
 
-//	insertObjectInformer->publish(objectPtr);
+	insertObjectInformer->publish(objectPtr);
 
 //	try {
 		if (isBigMap) {
@@ -182,22 +195,27 @@ void calcAndPublishNextPathSegment(boost::shared_ptr<bool> pathResponse) {
 		addPos2PoseList(pathToStartPos, cv::Point2f(pathToStartPosTmp->pose(i).x(),pathToStartPosTmp->pose(i).y()), 0);
 	}
 
-//	deleteObjectInformer->publish(objectPtr);
+	deleteObjectInformer->publish(objectPtr);
 
 	cout << "ObjectDelivery: Path to starting position retrieved (length: " << pathToStartPos->pose_size() << ")" << endl;
+
+	cout << "ObjectDelivery: Pushing Path:" << endl;
+	for (int idx=0; idx<pathToStartPos->pose_size(); idx++) {
+		cout << "ObjectDelivery:  - " << pathToStartPos->pose(idx).x() << "/" << pathToStartPos->pose(idx).y() << endl;
+	}
 
 	if(debug){
 		path4Drawing->Clear();
 		path4Drawing->CopyFrom(*pathToStartPosTmp);
 		addPos2PoseList(path4Drawing, currOwnPos, 3);
 		addPos2PoseList(path4Drawing, cv::Point2f(color_orange.x, color_orange.y), color_orange.z);
-		currOwnPos = destOwnPos;
+		//currOwnPos = destOwnPos;
 	}
 
 	pathInformer->publish(pathToStartPos);
 	cout << "ObjectDelivery: Path to starting position published." << endl;
 
-	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
+	for(int led=0; led<8; led++) myCAN.setLightColor(led, amiro::Color(amiro::Color::YELLOW));
 }
 
 int main(int argc, char **argv) {
@@ -228,16 +246,18 @@ int main(int argc, char **argv) {
 	// id of the tracking marker
 	int trackingMarkerID = 0;
 	int destinationMarkerID = 4;
+	int robotID = 0;
 
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()
 			("help,h", "Display a help message.")
+			("robotID", po::value <int> (&robotID), "ID of robot for communication (default=0)")
 			("id", po::value<int>(&trackingMarkerID), "ID of the tracking marker")
 			("destId", po::value<int>(&destinationMarkerID), "ID of the destination marker")
 			("positionInscope", po::value <std::string> (&odometryInscope), "Inscope for position data of SLAM localization.")
 //			("edgeout", po::value<std::string>(&edgeOutscope), "Outscope for edge found signals")
-			("pathRe", po::value<std::string>(&pathOutScope), "Inscope for path responses.")
+			("pathRe", po::value<std::string>(&pathResponseInScope), "Inscope for path responses.")
 			("pathOut", po::value<std::string>(&pathOutScope), "Outscope for the robots path.")
 			("mapServer", po::value<std::string>(&mapServerScope), "Scope for the mapGenerator server")
 			("host", po::value<std::string>(&spreadhost), "Host for Programatik Spread.")
@@ -263,6 +283,9 @@ int main(int argc, char **argv) {
 
 	debug = vm.count("debugVis") > 0;
 	if(debug) cout << "ObjectDelivery: Debug mode: object selection via keyboard (number as Id). Visualization data will be published for showMap." << endl;
+	if (vm.count("robotID")) {
+		mapServerScope.append(std::to_string(robotID));
+	}
 
 	mapServerIsRemote = vm.count("mapServerIsRemote");
 	useSLAMData = vm.count("useSLAMData");
@@ -338,6 +361,10 @@ int main(int argc, char **argv) {
 			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
 	pushingPathRequestListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(pushingPathRequestQueue)));
 
+	// prepare RSB listener for path responses
+/*	rsb::ListenerPtr pathResponseListener = factory.createListener(pathResponseInscope);
+	pathResponseListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<bool>(pathResponseQueue)));*/
+
 	// prepare rsb listener for tracking data
 	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, extspreadconfig);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
@@ -409,6 +436,7 @@ int main(int argc, char **argv) {
 		if (useSLAMData) {
 			while(odomQueue->empty()) usleep(250000);
 			destObjectPose = getSLAMPosition(*odomQueue->pop());
+			destObjectPose.x += 0.05;
 		} else {
 			while(trackingQueue->empty()) usleep(250000);
 			destObjectPose = readTracking(boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop()),destinationMarkerID);
@@ -501,7 +529,12 @@ int main(int argc, char **argv) {
 		}
 
 		if (pushingPath->pose_size() > 1) {
+			cout << "ObjectDelivery: Object Path:" << endl;
+			for (int idx=0; idx<pushingPath->pose_size(); idx++) {
+				cout << "ObjectDelivery:  - " << pushingPath->pose(idx).x() << "/" << pushingPath->pose(idx).y() << endl;
+			}
 			pathIdx = pushingPath->pose_size()-1;
+			isPushing = true;
 			calcAndPublishNextPathSegment(truePtr);
 		} else cout << "ObjectDelivery: ERROR - No pushing path found!" << endl;
 	}
