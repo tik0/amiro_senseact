@@ -132,6 +132,7 @@ static double detectionObstacleErosion = 0.1; // m
 
 rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
 rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPushPublish(new twbTracking::proto::Pose2DList);
+rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListObjectsPublish(new twbTracking::proto::Pose2DList);
 
 // Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
 void mapErosion(int erosion_size, cv::Mat &map) {
@@ -150,6 +151,10 @@ cv::Mat getObstacleMap() {
     if (map.at<uint8_t>(idx) > 127) // Delete all unsure guesses
       map.at<uint8_t>(idx) = 0xFF;
   return map;
+}
+
+void changeObstacleMap(cv::Mat map) {
+  // TODO Save given map into ts_map_.map!
 }
 
 // Show an image in a window with the given name.
@@ -211,8 +216,8 @@ void pathRequestFunction(twbTracking::proto::Pose2D pose) {
 		INFO_MSG("Path to " << pose.x() << "/" << pose.y() << " requested.");
 		// generate the obstacle map
 		cv::Mat obstacleMap(getObstacleMap());
-		const int erosion_size = pathObstacleErosion / delta_;
-		mapErosion(erosion_size, obstacleMap);
+		//const int erosion_size = pathObstacleErosion / delta_;
+		//mapErosion(erosion_size, obstacleMap);
 		float xSize = ((float)obstacleMap.size().width) * delta_;
 		float ySize = ((float)obstacleMap.size().height) * delta_;
 
@@ -303,7 +308,7 @@ void pushingPathRequestFunction(twbTracking::proto::Pose2DList inputPointList) {
 class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
   boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/, boost::shared_ptr<bool> draw_debug) {
 
-    // Get the obstacles
+/*    // Get the obstacles
     cv::Mat map = getObstacleMap();
 
     // Expand them
@@ -384,8 +389,72 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
       compression_params.push_back(3);
       imwrite("detection.png", debug, compression_params);
       INFO_MSG("Server returns obstacle list")
-    }
-    return pose2DList;
+    }*/
+    return pose2DListObjectsPublish;
+  }
+};
+
+void objectsRequestFunction() {
+
+  // Get the obstacles
+  cv::Mat map = getObstacleMap();
+
+  // Expand them
+  const int erosion_size = detectionObstacleErosion / delta_;
+  mapErosion(erosion_size, map);
+  float xSize = ((float)map.size().width) * delta_;
+  float ySize = ((float)map.size().height) * delta_;
+
+  // Obstacle list
+  vector<vector<cv::Point2i> > contours;
+
+  // Temporary stuff
+  cv::Mat mask, thresholded;
+
+  // Get area inside of walls
+  cv::threshold(map,thresholded,127,255,cv::THRESH_BINARY);
+
+  thresholded.copyTo(mask);
+
+  cv::findContours(mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+  mask = Mat::zeros(map.size(),CV_8UC1);
+
+  cv::drawContours(mask, contours, -1, cv::Scalar(255),-1);
+  cv::Mat help = Mat::ones(map.size(),CV_8UC1)*255;
+
+  thresholded.copyTo(help,mask);
+
+  // Switch black & white
+  cv::Mat objects = Mat::ones(map.size(), CV_8UC1)*255;
+  cv::subtract(objects, help, objects);
+
+  // Find objects
+  cv::findContours(objects, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+  int numObjects = contours.size();
+  cv::Point2f centers[numObjects];
+  float objectRadius[numObjects];
+  cv::Moments moments;
+  pose2DListObjectsPublish->clear_pose();
+
+  for(int i = 0; i < numObjects; ++i) {
+    if (cv::contourArea(contours[i]) < 5) continue;
+
+    // Calculate objects center of gravity
+    moments = cv::moments(contours[i], true);
+    centers[i] = Point2f(moments.m10/moments.m00 , moments.m01/moments.m00);
+
+    // Get objects radius
+    cv::Point2f center;
+    cv::minEnclosingCircle(contours[i],center,objectRadius[i]);
+
+    // Add object as pose
+    twbTracking::proto::Pose2D *pose2D1 = pose2DListObjectsPublish->add_pose();
+    pose2D1->set_x(centers[i].x * delta_ - xSize/2.0);
+    pose2D1->set_y(centers[i].y * delta_ - ySize/2.0);
+    pose2D1->set_orientation(objectRadius[i] * delta_);
+    pose2D1->set_id(0);
   }
 };
 
@@ -413,6 +482,18 @@ public:
   }
 };
 
+void insertObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
+  cv::Mat map = getObstacleMap();
+  cv::circle(map, cv::Point2f(objectPtr->x()/delta_,objectPtr->y()/delta_), (objectPtr->orientation()-0.05)/delta_, cv::Scalar(-255),-1);
+  changeObstacleMap(map);
+}
+
+void deleteObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
+  cv::Mat map = getObstacleMap();
+  cv::circle(map, cv::Point2f(objectPtr->x()/delta_,objectPtr->y()/delta_), (objectPtr->orientation()-0.05)/delta_, cv::Scalar(255),-1);
+  changeObstacleMap(map);
+}
+
 #define NUM_STATES 3
 enum states {
   idle,
@@ -434,11 +515,29 @@ void controlCoreSLAMBehaviour(boost::shared_ptr<std::string> e) {
   // Control the behaviour
   if ((e->compare("start") == 0) || (e->compare("slam") == 0))
     slamState = slam;
-  else if ((e->compare("finish") == 0) || (e->compare("localization") == 0))
+  else if ((e->compare("finish") == 0) || (e->compare("localization") == 0)) {
+    if (slamState == slam) {
+      cv::Mat map = getObstacleMap();
+      const int erosion_size = detectionObstacleErosion / delta_;
+      mapErosion(erosion_size, map);
+      std::vector<int> compression_params;
+      compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+      compression_params.push_back(3);
+      imwrite("mapLoc.png", map, compression_params);
+    }
     slamState = localization;
-  else if (e->compare("idle") == 0)
+  } else if (e->compare("idle") == 0) {
+    if (slamState == slam) {
+      cv::Mat map = getObstacleMap();
+      const int erosion_size = detectionObstacleErosion / delta_;
+      mapErosion(erosion_size, map);
+      std::vector<int> compression_params;
+      compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+      compression_params.push_back(3);
+      imwrite("mapIdle.png", map, compression_params);
+    }
     slamState = idle;
-  else
+  } else
     WARNING_MSG("STATEMACHINE: Received string " << *e << ". Remain in state " << statesString[slamState])
 
     INFO_MSG("STATEMACHINE: Received " << *e << " State is: " << statesString[slamState])
@@ -609,8 +708,12 @@ int main(int argc, const char **argv){
   std::string sExplorationAnswerScope = "/answer";
   std::string sPathInputScope = "/pathReq/request";
   std::string sPathOutputScope = "/pathReq/answer";
+  std::string sObjectsInputScope = "/objectsReq/request";
+  std::string sObjectsOutputScope = "/objectsReq/answer";
   std::string sPushPathInputScope = "/pushPathServer/request";
   std::string sPushPathOutputScope = "/pushPathServer/answer";
+	std::string insertObjectInscope = "/mapGenerator/insertObject";
+	std::string deleteObjectInscope = "/mapGenerator/deleteObject";
   std::string pathServerReq = "path";
   std::string pushingPathServerReq = "getPushingPath";
   std::string mapServerReq = "map";
@@ -618,9 +721,11 @@ int main(int argc, const char **argv){
   std::string obstacleServerReq = "getObjectsList";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
+  int robotID = 0;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
+    ("robotID", po::value <int> (&robotID), "ID of robot for communication (default=0)")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
 //    ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
     ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
@@ -664,6 +769,9 @@ int main(int argc, const char **argv){
 
   // afterwards, let program options handle argument errors
   po::notify(vm);
+  if (vm.count("robotID")) {
+    serverScope.append(std::to_string(robotID));
+  }
 
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
@@ -730,12 +838,18 @@ int main(int argc, const char **argv){
   rsb::ListenerPtr pathListener = factory.createListener(sPathInputScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>>pathQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>(1));
   pathListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2D>(pathQueue)));
+  // Prepare RSB listener for incomming objects request
+  rsb::ListenerPtr objectsListener = factory.createListener(sObjectsInputScope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>objectsQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+  objectsListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(objectsQueue)));
   // Prepare RSB listener for incomming pushing path request
   rsb::ListenerPtr pushPathListener = factory.createListener(sPushPathInputScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>pushPathQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
   pushPathListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(pushPathQueue)));
   // Prepare RSB informer for sending the path answer
   rsb::Informer<std::string>::Ptr pathInformer = factory.createInformer<std::string> (sPathOutputScope);
+  // Prepare RSB informer for sending the objects answer
+  rsb::Informer<std::string>::Ptr objectsInformer = factory.createInformer<std::string> (sObjectsOutputScope);
   // Prepare RSB informer for sending the pushing path answer
   rsb::Informer<std::string>::Ptr pushPathInformer = factory.createInformer<std::string> (sPushPathOutputScope);
   // Prepare RSB listener for controling the programs behaviour
@@ -752,6 +866,15 @@ int main(int argc, const char **argv){
   server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
   server->registerMethod(mapServerObstacleReq, rsb::patterns::LocalServer::CallbackPtr(new mapServerObstacles()));
   server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
+
+
+	// prepare RSB listener for commands to insert an object in the map
+	rsb::ListenerPtr insertObjectListener = factory.createListener(insertObjectInscope);
+	insertObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&insertObject)));
+
+	// prepare RSB listener for commands to delete an object from the map
+	rsb::ListenerPtr deleteObjectListener = factory.createListener(deleteObjectInscope);
+	deleteObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&deleteObject)));
 
   // Init the CAN controller
   ::CAN = new(ControllerAreaNetwork);
@@ -778,6 +901,14 @@ int main(int argc, const char **argv){
       boost::shared_ptr<std::string> stringPublisher(new std::string("Fin"));
       pushPathInformer->publish(stringPublisher);
       INFO_MSG("Pushing path request check finished.");
+    }
+    if (!objectsQueue->empty()) {
+      INFO_MSG("Checking objects requests.");
+      objectsRequestFunction();
+      objectsQueue->pop();
+      boost::shared_ptr<std::string> stringPublisher(new std::string("Fin"));
+      objectsInformer->publish(stringPublisher);
+      INFO_MSG("Objects request check finished.");
     }
 
     ++laser_count_;
