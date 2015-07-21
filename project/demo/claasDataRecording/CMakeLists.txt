@@ -16,8 +16,9 @@ add_subdirectory ($ENV{MUROX_PROJECT}/tools/PeakCan PeakCan)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/rsb_ws_bridge_claas rsb_ws_bridge_claas)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseS10Terminal senseS10Terminal)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/MachineModel MachineModel)
+add_subdirectory ($ENV{MUROX_PROJECT}/tools/DisplayRoi DisplayRoi)
 
-SET(folders "sensePepperlFuchsOMD8000;senseLeuzeODS9ODS96B;senseHokuyo;GigEVision2RSB;senseOpenNi2;senseSick_LD_MRS;senseLASE_2000D_226;PeakCan;rsb_ws_bridge_claas;senseS10Terminal;MachineModel")
+SET(folders "sensePepperlFuchsOMD8000;senseLeuzeODS9ODS96B;senseHokuyo;GigEVision2RSB;senseOpenNi2;senseSick_LD_MRS;senseLASE_2000D_226;PeakCan;rsb_ws_bridge_claas;senseS10Terminal;MachineModel;DisplayRoi")
 MESSAGE( STATUS "Processing: " )
 FOREACH(folder ${folders})
   INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/${folder}/${folder}"

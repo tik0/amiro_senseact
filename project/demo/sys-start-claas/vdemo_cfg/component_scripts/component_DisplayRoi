@@ -1,0 +1,20 @@
+#!/bin/bash
+
+function component {
+  echo "starting DisplayRoi"
+  DisplayRoi
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"
