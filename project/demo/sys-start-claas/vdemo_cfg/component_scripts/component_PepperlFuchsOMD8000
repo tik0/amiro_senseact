@@ -1,13 +1,15 @@
 #!/bin/bash
 
 function component {
-  echo "starting sensing PepperlFuchsOMD8000"
 #   -h [ --help ]         Display a help message.
 #   -o [ --outscope ] arg Scope for sending odometry values
 #   -t [ --period ] arg   Update interval in ms ( 20 for maximum rate)
 #   -p [ --port ] arg     Portnumber of ttyS<0-15> (Standardvalue: 0)
 #   -b [ --bdrate ] arg   Baudrate (Standardvalue: 115200)
-  sensePepperlFuchsOMD8000 -o /sense/PepperlFuchsOMD8000 -t 50 -p 1 -b 115200
+#   -q [ --position ] arg Sensor Poistion: x y z alpha beta gamma, default = 0, 0, 0, 0, 0, 0
+  SETUP="1312, -553, 1442.004, 0, 90, 0"
+  echo "starting sensing PepperlFuchsOMD8000 -q ${SETUP}"
+  sensePepperlFuchsOMD8000 -o /sense/PepperlFuchsOMD8000 -t 50 -p 1 -b 115200 -q ${SETUP}
 }
 
 function clean_component {
