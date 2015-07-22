@@ -18,3 +18,6 @@ killall -9 rsb_ws_bridge_amiro
 killall -9 spread
 
 sleep 1
+
+# reset AMiRo from 'project/act/stopAMiRo/'
+./stopAMiRo
