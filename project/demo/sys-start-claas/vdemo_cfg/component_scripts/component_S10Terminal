@@ -6,7 +6,7 @@ function component {
 #  -o [ --outscope ] arg Scope for sending Nmea values
 #  -p [ --port ] arg     Portnumber of ttyS<0-15> (Standardvalue: 3)
 #  -b [ --bdrate ] arg   Baudrate (Standardvalue: 19200)
-  senseS10Terminal -p 3 -b 19200
+  senseS10Terminal -p 3 -b 115200
 }
 
 function clean_component {

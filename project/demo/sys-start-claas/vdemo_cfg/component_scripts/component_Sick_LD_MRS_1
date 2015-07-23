@@ -1,15 +1,15 @@
 #!/bin/bash
 
 function component {
-#  -h [ --help ]              Display a help message.
-#  -s [ --TcpServerIP ] arg   Server ip address, default = 192.168.100.150
-#  -p [ --TcpServerPort ] arg Server port, default = 12002
-#  -o [ --outscope ] arg      Scope for sending sick data, default = /sense/SickLDMRS/1
-#  -q [ --position ] arg      Sensor Poistion: x y z alpha beta gamma, default = -2819.493, 2082.838, -206.29, 0, 0, 14.597
+#  -h [ --help ]                Display a help message.
+#  -s [ --s_TcpServerIP ] arg   Server ip address, default = 192.168.100.150
+#  -p [ --p_TcpServerPort ] arg Server port, default = 12002
+#  -o [ --outscope ] arg        Scope for sending sick data, default = /sense/SickLDMRS/1
+#  -q [ --q_position ] arg      Sensor Poistion: x y z alpha beta gamma, default = -2819.493, 2082.838, -206.29, 0, 0, 14.597
   SICK_IP=192.168.100.150
-  SETUP="-2819.493, 2082.838, -206.29, 0, 0, 14.597"
-  echo "starting senseSick_LD_MRS FR -s ${SICK_IP} -q ${SETUP}"
-  senseSick_LD_MRS -s ${SICK_IP} -q ${SETUP}
+  SETUP="-2819.493 2082.838 -206.29 0 0 14.597"
+  echo "starting senseSick_LD_MRS FR --s ${SICK_IP} --q ${SETUP}"
+  senseSick_LD_MRS --s ${SICK_IP} --q ${SETUP}
 }
 
 function clean_component {
