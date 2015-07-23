@@ -54,17 +54,17 @@ int main(int argc, char **argv) {
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending odometry values")
-    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
+    ("t_period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
     ("port,p", po::value < int32_t > (&cport_nr), "Portnumber of ttyS<0-15> (Standardvalue: 0)")
     ("bdrate,b", po::value < int32_t > (&bdrate), "Baudrate (Standardvalue: 19200)")
-	("position,q", po::value <std::vector<double> > (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = 0, 0, 0, 0, 0, 0");
+	("q_position,q", po::value <std::vector<double> > (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = 0, 0, 0, 0, 0, 0");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
   p.add("value", 1);
 
   po::variables_map vm;
-  po::store( po::command_line_parser(argc, argv).options(options).positional(p).run(), vm);
+  po::store( po::command_line_parser(argc, argv).options(options).style(po::command_line_style::unix_style ^ po::command_line_style::allow_short).run(), vm);
 
   // first, process the help option
   if (vm.count("help")) {

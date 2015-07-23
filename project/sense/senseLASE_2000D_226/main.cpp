@@ -106,19 +106,19 @@ int main(int argc, char* argv[])
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
-	("CLIENT_IP_ADDRESS,c", po::value <std::string> (&clientIP), "Client ip address, default = 192.168.100.96")
-	("CLIENT_PORT,p", po::value <uint16_t> (&clientPort), "Client port, default = 1025")
-	("LASE_SERVER_IP_ADDRESS,s", po::value <std::string> (&laseServerIP), "Lase server ip address, default = 192.168.100.160")
-	("LASE_SERVER_PORT,t", po::value <uint16_t> (&laseServerPort), "Lase server port, default = 1024")
+	("c_CLIENT_IP_ADDRESS,c", po::value <std::string> (&clientIP), "Client ip address, default = 192.168.100.96")
+	("p_CLIENT_PORT,p", po::value <uint16_t> (&clientPort), "Client port, default = 1025")
+	("s_LASE_SERVER_IP_ADDRESS,s", po::value <std::string> (&laseServerIP), "Lase server ip address, default = 192.168.100.160")
+	("t_LASE_SERVER_PORT,t", po::value <uint16_t> (&laseServerPort), "Lase server port, default = 1024")
 	("outscope,o", po::value <std::string> (&laseOutScope), "Scope for sending lase data, default = /sense/LASE2000D/1")
-	("position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = -2822.938, 2080.804, 0, 0, 0, 29.742");
+	("q_position,q", po::value <std::vector<double>> (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = -2822.938, 2080.804, 0, 0, 0, 29.742");
 
 	// allow to give the value as a positional argument
-	po::positional_options_description p;
-	p.add("value", 1);
+	//po::positional_options_description p;
+	//p.add("value", 1);
 
 	po::variables_map vm;
-	po::store( po::command_line_parser(argc, argv).options(options).positional(p).run(), vm);
+	po::store( po::command_line_parser(argc, argv).options(options).style(po::command_line_style::unix_style ^ po::command_line_style::allow_short).run(), vm);
 
 	// first, process the help option
 	if (vm.count("help")) {
