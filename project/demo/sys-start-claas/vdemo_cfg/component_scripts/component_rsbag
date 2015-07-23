@@ -16,7 +16,7 @@ function on_start {
 }
 
 function on_stop {
-    true
+    pkill -INT -f bag-record || true
 }
 
 source "$VDEMO_root/vdemo_standard_component_suffix.sh"
