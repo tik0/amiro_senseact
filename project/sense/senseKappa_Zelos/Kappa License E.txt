@@ -1,0 +1,67 @@
+KAPPA SOFTWARE LICENSE TERMS
+
+These license terms are an agreement between Kappa optronics GmbH and you.  Please read them.  They apply to the software named above, which includes the media on which you received it, if any.  The terms also apply to any Kappa
+  • updates, 
+  • supplements, 
+  • support services
+for this software, unless other terms accompany those items.  If so, those terms apply.
+BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS.  IF YOU DO NOT ACCEPT THEM, DO NOT USE THE SOFTWARE.  
+IF YOU COMPLY WITH THESE LICENSE TERMS, YOU HAVE THE RIGHTS BELOW FOR EACH LICENSE YOU ACQUIRE.
+1. OVERVIEW.
+a. Software.  The software includes development tools, software programs and documentation.
+b. License Model.  The software is licensed on a per user basis.
+2. INSTALLATION AND USE RIGHTS.
+a. General.  One user may install and use copies of the software to design, develop, test and demonstrate your programs.  Testing does not include staging on a server in a production environment, such as loading content prior to production use.
+b. Included Kappa Programs.  These license terms apply to all Kappa programs included with the software.  If the license terms with any of those programs give you other rights that do not expressly conflict with these license terms, you also have those rights.
+c. Third Party Programs.  The software contains third party programs.  The license terms with those programs apply to your use of them.
+3. ADDITIONAL LICENSING REQUIREMENTS AND/OR USE RIGHTS for Kappa SDKs.
+a. User Testing.  Your end users may access the software to perform acceptance tests on your programs.
+b. Distributable Code.  The software contains code that you are permitted to distribute in programs you develop if you comply with the terms below.
+c. Right to Use and Distribute.  The code and text files listed below are “Distributable Code.”
+  • REDIST.TXT Files.  You may copy and distribute the object code form of code listed in REDIST.TXT files.
+      	Sofern nicht gesondert in den REDIST.TXT-Dateien aufgeführt, enthalten die in der REDIST.TXT genannten Dateien keine Bestandteile, die Open Source Lizenzen berühren oder zusätzliche Lizenzanforderungen weiterer Dritter begründen.
+  • Sample Code.  You may modify, copy, and distribute the source and object code form of code marked as “sample.”
+  • Third Party Distribution.  You may permit distributors of your programs to copy and distribute the Distributable Code as part of those programs.
+d. Distribution Requirements.  For any Distributable Code you distribute, you must
+  • add significant primary functionality to it in your programs;
+  • require distributors and external end users to agree to terms that protect it at least as much as this agreement;
+  • display your valid copyright notice on your programs; and
+  • indemnify, defend, and hold harmless Kappa from any claims, including attorneys’ fees, related to the distribution or use of your programs.
+e. Distribution Restrictions.  You may not
+  • alter any copyright, trademark or patent notice in the Distributable Code;
+  • use the names of Kappa programs in your programs’ names or in a way that suggests your programs come from or are endorsed by Kappa;
+  • distribute Distributable Code to run on a platform other than the Windows platform;
+  • include Distributable Code in malicious, deceptive or unlawful programs; or
+  • modify or distribute the source code of any Distributable Code so that any part of it becomes subject to an Excluded License.  An Excluded License is one that requires, as a condition of use, modification or distribution, that
+  • the code be disclosed or distributed in source code form; or
+  • others have the right to modify it.
+4. MICROSOFT WINDOWS SOFTWARE.  The software contains the Microsoft .NET Framework.  This software is part of Windows.  The license terms for Windows apply to your use of the .NET Framework.
+5. SCOPE OF LICENSE.  The software is licensed, not sold. This agreement only gives you some rights to use the software.  Kappa reserves all other rights.  Unless applicable law gives you more rights despite this limitation, you may use the software only as expressly permitted in this agreement.  In doing so, you must comply with any technical limitations in the software that only allow you to use it in certain ways. You may not
+  • work around any technical limitations in the software;
+  • reverse engineer, decompile or disassemble the software, except and only to the extent that applicable law expressly permits, despite this limitation;
+  • make more copies of the software than specified in this agreement or allowed by applicable law, despite this limitation;
+  • publish the software for others to copy;
+  • rent, lease or lend the software; or
+6. BACKUP COPY.  You may make one backup copy of the software.  You may use it only to reinstall the software.
+7. DOCUMENTATION.  Any person that has valid access to your computer or internal network may copy and use the documentation for your internal, reference purposes.
+8. NOT FOR RESALE SOFTWARE.  You may not sell software marked as “NFR” or “Not for Resale.”
+9. UPGRADE.  If this software is marked as an upgrade version, you may use it only if you have a license to use the software eligible for upgrade.  If you upgrade, this software takes the place of the earlier version, and this agreement takes the place of the agreement for that earlier version.  You may use the earlier version only as permitted in the Downgrade clause below.  
+10. TRANSFER TO A THIRD PARTY.  The first user of the software may transfer it, and this agreement, directly to a third party.  Before the transfer, that party must agree that this agreement applies to the transfer and use of the software.  The first user must uninstall the software before transferring it separately from the device.  The first user may not retain any copies.
+11. EXPORT RESTRICTIONS.  The software is subject to German export laws and regulations.  You must comply with all domestic and international export laws and regulations that apply to the software.  These laws include restrictions on destinations, end users and end use.
+12. SUPPORT SERVICES.  Kappa provides support services for the software.
+13. ENTIRE AGREEMENT.  This agreement, and the terms for supplements, updates, Internet-based services and support services that you use, are the entire agreement for the software and support services.
+14. APPLICABLE LAW.
+a. United States.  If you acquired the software in the United States, Californian state law governs the interpretation of this agreement and applies to claims for breach of it, regardless of conflict of laws principles.  The laws of the state where you live govern all other claims, including claims under state consumer protection laws, unfair competition laws, and in tort.
+b. Outside the United States.  If you acquired the software in any other country, the laws of that country apply.
+15. LEGAL EFFECT.  This agreement describes certain legal rights.  You may have other rights under the laws of your state or country.  You may also have rights with respect to the party from whom you acquired the software.  This agreement does not change your rights under the laws of your state or country if the laws of your state or country do not permit it to do so.
+16. LIMITATION ON AND EXCLUSION OF DAMAGES.  YOU CAN RECOVER FROM KAPPA AND ITS SUPPLIERS ONLY DIRECT DAMAGES UP TO THE AMOUNT YOU PAID FOR THE SOFTWARE. YOU CANNOT RECOVER ANY OTHER DAMAGES, INCLUDING CONSEQUENTIAL, LOST PROFITS, SPECIAL, INDIRECT OR INCIDENTAL DAMAGES.
+This limitation applies to
+  • anything related to the software, services, content (including code) on third party Internet sites, or third party programs; and
+  • claims for breach of contract, breach of warranty, guarantee or condition, strict liability, negligence, or other tort to the extent permitted by applicable law.
+It also applies even if
+  • repair, replacement or a refund for the software does not fully compensate you for any losses; or
+  • Kappa knew or should have known about the possibility of the damages.
+Some states do not allow the exclusion or limitation of incidental or consequential damages, so the above limitation or exclusion may not apply to you.  They also may not apply to you because your country may not allow the exclusion or limitation of incidental, consequential or other damages. 
+If the software has been acquired in Germany or Austria the limitation mentioned in article 16 of these terms does not apply. Instead, and regardless of the legal ground (incl. unlawful act), the following regulations for compensation and reimbursement of expenses apply:
+In the case of intent, gross negligence, claims according to Product Liability Law and injuries to body, life or health, Kappa will be liable according to the provisions of law.
+Kappa will not be liable in the case of slight negligence. If, however, the software has been acquired in Germany, Kappa will also be liable in case of slight negligence if Kappa infringes an essential contractual obligation. In these cases Kappa’s liability is limited to typical and foreseeable damages. In all other cases of slight negligence, Kappa will not be liable even though the software has been acquired in Germany. 

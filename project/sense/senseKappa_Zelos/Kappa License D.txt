@@ -1,0 +1,68 @@
+Kappa-Software: Lizenzbestimmungen
+
+Diese Lizenzbestimmungen sind ein Vertrag zwischen Ihnen und Kappa optronics GmbH. Bitte lesen Sie die Lizenzbestimmungen aufmerksam durch. Sie gelten für die Kappa- Software und gegebenenfalls für die Medien, auf denen Sie diese erhalten haben, sowie für alle von Kappa diesbezüglich angebotenen
+• Updates
+• Ergänzungen
+• Supportleistungen
+Liegen letztgenannten Elementen eigene Bestimmungen bei, gelten diese eigenen Bestimmungen.
+DURCH DIE VERWENDUNG DER SOFTWARE ERKENNEN SIE DIESE BESTIMMUNGEN AN. FALLS SIE DIE BESTIMMUNGEN NICHT AKZEPTIEREN, SIND SIE NICHT BERECHTIGT, DIE SOFTWARE ZU VERWENDEN. 
+WENN SIE DIESE LIZENZBESTIMMUNGEN EINHALTEN, HABEN SIE DIE NACHFOLGEND AUFGEFÜHRTEN RECHTE FÜR JEDE LIZENZ, DIE SIE ERWERBEN.
+1. ÜBERBLICK.
+   a. Software.  Die Software umfasst Entwicklungstools, Softwareprogramme und Dokumentation.
+   b. Lizenzmodell.  Die Software wird auf Nutzerbasis lizenziert.
+2. RECHTE ZUR INSTALLATION UND NUTZUNG.
+   a. Allgemeines.  Ein Nutzer ist berechtigt, Kopien der Software zu installieren und zu verwenden.
+   b. Im Lieferumfang enthaltene Kappa-Programme.  Diese Lizenzbestimmungen gelten für alle im Lieferumfang der Software enthaltenen Kappa-Programme. 
+   c. Drittanbieterprogramme.  Die Software enthält Drittanbieterprogramme. Die Lizenzbestimmungen dieser Programme gelten für Ihre Verwendung derselben.
+3. ZUSÄTZLICHE LIZENZANFORDERUNGEN UND/ODER NUTZUNGSRECHTE für KAPPA SDKs.
+   a. Nutzertests.  Ihre Endbenutzer sind berechtigt, auf die Software zuzugreifen, um Akzeptanztests mit Ihren Programmen durchzuführen.
+   b. Vertreibbarer Code.  Die Software enthält Code, den Sie in von Ihnen entwickelten Programmen vertreiben dürfen, wenn Sie die nachfolgenden Bestimmungen einhalten.
+   c. Recht zur Nutzung und zum Vertrieb.  
+      • REDIST.TXT-Dateien.  Sie sind berechtigt, die Objektcodeform des in den Dateien namens REDIST.TXT aufgelisteten Codes zu kopieren und zu vertreiben.
+      	Sofern nicht gesondert in den REDIST.TXT-Dateien aufgeführt, enthalten die in der REDIST.TXT genannten Dateien keine Bestandteile, die Open Source Lizenzen berühren oder zusätzliche Lizenzanforderungen weiterer Dritter begründen.
+      • Mustercode.  Sie sind berechtigt, die Quell- und Objektcodeform des als „Samples“ gekennzeichneten Codes zu ändern, zu kopieren und zu vertreiben.
+      • Vertrieb durch Dritte.  Sie sind berechtigt, Distributoren Ihrer Programme zu erlauben, den vertreibbaren Code als Teil dieser Programme zu kopieren und zu vertreiben.
+   d. Vertriebsbedingungen.  Für vertreibbaren Code, den Sie vertreiben, sind Sie verpflichtet:
+      • diesem in Ihren Programmen wesentliche primäre Funktionalität hinzuzufügen
+      • von Distributoren und externen Endbenutzern die Zustimmung zu Bestimmungen zu verlangen, die einen mindestens gleichwertigen Schutz für ihn bieten wie dieser Vertrag
+      • Ihren gültigen Urheberrechtshinweis auf Ihren Programmen anzubringen
+      • Kappa von allen Ansprüchen freizustellen und gegen alle Ansprüche zu verteidigen, einschließlich Anwaltsgebühren, die mit dem Vertrieb oder der Verwendung Ihrer Programme in Zusammenhang stehen.
+   e. Vertriebsbeschränkungen.  Sie sind nicht dazu berechtigt:
+      • Urheberrechts-, Markenrechts- oder Patenthinweise im vertreibbaren Code zu ändern
+      • die Namen von Kappa-Programmen in den Namen Ihrer Programme oder auf eine Weise zu verwenden, die nahe legt, dass Ihre Programme von Kappa stammen oder von Kappa empfohlen werden
+      • vertreibbaren Code zur Ausführung auf einer anderen Plattform als der Windows-Plattform zu vertreiben
+      • vertreibbaren Code in bösartige, täuschende oder rechtswidrige Programme aufzunehmen
+      • den Quellcode von vertreibbarem Code so zu ändern oder zu vertreiben, dass irgendein Teil von ihm einer ausgeschlossenen Lizenz unterliegt. Eine ausgeschlossene Lizenz ist eine Lizenz, die als Bedingung für eine Verwendung, Änderung oder einen Vertrieb erfordert, dass:
+      • der Code in Quellcodeform offen gelegt oder vertrieben wird oder
+      • andere das Recht haben, ihn zu ändern.
+4. MICROSOFT WINDOWS-SOFTWARE.  Die Software umfasst die Software Microsoft .NET Framework. Diese Software ist Teil von Windows. Die Lizenzbestimmungen für Windows gelten für Ihre Verwendung der Software .NET Framework.
+5. GÜLTIGKEITSBEREICH DER LIZENZ.  Die Software wird lizenziert, nicht verkauft. Dieser Vertrag gibt Ihnen nur einige Rechte zur Verwendung der Software. Kappa behält sich alle anderen Rechte vor. Sie dürfen die Software nur wie in diesem Vertrag ausdrücklich gestattet verwenden, es sei denn, das anwendbare Recht gibt Ihnen ungeachtet dieser Einschränkung umfassendere Rechte. Dabei sind Sie verpflichtet, alle technischen Beschränkungen der Software einzuhalten, die Ihnen nur spezielle Verwendungen gestatten. Sie sind nicht dazu berechtigt:
+   • technische Beschränkungen der Software zu umgehen
+   • die Software zurückzuentwickeln (Reverse Engineering), zu dekompilieren oder zu disassemblieren, es sei denn, dass (und nur insoweit) es durch das anwendbare Recht ungeachtet dieser Einschränkung ausdrücklich gestattet ist
+   • eine größere Anzahl von Kopien der Software als in diesem Vertrag angegeben oder vom anwendbaren Recht ungeachtet dieser Einschränkung ausdrücklich gestattet anzufertigen
+   • die Software zu veröffentlichen, damit andere sie kopieren können
+   • die Software zu vermieten, zu verleasen oder zu verleihen
+6. SICHERUNGSKOPIE.  Sie sind berechtigt, eine Sicherungskopie der Software anzufertigen. Sie dürfen diese nur zur erneuten Installation der Software verwenden.
+7. DOKUMENTATION.  Jede Person, die über einen gültigen Zugriff auf Ihren Computer oder Ihr internes Netzwerk verfügt, ist berechtigt, die Dokumentation zu Ihren internen Referenzzwecken zu kopieren und zu verwenden.
+8. NICHT ZUM WEITERVERKAUF BESTIMMTE SOFTWARE.  Software, die als „Nicht zum Weiterverkauf bestimmt“ oder „NFR“ (Not for Resale) gekennzeichnet ist, dürfen Sie nicht verkaufen.
+9. UPDATE.  Wenn diese Software als Update-Version gekennzeichnet ist, sind Sie nur berechtigt, sie zu verwenden, wenn Sie über eine Lizenz zur Verwendung der für das Update geeigneten Software verfügen. 
+10. ÜBERTRAGUNG AN DRITTE.  Der erste Nutzer der Software ist berechtigt, diese mit diesem Vertrag direkt an Dritte zu übertragen. Vor der Übertragung muss sich die andere Partei damit einverstanden erklären, dass dieser Vertrag für die Übertragung und Verwendung der Software gilt. Der erste Nutzer ist verpflichtet, die Software zu deinstallieren, bevor er sie separat vom Gerät überträgt. Der erste Nutzer ist nicht berechtigt, Kopien zurückzubehalten.
+11. AUSFUHRBESCHRÄNKUNGEN.  Die Software unterliegt den Exportgesetzen und -regelungen der USA sowie des Landes, aus dem sie ausgeführt wird. Sie sind verpflichtet, alle nationalen und internationalen Exportgesetze und -regelungen einzuhalten, die für die Software gelten. Zu diesen Gesetzen gehören Einschränkungen im Hinblick auf Bestimmungsorte, Endbenutzer und Endbenutzung. 
+12. SUPPORTLEISTUNGEN.  Kappa stellt Supportleistungen für die Software bereit. 
+13. GESAMTER VERTRAG.  Dieser Vertrag sowie die Bestimmungen für von Ihnen verwendete Ergänzungen, Updates, internetbasierte Dienste und Supportleistungen stellen den gesamten Vertrag für die Software und die Supportleistungen dar.
+14. ANWENDBARES RECHT.
+   a. Vereinigte Staaten.  Wenn Sie die Software in den Vereinigten Staaten erworben haben, regelt das Gesetz des Staates Kalifornien die Auslegung dieses Vertrags und gilt für Ansprüche, die aus einer Vertragsverletzung entstehen, ungeachtet von Prinzipien über Gesetzeskonflikte. Die Gesetze des Staates Ihres Wohnortes regeln alle anderen Ansprüche, einschließlich Ansprüche aus den Verbraucherschutzgesetzen des Staates, aus Gesetzen gegen unlauteren Wettbewerb und aus Schadenersatzverfahren.
+   b. Außerhalb der Vereinigten Staaten.  Wenn Sie die Software in einem anderen Land erworben haben, gelten die Gesetze dieses Landes.
+15. RECHTSKRAFT.  Dieser Vertrag beschreibt bestimmte gesetzliche Rechte. Möglicherweise haben Sie unter den Gesetzen Ihres Staates oder Landes weitergehende Rechte. Möglicherweise verfügen Sie außerdem über Rechte im Hinblick auf die Partei, von der Sie die Software erworben haben. Dieser Vertrag ändert nicht Ihre Rechte, die sich aus den Gesetzen Ihres Staates oder Bundeslandes ergeben, sofern die Gesetze Ihres Staates oder Bundeslandes dies nicht zulassen.
+16. BESCHRÄNKUNG UND AUSSCHLUSS DES SCHADENERSATZES. SIE KÖNNEN VON KAPPA UND SEINEN LIEFERANTEN NUR EINEN ERSATZ FÜR DIREKTE SCHÄDEN BIS ZU DEM BETRAG ERHALTEN, DEN SIE FÜR DIE SOFTWARE GEZAHLT HABEN. SIE KÖNNEN KEINEN ERSATZ FÜR ANDERE SCHÄDEN ERHALTEN, EINSCHLIESSLICH FOLGESCHÄDEN, SCHÄDEN AUS ENTGANGENEM GEWINN, SPEZIELLE, INDIREKTE ODER BEILÄUFIG ENTSTANDENE SCHÄDEN.
+Diese Beschränkung gilt für:
+   • jeden Gegenstand im Zusammenhang mit der Software, Diensten, Inhalten (einschließlich Code) auf Internetseiten von Drittanbietern oder Programmen von Drittanbietern
+   • Ansprüche aus Vertragsverletzungen, Verletzungen der Garantie oder der Gewährleistung, verschuldensunabhängiger Haftung, Fahrlässigkeit oder anderen unerlaubten Handlungen im durch das anwendbare Recht gestatteten Umfang.
+Sie gilt auch:
+   • wenn Nachbesserung, Nachlieferung oder Erstattung des Kaufpreises für die Software Sie nicht vollständig für Verluste entschädigt
+   • wenn Kappa von der Möglichkeit der Schäden gewusst hat oder hätte wissen müssen.
+Einige Staaten gestatten den Ausschluss oder die Beschränkung von Folge- oder beiläufig entstandenen Schäden nicht. Daher gilt die obige Beschränkung oder der obige Ausschluss möglicherweise nicht für Sie. Obige Beschränkung und obiger Ausschluss gelten möglicherweise auch deshalb nicht für Sie, weil Ihr Land den Ausschluss oder die Beschränkung von beiläufig entstandenen Schäden, Folgeschäden oder sonstigen Schäden nicht gestattet.
+Wenn Sie die Software in DEUTSCHLAND oder in ÖSTERREICH erworben haben, findet die Beschränkung im vorstehenden Absatz „Beschränkung und Ausschluss des Schadenersatzes“ auf Sie keine Anwendung. Stattdessen gelten für Schadenersatz oder Ersatz vergeblicher Aufwendungen, gleich aus welchem Rechtsgrund einschließlich unerlaubter Handlung, die folgenden Regelungen:
+Kappa haftet bei Vorsatz, grober Fahrlässigkeit, bei Ansprüchen nach dem Produkthaftungsgesetz sowie bei Verletzung von Leben, Körper oder der Gesundheit nach den gesetzlichen Vorschriften.
+Kappa haftet nicht für leichte Fahrlässigkeit. Wenn Sie die Software jedoch in Deutschland erworben haben, haftet Kappa auch für leichte Fahrlässigkeit, wenn Kappa eine wesentliche Vertragspflicht verletzt. In diesen Fällen ist die Haftung von Kappa auf typische und vorhersehbare Schäden beschränkt. In allen anderen Fällen haftet Kappa auch in Deutschland nicht für leichte Fahrlässigkeit. 
+

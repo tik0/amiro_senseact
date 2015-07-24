@@ -1,0 +1,458 @@
+INFO  2015-07-24 14:56:37,726     0ms SDK4Acquire            SDK4InitLib                    - BEGIN ------------------------
+INFO  2015-07-24 14:56:37,726     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 14:56:37,726     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 14:56:37,726     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - ModulePath=/usr/local/lib/
+WARN  2015-07-24 14:56:37,726     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - numControlDLLs(.\) = 1
+INFO  2015-07-24 14:56:37,726     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - Register libfdc10ctrl.so
+INFO  2015-07-24 14:56:37,728     2ms SDK4FDC10Control       InitLibrary                    - Init FDC10Control
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-02150M
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-02150C
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-655M
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-655C
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-285M
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-285C
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-414M
+INFO  2015-07-24 14:56:37,728     2ms SDK4Acquire            Add                            - Zelos-414C
+INFO  2015-07-24 14:56:37,728     3ms SDK4Acquire            Add                            - Zelos-415M
+INFO  2015-07-24 14:56:37,728     3ms SDK4Acquire            Add                            - Zelos-415C
+INFO  2015-07-24 14:56:37,728     3ms SDK4Acquire            Add                            - HiRes3-XR
+INFO  2015-07-24 14:56:37,728     3ms SDK4Acquire            Add                            - Hires-XR3
+INFO  2015-07-24 14:56:37,728     3ms SDK4Acquire            Add                            - LumaCam G
+INFO  2015-07-24 14:56:37,728     3ms SDK4Acquire            CDeviceFactory::CDeviceFactory - End 
+INFO  2015-07-24 14:56:37,728     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 14:56:37,728     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 14:56:37,728     3ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth0
+INFO  2015-07-24 14:56:37,728     3ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 14:56:37,728     3ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 14:56:37,728     3ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 169.254.255.255
+INFO  2015-07-24 14:56:37,780    55ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Zelos-02150C::CP81389 (00:0B:1E:00:02:F9)
+INFO  2015-07-24 14:56:39,031  1306ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth2
+INFO  2015-07-24 14:56:39,032  1306ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 14:56:39,032  1306ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 14:56:39,032  1307ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 10.17.85.255
+WARN  2015-07-24 14:56:40,283  2558ms GigEVisionTL           T, RegisterT>::DiscoverDevices - NO_DEVICE
+INFO  2015-07-24 14:56:40,283  2558ms SDK4Acquire            DeviceFactory::~CDeviceFactory - Call
+INFO  2015-07-24 14:56:40,283  2558ms SDK4Acquire            DeviceFactory::~CDeviceFactory - End 
+INFO  2015-07-24 14:56:40,283  2558ms SDK4Acquire            SDK4CloseLib                   - END --------------------------
+INFO  2015-07-24 14:58:15,861     0ms SDK4Acquire            SDK4InitLib                    - BEGIN ------------------------
+INFO  2015-07-24 14:58:15,861     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 14:58:15,861     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 14:58:15,861     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - ModulePath=/usr/local/lib/
+WARN  2015-07-24 14:58:15,861     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - numControlDLLs(.\) = 1
+INFO  2015-07-24 14:58:15,861     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - Register libfdc10ctrl.so
+INFO  2015-07-24 14:58:15,863     2ms SDK4FDC10Control       InitLibrary                    - Init FDC10Control
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-02150M
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-02150C
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-655M
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-655C
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-285M
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-285C
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-414M
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-414C
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-415M
+INFO  2015-07-24 14:58:15,863     2ms SDK4Acquire            Add                            - Zelos-415C
+INFO  2015-07-24 14:58:15,863     3ms SDK4Acquire            Add                            - HiRes3-XR
+INFO  2015-07-24 14:58:15,863     3ms SDK4Acquire            Add                            - Hires-XR3
+INFO  2015-07-24 14:58:15,863     3ms SDK4Acquire            Add                            - LumaCam G
+INFO  2015-07-24 14:58:15,863     3ms SDK4Acquire            CDeviceFactory::CDeviceFactory - End 
+INFO  2015-07-24 14:58:15,863     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 14:58:15,863     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 14:58:15,863     3ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth0
+INFO  2015-07-24 14:58:15,863     3ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 14:58:15,863     3ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 14:58:15,863     3ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 169.254.255.255
+INFO  2015-07-24 14:58:15,915    55ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Zelos-02150C::CP81389 (00:0B:1E:00:02:F9)
+INFO  2015-07-24 14:58:17,167  1306ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth2
+INFO  2015-07-24 14:58:17,167  1307ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 14:58:17,167  1307ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 14:58:17,167  1307ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 10.17.85.255
+WARN  2015-07-24 14:58:18,418  2558ms GigEVisionTL           T, RegisterT>::DiscoverDevices - NO_DEVICE
+INFO  2015-07-24 14:58:18,419  2558ms SDK4Acquire            SDK4OpenDevice                 - Call(Zelos-02150C::CP81389,4)
+INFO  2015-07-24 14:58:18,419  2558ms GigEVisionTL           etNetworkInterface::OpenDevice - Linux is running ...
+INFO  2015-07-24 14:58:18,419  2558ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - _OpenDevice
+INFO  2015-07-24 14:58:18,475  2614ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - GVCP Configuration: SET HE
+INFO  2015-07-24 14:58:18,475  2614ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - _StartHeartbeatThread
+INFO  2015-07-24 14:58:18,475  2615ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - End _OpenDevice
+INFO  2015-07-24 14:58:18,475  2615ms SDK4Acquire            CGenericDevice::CGenericDevice - CreateObject(Zelos-02150C)
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       CreateObject                   - FDC10: CreateObject(Zelos-02150C)
+INFO  2015-07-24 14:58:18,475  2615ms GigEVisionTL           DataStreamT>::_HeartbeatThread - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       KStreamControl::KStreamControl - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       igEVisionPort::KGigEVisionPort - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       trol::KGigECamera::KGigECamera - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       Control::KGain::KGain          - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       ::KSignalFormat::KSignalFormat - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       Control::KSlowScan::KSlowScan  - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       Control::KGufi::KGufi          - Call
+INFO  2015-07-24 14:58:18,475  2615ms SDK4FDC10Control       Control::KExposure::KExposure  - Call
+INFO  2015-07-24 14:58:18,476  2615ms SDK4FDC10Control       FeatureCtrl::CZelosFeatureCtrl - Call Zelos-02150C
+INFO  2015-07-24 14:58:18,476  2615ms SDK4Acquire            SDK4OpenDevice                 - Create Datastream0
+INFO  2015-07-24 14:58:18,514  2653ms GigEVisionTL           ice<DataStreamT>::CreateStream - Primary Application:1
+INFO  2015-07-24 14:58:18,514  2653ms GigEVisionTL           ice<DataStreamT>::CreateStream - Multicast Socket   :0
+INFO  2015-07-24 14:58:18,514  2653ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 8388608
+INFO  2015-07-24 14:58:18,514  2653ms GigEVisionTL           SocketDataStream::_OpenStream  - ClientPort=57779
+INFO  2015-07-24 14:58:18,636  2775ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - DiscoverMTU Begin
+INFO  2015-07-24 14:58:18,655  2795ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - SCSP(0) = 0x400
+INFO  2015-07-24 14:58:19,722  3862ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - DiscoverMTU End (PacketSize=1472)
+INFO  2015-07-24 14:58:19,792  3932ms GigEVisionTL           SocketDataStream::_OpenStream  - Set SDCA(0) to 169.254.200.12
+INFO  2015-07-24 14:58:19,914  4054ms GigEVisionTL           SocketDataStream::_OpenStream  - SCSP(0) = 0x400
+INFO  2015-07-24 14:58:19,914  4054ms SDK4Acquire            SDK4DevGetClassID              - Call
+INFO  2015-07-24 14:58:19,914  4054ms SDK4Acquire            ce::CGenericDevice::GetClassID - Call
+INFO  2015-07-24 14:58:19,957  4097ms SDK4FDC10Control       CFeature<T>::OnRegisterInvalid - readouttime
+INFO  2015-07-24 14:58:19,958  4097ms SDK4FDC10Control       CRegister<T, I>::GetValue      - readouttime invalid @ Address=0xa0a0000
+INFO  2015-07-24 14:58:19,996  4136ms SDK4FDC10Control       CRegister<T, I>::GetValue      - exposuremode invalid @ Address=0xa020000
+INFO  2015-07-24 14:58:20,035  4174ms SDK4FDC10Control       CRegister<T, I>::GetValue      - gain invalid @ Address=0x14010000
+INFO  2015-07-24 14:58:20,073  4213ms SDK4FDC10Control       CRegister<T, I>::GetValue      - exposure invalid @ Address=0xa030000
+INFO  2015-07-24 14:58:20,093  4233ms SDK4FDC10Control       CRegister<T, I>::GetValue      - pixelclock invalid @ Address=0xa090000
+INFO  2015-07-24 14:58:20,112  4252ms SDK4FDC10Control       CRegister<T, I>::GetValue      - colorcoding invalid @ Address=0x28020000
+INFO  2015-07-24 14:58:20,131  4271ms SDK4FDC10Control       CRegister<T, I>::GetValue      - sharpness invalid @ Address=0x18030000
+INFO  2015-07-24 14:58:20,151  4290ms SDK4FDC10Control       CRegister<T, I>::GetValue      - contrast invalid @ Address=0x18020000
+INFO  2015-07-24 14:58:20,170  4309ms SDK4FDC10Control       CRegister<T, I>::GetValue      - brightness invalid @ Address=0x18010000
+INFO  2015-07-24 14:58:20,189  4329ms SDK4FDC10Control       CRegister<T, I>::GetValue      - lutmode invalid @ Address=0x19020000
+INFO  2015-07-24 14:58:20,208  4348ms SDK4FDC10Control       CRegister<T, I>::GetValue      - lutindex invalid @ Address=0x19010000
+INFO  2015-07-24 14:58:20,227  4367ms SDK4FDC10Control       CRegister<T, I>::GetValue      - imagesize invalid @ Address=0x28030000
+INFO  2015-07-24 14:58:20,325  4464ms GigEVisionTL           etDataStream::StartAcquisition - PacketSize    : 1472
+INFO  2015-07-24 14:58:20,325  4464ms GigEVisionTL           etDataStream::StartAcquisition - PacketDelay   : 32
+INFO  2015-07-24 14:58:20,325  4464ms GigEVisionTL           etDataStream::StartAcquisition - AdapterAddress: 169.254.200.12
+INFO  2015-07-24 14:58:20,325  4464ms GigEVisionTL           etDataStream::StartAcquisition - RemoteAddress : 169.254.165.222
+INFO  2015-07-24 14:58:24,847  8986ms GigEVisionTL           ketDataStream::StopAcquisition - Call
+INFO  2015-07-24 14:58:24,847  8986ms GigEVisionTL           ketDataStream::StopAcquisition - Wait 2500ms to terminate GrabberThread
+INFO  2015-07-24 14:58:24,847  8987ms GigEVisionTL           cketDataStream::_GrabberThread - Thread Terminated
+INFO  2015-07-24 14:58:24,847  8987ms GigEVisionTL           ketDataStream::StopAcquisition - End
+INFO  2015-07-24 14:58:24,849  8989ms SDK4Acquire            SDK4CloseDevice                - Call
+INFO  2015-07-24 14:58:24,849  8989ms SDK4Acquire            SDK4CloseDevice                - CloseDSHandle 
+INFO  2015-07-24 14:58:24,849  8989ms SDK4Acquire            SDK4CloseDevice                - CloseCTRLHandle 
+INFO  2015-07-24 14:58:24,849  8989ms SDK4Acquire            CDeviceFactory::CloseDevice    - Call
+INFO  2015-07-24 14:58:24,849  8989ms SDK4Acquire            GenericDevice::~CGenericDevice - Call
+INFO  2015-07-24 14:58:24,849  8989ms SDK4Acquire            Device::CGenericDevice::Close  - Call
+INFO  2015-07-24 14:58:24,849  8989ms SDK4FDC10Control       ol::CZelosFeatureCtrl::Release - dtor CZelos2FeatureCtrl
+INFO  2015-07-24 14:58:24,849  8989ms SDK4FDC10Control       eatureCtrl::~CZelosFeatureCtrl - Call
+INFO  2015-07-24 14:58:24,849  8989ms SDK4FDC10Control       CFeatureList::~CFeatureList    - dtor CFeatureList
+INFO  2015-07-24 14:58:24,849  8989ms SDK4FDC10Control       CRegisterList::~CRegisterList  - dtor CRegisterList
+INFO  2015-07-24 14:58:24,849  8989ms SDK4FDC10Control       Control::KExposure::~KExposure - Call
+INFO  2015-07-24 14:58:24,849  8989ms GigEVisionTL           SocketDataStream::_CloseStream - Call
+INFO  2015-07-24 14:58:24,849  8989ms GigEVisionTL           ketDataStream::StopAcquisition - Call
+INFO  2015-07-24 14:58:24,849  8989ms GigEVisionTL           ketDataStream::StopAcquisition - End
+INFO  2015-07-24 14:58:24,901  9041ms GigEVisionTL           SocketDataStream::_CloseStream - Stream Channel closed
+INFO  2015-07-24 14:58:24,901  9041ms GigEVisionTL           SocketDataStream::_CloseStream - End
+INFO  2015-07-24 14:58:24,901  9041ms GigEVisionTL           ice<DataStreamT>::_CloseDevice - _CloseDevice
+INFO  2015-07-24 14:58:25,672  9812ms GigEVisionTL           DataStreamT>::_HeartbeatThread - Return
+INFO  2015-07-24 14:58:25,921 10061ms SDK4Acquire            SDK4CloseDevice                - CloseDevHandle 
+INFO  2015-07-24 14:58:25,921 10061ms SDK4Acquire            DeviceFactory::~CDeviceFactory - Call
+INFO  2015-07-24 14:58:25,921 10061ms SDK4Acquire            DeviceFactory::~CDeviceFactory - End 
+INFO  2015-07-24 14:58:25,922 10061ms SDK4Acquire            SDK4CloseLib                   - END --------------------------
+INFO  2015-07-24 15:19:41,704     2ms SDK4Acquire            SDK4InitLib                    - BEGIN ------------------------
+INFO  2015-07-24 15:19:41,704     2ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:19:41,704     2ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:19:41,704     2ms SDK4Acquire            CDeviceFactory::CDeviceFactory - ModulePath=/usr/local/lib/
+WARN  2015-07-24 15:19:41,704     2ms SDK4Acquire            CDeviceFactory::CDeviceFactory - numControlDLLs(.\) = 1
+INFO  2015-07-24 15:19:41,704     2ms SDK4Acquire            CDeviceFactory::CDeviceFactory - Register libfdc10ctrl.so
+INFO  2015-07-24 15:19:41,706     4ms SDK4FDC10Control       InitLibrary                    - Init FDC10Control
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-02150M
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-02150C
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-655M
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-655C
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-285M
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-285C
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-414M
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-414C
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-415M
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Zelos-415C
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - HiRes3-XR
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - Hires-XR3
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            Add                            - LumaCam G
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            CDeviceFactory::CDeviceFactory - End 
+INFO  2015-07-24 15:19:41,706     4ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:19:41,706     4ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:19:41,706     4ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth0
+INFO  2015-07-24 15:19:41,706     4ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:19:41,706     4ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:19:41,706     4ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 169.254.255.255
+INFO  2015-07-24 15:19:41,758    56ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Zelos-02150C::CP81389 (00:0B:1E:00:02:F9)
+INFO  2015-07-24 15:19:43,010  1308ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth2
+INFO  2015-07-24 15:19:43,010  1308ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:19:43,010  1308ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:19:43,010  1308ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 10.17.85.255
+INFO  2015-07-24 15:22:56,027     0ms SDK4Acquire            SDK4InitLib                    - BEGIN ------------------------
+INFO  2015-07-24 15:22:56,027     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:22:56,027     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:22:56,027     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - ModulePath=/usr/local/lib/
+WARN  2015-07-24 15:22:56,027     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - numControlDLLs(.\) = 1
+INFO  2015-07-24 15:22:56,027     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - Register libfdc10ctrl.so
+INFO  2015-07-24 15:22:56,029     2ms SDK4FDC10Control       InitLibrary                    - Init FDC10Control
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-02150M
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-02150C
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-655M
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-655C
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-285M
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-285C
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-414M
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-414C
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-415M
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Zelos-415C
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - HiRes3-XR
+INFO  2015-07-24 15:22:56,029     2ms SDK4Acquire            Add                            - Hires-XR3
+INFO  2015-07-24 15:22:56,029     3ms SDK4Acquire            Add                            - LumaCam G
+INFO  2015-07-24 15:22:56,029     3ms SDK4Acquire            CDeviceFactory::CDeviceFactory - End 
+INFO  2015-07-24 15:22:56,029     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:22:56,029     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:22:56,029     3ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth0
+INFO  2015-07-24 15:22:56,029     3ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:22:56,029     3ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:22:56,029     3ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 169.254.255.255
+INFO  2015-07-24 15:22:56,081    55ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Zelos-02150C::CP81389 (00:0B:1E:00:02:F9)
+INFO  2015-07-24 15:22:57,333  1306ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth2
+INFO  2015-07-24 15:22:57,333  1306ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:22:57,333  1306ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:22:57,333  1306ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 10.17.85.255
+WARN  2015-07-24 15:22:58,584  2558ms GigEVisionTL           T, RegisterT>::DiscoverDevices - NO_DEVICE
+INFO  2015-07-24 15:22:58,584  2558ms SDK4Acquire            DeviceFactory::~CDeviceFactory - Call
+INFO  2015-07-24 15:22:58,584  2558ms SDK4Acquire            DeviceFactory::~CDeviceFactory - End 
+INFO  2015-07-24 15:22:58,585  2558ms SDK4Acquire            SDK4CloseLib                   - END --------------------------
+INFO  2015-07-24 15:25:51,114     0ms SDK4Acquire            SDK4InitLib                    - BEGIN ------------------------
+INFO  2015-07-24 15:25:51,114     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:25:51,114     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:25:51,114     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - ModulePath=/usr/local/lib/
+WARN  2015-07-24 15:25:51,114     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - numControlDLLs(.\) = 1
+INFO  2015-07-24 15:25:51,114     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - Register libfdc10ctrl.so
+INFO  2015-07-24 15:25:51,116     2ms SDK4FDC10Control       InitLibrary                    - Init FDC10Control
+INFO  2015-07-24 15:25:51,116     2ms SDK4Acquire            Add                            - Zelos-02150M
+INFO  2015-07-24 15:25:51,116     2ms SDK4Acquire            Add                            - Zelos-02150C
+INFO  2015-07-24 15:25:51,116     2ms SDK4Acquire            Add                            - Zelos-655M
+INFO  2015-07-24 15:25:51,116     2ms SDK4Acquire            Add                            - Zelos-655C
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - Zelos-285M
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - Zelos-285C
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - Zelos-414M
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - Zelos-414C
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - Zelos-415M
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - Zelos-415C
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - HiRes3-XR
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - Hires-XR3
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            Add                            - LumaCam G
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            CDeviceFactory::CDeviceFactory - End 
+INFO  2015-07-24 15:25:51,116     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:25:51,116     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:25:51,116     3ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth0
+INFO  2015-07-24 15:25:51,116     3ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:25:51,116     3ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:25:51,116     3ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 169.254.255.255
+INFO  2015-07-24 15:25:51,168    55ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Zelos-02150C::CP81389 (00:0B:1E:00:02:F9)
+INFO  2015-07-24 15:25:52,420  1306ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth2
+INFO  2015-07-24 15:25:52,420  1306ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:25:52,420  1307ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:25:52,420  1307ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 10.17.85.255
+WARN  2015-07-24 15:25:53,671  2558ms GigEVisionTL           T, RegisterT>::DiscoverDevices - NO_DEVICE
+INFO  2015-07-24 15:25:53,671  2558ms SDK4Acquire            DeviceFactory::~CDeviceFactory - Call
+INFO  2015-07-24 15:25:53,671  2558ms SDK4Acquire            DeviceFactory::~CDeviceFactory - End 
+INFO  2015-07-24 15:25:53,671  2558ms SDK4Acquire            SDK4CloseLib                   - END --------------------------
+INFO  2015-07-24 15:26:14,346     0ms SDK4Acquire            SDK4InitLib                    - BEGIN ------------------------
+INFO  2015-07-24 15:26:14,346     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:26:14,346     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:26:14,346     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - ModulePath=/usr/local/lib/
+WARN  2015-07-24 15:26:14,346     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - numControlDLLs(.\) = 1
+INFO  2015-07-24 15:26:14,346     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - Register libfdc10ctrl.so
+INFO  2015-07-24 15:26:14,348     2ms SDK4FDC10Control       InitLibrary                    - Init FDC10Control
+INFO  2015-07-24 15:26:14,348     2ms SDK4Acquire            Add                            - Zelos-02150M
+INFO  2015-07-24 15:26:14,348     2ms SDK4Acquire            Add                            - Zelos-02150C
+INFO  2015-07-24 15:26:14,348     2ms SDK4Acquire            Add                            - Zelos-655M
+INFO  2015-07-24 15:26:14,348     2ms SDK4Acquire            Add                            - Zelos-655C
+INFO  2015-07-24 15:26:14,348     2ms SDK4Acquire            Add                            - Zelos-285M
+INFO  2015-07-24 15:26:14,348     2ms SDK4Acquire            Add                            - Zelos-285C
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            Add                            - Zelos-414M
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            Add                            - Zelos-414C
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            Add                            - Zelos-415M
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            Add                            - Zelos-415C
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            Add                            - HiRes3-XR
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            Add                            - Hires-XR3
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            Add                            - LumaCam G
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            CDeviceFactory::CDeviceFactory - End 
+INFO  2015-07-24 15:26:14,348     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:26:14,348     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:26:14,348     3ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth0
+INFO  2015-07-24 15:26:14,348     3ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:26:14,348     3ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:26:14,348     3ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 169.254.255.255
+INFO  2015-07-24 15:26:14,400    55ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Zelos-02150C::CP81389 (00:0B:1E:00:02:F9)
+INFO  2015-07-24 15:26:15,652  1306ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth2
+INFO  2015-07-24 15:26:15,652  1306ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:26:15,652  1306ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:26:15,652  1306ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 10.17.85.255
+WARN  2015-07-24 15:26:16,903  2558ms GigEVisionTL           T, RegisterT>::DiscoverDevices - NO_DEVICE
+INFO  2015-07-24 15:26:16,903  2558ms SDK4Acquire            SDK4OpenDevice                 - Call(Zelos-02150C::CP81389,4)
+INFO  2015-07-24 15:26:16,903  2558ms GigEVisionTL           etNetworkInterface::OpenDevice - Linux is running ...
+INFO  2015-07-24 15:26:16,904  2558ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - _OpenDevice
+INFO  2015-07-24 15:26:16,960  2614ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - GVCP Configuration: SET HE
+INFO  2015-07-24 15:26:16,960  2614ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - _StartHeartbeatThread
+INFO  2015-07-24 15:26:16,960  2614ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - End _OpenDevice
+INFO  2015-07-24 15:26:16,960  2614ms SDK4Acquire            CGenericDevice::CGenericDevice - CreateObject(Zelos-02150C)
+INFO  2015-07-24 15:26:16,960  2614ms GigEVisionTL           DataStreamT>::_HeartbeatThread - Call
+INFO  2015-07-24 15:26:16,960  2614ms SDK4FDC10Control       CreateObject                   - FDC10: CreateObject(Zelos-02150C)
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       KStreamControl::KStreamControl - Call
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       igEVisionPort::KGigEVisionPort - Call
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       trol::KGigECamera::KGigECamera - Call
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       Control::KGain::KGain          - Call
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       ::KSignalFormat::KSignalFormat - Call
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       Control::KSlowScan::KSlowScan  - Call
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       Control::KGufi::KGufi          - Call
+INFO  2015-07-24 15:26:16,960  2615ms SDK4FDC10Control       Control::KExposure::KExposure  - Call
+INFO  2015-07-24 15:26:16,961  2615ms SDK4FDC10Control       FeatureCtrl::CZelosFeatureCtrl - Call Zelos-02150C
+INFO  2015-07-24 15:26:16,961  2615ms SDK4Acquire            SDK4OpenDevice                 - Create Datastream0
+INFO  2015-07-24 15:26:16,998  2653ms GigEVisionTL           ice<DataStreamT>::CreateStream - Primary Application:1
+INFO  2015-07-24 15:26:16,999  2653ms GigEVisionTL           ice<DataStreamT>::CreateStream - Multicast Socket   :0
+INFO  2015-07-24 15:26:16,999  2653ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 8388608
+INFO  2015-07-24 15:26:16,999  2653ms GigEVisionTL           SocketDataStream::_OpenStream  - ClientPort=48476
+INFO  2015-07-24 15:26:17,121  2775ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - DiscoverMTU Begin
+INFO  2015-07-24 15:26:17,140  2794ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - SCSP(0) = 0x400
+INFO  2015-07-24 15:26:18,130  3785ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - DiscoverMTU End (PacketSize=7968)
+INFO  2015-07-24 15:26:18,201  3855ms GigEVisionTL           SocketDataStream::_OpenStream  - Set SDCA(0) to 169.254.200.12
+INFO  2015-07-24 15:26:18,322  3977ms GigEVisionTL           SocketDataStream::_OpenStream  - SCSP(0) = 0x400
+INFO  2015-07-24 15:26:18,322  3977ms SDK4Acquire            SDK4DevGetClassID              - Call
+INFO  2015-07-24 15:26:18,322  3977ms SDK4Acquire            ce::CGenericDevice::GetClassID - Call
+INFO  2015-07-24 15:26:18,379  4033ms SDK4FDC10Control       CFeature<T>::OnRegisterInvalid - readouttime
+INFO  2015-07-24 15:26:18,379  4033ms SDK4FDC10Control       CRegister<T, I>::GetValue      - readouttime invalid @ Address=0xa0a0000
+INFO  2015-07-24 15:26:18,418  4072ms SDK4FDC10Control       CRegister<T, I>::GetValue      - exposuremode invalid @ Address=0xa020000
+INFO  2015-07-24 15:26:18,456  4110ms SDK4FDC10Control       CRegister<T, I>::GetValue      - gain invalid @ Address=0x14010000
+INFO  2015-07-24 15:26:18,494  4149ms SDK4FDC10Control       CRegister<T, I>::GetValue      - exposure invalid @ Address=0xa030000
+INFO  2015-07-24 15:26:18,514  4169ms SDK4FDC10Control       CRegister<T, I>::GetValue      - pixelclock invalid @ Address=0xa090000
+INFO  2015-07-24 15:26:18,533  4188ms SDK4FDC10Control       CRegister<T, I>::GetValue      - colorcoding invalid @ Address=0x28020000
+INFO  2015-07-24 15:26:18,553  4207ms SDK4FDC10Control       CRegister<T, I>::GetValue      - sharpness invalid @ Address=0x18030000
+INFO  2015-07-24 15:26:18,572  4226ms SDK4FDC10Control       CRegister<T, I>::GetValue      - contrast invalid @ Address=0x18020000
+INFO  2015-07-24 15:26:18,591  4245ms SDK4FDC10Control       CRegister<T, I>::GetValue      - brightness invalid @ Address=0x18010000
+INFO  2015-07-24 15:26:18,610  4265ms SDK4FDC10Control       CRegister<T, I>::GetValue      - lutmode invalid @ Address=0x19020000
+INFO  2015-07-24 15:26:18,629  4284ms SDK4FDC10Control       CRegister<T, I>::GetValue      - lutindex invalid @ Address=0x19010000
+INFO  2015-07-24 15:26:18,649  4303ms SDK4FDC10Control       CRegister<T, I>::GetValue      - imagesize invalid @ Address=0x28030000
+INFO  2015-07-24 15:26:18,746  4400ms GigEVisionTL           etDataStream::StartAcquisition - PacketSize    : 7968
+INFO  2015-07-24 15:26:18,746  4400ms GigEVisionTL           etDataStream::StartAcquisition - PacketDelay   : 32
+INFO  2015-07-24 15:26:18,746  4400ms GigEVisionTL           etDataStream::StartAcquisition - AdapterAddress: 169.254.200.12
+INFO  2015-07-24 15:26:18,746  4400ms GigEVisionTL           etDataStream::StartAcquisition - RemoteAddress : 169.254.84.207
+INFO  2015-07-24 15:26:22,196  7850ms GigEVisionTL           ketDataStream::StopAcquisition - Call
+INFO  2015-07-24 15:26:22,196  7850ms GigEVisionTL           ketDataStream::StopAcquisition - Wait 2500ms to terminate GrabberThread
+INFO  2015-07-24 15:26:22,196  7851ms GigEVisionTL           cketDataStream::_GrabberThread - Thread Terminated
+INFO  2015-07-24 15:26:22,196  7851ms GigEVisionTL           ketDataStream::StopAcquisition - End
+INFO  2015-07-24 15:26:22,198  7853ms SDK4Acquire            SDK4CloseDevice                - Call
+INFO  2015-07-24 15:26:22,199  7853ms SDK4Acquire            SDK4CloseDevice                - CloseDSHandle 
+INFO  2015-07-24 15:26:22,199  7853ms SDK4Acquire            SDK4CloseDevice                - CloseCTRLHandle 
+INFO  2015-07-24 15:26:22,199  7853ms SDK4Acquire            CDeviceFactory::CloseDevice    - Call
+INFO  2015-07-24 15:26:22,199  7853ms SDK4Acquire            GenericDevice::~CGenericDevice - Call
+INFO  2015-07-24 15:26:22,199  7853ms SDK4Acquire            Device::CGenericDevice::Close  - Call
+INFO  2015-07-24 15:26:22,199  7853ms SDK4FDC10Control       ol::CZelosFeatureCtrl::Release - dtor CZelos2FeatureCtrl
+INFO  2015-07-24 15:26:22,199  7853ms SDK4FDC10Control       eatureCtrl::~CZelosFeatureCtrl - Call
+INFO  2015-07-24 15:26:22,199  7853ms SDK4FDC10Control       CFeatureList::~CFeatureList    - dtor CFeatureList
+INFO  2015-07-24 15:26:22,199  7853ms SDK4FDC10Control       CRegisterList::~CRegisterList  - dtor CRegisterList
+INFO  2015-07-24 15:26:22,199  7853ms SDK4FDC10Control       Control::KExposure::~KExposure - Call
+INFO  2015-07-24 15:26:22,199  7853ms GigEVisionTL           SocketDataStream::_CloseStream - Call
+INFO  2015-07-24 15:26:22,199  7853ms GigEVisionTL           ketDataStream::StopAcquisition - Call
+INFO  2015-07-24 15:26:22,199  7853ms GigEVisionTL           ketDataStream::StopAcquisition - End
+INFO  2015-07-24 15:26:22,250  7904ms GigEVisionTL           SocketDataStream::_CloseStream - Stream Channel closed
+INFO  2015-07-24 15:26:22,250  7905ms GigEVisionTL           SocketDataStream::_CloseStream - End
+INFO  2015-07-24 15:26:22,250  7905ms GigEVisionTL           ice<DataStreamT>::_CloseDevice - _CloseDevice
+INFO  2015-07-24 15:26:23,176  8830ms GigEVisionTL           DataStreamT>::_HeartbeatThread - Return
+INFO  2015-07-24 15:26:23,271  8925ms SDK4Acquire            SDK4CloseDevice                - CloseDevHandle 
+INFO  2015-07-24 15:26:23,271  8925ms SDK4Acquire            DeviceFactory::~CDeviceFactory - Call
+INFO  2015-07-24 15:26:23,271  8925ms SDK4Acquire            DeviceFactory::~CDeviceFactory - End 
+INFO  2015-07-24 15:26:23,271  8925ms SDK4Acquire            SDK4CloseLib                   - END --------------------------
+INFO  2015-07-24 15:29:36,729     0ms SDK4Acquire            SDK4InitLib                    - BEGIN ------------------------
+INFO  2015-07-24 15:29:36,729     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:29:36,729     1ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:29:36,729     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - ModulePath=/usr/local/lib/
+WARN  2015-07-24 15:29:36,729     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - numControlDLLs(.\) = 1
+INFO  2015-07-24 15:29:36,729     1ms SDK4Acquire            CDeviceFactory::CDeviceFactory - Register libfdc10ctrl.so
+INFO  2015-07-24 15:29:36,731     2ms SDK4FDC10Control       InitLibrary                    - Init FDC10Control
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-02150M
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-02150C
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-655M
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-655C
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-285M
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-285C
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-414M
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-414C
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-415M
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Zelos-415C
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - HiRes3-XR
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - Hires-XR3
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            Add                            - LumaCam G
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            CDeviceFactory::CDeviceFactory - End 
+INFO  2015-07-24 15:29:36,731     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth0 - 169.254.200.12 / 255.255.0.0
+INFO  2015-07-24 15:29:36,731     3ms GigEVisionTL           ansportProvider::GetInterfaces - NetworkInfo=eth2 - 10.17.85.88 / 255.255.255.0
+INFO  2015-07-24 15:29:36,731     3ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth0
+INFO  2015-07-24 15:29:36,731     3ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:29:36,731     3ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:29:36,731     3ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 169.254.255.255
+INFO  2015-07-24 15:29:36,783    55ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Zelos-02150C::CP81389 (00:0B:1E:00:02:F9)
+INFO  2015-07-24 15:29:38,035  1306ms SDK4Acquire            CDeviceFactory::OpenInterfaces - Open Interface eth2
+INFO  2015-07-24 15:29:38,035  1307ms GigEVisionTL           tProvider::OpenBroadcastSocket - Bind Discovery Socket to 0.0.0.0:0
+INFO  2015-07-24 15:29:38,035  1307ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 2097152
+INFO  2015-07-24 15:29:38,035  1307ms GigEVisionTL           T, RegisterT>::DiscoverDevices - Send Discovery Message to 10.17.85.255
+WARN  2015-07-24 15:29:39,286  2558ms GigEVisionTL           T, RegisterT>::DiscoverDevices - NO_DEVICE
+INFO  2015-07-24 15:29:39,287  2558ms SDK4Acquire            SDK4OpenDevice                 - Call(Zelos-02150C::CP81389,4)
+INFO  2015-07-24 15:29:39,287  2558ms GigEVisionTL           etNetworkInterface::OpenDevice - Linux is running ...
+INFO  2015-07-24 15:29:39,287  2558ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - _OpenDevice
+INFO  2015-07-24 15:29:39,326  2597ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - GVCP Configuration: SET HE
+INFO  2015-07-24 15:29:39,326  2597ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - _StartHeartbeatThread
+INFO  2015-07-24 15:29:39,326  2598ms GigEVisionTL           vice<DataStreamT>::_OpenDevice - End _OpenDevice
+INFO  2015-07-24 15:29:39,326  2598ms SDK4Acquire            CGenericDevice::CGenericDevice - CreateObject(Zelos-02150C)
+INFO  2015-07-24 15:29:39,326  2598ms GigEVisionTL           DataStreamT>::_HeartbeatThread - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       CreateObject                   - FDC10: CreateObject(Zelos-02150C)
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       KStreamControl::KStreamControl - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       igEVisionPort::KGigEVisionPort - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       trol::KGigECamera::KGigECamera - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       Control::KGain::KGain          - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       ::KSignalFormat::KSignalFormat - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       Control::KSlowScan::KSlowScan  - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       Control::KGufi::KGufi          - Call
+INFO  2015-07-24 15:29:39,326  2598ms SDK4FDC10Control       Control::KExposure::KExposure  - Call
+INFO  2015-07-24 15:29:39,327  2598ms SDK4FDC10Control       FeatureCtrl::CZelosFeatureCtrl - Call Zelos-02150C
+INFO  2015-07-24 15:29:39,327  2598ms SDK4Acquire            SDK4OpenDevice                 - Create Datastream0
+INFO  2015-07-24 15:29:39,365  2636ms GigEVisionTL           ice<DataStreamT>::CreateStream - Primary Application:1
+INFO  2015-07-24 15:29:39,365  2636ms GigEVisionTL           ice<DataStreamT>::CreateStream - Multicast Socket   :0
+INFO  2015-07-24 15:29:39,365  2636ms GigEVisionTL           tProvider::SetRecvBufferOption - Set Socket RCVBUFSize to 8388608
+INFO  2015-07-24 15:29:39,365  2636ms GigEVisionTL           SocketDataStream::_OpenStream  - ClientPort=60483
+INFO  2015-07-24 15:29:39,487  2758ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - DiscoverMTU Begin
+INFO  2015-07-24 15:29:39,506  2778ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - SCSP(0) = 0x400
+INFO  2015-07-24 15:29:40,496  3768ms GigEVisionTL           ressT, RegisterT>::DiscoverMTU - DiscoverMTU End (PacketSize=7968)
+INFO  2015-07-24 15:29:40,567  3839ms GigEVisionTL           SocketDataStream::_OpenStream  - Set SDCA(0) to 169.254.200.12
+INFO  2015-07-24 15:29:40,689  3960ms GigEVisionTL           SocketDataStream::_OpenStream  - SCSP(0) = 0x400
+INFO  2015-07-24 15:29:40,689  3961ms SDK4Acquire            SDK4DevGetClassID              - Call
+INFO  2015-07-24 15:29:40,689  3961ms SDK4Acquire            ce::CGenericDevice::GetClassID - Call
+INFO  2015-07-24 15:29:40,734  4006ms SDK4FDC10Control       CFeature<T>::OnRegisterInvalid - readouttime
+INFO  2015-07-24 15:29:40,734  4006ms SDK4FDC10Control       CRegister<T, I>::GetValue      - readouttime invalid @ Address=0xa0a0000
+INFO  2015-07-24 15:29:40,773  4045ms SDK4FDC10Control       CRegister<T, I>::GetValue      - exposuremode invalid @ Address=0xa020000
+INFO  2015-07-24 15:29:40,811  4083ms SDK4FDC10Control       CRegister<T, I>::GetValue      - gain invalid @ Address=0x14010000
+INFO  2015-07-24 15:29:40,850  4121ms SDK4FDC10Control       CRegister<T, I>::GetValue      - exposure invalid @ Address=0xa030000
+INFO  2015-07-24 15:29:40,870  4141ms SDK4FDC10Control       CRegister<T, I>::GetValue      - pixelclock invalid @ Address=0xa090000
+INFO  2015-07-24 15:29:40,889  4161ms SDK4FDC10Control       CRegister<T, I>::GetValue      - colorcoding invalid @ Address=0x28020000
+INFO  2015-07-24 15:29:40,946  4217ms SDK4FDC10Control       CRegister<T, I>::GetValue      - sharpness invalid @ Address=0x18030000
+INFO  2015-07-24 15:29:40,965  4237ms SDK4FDC10Control       CRegister<T, I>::GetValue      - contrast invalid @ Address=0x18020000
+INFO  2015-07-24 15:29:40,984  4256ms SDK4FDC10Control       CRegister<T, I>::GetValue      - brightness invalid @ Address=0x18010000
+INFO  2015-07-24 15:29:41,004  4275ms SDK4FDC10Control       CRegister<T, I>::GetValue      - lutmode invalid @ Address=0x19020000
+INFO  2015-07-24 15:29:41,023  4294ms SDK4FDC10Control       CRegister<T, I>::GetValue      - lutindex invalid @ Address=0x19010000
+INFO  2015-07-24 15:29:41,042  4314ms SDK4FDC10Control       CRegister<T, I>::GetValue      - imagesize invalid @ Address=0x28030000
+INFO  2015-07-24 15:29:41,139  4411ms GigEVisionTL           etDataStream::StartAcquisition - PacketSize    : 7968
+INFO  2015-07-24 15:29:41,139  4411ms GigEVisionTL           etDataStream::StartAcquisition - PacketDelay   : 32
+INFO  2015-07-24 15:29:41,139  4411ms GigEVisionTL           etDataStream::StartAcquisition - AdapterAddress: 169.254.200.12
+INFO  2015-07-24 15:29:41,139  4411ms GigEVisionTL           etDataStream::StartAcquisition - RemoteAddress : 169.254.84.207
+INFO  2015-07-24 15:29:46,272  9543ms GigEVisionTL           ketDataStream::StopAcquisition - Call
+INFO  2015-07-24 15:29:46,272  9543ms GigEVisionTL           ketDataStream::StopAcquisition - Wait 2500ms to terminate GrabberThread
+INFO  2015-07-24 15:29:46,272  9544ms GigEVisionTL           cketDataStream::_GrabberThread - Thread Terminated
+INFO  2015-07-24 15:29:46,272  9544ms GigEVisionTL           ketDataStream::StopAcquisition - End
+INFO  2015-07-24 15:29:46,274  9546ms SDK4Acquire            SDK4CloseDevice                - Call
+INFO  2015-07-24 15:29:46,274  9546ms SDK4Acquire            SDK4CloseDevice                - CloseDSHandle 
+INFO  2015-07-24 15:29:46,274  9546ms SDK4Acquire            SDK4CloseDevice                - CloseCTRLHandle 
+INFO  2015-07-24 15:29:46,274  9546ms SDK4Acquire            CDeviceFactory::CloseDevice    - Call
+INFO  2015-07-24 15:29:46,274  9546ms SDK4Acquire            GenericDevice::~CGenericDevice - Call
+INFO  2015-07-24 15:29:46,274  9546ms SDK4Acquire            Device::CGenericDevice::Close  - Call
+INFO  2015-07-24 15:29:46,274  9546ms SDK4FDC10Control       ol::CZelosFeatureCtrl::Release - dtor CZelos2FeatureCtrl
+INFO  2015-07-24 15:29:46,274  9546ms SDK4FDC10Control       eatureCtrl::~CZelosFeatureCtrl - Call
+INFO  2015-07-24 15:29:46,274  9546ms SDK4FDC10Control       CFeatureList::~CFeatureList    - dtor CFeatureList
+INFO  2015-07-24 15:29:46,274  9546ms SDK4FDC10Control       CRegisterList::~CRegisterList  - dtor CRegisterList
+INFO  2015-07-24 15:29:46,274  9546ms SDK4FDC10Control       Control::KExposure::~KExposure - Call
+INFO  2015-07-24 15:29:46,274  9546ms GigEVisionTL           SocketDataStream::_CloseStream - Call
+INFO  2015-07-24 15:29:46,274  9546ms GigEVisionTL           ketDataStream::StopAcquisition - Call
+INFO  2015-07-24 15:29:46,274  9546ms GigEVisionTL           ketDataStream::StopAcquisition - End
+INFO  2015-07-24 15:29:46,326  9597ms GigEVisionTL           SocketDataStream::_CloseStream - Stream Channel closed
+INFO  2015-07-24 15:29:46,326  9597ms GigEVisionTL           SocketDataStream::_CloseStream - End
+INFO  2015-07-24 15:29:46,326  9597ms GigEVisionTL           ice<DataStreamT>::_CloseDevice - _CloseDevice
+INFO  2015-07-24 15:29:46,562  9833ms GigEVisionTL           DataStreamT>::_HeartbeatThread - Return
+INFO  2015-07-24 15:29:47,346 10618ms SDK4Acquire            SDK4CloseDevice                - CloseDevHandle 
+INFO  2015-07-24 15:29:47,346 10618ms SDK4Acquire            DeviceFactory::~CDeviceFactory - Call
+INFO  2015-07-24 15:29:47,346 10618ms SDK4Acquire            DeviceFactory::~CDeviceFactory - End 
+INFO  2015-07-24 15:29:47,346 10618ms SDK4Acquire            SDK4CloseLib                   - END --------------------------

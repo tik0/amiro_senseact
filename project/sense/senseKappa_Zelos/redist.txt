@@ -1,0 +1,12 @@
+The following list is a list of files available with Kappa SDK 4.5 for redistribution under the Kappa license.
+
+_____________________________________________________________
+
+Kappa SDK4.5 files
+
+Subject to Kappa's license terms for the software, the following file may be redistributed unmodified only:
+
+libsdk4acquire.so
+libsdk4control.so
+libfdc10ctrl.so
+libgevtl.so
