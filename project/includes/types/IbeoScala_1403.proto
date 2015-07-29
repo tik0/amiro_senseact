@@ -1,0 +1,52 @@
+package rst.claas;
+
+import "PoseEuler.proto";
+
+option java_outer_classname = "IbeoScala_1403Type";
+
+message IbeoScala_1403 {
+
+	//Header
+	required string uniqueIdentifier = 1;		
+	optional uint32 sizePrevMsg =2;					
+	optional uint32 sizeMsg = 3;					
+	optional uint32 reserved = 4 [default = 0];		
+	optional uint32 scalaDeviceId = 5;				
+	optional uint32 dataType = 6; 				
+	optional fixed64 timeMsgSent = 7;
+				
+	//Measured Data
+	required uint32 scanNumber = 8;			
+	required uint32 scannerType = 9; 		
+	required int32 scannerStatus = 10;			
+	required uint32 angleTicksRotation = 11;	
+		
+	optional uint32 scanFlags = 12 [default  = 0];
+	required int32 mountingYaw = 13;
+	required int32 mountingPitch = 14;
+	required int32 mountingRoll = 15;
+	required int32 mounting_X = 16;
+	required int32 mounting_Y = 17;
+	required int32 mounting_Z = 18;
+	required uint32 deviceID = 19;
+	optional int32 reserved_1 = 20 [default = 0];
+	required uint64 scanStartTime = 21;
+	required uint64 scanEndTime = 22;
+	required int32 startAngle = 23;
+	optional int32 subFlags = 24 [default = 0];
+	required uint32 mirrorSide = 25;
+	optional fixed32 reserved_2 = 26 [default = 0];
+	required int32 mirrorTilt = 27;
+	required uint32 numberScanPoints = 28;
+	
+	//List of measured points
+	repeated uint32 echo 	= 29 [packed=true];	
+	repeated uint32 layer 	= 30 [packed=true];	
+	repeated uint32 scanPointFlags 	= 31 [packed=true];	
+	repeated uint32 horizontalAngle = 32 [packed=true];	
+	repeated uint32 radialDistance = 33 [packed=true];	
+	repeated uint32 echoPulseWidth = 34 [packed=true]; 
+
+	optional geometry.PoseEuler pose = 35;  
+}
+
