@@ -4,7 +4,7 @@ import "PoseEuler.proto";
 
 option java_outer_classname = "IbeoScala_1403Type";
 
-message IbeoScala_1403 {
+message IbeoScala_1403_Scan_2208 {
 
 	//Header
 	required string uniqueIdentifier = 1;		
@@ -50,3 +50,104 @@ message IbeoScala_1403 {
 	optional geometry.PoseEuler pose = 35;  
 }
 
+message IbeoScala_1403_DeviceStatus {
+	required string uniqueIdentifier = 1;
+	required uint32 serial_Year = 2;
+	required uint32 serial_Month = 3;
+	required uint32 serial_Cnt1 = 4;
+	required uint32 serial_Cnt0 = 5;
+	required uint32 serial_Null = 6;
+	required uint32 fpgaVersion = 7;
+	required uint32 dspVersion = 8;
+	required uint32 hostVersion = 9;
+	required uint32 fpgaModusRegister = 10;
+	required double sensorTemperature = 11;
+	required double frequency = 12;
+	required double apdTableVoltage = 13;
+	required double noiseMeasurementThreshold = 14;
+	required uint32 referenceNoise = 15;
+	required uint32 actualNoise = 16;
+}
+
+message IbeoScala_1403_ObjectData_2271 {
+	required uint64 startTimestamp = 1;
+	required uint32 scanNumber = 2;
+	required uint32 numberObjects = 3;
+	repeated IbeoScala_Object object = 4;
+}
+
+message IbeoScala_Object {
+	required uint32 objectID = 1;
+	optional uint32 propertiesAvailable = 2; //These Flags indicate what kind of Properties are available for this particular Object. Bit1: untracked Properties Bit3: tracked Properties Others: internal
+	optional uint32 interfaceFlags = 3;
+	optional uint32 attributeFlags = 4;
+	optional IbeoScala_UntrackedProperties untackedProperties = 5;
+	optional IbeoScala_TrackedProperties trackedProperties = 6; 
+}
+
+message IbeoScala_UntrackedProperties {
+	required uint32 relTimeMeasure = 1;
+	required IbeoScala_Point2D point_PositionClosest = 2;
+	required IbeoScala_Point2D point_ObjectBoxSize = 3;
+	required IbeoScala_Point2D point_ObjectBoxSizeSigma = 4;
+	required int32 objectBoxOrientation = 5;
+	required uint32 objectBoxOrientationSigma = 6;
+	required IbeoScala_Point2D trackingCoordinate = 7;
+	required IbeoScala_Point2D trackingCoordinateSigma = 8;
+	required uint32 numberContourPoints = 9;
+	repeated IbeoScala_ContourPoint contourPoints = 10;
+}
+
+message IbeoScala_TrackedProperties {
+	required uint32 objectAge = 1;
+	required uint32 hiddenStatusAge = 2;
+	required uint32 dynamicFlags = 3;
+	required uint32 relTimeMeasure = 4;
+	required IbeoScala_Point2D point_PositionClosest = 5;
+	required IbeoScala_Point2D point_relVelocity = 6;
+	required IbeoScala_Point2D point_relVelocitySigma = 7;
+	required uint32 objectClaas = 8;
+	required uint32 classificationAge = 9;
+	required IbeoScala_Point2D point_ObjectBoxSize = 10;
+	required IbeoScala_Point2D point_ObjectBoxSizeSigma = 11;
+	required int32 objectBoxOrientation = 12;
+	required uint32 objectBoxOrientationSigma = 13;
+	required TrackingPointLocation trackPointLocation = 14;
+	required IbeoScala_Point2D point_trackCoordinate = 15;
+	required IbeoScala_Point2D point_trackCoordinateSigma = 16;
+	required IbeoScala_Point2D point_Velocity = 17;
+	required IbeoScala_Point2D point_VelocitySigma = 18;
+	required IbeoScala_Point2D point_Acceleration = 19;
+	required IbeoScala_Point2D point_AccelerationSigma = 20;
+	required int32 yawrate = 21;
+	required uint32 yawrateSigma = 22;
+	required uint32 numberContourPoints = 23;
+	repeated IbeoScala_ContourPoint contourPoints = 24;		
+}
+
+message IbeoScala_Point2D {
+	required uint32 x = 1;
+	required uint32 y = 2;
+}
+message IbeoScala_ContourPoint { // in [cm]
+	required uint32 point_x = 1;
+ 	required uint32 point_y = 2;
+	required uint32 point_x_sigma = 3;
+	required uint32 point_y_sigma = 4;
+}
+
+// The tracking point (stated below) is located at the following position of the object box.
+enum TrackingPointLocation {
+	option allow_alias = true;
+	CENTEROFGRAVITY = 0; 	//Center of gravity
+	FRONTLEFT = 1; 		//Front/Left
+	FRONTRIGHT = 2;		//Front/Right
+	REARRIGHT = 3;		//Rear/Right
+	REARLEFT = 4;		//Rear/Left
+	FRONTCENTER = 5; 	//Front/Center
+	RIGHTCENTER = 6;	//Right/Center
+	REARCENTER = 7; 	//Rear/Center
+	LEFTCENTER = 8; 	//Left/Center
+	OBJECTCENTER = 9; 	//Object Center
+	UNKNOWN = 255;		//unknown
+}
