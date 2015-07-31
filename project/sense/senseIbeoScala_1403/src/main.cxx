@@ -35,9 +35,9 @@ void getScalaValues(ibeosdk::LogFileManager& logFileManager, std::string& ip, st
 	scala.registerListener(dynamic_cast<ibeosdk::DataListener<ibeosdk::Scan2208>*>(&ibeoScalaDataListener));
 //	scala.registerListener(dynamic_cast<DataListener<ObjectListLux>*>(&allScalaListener));
 //	scala.registerListener(dynamic_cast<DataListener<ObjectListScala>*>(&allScalaListener));
-//	scala.registerListener(dynamic_cast<DataListener<ObjectListScala2271>*>(&allScalaListener));
+	scala.registerListener(dynamic_cast<ibeosdk::DataListener<ibeosdk::ObjectListScala2271>*>(&ibeoScalaDataListener));
 //	scala.registerListener(dynamic_cast<DataListener<VehicleStateBasicLux>*>(&allScalaListener));
-//	scala.registerListener(dynamic_cast<DataListener<DeviceStatus>*>(&allScalaListener));
+	scala.registerListener(dynamic_cast<ibeosdk::DataListener<ibeosdk::DeviceStatus>*>(&ibeoScalaDataListener));
 //	scala.registerListener(dynamic_cast<DataListener<LogMessageError>*>(&allScalaListener));
 //	scala.registerListener(dynamic_cast<DataListener<LogMessageDebug>*>(&allScalaListener));
 //	scala.registerListener(dynamic_cast<DataListener<LogMessageNote>*>(&allScalaListener));
@@ -57,7 +57,7 @@ void getScalaValues(ibeosdk::LogFileManager& logFileManager, std::string& ip, st
 int main(int argc, char *argv[]) {
 
 	std::vector<double> coordinates{-2645.269, 1868.837, -75, 0, 0, 13.658};
-	std::string scalaIP = "192.168.1.52";
+	std::string scalaIP = "192.168.100.180";
 	uint16_t tcpServerPort = 12002;
 	std::string rsbOutScope = "/sense/IBEOScala/1";
 
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 	("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending ibeo scala 1403 values")
-	("s_Scala_IP,s", po::value <std::string> (&scalaIP), "Scala ip address, default = 192.168.1.52")
+	("s_Scala_IP,s", po::value <std::string> (&scalaIP), "Scala ip address, default = 192.168.100.180")
 	("p_TcpServerPort,p", po::value <uint16_t> (&tcpServerPort), "Server port, default = 12002")
 	("q_position,q", po::value <std::vector<double> > (&coordinates)->multitoken(), "Sensor Poistion: x y z alpha beta gamma, default = -2645.269, 1868.837, -75, 0, 0, 13.658");
 
@@ -89,9 +89,17 @@ int main(int argc, char *argv[]) {
 	po::notify(vm);
 
 	// Register new converter for std::vector<int>
-	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403> >
-	  converter(new rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403>());
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403_Scan_2208> >
+		converter(new rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403_Scan_2208>());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403_ObjectData_2271>>
+		converter_ObjectData_2271(new rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403_ObjectData_2271>());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_ObjectData_2271);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403_DeviceStatus>>
+		converter_DeviceStatus(new rsb::converter::ProtocolBufferConverter<rst::claas::IbeoScala_1403_DeviceStatus>());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_DeviceStatus);
 
 	const off_t maxLogFileSize = 1000000;
 

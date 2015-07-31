@@ -48,6 +48,7 @@ export VDEMO_component_LASE_2000D_226_2="LASE_2000D_226_2,$car, -c  -g sense -L 
 export VDEMO_component_Sick_LD_MRS_1="Sick_LD_MRS_1,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_Sick_LD_MRS_2="Sick_LD_MRS_2,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_Sick_LD_MRS_3="Sick_LD_MRS_3,$car, -c  -g sense -L 1 -w 2:"
+export VDEMO_component_IbeoScala_1403_1="IbeoScala_1403_1,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_S10Terminal="S10Terminal,$car, -c  -g sense -L 1 -w 2:"
 export VDEMO_component_MachineModel="MachineModel,$car, -c -g util -L 1 -w 2:"
 export VDEMO_component_DisplayRoi="DisplayRoi,$car, -c -g util -L 1 -w 2:"
@@ -87,6 +88,7 @@ $VDEMO_component_LASE_2000D_226_2\
 $VDEMO_component_Sick_LD_MRS_1\
 $VDEMO_component_Sick_LD_MRS_2\
 $VDEMO_component_Sick_LD_MRS_3\
+$VDEMO_component_IbeoScala_1403_1\
 $VDEMO_component_gigEvisionManta\
 $VDEMO_component_S10Terminal\
 "

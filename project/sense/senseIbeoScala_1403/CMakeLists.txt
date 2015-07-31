@@ -20,7 +20,7 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 find_library(IBEOSDK
 libibeosdk.so
-${CMAKE_CURRENT_BINARY_DIR}/IbeoSDK4.1.1/libs)
+./IbeoSDK4.1.1/libs)
 
 if(IBEOSDK)
 message (STATUS "IBEO Library found")
@@ -36,7 +36,7 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
     ${GXX_INCLUDES}
     ${Boost_INCLUDE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}/IbeoSDK4.1.1/src
+    "./IbeoSDK4.1.1/src"
 )
 
 # Define the source

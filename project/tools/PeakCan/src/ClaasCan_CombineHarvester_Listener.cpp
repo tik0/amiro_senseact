@@ -12,28 +12,7 @@
 //RSC
 #include <rsc/misc/SignalWaiter.h>
 
-// RSB
-#include <rsb/Factory.h>
-#include <rsb/filter/TypeFilter.h>
-
-#include <unistd.h>
-#include <linux/can.h>
-#include <byteswap.h>
-
-int m_socketHandle_1 = 0;
-int m_socketHandle_2 = 0;
-int m_socketHandle_3 = 0;
-int m_socketHandle_4 = 0;
-int m_socketHandle_5 = 0;
-int m_socketHandle_6 = 0;
-
-void writeCanFrame(struct can_frame& frame, int socketHandle){
-
-	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
-	if(bytes_write < 1){
-		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
-	}
-}
+#include "PeakCan.hpp"
 
 void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 
@@ -61,7 +40,7 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 		memcpy(&frame.data[3], &vbar, sizeof(vbar));
 		memcpy(&frame.data[4], &avgdistance, sizeof(avgdistance));
 
-		writeCanFrame(frame, m_socketHandle_4);
+		PeakCan::writeCanFrame(frame, m_socketHandle_4);
 	}
 	else if (sample_data->canid() == cCascBrc_LaserScnLeftData2_ID) {
 
@@ -73,7 +52,7 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 
 		memcpy(&frame.data[0], &laserScnLeftStatus, sizeof(laserScnLeftStatus));
 
-		writeCanFrame(frame, m_socketHandle_4);
+		PeakCan::writeCanFrame(frame, m_socketHandle_4);
 	}
 	else if(sample_data->canid() == cCascBrc_LaserScnRightData1_ID){
 
@@ -91,7 +70,7 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 		memcpy(&frame.data[3], &vbar, sizeof(vbar));
 		memcpy(&frame.data[4], &avgdistance, sizeof(avgdistance));
 
-		writeCanFrame(frame, m_socketHandle_4);
+		PeakCan::writeCanFrame(frame, m_socketHandle_4);
 	}
 	else if (sample_data->canid() == cCascBrc_LaserScnRightData2_ID) {
 
@@ -103,7 +82,7 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 
 		memcpy(&frame.data[0], &laserScnRightStatus, sizeof(laserScnRightStatus));
 
-		writeCanFrame(frame, m_socketHandle_4);
+		PeakCan::writeCanFrame(frame, m_socketHandle_4);
 	}
 
 }

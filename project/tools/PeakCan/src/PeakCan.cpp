@@ -16,6 +16,13 @@
 
 #include "PeakCan.hpp"
 
+int m_socketHandle_1 = 0;
+int m_socketHandle_2 = 0;
+int m_socketHandle_3 = 0;
+int m_socketHandle_4 = 0;
+int m_socketHandle_5 = 0;
+int m_socketHandle_6 = 0;
+
 PeakCan::PeakCan() : socketHandle_1(0), socketHandle_2(0), socketHandle_3(0),socketHandle_4(0),socketHandle_5(0),socketHandle_6(0){
 
 }
@@ -183,10 +190,7 @@ void PeakCan::writeCanFrame_ClaasCan_cCoecCaccDevStat1(int socketHandle){
 	frame.data[6] = 0x00;
 	frame.data[7] = 0x00;
 
-	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
-	if(bytes_write < 1){
-		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
-	}
+	PeakCan::writeCanFrame(frame, socketHandle);
 }
 
 void PeakCan::writeCanFrame_ClaasCan_feedingHeight(int socketHandle){
@@ -202,10 +206,7 @@ void PeakCan::writeCanFrame_ClaasCan_feedingHeight(int socketHandle){
 	frame.data[6] = 0x00;
 	frame.data[7] = 0x00;
 
-	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
-	if(bytes_write < 1){
-		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
-	}
+	PeakCan::writeCanFrame(frame, socketHandle);
 }
 
 void PeakCan::writeCanFrame_ClaasCan_feedingHeight_Offset(int socketHandle){
@@ -221,8 +222,5 @@ void PeakCan::writeCanFrame_ClaasCan_feedingHeight_Offset(int socketHandle){
 	frame.data[6] = 0x00;
 	frame.data[7] = 0x00;
 
-	int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
-	if(bytes_write < 1){
-		std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
-	}
+	PeakCan::writeCanFrame(frame, socketHandle);
 }
