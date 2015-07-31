@@ -5,7 +5,7 @@
  *      Author: itsowl
  */
 
-#include <src/IbeoScalaDataListener.hpp>
+#include "IbeoScalaDataListener.hpp"
 #include <iostream>
 
 IbeoScalaDataListener::IbeoScalaDataListener(std::string ip, std::string scalaScope) : scalaIp(ip),
