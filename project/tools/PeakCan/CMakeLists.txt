@@ -32,6 +32,8 @@ set(source_files
 	#../../includes/converter/vecDoubleConverter/main.cpp
 	../../includes/types/CanMessage.pb.cc
 	src/ClaasCan_CombineHarvester_Listener.cpp
+	src/S10GpsListener.cpp
+	../../includes/types/Nmea.pb.cc
 	)
 
 # Set the include path

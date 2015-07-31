@@ -2,6 +2,7 @@
 
 #include "PeakCan.hpp"
 #include "ClaasCan_CombineHarvester_Listener.hpp"
+#include "S10GpsListener.hpp"
 
 int main(int argc, char **argv) {
 
@@ -10,6 +11,24 @@ int main(int argc, char **argv) {
 	 */
 	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::CanMessage>> converter(new rsb::converter::ProtocolBufferConverter<rst::claas::CanMessage>());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGGA> > converter_GPGGA(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGGA>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPGGA);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGSA> > converter_GPGSA(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGSA>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPGSA);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGSV> > converter_GPGSV(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGSV>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPGSV);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPRMC> > converter_GPRMC(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPRMC>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPRMC);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPVTG> > converter_GPVTG(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPVTG>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPVTG);
+
+	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGLL> > converter_GPGLL(new rsb::converter::ProtocolBufferConverter<rst::claas::Nmea_GPGLL>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter_GPGLL);
 
 	std::string interface_1 = "can0";
 	std::string interface_2 = "can1";
@@ -56,6 +75,9 @@ int main(int argc, char **argv) {
 	m_socketHandle_2 = peakcan.socketHandle_2;
 	m_socketHandle_3 = peakcan.socketHandle_3;
 	m_socketHandle_4 = peakcan.socketHandle_4;
+
+	S10Gps_Listener s10Gps_Listener;
+	s10Gps_Listener.setUpListener();
 
 	ClaasCan_CombineHarvester_Listener claasCan_CombineHarvester_Listener;
 	claasCan_CombineHarvester_Listener.setUpListener();

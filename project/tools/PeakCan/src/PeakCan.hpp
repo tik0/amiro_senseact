@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
+#include <byteswap.h>
 
 #include <rsb/Factory.h>
 #include <rsb/converter/Repository.h>
@@ -29,6 +30,13 @@
 
 #include <thread>
 #include <chrono>
+
+extern int m_socketHandle_1;
+extern int m_socketHandle_2;
+extern int m_socketHandle_3;
+extern int m_socketHandle_4;
+extern int m_socketHandle_5;
+extern int m_socketHandle_6;
 
 class PeakCan {
 public:
@@ -83,6 +91,13 @@ public:
 	int socketHandle_4;
 	int socketHandle_5;
 	int socketHandle_6;
+
+	static void writeCanFrame(struct can_frame& frame, int socketHandle){
+		int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
+		if(bytes_write < 1){
+			std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
+		}
+	}
 };
 
 #endif /* PEAKCAN_HPP_ */
