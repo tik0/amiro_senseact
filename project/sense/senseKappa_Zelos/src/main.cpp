@@ -20,7 +20,8 @@ using namespace std;
 
 #define _CHECK(f) {SDK4_ERROR err=(f);if(SDK4_ERR_SUCCESS!=err){cerr<< #f <<" failed: "<<err<<endl;(SDK4CloseLib());}}
 #define NBUFFERS 10
-#define NCOUNT 100
+//#define NCOUNT 100
+int NCOUNT = 5;
 
 const char* EnumColorCodingToString(SDK4_ENUM_COLORCODING iColorCoding)
 {
@@ -107,6 +108,8 @@ uint32_t ConvertExposureToMicroSec(SDK4_KEXPOSURE kExposure, uint32_t uPixelCloc
 	}
 }
 
+using namespace cv;
+
 int main(int argc, char* argv[])
 {
 	std::string prefix("Bilder_Zelos_02150M_CP81030/");
@@ -114,13 +117,17 @@ int main(int argc, char* argv[])
 	//std::string zelos2150C_GV("Zelos-02150C::CP81389");
 	std::string cameraDevice("Zelos-02150M::CP81030");
 
+	bool   	cfgSaveRawData 	= false; // save as raw or bmp
+
 	// Handle program options
 	namespace po = boost::program_options;
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
-	("device,d", po::value < std::string > (&cameraDevice), "device to be opened, default = Zelos-02150M::CP81030")
-	("path,p", po::value < std::string > (&prefix), "path where the pictures are saved");
+	("d_device,d", po::value < std::string > (&cameraDevice), "device to be opened, default = Zelos-02150M::CP81030")
+	("p_path,p", po::value < std::string > (&prefix), "path where the pictures are saved")
+	("raw,r", po::value < bool > (&cfgSaveRawData), "save rawData or not, default = false")
+	("n_pictureCount,n", po::value < int > (&NCOUNT), "pictures to be captured, default = 30000");
 
 	// allow to give the value as a positional argument
 	//po::positional_options_description p;
@@ -147,7 +154,7 @@ int main(int argc, char* argv[])
 
 	char sClassId[256];
 	int32_t sizeClassId = sizeof(sClassId);
-	
+
 	char sDeviceName[256];
 	int32_t sizeDeviceName = sizeof(sDeviceName);
 
@@ -166,7 +173,7 @@ int main(int argc, char* argv[])
 	int32_t width = 0;
 	int32_t height = 0;
 	ENUM_PIXELFORMAT format = 0;
-	
+
 	//Stat Parm
 	int nComplete = 0;
 	int nIncomplete = 0;
@@ -200,8 +207,9 @@ int main(int argc, char* argv[])
 	uint32_t firstFrameID = 0;
 
 	// Configuration Params
-	bool   	cfgSaveRawData 	= false; // save as raw or bmp
+
 	double 	cfgFramerate 	= 30;
+	uint32_t 	cfgExposureTime	= 33333;
 
 	cout << "[SDK4 Acquire] " << endl;
 
@@ -240,14 +248,14 @@ int main(int argc, char* argv[])
 
 	_CHECK(SDK4OpenDevice(devnames[choice - 1].c_str(), DEVICEACCESS_EXCLUSIVE, &hDev));
 	_CHECK(SDK4DevGetClassID(hDev, sClassId, &sizeClassId));
-	_CHECK(SDK4DevGetModel(hDev, sModel, &sizeModel));	
+	_CHECK(SDK4DevGetModel(hDev, sModel, &sizeModel));
 	_CHECK(SDK4DevGetDataStream(hDev, 0, &hDataStream));
 	_CHECK(SDK4DevGetControl(hDev,&hCtrl));
 
 	cout << endl;
 	cout << "ClassID          = " << sClassId << endl;
 	cout << "Model            = " << sModel << endl;
-	
+
 	//Set Framerate
 	uReadoutTime = uint32_t(10000.0 / cfgFramerate + 0.5);
 	_CHECK(SDK4SetReadoutTime(hCtrl, uReadoutTime));
@@ -262,7 +270,7 @@ int main(int argc, char* argv[])
 	//Get ExposureMode
 	_CHECK(SDK4GetExposureMode(hCtrl, &enumExposureMode));
 	cout << "ExposureMode     = " << EnumExposureModeToString(enumExposureMode) << endl;
-	
+
 
 	//Get AGC/Gain
 	_CHECK(SDK4GetAGC(hCtrl, &agc));
@@ -272,7 +280,15 @@ int main(int argc, char* argv[])
 
 	//Get AET/ExposureTime
 	_CHECK(SDK4GetAET(hCtrl, &aet));
-	_CHECK(SDK4GetExposure(hCtrl, &kExposure));				
+	_CHECK(SDK4GetExposure(hCtrl, &kExposure));
+
+	//kExposure.base = SDK4_ENUM_EXPOSUREBASE_1us;
+	//kExposure.base = SDK4_ENUM_EXPOSUREBASE_PIXELCLOCK;
+
+	//kExposure.counter = cfgExposureTime;
+	_CHECK(SDK4SetAutoExposureLevel(hCtrl, 51));
+	//_CHECK(SDK4SetExposure(hCtrl, kExposure));
+
 	_CHECK(SDK4GetPixelClock(hCtrl, &uPixelClock));
 	uExposureTime = ConvertExposureToMicroSec(kExposure, uPixelClock);
 	cout << "AET              = " << aet  << endl;
@@ -308,6 +324,20 @@ int main(int argc, char* argv[])
 	cout << "PacketSize       = " << dec << uPacketSize << ((uPacketSize < 4000)?"   WARNING: Payload/MTU Size too small !":"") << endl;
 	cout << "PayloadSize      = " << uPayloadSize << endl << endl;
 
+	uint32_t gigEVersion = 0;
+	char ipaddress[256];
+	char subnet[256];
+	int32_t sizeIP = sizeof(ipaddress);
+	int32_t sizeSub = sizeof(subnet);
+	uint32_t port = 0;
+	SDK4_ENUM_IOPORT ioPort;
+	_CHECK(SDK4GetGigEVersion(hCtrl, &gigEVersion));
+	_CHECK(SDK4GetCurrentIPAddress(hCtrl, ipaddress, &sizeIP));
+	_CHECK(SDK4GetCurrentSubnetmask(hCtrl, subnet, &sizeSub));
+
+	_CHECK(SDK4GetIoPort(hCtrl, port, &ioPort));
+	std::cout << "gigEVersion: " << gigEVersion << "\nipaddress: " << ipaddress << "\nsubnet: " << subnet<< "\n";
+	std::cout << "ioPort: " << port << "  "  << (int) ioPort << "\n";
 	// Run Acquisition Task
 
 	cout << "Save RawData = " << (cfgSaveRawData? "True": "False")  << endl  << endl;;
@@ -378,6 +408,7 @@ int main(int argc, char* argv[])
 //Exit:
 	_CHECK(SDK4CloseLib());
 	return 0;
+
 }
 
 
