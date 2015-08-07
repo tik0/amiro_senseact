@@ -1,0 +1,27 @@
+#!/bin/bash
+
+function component {
+#  --h [ --help ]             Display a help message.
+#  --d [ --device ] arg       device to be opened, default = Zelos-02150M::CP81030
+#  --p [ --path ] arg         path where the pictures are saved
+#  --n [ --pictureCount ] arg pictures to be captured, default = 30000
+
+  DEVICE=Zelos-02150C::CP81389
+  IMGPATH=/home/itsowl/Bilder_Zelos_02150C_CP81389/
+  echo "starting senseKappa_Zelos --s ${DEVICE} --p ${IMGPATH}"
+  senseKappa_Zelos --d ${DEVICE} --p ${IMGPATH} --n 25000
+}
+
+function clean_component {
+    true
+}
+
+function on_start {
+    true
+}
+
+function on_stop {
+    true
+}
+
+source "$VDEMO_root/vdemo_standard_component_suffix.sh"
