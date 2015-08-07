@@ -108,8 +108,6 @@ uint32_t ConvertExposureToMicroSec(SDK4_KEXPOSURE kExposure, uint32_t uPixelCloc
 	}
 }
 
-using namespace cv;
-
 int main(int argc, char* argv[])
 {
 	std::string prefix("Bilder_Zelos_02150M_CP81030/");
