@@ -87,14 +87,10 @@ void get_cCascBrc_LaserScnLeftData1(rsb::EventPtr canEvent){
 
 }
 
-int ClaasCan_CombineHarvester_Listener::setUpListener(){
-
-	rsc::misc::initSignalWaiter();
+void ClaasCan_CombineHarvester_Listener::setUpListener(){
 	std::string scope = "/act/ClaasCan/tx";
 	rsb::Factory& factory = rsb::getFactory();
 	rsb::ListenerPtr listener = factory.createListener(scope);
 	listener->addHandler(rsb::HandlerPtr(new rsb::EventFunctionHandler(&get_cCascBrc_LaserScnLeftData1)));
-	//listener->addFilter(rsb::filter::FilterPtr(new rsb::filter::TypeFilter("ClaasCan_CombineHarvester::cCascBrc_LaserScnLeftData1")));
-	return rsc::misc::waitForSignal();
 }
 

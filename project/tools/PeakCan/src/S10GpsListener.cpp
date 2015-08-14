@@ -11,11 +11,12 @@
 
 #include "PeakCan.hpp"
 #include <cmath>
+#include <signal.h>
 
 void get_S10Gps_Data(rsb::EventPtr canEvent){
 
 	std::string type =  canEvent->getType();
-	std::cout << "Type: " << type << "\n";
+	//std::cout << "Type: " << type << "\n";
 	if(type.compare("rst::claas::Nmea_GPRMC") == 0){
 		boost::shared_ptr<rst::claas::Nmea_GPRMC> sample_data = boost::static_pointer_cast<rst::claas::Nmea_GPRMC>(canEvent->getData());
 
@@ -31,7 +32,7 @@ void get_S10Gps_Data(rsb::EventPtr canEvent){
 
 		memcpy(&frame.data[0], &lat, sizeof(lat));
 		memcpy(&frame.data[4], &lon, sizeof(lon));
-		std::cout << "Lat: " << lat << " Speed: " << sample_data->speed() << "  Lon: " << lon << " Direction: "<< sample_data->direction() << "\n";
+		//std::cout << "Lat: " << lat << " Speed: " << sample_data->speed() << "  Lon: " << lon << " Direction: "<< sample_data->direction() << "\n";
 
 		PeakCan::writeCanFrame(frame, m_socketHandle_4);
 
@@ -47,26 +48,23 @@ void get_S10Gps_Data(rsb::EventPtr canEvent){
 		memcpy(&frame.data[2], &speed, sizeof(speed));
 
 		PeakCan::writeCanFrame(frame, m_socketHandle_4);
-
 	}
 
 }
 
 S10Gps_Listener::S10Gps_Listener() {
-	// TODO Auto-generated constructor stub
-
+	//TODO Auto-generated constructor stub
 }
 
 S10Gps_Listener::~S10Gps_Listener() {
 	// TODO Auto-generated destructor stub
 }
 
-int S10Gps_Listener::setUpListener(){
+void S10Gps_Listener::setUpListener(){
 
-	rsc::misc::initSignalWaiter();
 	std::string scope = "/sense/S10Gps";
 	rsb::Factory& factory = rsb::getFactory();
-	rsb::ListenerPtr listener = factory.createListener(scope);
+	listener = factory.createListener(scope);
 	listener->addHandler(rsb::HandlerPtr(new rsb::EventFunctionHandler(&get_S10Gps_Data)));
-	return rsc::misc::waitForSignal();
+
 }

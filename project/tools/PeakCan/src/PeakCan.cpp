@@ -23,8 +23,20 @@ int m_socketHandle_4 = 0;
 int m_socketHandle_5 = 0;
 int m_socketHandle_6 = 0;
 
-PeakCan::PeakCan() : socketHandle_1(0), socketHandle_2(0), socketHandle_3(0),socketHandle_4(0),socketHandle_5(0),socketHandle_6(0){
+bool PeakCan::runningHandle_1 = true;
+bool PeakCan::runningHandle_2 = true;
+bool PeakCan::runningHandle_3 = true;
+bool PeakCan::runningHandle_4 = true;
+bool PeakCan::runningHandle_5 = true;
+bool PeakCan::runningHandle_6 = true;
+bool PeakCan::wrintingHandle_1 = true;
 
+PeakCan::PeakCan() : socketHandle_1(0),
+		socketHandle_2(0),
+		socketHandle_3(0),
+		socketHandle_4(0),
+		socketHandle_5(0),
+		socketHandle_6(0){
 }
 
 /**
@@ -35,6 +47,8 @@ PeakCan::PeakCan() : socketHandle_1(0), socketHandle_2(0), socketHandle_3(0),soc
  */
 int PeakCan::setUpSocket(std::string& interface, int &socketHandle){
 
+	int result = -2;
+
 	//create the socket
 	socketHandle = socket(PF_CAN, SOCK_RAW, CAN_RAW);
 	if(socketHandle < 0){
@@ -44,13 +58,18 @@ int PeakCan::setUpSocket(std::string& interface, int &socketHandle){
 	struct ifreq ifr;
 	//Locate the interface you wish to use
 	std::strcpy(ifr.ifr_name, interface.c_str());
-	ioctl(socketHandle, SIOCGIFINDEX, &ifr);
+	result = ioctl(socketHandle, SIOCGIFINDEX, &ifr);
 
-	//Select that CAN interface, and bind the socket to it.
-	struct sockaddr_can addr;
-	addr.can_family  = AF_CAN;
-	addr.can_ifindex = ifr.ifr_ifindex;
-	int result = ::bind(socketHandle, (struct sockaddr *)&addr, sizeof(addr));
+	std::cout << "ioctl: " << result << "\n";
+
+	if(result != -1){
+		//Select that CAN interface, and bind the socket to it.
+		struct sockaddr_can addr;
+		addr.can_family  = AF_CAN;
+		addr.can_ifindex = ifr.ifr_ifindex;
+		result = ::bind(socketHandle, (struct sockaddr *)&addr, sizeof(addr));
+		std::cout<< "Opening socket: " << interface << "  Handle: " << socketHandle <<"\n";
+	}
 
 	return result;
 }
@@ -62,7 +81,7 @@ void PeakCan::readCanFrame_1(int socketHandle){
 	rsb::Informer<rst::claas::CanMessage>::Ptr informer_vec = factory.createInformer<rst::claas::CanMessage>("/sense/ClaasCan/rx");
 	rsb::Informer<rst::claas::CanMessage>::DataPtr msg(new rst::claas::CanMessage);
 
-	while(true){
+	while(PeakCan::runningHandle_1){
 
 		int bytes_read = read( socketHandle, &frame, sizeof(frame) );
 
@@ -81,6 +100,7 @@ void PeakCan::readCanFrame_1(int socketHandle){
 		informer_vec->publish(msg);
 		msg->Clear();
 	}
+	std::cout << "Stopping Thread 1\n";
 }
 
 void PeakCan::readCanFrame_2(int socketHandle){
@@ -90,7 +110,7 @@ void PeakCan::readCanFrame_2(int socketHandle){
 	rsb::Informer<rst::claas::CanMessage>::Ptr informer_vec = factory.createInformer<rst::claas::CanMessage>("/sense/J1939Can/rx");
 	rsb::Informer<rst::claas::CanMessage>::DataPtr msg(new rst::claas::CanMessage);
 
-	while(true){
+	while(PeakCan::runningHandle_2){
 
 		int bytes_read = read( socketHandle, &frame, sizeof(frame) );
 
@@ -109,6 +129,7 @@ void PeakCan::readCanFrame_2(int socketHandle){
 		informer_vec->publish(msg);
 		msg->Clear();
 	}
+	std::cout << "Stopping Thread 2\n";
 }
 
 void PeakCan::readCanFrame_3(int socketHandle){
@@ -118,7 +139,7 @@ void PeakCan::readCanFrame_3(int socketHandle){
 	rsb::Informer<rst::claas::CanMessage>::Ptr informer_vec = factory.createInformer<rst::claas::CanMessage>("/sense/FrontAtt/rx");
 	rsb::Informer<rst::claas::CanMessage>::DataPtr msg(new rst::claas::CanMessage);
 
-	while(true){
+	while(PeakCan::runningHandle_3){
 
 		int bytes_read = read( socketHandle, &frame, sizeof(frame) );
 
@@ -136,6 +157,7 @@ void PeakCan::readCanFrame_3(int socketHandle){
 		informer_vec->publish(msg);
 		msg->Clear();
 	}
+	std::cout << "Stopping Thread 3\n";
 }
 
 void PeakCan::readCanFrame_4(int socketHandle){
@@ -145,7 +167,7 @@ void PeakCan::readCanFrame_4(int socketHandle){
 	rsb::Informer<rst::claas::CanMessage>::Ptr informer_vec = factory.createInformer<rst::claas::CanMessage>("/sense/Steering/rx");
 	rsb::Informer<rst::claas::CanMessage>::DataPtr msg(new rst::claas::CanMessage);
 
-	while(true){
+	while(PeakCan::runningHandle_4){
 
 		int bytes_read = read( socketHandle, &frame, sizeof(frame) );
 
@@ -164,17 +186,48 @@ void PeakCan::readCanFrame_4(int socketHandle){
 		informer_vec->publish(msg);
 		msg->Clear();
 	}
+	std::cout << "Stopping Thread 4\n";
+}
+
+void PeakCan::readCanFrame_5(int socketHandle){
+	struct can_frame frame;
+
+	rsb::Factory& factory = rsb::getFactory();
+	rsb::Informer<rst::claas::CanMessage>::Ptr informer_vec = factory.createInformer<rst::claas::CanMessage>("/sense/MessCan/rx");
+	rsb::Informer<rst::claas::CanMessage>::DataPtr msg(new rst::claas::CanMessage);
+
+	while(PeakCan::runningHandle_5){
+
+		int bytes_read = read( socketHandle, &frame, sizeof(frame) );
+
+		if(bytes_read < 0){
+			return;
+		}
+
+		uint32_t canId = frame.can_id & 0x7FFFFFFF;
+
+		msg->set_canid(canId);
+		msg->set_candlc(frame.can_dlc);
+		for(int i = 0; i < frame.can_dlc; ++i){
+			msg->add_canmessage(frame.data[i]);
+		}
+
+		informer_vec->publish(msg);
+		msg->Clear();
+	}
+	std::cout << "Stopping Thread 5\n";
 }
 
 void PeakCan::writeCanFrame_ClaasCan(int socketHandle){
 
-	while(true){
+	while(PeakCan::wrintingHandle_1){
 		writeCanFrame_ClaasCan_cCoecCaccDevStat1(socketHandle);
 		writeCanFrame_ClaasCan_feedingHeight(socketHandle);
 		writeCanFrame_ClaasCan_feedingHeight_Offset(socketHandle);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
+	std::cout << "Stopping Thread Writing\n";
 }
 
 void PeakCan::writeCanFrame_ClaasCan_cCoecCaccDevStat1(int socketHandle){

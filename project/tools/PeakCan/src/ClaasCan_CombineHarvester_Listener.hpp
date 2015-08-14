@@ -11,7 +11,7 @@
 class ClaasCan_CombineHarvester_Listener {
 public:
 
-	int setUpListener();
+	void setUpListener();
 
 };
 

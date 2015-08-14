@@ -31,6 +31,8 @@
 #include <thread>
 #include <chrono>
 
+#include <signal.h>
+
 extern int m_socketHandle_1;
 extern int m_socketHandle_2;
 extern int m_socketHandle_3;
@@ -85,6 +87,8 @@ public:
 	void readCanFrame_2(int socketHandle);
 	void readCanFrame_3(int socketHandle);
 	void readCanFrame_4(int socketHandle);
+	void readCanFrame_5(int socketHandle);
+
 	int socketHandle_1;
 	int socketHandle_2;
 	int socketHandle_3;
@@ -92,12 +96,29 @@ public:
 	int socketHandle_5;
 	int socketHandle_6;
 
+	static bool runningHandle_1;
+	static bool runningHandle_2;
+	static bool runningHandle_3;
+	static bool runningHandle_4;
+	static bool runningHandle_5;
+	static bool runningHandle_6;
+	static bool wrintingHandle_1;
+
 	static void writeCanFrame(struct can_frame& frame, int socketHandle){
 		int bytes_write = write(socketHandle, &frame, sizeof(struct can_frame));
 		if(bytes_write < 1){
 			std::cerr<<"Could not write CAN messages: " << std::hex << frame.can_id << std::dec << std::endl;
 		}
 	}
+
+	static void closeSocket(int socketHandle){
+		std::cout << "Closing socket: " << socketHandle << "\n";
+		int disconnect = close(socketHandle);
+		if(disconnect < 0){
+			std::cerr << "Failure closing socket: " << socketHandle << "\n";
+		}
+	}
+
 };
 
 #endif /* PEAKCAN_HPP_ */

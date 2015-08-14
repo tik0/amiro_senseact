@@ -13,13 +13,16 @@
 
 #include <Nmea.pb.h>
 
+#include <rsb/Factory.h>
+
 class S10Gps_Listener {
 public:
 	S10Gps_Listener();
 	virtual ~S10Gps_Listener();
 
-	int setUpListener();
+	void setUpListener();
 
+	rsb::ListenerPtr listener;
 };
 
 #endif /* SRC_S10GPSLISTENER_HPP_ */
