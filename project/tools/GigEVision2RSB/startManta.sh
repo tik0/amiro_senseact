@@ -15,13 +15,13 @@ echo "Start camera ${1}"
 #start file for manta camera
 ./GigEVision2RSB \
 --record 0 \
---outscope /gigevision/cam \
+--outscope /sense/gigevision/manta \
 --recordFilename video.avi \
 --numFrames 0 \
---camStreamBytesPerSecond 12400000 \
+--camStreamBytesPerSecond 124000000 \
 --camPixelFormat 17301505 \
---camWidth 500 \
---camHeight 250 \
+--camWidth 2048 \
+--camHeight 1088 \
 --camOffsetX 0 \
 --camOffsetY 0 \
 --camExposureTimeAbs 16000 \
@@ -30,6 +30,8 @@ echo "Start camera ${1}"
 --camGainAuto 3 \
 --camBlackLevel 4.00 \
 --camGamma 1.00 \
+--camTriggerMode Off \
+--camAcquisitionFrameRateAbs 20.0 \
 
 #optional
 #--fpsRecord 1 \

@@ -67,7 +67,7 @@ cv::Mat frame;
  */
 
 // Create an informer that is capable of sending events
-rsb::Informer<IplImage>::Ptr informer;
+rsb::Informer<String>::Ptr informer;
 
 // Scope for sending the data
 std::string rsbOutScope = "/gigevision/cam";
@@ -554,7 +554,7 @@ int main(int argc, char **argv) {
   converterRepository<std::string>()->registerConverter(converter);
 
   // Create an informer that is capable of sending events containing string data on the given scope.
-  informer = factory.createInformer<IplImage> (rsbOutScope);
+  informer = factory.createInformer<String> (rsbOutScope);
 
   char driverPath[DRIVERPATHSIZE] = { 0 };
 
@@ -610,7 +610,6 @@ int main(int argc, char **argv) {
   }
 
   
-  
   // Start with the grabbing
   for (;;) {
     processEverything();
@@ -663,7 +662,7 @@ static void programOptions(int argc, char **argv) {
 
 static void processEverything(void) {
   // Wait for next image to be acquired
-  // (returns immediately if unprocessed image are in the ring buffer)
+  // (returns immediately if unprocessed images are in the ring buffer)
   cvbres_t result = G2Wait(hCamera);
   if (result < 0) {
     std::cout << " Error with G2Wait";
@@ -677,8 +676,19 @@ static void processEverything(void) {
     stopRecordVideo();
 
     // Send the data
-    boost::shared_ptr<IplImage> iplImage(new IplImage(frame));
-    informer->publish(iplImage);
+//    boost::shared_ptr<IplImage> iplImage(new IplImage(frame));
+//    informer->publish(iplImage);
+
+    vector<uchar> buf;
+    vector<int> compression_params;
+    compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+    compression_params.push_back(20);
+      
+    imencode(".jpg", frame, buf, compression_params);
+
+    // Send the data.
+    boost::shared_ptr<string> frameJpg(new std::string(buf.begin(), buf.end()));
+    informer->publish(frameJpg);
   }
 }
 

@@ -8,7 +8,7 @@ find_package(PkgConfig)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(RST rst0.11)
-pkg_check_modules(OPENCV opencv)
+find_package(OpenCV)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system)
@@ -51,7 +51,7 @@ LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}
     ${RSC_LIBRARY_DIRS}
     ${RST_LIBRARY_DIRS}
-    ${OPENCV_LIBRARY_DIRS}
+    ${OpenCV_LIBRARY_DIRS}
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
     "$ENV{CVB}/lib"                                             # Stemmer imaging
     "${CMAKE_CURRENT_BINARY_DIR}/../ARToolKit/lib"              # ARToolKit
@@ -66,7 +66,7 @@ target_link_libraries (
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
     ${Boost_LIBARIES}
-    ${OPENCV_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     # -- stemmer imaging
     :"$ENV{CVB}/lib/libCVCImg.so"
     :"$ENV{CVB}/lib/libCVCUtilities.so"
