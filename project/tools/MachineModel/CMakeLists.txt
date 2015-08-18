@@ -24,7 +24,7 @@ pkg_check_modules(PROTOBUF protobuf)
 
 set(source_files
 	../../includes/types/CanMessage.pb.cc
-	src/Odemetrie_data.cpp
+	#src/Odemetrie_data.cpp
 	src/Odemetrie.cpp
 	../../includes/types/MachineModel.pb.cc
 )
