@@ -539,17 +539,17 @@ void Auswertung(double X, double Y, double Phi_k, double, double, double, double
 
     cv::warpAffine(image, dst, rot, image.size(), cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(255));
 
-    // Load a color image and put it under the gray scale combine harvester
-    cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2BGR, 3);  // Convert to color image
-    cv::Mat source = cv::imread("/opt/vbShare/CLAAS/600x600Map.bmp");
-    const uchar grayScaleThreshold = 230;
-    for (int idy = 0; idy < dst.rows; ++idy) {
-      for (int idx = 0; idx < dst.cols; ++idx) {
-        if (dst.at<uchar>(idy, idx) > grayScaleThreshold) {
-          dstColor.at<cv::Vec3b>(idy, idx) = source.at<cv::Vec3b>(idy, idx);
-        }
-      }
-    }
+//    // Load a color image and put it under the gray scale combine harvester
+//    cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2BGR, 3);  // Convert to color image
+//    cv::Mat source = cv::imread("/opt/vbShare/CLAAS/600x600Map.bmp");
+//    const uchar grayScaleThreshold = 230;
+//    for (int idy = 0; idy < dst.rows; ++idy) {
+//      for (int idx = 0; idx < dst.cols; ++idx) {
+//        if (dst.at<uchar>(idy, idx) > grayScaleThreshold) {
+//          dstColor.at<cv::Vec3b>(idy, idx) = source.at<cv::Vec3b>(idy, idx);
+//        }
+//      }
+//    }
 //    // Test of copying the non interleaved data from Matlab to an interleaved
 //    // Mat array
 //    cv::Mat imageR(cv::Size(600, 600), CV_8UC1, &Roi[0]);
@@ -577,7 +577,7 @@ void Auswertung(double X, double Y, double Phi_k, double, double, double, double
 //
 
     cv::namedWindow( "DisplayRoi");// Create a window for display.
-    cv::imshow( "DisplayRoi", dstColor );                   // Show our image inside it.
+    cv::imshow( "DisplayRoi", dst );                   // Show our image inside it.
     cv::waitKey(1);
 
   }
