@@ -535,15 +535,52 @@ void Auswertung(double X, double Y, double Phi_k, double, double, double, double
     cv::flip(image, image, 1);
     cv::Point2f srcCenter(image.cols/2.0F, image.rows/2.0F);
     cv::Mat rot = cv::getRotationMatrix2D(srcCenter, 90, 1);
-    cv::Mat dst;
+    cv::Mat dst, dstColor;
 
-    cv::warpAffine(image, dst, rot, image.size());
+    cv::warpAffine(image, dst, rot, image.size(), cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(255));
+
+    // Load a color image and put it under the gray scale combine harvester
+    cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2BGR, 3);  // Convert to color image
+    cv::Mat source = cv::imread("/opt/vbShare/CLAAS/600x600Map.bmp");
+    const uchar grayScaleThreshold = 230;
+    for (int idy = 0; idy < dst.rows; ++idy) {
+      for (int idx = 0; idx < dst.cols; ++idx) {
+        if (dst.at<uchar>(idy, idx) > grayScaleThreshold) {
+          dstColor.at<cv::Vec3b>(idy, idx) = source.at<cv::Vec3b>(idy, idx);
+        }
+      }
+    }
+//    // Test of copying the non interleaved data from Matlab to an interleaved
+//    // Mat array
+//    cv::Mat imageR(cv::Size(600, 600), CV_8UC1, &Roi[0]);
+//    cv::Mat imageG(cv::Size(600, 600), CV_8UC1, &Roi[600*600-1]);
+//    cv::Mat imageB(cv::Size(600, 600), CV_8UC1, &Roi[600*600*2-1]);
+//    std::vector<cv::Mat> channels;
+//    channels.push_back(imageB);
+//    channels.push_back(imageG);
+//    channels.push_back(imageR);
+//    cv::Mat image(cv::Size(600, 600), CV_8UC3, Roi);
+//    cv::merge(channels, image);
+//
+//    // Merge the two images
+//    const int bgrStep = 3;
+//    int idxC = 0;
+//    for (int idx = 0; idx < dst.rows * dst.cols; ++idx) {
+//      if (dst.data[idx] == 255) {
+//        std::cout << "1 " << int(dst.data[idx]) << std::endl << std::flush;
+//        dstColor.data[idxC] = source.data[idxC];
+//        dstColor.data[idxC+1] = source.data[idxC+1];
+//        dstColor.data[idxC+2] = source.data[idxC+2];
+//      }
+//      idxC+=bgrStep;
+//    }
+//
+
     cv::namedWindow( "DisplayRoi");// Create a window for display.
-    cv::imshow( "DisplayRoi", dst );                   // Show our image inside it.
+    cv::imshow( "DisplayRoi", dstColor );                   // Show our image inside it.
     cv::waitKey(1);
 
   }
-
   /*  */
 }
 
