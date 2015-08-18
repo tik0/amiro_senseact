@@ -7,7 +7,7 @@ function component {
 #                          "/plan/Fahrzeugdaten"
 #  -c [ --offset ] arg     Offset curvature for machine, dafault = 0.0226
 #  -d [ --diskretAuf ] arg Discrete resolution for roi = 0.05
-  MachineModel -c 0.0226 -d 0.05
+  MachineModel -c -0.0045 -d 0.05
 }
 
 function clean_component {
