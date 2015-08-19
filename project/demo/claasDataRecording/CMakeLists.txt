@@ -19,9 +19,8 @@ add_subdirectory ($ENV{MUROX_PROJECT}/tools/MachineModel MachineModel)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/DisplayRoi DisplayRoi)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseIbeoScala_1403 senseIbeoScala_1403)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseKappa_Zelos senseKappa_Zelos)
-add_subdirectory ($ENV{MUROX_PROJECT}/process/mapServer mapServer)
 
-SET(folders "sensePepperlFuchsOMD8000;senseLeuzeODS9ODS96B;senseHokuyo;GigEVision2RSB;senseOpenNi2;senseSick_LD_MRS;senseLASE_2000D_226;PeakCan;rsb_ws_bridge_claas;senseS10Terminal;MachineModel;DisplayRoi;mapServer;senseIbeoScala_1403;senseKappa_Zelos")
+SET(folders "sensePepperlFuchsOMD8000;senseLeuzeODS9ODS96B;senseHokuyo;GigEVision2RSB;senseOpenNi2;senseSick_LD_MRS;senseLASE_2000D_226;PeakCan;rsb_ws_bridge_claas;senseS10Terminal;MachineModel;DisplayRoi;senseIbeoScala_1403;senseKappa_Zelos")
 MESSAGE( STATUS "Processing: " )
 FOREACH(folder ${folders})
   INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/${folder}/${folder}"
