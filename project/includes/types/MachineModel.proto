@@ -1,6 +1,6 @@
 package rst.claas;
 
-option java_outer_classname = "MachineModel";
+option java_outer_classname = "MachineModelType";
 
 message MachineModel_Odemetrie {
 

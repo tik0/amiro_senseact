@@ -1,6 +1,6 @@
 package rst.claas;
 
-option java_outer_classname = "sensorNmea";
+option java_outer_classname = "sensorNmeaType";
 
 message Nmea_Time{
 
