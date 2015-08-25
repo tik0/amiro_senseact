@@ -2,7 +2,7 @@ package rst.claas;
 
 import "PoseEuler.proto";
 
-option java_outer_classname = "SickLdMRS400102Type";
+option java_outer_classname = "SickLdMRS4002Type";
 
 message SickLdMRS400102 {
 
