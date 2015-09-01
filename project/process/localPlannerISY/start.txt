@@ -10,3 +10,4 @@ It sends a rsb signal when a path is finished.
 |/path | Inscope for the paths |
 |/pathResponse | Outscope for path responses (whenever a path is finished)|
 |/motor/05 | Outscope for steering signals|
+|/pathUpdate/[makerID] | Outscope for path updates (used for visualization in [[tools:showMap:start|showMap]])

@@ -1,0 +1,19 @@
+====== Show Map ======
+
+ShowMap builds and visualizes a occupancy grid map from MapUpdates received from a running exploration.
+Paths received from the [[process:localPlannerISY:start|localPlanner]] are visualized.
+
+===== Run showMap =====
+
+    - ''cmake .''
+    - ''make''
+    - Start a spread that connects to the spread of the AMiRo
+    - Make sure that there is an rsb.conf that refers to this spread
+    - ''./showMap''
+
+===== RSB Scopes =====
+
+^ Scope (default name)      ^ Description ^
+|/murox/roboterlocation | Inscope for the tracking data ("in program spread" --port, --host; id: --id)|
+|/mapUpdate | Inscope for MapUpdates |
+|/pathUpdate| Inscope for path updates |
