@@ -1,0 +1,3 @@
+====== rirReader ======
+
+Reads and publishes proximity informations.

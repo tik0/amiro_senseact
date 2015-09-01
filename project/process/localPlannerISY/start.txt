@@ -1,0 +1,12 @@
+====== Local Planner ======
+
+The Local Planner receives paths and steers the robot along these. For this purpose only the current robot position received from tracking is used.
+It sends a rsb signal when a path is finished.
+
+===== RSB Scopes =====
+
+^ Scope (default name)      ^ Description ^
+|/murox/roboterlocation | Inscope for the tracking data ("in program spread" --port, --host; id: --id)|
+|/path | Inscope for the paths |
+|/pathResponse | Outscope for path responses (whenever a path is finished)|
+|/motor/05 | Outscope for steering signals|
