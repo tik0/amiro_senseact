@@ -75,7 +75,7 @@ class ControllerAreaNetwork {
   }
 
   void getAnyFrame() {
-    int nbytes = read(s, &frame, sizeof(frame));
+    const int nbytes = read(s, &frame, sizeof(frame));
      if (nbytes > 0) {
        printf("ID=0x%X DLC=%d data[0]=0x%X\n ",frame.can_id,frame.can_dlc,frame.data[0]);
      }
@@ -92,19 +92,22 @@ class ControllerAreaNetwork {
 
     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
 
-    
     /* Listen to the socket */
-    int nbytes = read(s, &frame, sizeof(frame));
-    /* Process the data */
+    const int nbytes = read(s, &frame, sizeof(frame));
     types::position robotPosition;
-    
-    robotPosition.x = (frame.data[0] << 8 | frame.data[1] << 16 | frame.data[2] << 24);
-    robotPosition.y = (frame.data[3] << 8 | frame.data[4] << 16 | frame.data[5] << 24);
-    robotPosition.f_z = (frame.data[6] << 8 | frame.data[7] << 16);
-            
-    
+    // TODO Make proper error handling, so that the calling function knows that the data is not correct
+    if (nbytes > 0) {
+      /* Process the data */
+      robotPosition.x = (frame.data[0] << 8 | frame.data[1] << 16 | frame.data[2] << 24);
+      robotPosition.y = (frame.data[3] << 8 | frame.data[4] << 16 | frame.data[5] << 24);
+      robotPosition.f_z = (frame.data[6] << 8 | frame.data[7] << 16);
+
+    } else {
+      robotPosition.x = 0;
+      robotPosition.y = 0;
+      robotPosition.f_z = 0;
+    }
     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
-    
     return robotPosition;
   }
 
@@ -164,7 +167,7 @@ class ControllerAreaNetwork {
     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
 
     /* Listen to the socket */
-    int nbytes = read(s, &frame, sizeof(frame));
+    const int nbytes = read(s, &frame, sizeof(frame));
     /* Process the data */
      if (nbytes != 8) {
        memcpy(&v, &(frame.data[0]), 4);
@@ -192,7 +195,7 @@ class ControllerAreaNetwork {
     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
 
     /* Listen to the socket */
-    int nbytes = read(s, &frame, sizeof(frame));
+    const int nbytes = read(s, &frame, sizeof(frame));
     /* Process the data */
      if (nbytes != 8) {
        memcpy(&proximityValues[0], &(frame.data[0]), 2);  // Front right
@@ -224,7 +227,7 @@ class ControllerAreaNetwork {
     setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
 
     for (int sensorIdx = 0; sensorIdx < 8; ++sensorIdx) {
-      int nbytes = read(s, &frame, sizeof(frame));
+      const int nbytes = read(s, &frame, sizeof(frame));
        if (nbytes != 2) {
          int index = decodeDeviceId(&frame) & 0x7;
          memcpy(&proximityValues[index], &(frame.data[0]), 2);
