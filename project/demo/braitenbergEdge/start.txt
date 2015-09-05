@@ -1,9 +1,9 @@
-====== Building the Open Challenge 2015 Environment for AMiRo ======
+====== Building the Braitenberg vehicle for AMiRo which avoids edges on the tabele ======
 
 This is a demo of the braitenberg with obstacle and edge avoidence.
 IMPORTANT: Make sure that you measured IR offsets of the ground and of the air (see demo "initial"). Otherwise the robot isn't able to stop in front of edges!
 
-===== Run the simulation =====
+===== Run the Demo =====
 
   - ''. ./build.sh .''
   - ''./copyPrograms.sh''
