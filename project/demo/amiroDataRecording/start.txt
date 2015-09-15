@@ -1,9 +1,7 @@
-====== Building the CoreSLAM Environment for AMiRo ======
+====== AMiRo DataRecording demo ======
 
-This is a demo which streams the local camera device via RSB and displays it with another process.
-It only consists of two applications.
-One for opening the camera device, compressing the image and sending it via RSB.
-And another which grabs the compressed images from the RSB scope and display them via OpenCV
+This demo builds all sensing programs.
+You have to run rsBag on a remote Host for recording, which is listening to the AMiRo RSB scopes.
 
 ===== Run the demo =====
 
@@ -11,5 +9,4 @@ And another which grabs the compressed images from the RSB scope and display the
   - ''./copyPrograms.sh''
   - ''./run.sh'' on the AMiRo
   - ''./stop.sh'' on the AMiRo for stopping
-
-One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+  
