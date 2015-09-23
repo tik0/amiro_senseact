@@ -43,7 +43,6 @@ MapUpdate MapGenerator::createMapUpdate(const boost::shared_ptr<std::vector<int>
 		float movedDistance) {
 
 	// calculate the offsets depending on the distance the robot moved
-	// TODO these values should be capped
 	const float g = 15.0 * movedDistance / 0.01;
 	const float gridObstacle = max(-g, (float) GRID_VALUE_MIN);
 	const float gridObstacleUnsure = max((float) -(0.7 * g), (float) GRID_VALUE_MIN);
@@ -146,18 +145,12 @@ MapUpdate MapGenerator::createEdgeUpdate(cv::Point3f &robotPose, bool side) {
 //	int edgeRadius = (int) (cv::norm(diff) / cellSize);
 
 	// initialize the update with zero
-	//MapUpdate mapUpdate(cv::Size(2 * edgeRadius + 1, 2 * edgeRadius + 1), CV_8SC1, Scalar(0));
 	MapUpdate mapUpdate(mapUpdateSize, CV_8SC1, Scalar(0));
 
 	// set the pose of the update
 	mapUpdate.x = robotPose.x;
 	mapUpdate.y = robotPose.y;
 	mapUpdate.theta = 0;
-
-	//mapUpdate.at<char>(edgeRadius,edgeRadius) = GRID_VALUE_MIN;
-	// draw a blocked circle at the edges location
-	//cv::circle(mapUpdate, cv::Point2i(edgeRadius, edgeRadius), edgeRadius, Scalar(GRID_VALUE_MIN), -1);
-
 	float offset = side ? -M_PI / 2 : M_PI / 2;
 
 	// calculate edge coordinates
@@ -182,17 +175,12 @@ MapUpdate MapGenerator::createEdgePoseUpdate(cv::Point3f edgePose) {
 //	int edgeRadius = (int) (cv::norm(diff) / cellSize);
 
 	// initialize the update with zero
-	//MapUpdate mapUpdate(cv::Size(2 * edgeRadius + 1, 2 * edgeRadius + 1), CV_8SC1, Scalar(0));
 	MapUpdate mapUpdate(mapUpdateSize, CV_8SC1, Scalar(0));
 
 	// set the pose of the update
 	mapUpdate.x = edgePose.x;
 	mapUpdate.y = edgePose.y;
 	mapUpdate.theta = 0;
-
-	//mapUpdate.at<char>(edgeRadius,edgeRadius) = GRID_VALUE_MIN;
-	// draw a blocked circle at the edges location
-	//cv::circle(mapUpdate, cv::Point2i(edgeRadius, edgeRadius), edgeRadius, Scalar(GRID_VALUE_MIN), -1);
 
 	// calculate edge coordinates
 	cv::Point2i mid(mapUpdateSize.width / 2, mapUpdateSize.height / 2);
@@ -288,23 +276,4 @@ float MapGenerator::normalizeAngle(float theta) {
 // calculate the smallest periodical angle in [-pi,pi]
 float MapGenerator::getSmallestAngleDiff(float angle1, float angle2) {
 	return M_PI - abs(abs(angle1 - angle2) - M_PI);
-}
-
-
-
-void drawOtherPaths(cv::Mat &in, cv::Mat &out, cv::Point3f poses[], std::vector<cv::Point2i> paths[], int id){
-	in.copyTo(out);
-//	for (int i = 0; i < 12; i++) {
-//					if (poses[i] != cv::Point2i(0, 0) && ids[i] >= 0) {
-//						cv::circle(combinedMap1, poses[i], 5, colors[ids[i]]);
-//						cv::circle(obstacleMap1, poses[i], 5, colors[ids[i]]);
-//
-//						cv::Point2i lastPoint = poses[i];
-//						for (cv::Point2i pathPoint : paths[i]) {
-//							cv::line(combinedMap1, lastPoint, pathPoint, colors[ids[i]]);
-//							cv::line(obstacleMap1, lastPoint, pathPoint, colors[ids[i]]);
-//							lastPoint = pathPoint;
-//						}
-//					}
-//				}
 }

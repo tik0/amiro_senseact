@@ -19,3 +19,16 @@ An initial map can be loaded with the ''-l [filename]'' command line option.
 |/saveEdgeMap | Inscope for receiving filenames to save the edge map |
 |/mapUpdate | Scope for receiving and sending MapUpdates |
 |/mapGenerator | Scope of the rsb-server. Methods: getMap, getObstacleMap, getFrontierPath, getPath, getPushingPath|
+
+===== Important Command-Line Options =====
+^ Option      ^ Description ^
+| -h, --help | Display a help message |
+| -v, --verbose | Print the robots pose and received sensorvalues |
+| -s, --single | Single robot map building, without sending map updates|
+| -r, --repel | Enable the repel effect for multi robot exploration |
+| --id | ID of the tracking marker |
+| --host | Spread host |
+| --port | Spread port |
+| --meterPerPixel | Camera scaling |
+| --loadMap, -l | Load the given map |
+| --loadEdgeMap, -e | Load the given edge map |

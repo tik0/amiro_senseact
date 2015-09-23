@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : fpatzelt <fpatzelt@techfak.uni-bielefeld.de>
-// Description : Central control of the robots map building and exploration.
+// Description : Map generation and path planning.
 //============================================================================
 
 // std includes
@@ -47,7 +47,7 @@ using namespace muroxConverter;
 const cv::Size mapSize = cv::Size(600, 600);
 
 // enable repell effect
-bool repell = false;
+bool repel = false;
 
 // cellSize
 const float cellSize = 0.01;
@@ -155,7 +155,6 @@ class pathCallback: public LocalServer::Callback<twbTracking::proto::Pose2D, twb
 class objectsCallback: public LocalServer::Callback<void, twbTracking::proto::Pose2DList> {
 	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/) {
 
-		std::cout << "Path request received." << std::endl;
 		vector<vector<cv::Point2i> > contours;
 		cv::Mat map, mask, thresholded;
 
@@ -222,19 +221,8 @@ class pushingPathCallback: public LocalServer::Callback<twbTracking::proto::Pose
 		Mat obstacleMap;
 		mapGenerator.generateObstacleMap(combinedMap, obstacleMap);
 
-		/*vector<vector<cv::Point2i> > contours;
-		 vector<cv::Point2i> contour;
-		 for (int i = 2; i < inputPointList->pose_size() - 2; ++i)
-		 contour.push_back(Point2i(inputPointList->pose(i).x(), inputPointList->pose(i).y()));
-		 contours.push_back(contour);
-		 cv::drawContours(obstacleMap, contours, 0, cv::Scalar(255), -1);
-		 //		cv::drawContours(gridmap, contours, 0, cv::Scalar(255),-1);*/
-
 		// calculate a path
 		std::vector<cv::Point2f> path = pathPlanner.getPathToTarget(obstacleMap, startPos, target);
-
-//		cv::circle(gridmap, center, inputPointList->pose(2).orientation()/cellSize, cv::Scalar(255),-1);
-//		combinedMap = gridmap + edgeMap + edgeMap;
 
 		// convert that path to a pose2DList
 		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
@@ -250,12 +238,14 @@ class pushingPathCallback: public LocalServer::Callback<twbTracking::proto::Pose
 };
 
 void insertObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
-	cv::circle(gridmap, cv::Point2f(objectPtr->x()/cellSize,objectPtr->y()/cellSize), (objectPtr->orientation()-robotRadius)/cellSize, cv::Scalar(-255),-1);
+	cv::circle(gridmap, cv::Point2f(objectPtr->x() / cellSize, objectPtr->y() / cellSize),
+			(objectPtr->orientation() - robotRadius) / cellSize, cv::Scalar(-255), -1);
 	combinedMap = gridmap + edgeMap + edgeMap;
 }
 
 void deleteObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
-	cv::circle(gridmap, cv::Point2f(objectPtr->x()/cellSize,objectPtr->y()/cellSize), (objectPtr->orientation()-robotRadius)/cellSize, cv::Scalar(255),-1);
+	cv::circle(gridmap, cv::Point2f(objectPtr->x() / cellSize, objectPtr->y() / cellSize),
+			(objectPtr->orientation() - robotRadius) / cellSize, cv::Scalar(255), -1);
 	combinedMap = gridmap + edgeMap + edgeMap;
 }
 
@@ -324,8 +314,8 @@ int main(int argc, char **argv) {
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")("verbose,v", "Print the robots pose and sensorvalues.")(
-			"single,s", "Single robot mapbuilding, no map updates will be send.")("repell,r",
-			"Enable repell effect for multi exploration.")("id", po::value<int>(&trackingMarkerID),
+			"single,s", "Single robot mapbuilding, no map updates will be send.")("repel,r",
+			"Enable repel effect for multi exploration.")("id", po::value<int>(&trackingMarkerID),
 			"ID of the tracking marker")("freq,f", po::value<int>(&mapFreq),
 			"Frequency to publish the map (0 = nothing will be published)")("meterPerPixel,mpp",
 			po::value<float>(&meterPerPixel), "Camera parameter: Meter per Pixel")("loadMap,l",
@@ -355,8 +345,8 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	if (vm.count("repell")) {
-		repell = true;
+	if (vm.count("repel")) {
+		repel = true;
 	}
 
 	// afterwards, let program options handle argument errors
@@ -446,11 +436,13 @@ int main(int argc, char **argv) {
 
 	// prepare RSB listener for commands to insert an object in the map
 	rsb::ListenerPtr insertObjectListener = factory.createListener(insertObjectInscope);
-	insertObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&insertObject)));
+	insertObjectListener->addHandler(
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&insertObject)));
 
 	// prepare RSB listener for commands to delete an object from the map
 	rsb::ListenerPtr deleteObjectListener = factory.createListener(deleteObjectInscope);
-	deleteObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&deleteObject)));
+	deleteObjectListener->addHandler(
+			rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&deleteObject)));
 
 	// ---------------- Informer ---------------------
 
@@ -539,8 +531,6 @@ int main(int argc, char **argv) {
 				}
 
 			} else {
-				// TODO calculate the position via odomety (maybe just send position offsets that will be added to the current pose)
-				// get odometry data
 				boost::shared_ptr<twbTracking::proto::Pose2D> odometryPose = boost::static_pointer_cast<
 						twbTracking::proto::Pose2D>(odoQueue->pop());
 				robotPose.x = gridmap.cols / 2.0 * cellSize + odometryPose->x() / YM_2_M;
@@ -577,7 +567,6 @@ int main(int argc, char **argv) {
 
 			combinedMap = gridmap + edgeMap + edgeMap;
 
-			// TODO this might be not necessay anymore because this information can be requested via a remote procedure call
 			// publish visualization information
 			if (mapFreq > 0) {
 				if (count < mapFreq) {
@@ -641,7 +630,7 @@ cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data,
 	for (int i = 0; i < data->pose_size(); i++) {
 		if (trackingMarkerID == data->pose(i).id()) {
 			rpose = data->pose(i);
-		} else if (repell) {
+		} else if (repel) {
 			pose = data->pose(i);
 			otherPoses.push_back(
 					cv::Point3f(pose.x() * meterPerPixel, pose.y() * meterPerPixel, pose.orientation() * M_PI / 180.0));
@@ -649,5 +638,4 @@ cv::Point3f readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data,
 	}
 	return cv::Point3f(rpose.x() * meterPerPixel, rpose.y() * meterPerPixel, rpose.orientation() * M_PI / 180.0);
 }
-
 

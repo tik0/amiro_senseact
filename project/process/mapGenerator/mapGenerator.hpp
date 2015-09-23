@@ -30,8 +30,6 @@ public:
 
 	void generateObstacleMap(cv::Mat &map, cv::Mat &obstacleMap);
 
-	void drawOtherPaths(cv::Mat &in, cv::Mat &out, cv::Point3f poses[], std::vector<cv::Point2i> paths[], int id);
-
 private:
 	// inverse sensor Modell, return predicted distance to obstacle
 	float invSensorModel(float angle, float sensorValue);
