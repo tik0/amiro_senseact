@@ -11,3 +11,12 @@ It sends a rsb signal when a path is finished.
 |/pathResponse | Outscope for path responses (whenever a path is finished)|
 |/motor/05 | Outscope for steering signals|
 |/pathUpdate/[makerID] | Outscope for path updates (used for visualization in [[tools:showMap:start|showMap]])
+
+
+===== Important Command-Line Options =====
+^ Option      ^ Description ^
+| -h, --help | Display a help message |
+| --id | ID of the tracking marker |
+| --host | Spread host |
+| --port | Spread port |
+| --meterPerPixel | Camera scaling |

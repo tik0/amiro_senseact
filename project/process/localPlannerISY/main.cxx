@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : fpatzelt <fpatzelt@techfak.uni-bielefeld.de>
-// Description : Central control of the robots map building and exploration.
+// Description : Local planner used for the isy-project 2014/2015
 //============================================================================
 
 // std includes
@@ -142,7 +142,6 @@ int main(int argc, char **argv) {
 	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathUpdateInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutscope, extspreadconfig);
 
 	// initialize the robots pose
-
 	cv::Point3f robotPose(0, 0, 0);
 	cv::Point3f lastRobotPose = robotPose;
 

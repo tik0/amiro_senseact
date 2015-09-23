@@ -11,9 +11,9 @@
 using namespace std;
 
 const float LocalPlanner::cellSize = 0.01f;
-//const int LocalPlanner::maxW = 300000;
-//const int LocalPlanner::maxV = 30000;
+// maximum angular velocity
 const int LocalPlanner::maxW = 600000;
+// maximum velocity
 const int LocalPlanner::maxV = 45000;
 
 // constructor, steering commands will be published with the given informer
@@ -25,7 +25,7 @@ LocalPlanner::LocalPlanner(rsb::Informer<std::vector<int>>::Ptr steeringInformer
 }
 
 LocalPlanner::~LocalPlanner() {
-	// TODO Auto-generated destructor stub
+
 }
 
 // Update the robots pose.
@@ -86,14 +86,10 @@ void LocalPlanner::driveToPoint(cv::Point3f currentPose, cv::Point2f nextPose) {
 
 	int v = 0;
 	int w = 0;
-	// calculate the robots angular velocity
-	//int w = min(max(-maxW, (int) (angleDiff * maxW / 2 * M_PI)), maxW);
 
 	// if the robot is oriented towards the cell, drive forward
 	if (abs(angleDiff) < M_PI / 6.0) {
 		float dist = sqrt(diffX * diffX + diffY * diffY);
-//		v = min(6000 + (int) (dist * 20 * 24000), maxV);
-
 		v = maxV;
 		w = angleDiff > 0 ? 0.3*maxW : -0.3*maxW;
 	} else {
@@ -108,7 +104,6 @@ void LocalPlanner::driveToPoint(cv::Point3f currentPose, cv::Point2f nextPose) {
 // only send the new steering command if it differs from the last steering command
 // returns true if a new command was send
 bool LocalPlanner::setSteering(int v, int w) {
-	//
 	if (v != vecSteering_->at(0) || w != vecSteering_->at(1)) {
 		vecSteering_->at(0) = v;
 		vecSteering_->at(1) = w;
