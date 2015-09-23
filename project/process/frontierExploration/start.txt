@@ -18,3 +18,13 @@ It also implements an edge following. For this purpose steering signals are dire
 |/edgePose | Outscope for edge positions relative to the robot|
 |/mapGenerator | Scope of the rsb-server to request paths with the getFrontierPath method|
 
+===== Important Command-Line Options =====
+^ Option      ^ Description ^
+| -h, --help | Display a help message |
+| --id | ID of the tracking marker |
+| --host | Spread host |
+| --port | Spread port |
+| --meterPerPixel | Camera Scaling |
+
+
+

@@ -56,14 +56,7 @@ static const int V = 30000;
 static const int W = 300000;
 static const int DT = std::numeric_limits<int>::max();
 
-//int floorProxMinValues[4] = { 3200, 3100, 3300, 4900 };
-//int floorProxMaxValues[4] = { 31000, 22200, 28200, 34200 };
-// amiro 15
-//int floorProxMinValues[4] = { 0, 0, 0, 0 };
-//int floorProxMaxValues[4] = { 21946, 18583, 21415, 22457 };
-
-//
-int floorProxMinValues[4] = { 3292, 3803, 3256, 3039};
+int floorProxMinValues[4] = { 3292, 3803, 3256, 3039 };
 int floorProxMaxValues[4] = { 27291, 25145, 24887, 26233 };
 
 bool lineBelow[4] = { false, false, false, false };
@@ -78,13 +71,7 @@ void updateSensors(std::vector<int> floorProxValues) {
 	for (uint8_t sensorIdx = 0; sensorIdx < floorProxValues.size(); sensorIdx++) {
 		floorProxValuesNormalized[sensorIdx] = (floorProxValues[sensorIdx] - floorProxMinValues[sensorIdx])
 				/ ((float) floorProxMaxValues[sensorIdx]);
-//		if (lineBelow[sensorIdx]) {
-//			if (floorProxValuesNormalized[sensorIdx] > 0.6f)
-//				lineBelow[sensorIdx] = false;
-//		} else {
-//			if (floorProxValuesNormalized[sensorIdx] < 0.4f)
-//				lineBelow[sensorIdx] = true;
-//		}
+
 		lineBelow[sensorIdx] = floorProxValuesNormalized[sensorIdx] < 0.7;
 	}
 }
@@ -128,7 +115,7 @@ int main(int argc, char **argv) {
 	std::string steeringOutScope = "/motor/04";
 	std::string mapServerScope = "/mapGenerator";
 	std::string frontierCommandScope = "/exploration/command";
-    std::string frontierResponseScope = "/exploration/answer";
+	std::string frontierResponseScope = "/exploration/answer";
 
 	bool advancedEdge = false, predictPaths = false;
 
@@ -148,7 +135,10 @@ int main(int argc, char **argv) {
 			"Inscope for ring prox sensors.")("mapServer", po::value<std::string>(&mapServerScope),
 			"Scope for the mapGenerator server")("host", po::value<std::string>(&spreadhost),
 			"Host for Programatik Spread.")("port", po::value<std::string>(&spreadport), "Port for Programatik Spread.")(
-			"meterPerPixel,mpp", po::value<float>(&meterPerPixel), "Camera parameter: Meter per Pixel")("frontierCommandScope",po::value<std::string>(&frontierCommandScope),"frontierCommandScope")("frontierResponseScope",po::value<std::string>(&frontierResponseScope),"frontierResponseScope");;
+			"meterPerPixel,mpp", po::value<float>(&meterPerPixel), "Camera parameter: Meter per Pixel")(
+			"frontierCommandScope", po::value<std::string>(&frontierCommandScope), "frontierCommandScope")(
+			"frontierResponseScope", po::value<std::string>(&frontierResponseScope), "frontierResponseScope");
+	;
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -297,7 +287,7 @@ int main(int argc, char **argv) {
 			if (newRobotPose != cv::Point3f(0, 0, 0)) {
 				robotPose = newRobotPose;
 			} else {
-				setSteering(0,0,1);
+				setSteering(0, 0, 1);
 				continue;
 			}
 		}
@@ -337,7 +327,7 @@ int main(int argc, char **argv) {
 						pathResponseQueue->pop();
 					}
 					try {
-						cout << "Request new path!" << endl;
+
 						// get a new path
 						boost::shared_ptr<twbTracking::proto::Pose2DList> path = mapServer->call<
 								twbTracking::proto::Pose2DList>("getFrontierPath");
@@ -346,11 +336,11 @@ int main(int argc, char **argv) {
 							twbTracking::proto::Pose2D pEnd = path->pose(0);
 							pathEnd = cv::Point2f(pEnd.x(), pEnd.y());
 							// send the path to the local planner
-							cout << "Publish new path!" << endl;
+
 							pathInformer->publish(path);
 							lastPose = robotPose;
 						} else {
-							cout << "Exploration finished" << endl;
+
 							running = false;
 						}
 					} catch (const rsc::threading::FutureTimeoutException & e) {
@@ -367,23 +357,18 @@ int main(int argc, char **argv) {
 			// distance between edge start position and current position
 			float edgeDistance = cv::norm(
 					cv::Point2f(robotPose.x - edgeApproachPose.x, robotPose.y - edgeApproachPose.y));
-			float deltaEdge = cv::norm(
-								cv::Point2f(robotPose.x - lastPose.x, robotPose.y - lastPose.y));
+			float deltaEdge = cv::norm(cv::Point2f(robotPose.x - lastPose.x, robotPose.y - lastPose.y));
 
 			// check if the robot reenters know space
 			if (robotPose != cv::Point3f(0, 0, 0)) {
 				if (map.at<uchar>(cv::Point2i(robotPose.x / 0.01, robotPose.y / 0.01)) == 128) {
 					unknownEdge = true;
 				} else if (unknownEdge) {
-
-					cout << "abort map" << endl;
 					currentState = ABORTEDGE;
 					continue;
 				}
 
 				if (!unknownEdge && edgeDistance > 0.35) {
-
-					cout << "abort map known" << endl;
 					currentState = ABORTEDGE;
 					continue;
 				}
@@ -394,43 +379,17 @@ int main(int argc, char **argv) {
 				const boost::shared_ptr<std::vector<int>> proxValues = boost::static_pointer_cast<std::vector<int> >(
 						proxQueue->pop());
 				if (proxValues->at(3) > 500 || proxValues->at(4) > 500) {
-
-					cout << "abort wall" << endl;
 					currentState = ABORTEDGE;
 					continue;
 				}
 			}
 
-			// calculate steering and edge side
-			/*
-			 * Input			Output
-			 * l	ml	mr	r		v	w
-			 *
-			 * 0	0	0	0		+	0			0
-			 * 0	0	0	1		0+	-			1
-			 * 0	0	1	0		0	+			2
-			 * 0	0	1	1		+	0			0
-			 * 0	1	0	0		0	-			1
-			 * 0	1	0	1		0	+ ?			2
-			 * 0	1	1	0		0	+/- *		4
-			 * 0	1	1	1		0+	+			2
-			 * 1	0	0	0		0+	+			2
-			 * 1	0	0	1		0	+/- *		5	4
-			 * 1	0	1	0		0	- ?			1
-			 * 1	0	1	1		+	0 ?			0
-			 * 1	1	0	0		+	0			0
-			 * 1	1	0	1		+	0 ?			0
-			 * 1	1	1	0		0+	-			1
-			 * 1	1	1	1		0	+/-	*		5	4
-			 */
+			// calculate steering and edge side depending on the sensors
 			if (!lineBelow[LEFT] && !lineBelow[MIDDLE_LEFT] && !lineBelow[MIDDLE_RIGHT] && !lineBelow[RIGHT]) {
-				//setSteering(V, 0, DT);
 				setSteering(0, 0, DT);
 				currentState = ABORTEDGE;
-				cout << "abort floor" << endl;
 				continue;
 			} else if (!lineBelow[LEFT] && !lineBelow[MIDDLE_LEFT] && !lineBelow[MIDDLE_RIGHT] && lineBelow[RIGHT]) {
-				//				setSteering(0, -W, DT);
 				setSteering(0.5 * V, -W, DT);
 				edgeSide = RIGHTSIDE;
 			} else if (!lineBelow[LEFT] && !lineBelow[MIDDLE_LEFT] && lineBelow[MIDDLE_RIGHT] && !lineBelow[RIGHT]) {
@@ -443,39 +402,33 @@ int main(int argc, char **argv) {
 				setSteering(0, -W, DT);
 				edgeSide = LEFTSIDE;
 			} else if (!lineBelow[LEFT] && lineBelow[MIDDLE_LEFT] && !lineBelow[MIDDLE_RIGHT] && lineBelow[RIGHT]) {
-				setSteering(0, W, DT); // ?
+				setSteering(0, W, DT);
 			} else if (!lineBelow[LEFT] && lineBelow[MIDDLE_LEFT] && lineBelow[MIDDLE_RIGHT] && !lineBelow[RIGHT]) {
 				setSteering(0, floorProxValuesNormalized[MIDDLE_LEFT] > floorProxValuesNormalized[MIDDLE_LEFT] ? W : -W,
 						DT);
 			} else if (!lineBelow[LEFT] && lineBelow[MIDDLE_LEFT] && lineBelow[MIDDLE_RIGHT] && lineBelow[RIGHT]) {
-				//				setSteering(0, W, DT);
 				setSteering(0.3 * V, W, DT);
 				edgeSide = RIGHTSIDE;
 			} else if (lineBelow[LEFT] && !lineBelow[MIDDLE_LEFT] && !lineBelow[MIDDLE_RIGHT] && !lineBelow[RIGHT]) {
-				//				setSteering(0, W, DT);
 				setSteering(0.5 * V, W, DT);
 				edgeSide = LEFTSIDE;
 			} else if (lineBelow[LEFT] && !lineBelow[MIDDLE_LEFT] && !lineBelow[MIDDLE_RIGHT] && lineBelow[RIGHT]) {
 				setSteering(0, floorProxValuesNormalized[LEFT] > floorProxValuesNormalized[RIGHT] ? W : -W, DT);
 			} else if (lineBelow[LEFT] && !lineBelow[MIDDLE_LEFT] && lineBelow[MIDDLE_RIGHT] && !lineBelow[RIGHT]) {
-				setSteering(0, -W, DT); // ?
+				setSteering(0, -W, DT);
 			} else if (lineBelow[LEFT] && !lineBelow[MIDDLE_LEFT] && lineBelow[MIDDLE_RIGHT] && lineBelow[RIGHT]) {
-				setSteering(V, 0, DT); // ?
+				setSteering(V, 0, DT);
 			} else if (lineBelow[LEFT] && lineBelow[MIDDLE_LEFT] && !lineBelow[MIDDLE_RIGHT] && !lineBelow[RIGHT]) {
 				setSteering(V, 0, DT);
 				edgeSide = LEFTSIDE;
 			} else if (lineBelow[LEFT] && lineBelow[MIDDLE_LEFT] && !lineBelow[MIDDLE_RIGHT] && lineBelow[RIGHT]) {
-				setSteering(V, 0, DT); // ?
+				setSteering(V, 0, DT);
 			} else if (lineBelow[LEFT] && lineBelow[MIDDLE_LEFT] && lineBelow[MIDDLE_RIGHT] && !lineBelow[RIGHT]) {
-				//				setSteering(0, -W, DT);
 				setSteering(0.3 * V, -W, DT);
 				edgeSide = LEFTSIDE;
 			} else {
 				setSteering(0, floorProxValuesNormalized[LEFT] > floorProxValuesNormalized[RIGHT] ? W : -W, DT);
 			}
-//
-//			cout << (edgeSide == UNKNOWN ? "Edgeside unknown" : "Edgeside fixed") << endl;
-//			cout << "Distance: " << edgeDistance << endl;
 
 			// publish information to include the edge in the map
 			if (edgeDistance > 0.05 && edgeSide != UNKNOWN && deltaEdge > 0.02) {
@@ -508,7 +461,7 @@ int main(int argc, char **argv) {
 				}
 
 				float deltaRot = abs(lastPose.z - robotPose.z);
-				if (edgeSide != UNKNOWN && deltaRot > M_PI / 18 ) {
+				if (edgeSide != UNKNOWN && deltaRot > M_PI / 18) {
 					lastPose = robotPose;
 					float offset = edgeSide == RIGHTSIDE ? -M_PI / 2 : M_PI / 2;
 					boost::shared_ptr<twbTracking::proto::Pose2D> edgePose(new twbTracking::proto::Pose2D);
