@@ -43,7 +43,6 @@ MapUpdate MapGenerator::createMapUpdate(const boost::shared_ptr<std::vector<int>
 		float movedDistance) {
 
 	// calculate the offsets depending on the distance the robot moved
-	// TODO these values should be capped
 	const float g = 15.0 * movedDistance / 0.01;
 	const float gridObstacle = max(-g, (float) GRID_VALUE_MIN);
 	const float gridObstacleUnsure = max((float) -(0.7 * g), (float) GRID_VALUE_MIN);
@@ -141,23 +140,14 @@ MapUpdate MapGenerator::createMapUpdate(const boost::shared_ptr<std::vector<int>
 // Generate a Mapupdate for a detected edge
 MapUpdate MapGenerator::createEdgeUpdate(cv::Point3f &robotPose, bool side) {
 
-//	// calculate the distance between the edge and the robot
-//	cv::Point2f diff(robotPose.x - edgeLocation.x, robotPose.y - edgeLocation.y);
-//	int edgeRadius = (int) (cv::norm(diff) / cellSize);
-
 	// initialize the update with zero
-	//MapUpdate mapUpdate(cv::Size(2 * edgeRadius + 1, 2 * edgeRadius + 1), CV_8SC1, Scalar(0));
+
 	MapUpdate mapUpdate(mapUpdateSize, CV_8SC1, Scalar(0));
 
 	// set the pose of the update
 	mapUpdate.x = robotPose.x;
 	mapUpdate.y = robotPose.y;
 	mapUpdate.theta = 0;
-
-	//mapUpdate.at<char>(edgeRadius,edgeRadius) = GRID_VALUE_MIN;
-	// draw a blocked circle at the edges location
-	//cv::circle(mapUpdate, cv::Point2i(edgeRadius, edgeRadius), edgeRadius, Scalar(GRID_VALUE_MIN), -1);
-
 	float offset = side ? -M_PI / 2 : M_PI / 2;
 
 	// calculate edge coordinates

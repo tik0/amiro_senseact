@@ -17,3 +17,13 @@ Paths received from the [[process:localPlannerISY:start|localPlanner]] are visua
 |/murox/roboterlocation | Inscope for the tracking data ("in program spread" --port, --host; id: --id)|
 |/mapUpdate | Inscope for MapUpdates |
 |/pathUpdate| Inscope for path updates |
+
+===== Important Command-Line Options =====
+^ Option      ^ Description ^
+| --help, -h | Display a help message |
+| --size | Width and Height (in pixel) of the map |
+| --offset, -o | Offset (in pixel) from the left side of the screen |
+| --scale | Scale factor for he displayed map |
+| --meterPerPixel | Camera scaling |
+| --loadMap, -l | Load the given map |
+| --loadEdgeMap, -e | Load the given edge map |
