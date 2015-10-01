@@ -7,7 +7,7 @@ function component {
 #   -t [ --period ] arg   Update interval (0 for maximum rate)
 #   -p [ --port ] arg     Portnumber of ttyS<0-15> (Standardvalue: 0)
 #   -b [ --bdrate ] arg   Baudrate (Standardvalue: 19200)
-  senseLeuzeODS9ODS96B -o /sense/LeuzeODS9ODS96B -t 0 -p 2 -b 19200
+  senseLeuzeODS9ODS96B -o /sense/LeuzeODS9ODS96B --t 0 --p 2 --b 19200
 }
 
 function clean_component {
