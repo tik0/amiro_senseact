@@ -1,5 +1,5 @@
 ====== answerer_tobi ======
 
-This is the ToBI state machine simulation. It can simulate all functions which are used by the [[process:openChallenge2015:|openChallenge state machine]]. The functions cannot be deactivated.
+This is the ToBI state machine simulation. It can simulate all functions which are used by the [[process:openChallenge2015:start|openChallenge state machine]]. The functions cannot be deactivated.
 
 For detailed information about the application parameters type ''answerer_tobi -h''.

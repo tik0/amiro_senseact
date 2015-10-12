@@ -1,6 +1,6 @@
 ====== answerer ======
 
-This is the state machine with opposite communication to the [[process:stateMachineGEPTRO:|final GEPTRO state machine]]. It can simulate all functions which are used by the GEPTRO state machine.
+This is the state machine with opposite communication to the [[process:stateMachineGEPTRO:start|final GEPTRO state machine]]. It can simulate all functions which are used by the GEPTRO state machine.
 
 On default every simulation is activated. For deactivation the following parameters have to be typed:
 

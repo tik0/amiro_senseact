@@ -1,5 +1,5 @@
 ====== braitenbergEdge ======
 
-This is the basic braitenberg behavior. It gets the sensor values by the [[process:rirReader:|Ring Proximity Reader]] which are seperated in obstacle and ground values.
+This is the basic braitenberg behavior. It gets the sensor values by the [[process:rirReader:start|Ring Proximity Reader]] which are seperated in obstacle and ground values.
 
 For additional parameter information type ''braitenbergEdge -h''.

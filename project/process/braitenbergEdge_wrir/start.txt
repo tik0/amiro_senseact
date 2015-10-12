@@ -1,5 +1,5 @@
 ====== braitenbergEdge_wrir ======
 
-This is the basic braitenberg behavior. In contrast to the [[process:braitenbergEdge:|normal braitenbergEdge]] it reads the sensor values seperates them in obstacle and ground values by itself.
+This is the basic braitenberg behavior. In contrast to the [[process:braitenbergEdge:start|normal braitenbergEdge]] it reads the sensor values seperates them in obstacle and ground values by itself.
 
 For additional parameter information type ''braitenbergEdge_wrir -h''.

@@ -1,0 +1,3 @@
+====== stateMachineGEPTRO ======
+
+Basic GEPTRO state machine.
