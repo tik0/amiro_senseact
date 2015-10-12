@@ -1,3 +1,10 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : This is the state machine with opposite communication to
+//               the final GEPTRO state machine.
+//============================================================================
+
 // Messages
 #define INFO_MSG_
 #define DEBUG_MSG_

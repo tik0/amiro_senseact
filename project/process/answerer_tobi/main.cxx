@@ -1,3 +1,11 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : This is the ToBI state machine simulation to the
+//               openChallenge state machine.
+//============================================================================
+
+
 // Messages
 #define INFO_MSG_
 #define DEBUG_MSG_
@@ -143,10 +151,6 @@ bool objectDetectedRec[] = {false, false};
 std::string sRemoteServerPort = "4823";
 std::string sRemoteServer = "localhost";
 
-double tableDepth = 0.7; // cm
-double startPosition = 0.10; /*cm start position*/
-double endPosition = 0.20;
-
 // Object detection
 double minimalAngle = 0;
 double minimalValue = 99999;
@@ -229,10 +233,7 @@ int main(int argc, char **argv) {
         ("outscopeTobi,o", po::value < std::string > (&sOutScopeTobi), "Scope for sending the current state to tobi.")
         ("outscopeState,s", po::value < std::string > (&sOutScopeState), "Scope for sending the current state internaly.")
         ("inscopeTobi,i", po::value < std::string > (&sInScopeTobi), "Scope for recieving Tobis messages.")
-        ("robotID,d", po::value < int > (&robotID), "Robot ID.")
-        ("tableDepth", po::value < double > (&tableDepth), "Table depth.")
-        ("startPosition", po::value < double > (&tableDepth), "Start Position.")
-        ("endPosition", po::value < double > (&endPosition), "End Position.");
+        ("robotID,d", po::value < int > (&robotID), "Robot ID.");
 
 
     // allow to give the value as a positional argument

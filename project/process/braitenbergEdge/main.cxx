@@ -1,7 +1,10 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : mbarther
-// Description : -
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Prefroms a basic braitenberg-like obstacle avoidanve.
+//               Gets sensor values from RIR-Reader seperated in obstacle
+//               and edge values. It uses the obstacle and edge avoidence
+//               behavior. Steering and light commands are given via CAN.
 //============================================================================
 
 //#define TRACKING

@@ -1,7 +1,10 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : mbarther
-// Description : -
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Prefroms a basic braitenberg-like obstacle avoidanve.
+//               Reads sensor values via CAN. It uses the obstacle and edge
+//               avoidence behavior. Steering and light commands are given
+//               via CAN.
 //============================================================================
 
 //#define TRACKING
