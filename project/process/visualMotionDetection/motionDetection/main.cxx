@@ -1,3 +1,13 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : This is the program for motion detection. It sends a motion
+//               detection signal over RSB and can receive commands. If
+//               activated it sends the camera frames (including motion
+//               markers).
+//============================================================================
+
+
 #include <iostream>
 #include <fstream>
 
@@ -59,9 +69,9 @@ using namespace cv;
 
 #include <jpeglib.h>
 
-static std::string g_sImageScope = "/objectDetection/image";
-static std::string g_sOutScope = "/objectDetection/detected";
-static std::string g_sInScope = "/objectDetection/command";
+static std::string g_sImageScope = "/motionDetection/image";
+static std::string g_sOutScope = "/motionDetection/detected";
+static std::string g_sInScope = "/motionDetection/command";
 static int g_iDevice = 0;
 static unsigned int g_uiQuality = 85;
 
@@ -137,7 +147,7 @@ inline bool saveImg(Mat image, const string DIRECTORY, const string EXTENSION, c
 
 // Check if there is motion in the result matrix
 // count the number of changes and return.
-inline int detectMotion(const Mat & motion, Mat & result, Mat & result_cropped,
+inline int detectMotion(const Mat & motion, Mat & result, Mat & result_cropped, Mat & debugImage,
                  int x_start, int x_stop, int y_start, int y_stop,
                  int max_deviation,
                  Scalar & color)
@@ -196,6 +206,11 @@ inline int detectMotion(const Mat & motion, Mat & result, Mat & result_cropped,
             Mat cropped = result(rect);
             cropped.copyTo(result_cropped);
             rectangle(result,rect,color,1);
+
+            result.copyTo(debugImage(Rect(0, 0, result.cols, result.rows)));
+            Mat motion3ch(motion.rows, motion.cols, CV_8UC3);
+            cvtColor(motion, motion3ch, CV_GRAY2RGB);
+            motion3ch.copyTo(debugImage(Rect(result.cols, 0, motion3ch.cols, motion3ch.rows)));
         }
         return number_of_changes;
     }
@@ -218,7 +233,7 @@ int main (int argc, char * const argv[])
             ("imagescope,i", po::value < std::string > (&g_sImageScope),"Scope for sending images.")
             ("outscope,o", po::value < std::string > (&g_sOutScope),"Scope for sending recognition of motion detection.")
             ("commandscope,c", po::value < std::string > (&g_sInScope),"Scope for receiving commands.")
-            ("loadingDirectory,l", po::value < std::string > (&directory),"Directory where the images can be stored.")
+            ("directory", po::value < std::string > (&directory),"Directory where the images can be stored.")
             ("device,d", po::value < int > (&g_iDevice),"Number of video device (/dev/video<number>).")
             ("quality,q", po::value < unsigned int > (&g_uiQuality),"Quality of JPEG compression [0 .. 100].")
             ("motionsize,m", po::value < int > (&there_is_motion),"Minimum number of pixels which have been changed for motion detectin.")
@@ -333,14 +348,19 @@ int main (int argc, char * const argv[])
             threshold(motion, motion, 35, 255, CV_THRESH_BINARY);
             erode(motion, motion, kernel_ero);
 
+            Mat debugImage(result.rows, result.cols*2, CV_8UC3);
+            result.copyTo(debugImage(Rect(0, 0, result.cols, result.rows)));
             if (trackMotion) {
-                // 
-                number_of_changes = detectMotion(motion, result, result_cropped,  x_start, x_stop, y_start, y_stop, max_deviation, color);
+                number_of_changes = detectMotion(motion, result, result_cropped, debugImage, x_start, x_stop, y_start, y_stop, max_deviation, color);
             }
 
             // Send the image
             if (sendingPic) {
-                imencode(".jpg", result, buf, compression_params);
+                if (debugging) {
+                    imencode(".jpg", debugImage, buf, compression_params);
+                } else {
+                    imencode(".jpg", result, buf, compression_params);
+                }
                 shared_ptr<std::string> frameJpg(new std::string(buf.begin(), buf.end()));
                 imageInformer->publish(frameJpg);
             }
