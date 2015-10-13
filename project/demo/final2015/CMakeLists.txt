@@ -6,7 +6,7 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/process/final2015 final2015)
-add_subdirectory ($ENV{MUROX_PROJECT}/sandbox/waypoint waypoint)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/waypoint waypoint)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/followToBI followToBI)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/stopAMiRo stopAMiRo)
