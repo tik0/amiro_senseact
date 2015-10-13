@@ -1,3 +1,14 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : This is the interface program for the communication and
+//               visualization of the motion detection. It receives and shows
+//               the camera frames and outputs a mark on the console if a
+//               motion has been detected. With the keys "enter", "back space"
+//               and "esc" the commands "start", "stop" and "quit" can be
+//               sent.
+//============================================================================
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -33,9 +44,9 @@ using namespace rsb::converter;
 // For program options
 #include <boost/program_options.hpp>
 
-static std::string g_sImageScope = "/objectDetection/image";
-static std::string g_sInScope = "/objectDetection/detected";
-static std::string g_sOutScope = "/objectDetection/command";
+static std::string g_sImageScope = "/motionDetection/image";
+static std::string g_sInScope = "/motionDetection/detected";
+static std::string g_sOutScope = "/motionDetection/command";
 
 int main(int argc, char **argv) {  
 
@@ -43,9 +54,9 @@ int main(int argc, char **argv) {
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
-            ("inscope,s", po::value < std::string > (&g_sInScope),"Scope for receiving compressed images")
-            ("imagescope,i", po::value < std::string > (&g_sImageScope),"Scope for receiving compressed images")
-            ("outscope,c", po::value < std::string > (&g_sOutScope),"Scope for receiving compressed images");
+            ("inscope,s", po::value < std::string > (&g_sInScope),"Scope for receiving motion detection signal.")
+            ("imagescope,i", po::value < std::string > (&g_sImageScope),"Scope for receiving compressed images.")
+            ("outscope,c", po::value < std::string > (&g_sOutScope),"Scope for sending commands.");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
