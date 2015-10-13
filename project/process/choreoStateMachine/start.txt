@@ -1,0 +1,22 @@
+====== ChoreoStateMachine ======
+
+This program performs a choreography on the AMiRo. 
+For this purpose a xml-File that defines the Choreography is parsed.  
+Based on the choreography movements and settings for the lightring are published via CAN. 
+
+===== RSB Scopes =====
+
+^ Scope (default name)      ^ Description ^
+|/choreo | Inscope for choreo names|
+
+===== Important Command-Line Options =====
+^ Option      ^ Description ^
+| -h, --help | Display a help message |
+| -v, --verbose | Print values that are published via CAN |
+| --delay | Delay between creating the rsb event and starting the choreography in ms (default: 2000ms)|
+| --pos | Position in the formation (from the front: 0=left, 1=middle left, 2=middle, 3=middle right, 4=right) |
+| -s, --homing | The homing will be activated. After finishing the choreography the robot will return to its start position. |
+
+===== Structure of the xml files =====
+
+The filename of a choreography has to be //[songname][position].xml//, where position is a number that indicates the starting position (from the front: 0=left, 1=middle left, 2=middle, 3=middle right, 4=right).
