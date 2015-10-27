@@ -12,8 +12,8 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
 pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(RST rstsandbox0.11)
 pkg_check_modules(OpenCV opencv)
@@ -41,7 +41,7 @@ include_directories(include
 )
 
 # Define the source
-SET (SOURCE main.cxx)
+SET (SOURCE main.cxx $ENV{MUROX_INCLUDE_DIRS}/types/MachineModel.pb.cc)
 
 ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})
 
