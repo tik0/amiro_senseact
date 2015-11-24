@@ -76,7 +76,7 @@ static int g_iDevice = 0;
 static unsigned int g_uiQuality = 85;
 
 const string EXT = ".jpg";
-std::string directory = "/home/root/motionDetection/";
+std::string directory = "/home/root/motionDetectionPics/";
 
 bool sendingPic = false;
 bool debugging = false;
