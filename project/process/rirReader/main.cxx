@@ -166,11 +166,11 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-    ("outscopeObstacle,o", po::value < std::string > (&rsbOutScopeObstacle), "Scope for sending proximity values for obstacle")
-    ("outscopeGround,g", po::value < std::string > (&rsbOutScopeGround), "Scope for sending proximity values of ground")
-    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
+    ("outscopeObstacle,o", po::value < std::string > (&rsbOutScopeObstacle), "Scope for sending generalized proximity values for the obstacle model.")
+    ("outscopeGround,g", po::value < std::string > (&rsbOutScopeGround), "Scope for sending generalized proximity values the egde model.")
+    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval in milliseconds (0 for maximum rate).")
     ("print,p", "Prints read proximity values")
-    ("loadOffsets,l", "Loads offset from the file 'irConfig.conf'.");
+    ("loadOffsets,l", "Loads offsets from the files 'irConfig.conf' and 'irEmpty.conf'.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
