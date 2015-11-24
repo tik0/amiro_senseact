@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : tkorthals <tkorthals@cit-ec.uni-bielefeld.de>
-// Description : Reads the proximity ring sensor data of AMiRo
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : -
 //============================================================================
 
 #define INFO_MSG_
@@ -35,6 +35,8 @@
 using namespace std;
 using namespace muroxConverter;
 
+  
+string configFileName = "irConfig.conf";
 bool saveMean = false;
 bool ignoreFloor = false;
 bool ignoreRing = false;
@@ -43,17 +45,11 @@ int main(int argc, char **argv) {
   
   // Handle program options
   namespace po = boost::program_options;
-  
-  std::string rsbOutScope = "/prox";
-  std::string configFileName = "irConfig.conf";
-  uint32_t rsbPeriod = 0;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-    ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending proximity values")
     ("calculate,c", "Calculate the mean of all measured values and writes the results in config file (default is 'irConfig.conf', change with -f [--configfile]).")
     ("configfile,f", po::value < std::string > (&configFileName), "Config file name (default is 'irConfig.conf'.")
-    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
     ("ignoreFloor", "Ignores the values of the floor proximity sensors.")
     ("ignoreRing", "Ignores the values of the ring proximity sensors.");
 
@@ -88,7 +84,6 @@ int main(int argc, char **argv) {
   
   // Prepare RSB informer
   rsb::Factory& factory = rsb::Factory::getInstance();
-  rsb::Informer< std::vector<int> >::Ptr informer_vec = factory.createInformer< std::vector<int> > (rsbOutScope);
 
   // Init the CAN interface
   ControllerAreaNetwork CAN;    
