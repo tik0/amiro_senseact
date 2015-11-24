@@ -53,5 +53,5 @@ The ground and edge values are published seperately via RSB. They can be used di
 | --outscopeObstacle, -o | String | ''/rir_prox/obstacle'' | Scope for sending generalized proximity values for the obstacle model. |
 | --outscopeGround, -g | String | ''/rir_prox/ground'' | Scope for sending generalized proximity values for the edge model. |
 | --period, -t | Integer | 0 | Update interval in milliseconds (0 for maximum rate). |
-| --print, -p | - | - | Prints read proximity values in console. |
+| --print, -p | - | - | Prints read proximity values in the console. |
 | --loadOffsets, -l | - | - | Loads offsets from the files 'irConfig.conf' and 'irEmpty.conf'. |

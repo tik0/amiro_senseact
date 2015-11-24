@@ -1,7 +1,8 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : tkorthals <tkorthals@cit-ec.uni-bielefeld.de>
-// Description : Reads the proximity ring sensor data of AMiRo
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Reads and generalizes the proximity ring sensor data of
+//               AMiRo
 //============================================================================
 
 #define INFO_MSG_
@@ -169,7 +170,7 @@ int main(int argc, char **argv) {
     ("outscopeObstacle,o", po::value < std::string > (&rsbOutScopeObstacle), "Scope for sending generalized proximity values for the obstacle model.")
     ("outscopeGround,g", po::value < std::string > (&rsbOutScopeGround), "Scope for sending generalized proximity values the egde model.")
     ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval in milliseconds (0 for maximum rate).")
-    ("print,p", "Prints read proximity values")
+    ("print,p", "Prints read proximity values in the console.")
     ("loadOffsets,l", "Loads offsets from the files 'irConfig.conf' and 'irEmpty.conf'.");
 
   // allow to give the value as a positional argument
