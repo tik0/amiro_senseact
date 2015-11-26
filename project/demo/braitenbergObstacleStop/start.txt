@@ -1,0 +1,13 @@
+====== Building the Braitenberg vehicle for AMiRo which avoids edges on the tabele ======
+
+This is a demo of the braitenberg with obstacle and edge avoidence.
+IMPORTANT: Make sure that you measured IR offsets of the ground and of the air (see demo "initial"). Otherwise the robot isn't able to stop in front of edges!
+
+===== Run the Demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh <ip adress>''
+  - ''./run.sh'' on the AMiRo
+  - ''./stop.sh'' on the AMiRo for stopping
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
