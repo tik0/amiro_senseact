@@ -15,7 +15,7 @@ using namespace std;
 
 /// Global variables
 Mat src, src_gray;
-int thresh = 200;
+int thresh = 150;
 int max_thresh = 255;
 
 const char* source_window = "Source image";
@@ -34,7 +34,7 @@ int main( int, char** argv )
   cvtColor( src, src_gray, COLOR_BGR2GRAY );
 
   /// Create a window and a trackbar
-  namedWindow( source_window, WINDOW_AUTOSIZE );
+  namedWindow( source_window, WINDOW_NORMAL );
   createTrackbar( "Threshold: ", source_window, &thresh, max_thresh, cornerHarris_demo );
   imshow( source_window, src );
 
@@ -77,6 +77,6 @@ void cornerHarris_demo( int, void* )
           }
      }
   /// Showing the result
-  namedWindow( corners_window, WINDOW_AUTOSIZE );
+  namedWindow( corners_window, WINDOW_NORMAL );
   imshow( corners_window, dst_norm_scaled );
 }

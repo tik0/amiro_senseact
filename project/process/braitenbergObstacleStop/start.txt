@@ -1,0 +1,5 @@
+====== braitenbergObstacleStop ======
+
+This is the braitenberg behavior for stopping in front of obstacles. It gets the sensor values by the [[process:rirReader:start|Ring Proximity Reader]] which are seperated in obstacle and ground values.
+
+For additional parameter information type ''braitenbergObstacleStop -h''.

@@ -1,10 +1,7 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : Prefroms a basic braitenberg-like obstacle avoidanve.
-//               Gets sensor values from RIR-Reader seperated in obstacle
-//               and edge values. It uses the obstacle and edge avoidence
-//               behavior. Steering and light commands are given via CAN.
+// Description : -
 //============================================================================
 
 //#define TRACKING
@@ -62,8 +59,8 @@ using namespace rsb::patterns;
 
 
 // margins
-#define OBSTACLE_MARGIN 0.09
-#define OBSTACLE_MARGIN_SIDE 0.015
+#define OBSTACLE_MARGIN 0.15
+#define OBSTACLE_MARGIN_DANGER 0.05
 #define GROUND_MARGIN 0.06
 #define GROUND_MARGIN_DANGER 0.03
 
@@ -185,6 +182,7 @@ int main(int argc, char **argv) {
   uint8_t sensorIdx = 0;
   bool ok = true;
   bool turn = 0;
+  bool interrupted = false;
 
   int counter = 0;
   while(ok) {
@@ -195,16 +193,17 @@ int main(int argc, char **argv) {
       boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
       boost::shared_ptr<std::vector<int>> sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
 
+      // get obstacle distance
       float valueLeft = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(3));
       float valueRight = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(4));
-      float valueSide = VCNL4020Models::obstacleModel(0, max(sensorValuesObstacle->at(2), sensorValuesObstacle->at(5)));
+
+      // get edge distance
       float distLeft = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
       float distRight = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
-//      INFO_MSG("left: " << valueLeft << ", right: " << valueRight << ", side: " << valueSide);
-      for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
-//        INFO_MSG( (int) sensorIdx << ": " << sensorValuesObstacle->at(sensorIdx) << "/" << sensorValuesGround->at(sensorIdx));
 
-        if (showColors) {
+      // set colors
+      if (showColors) {
+        for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
           float obstacleDist = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(sensorIdx));
           float edgeDist = VCNL4020Models::edgeModel(sensorValuesGround->at(sensorIdx));
           int led = sensorIdx+4;
@@ -219,7 +218,7 @@ int main(int argc, char **argv) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::ORANGE));
               setColors[sensorIdx] = orange;
             }
-          } else if (obstacleDist < OBSTACLE_MARGIN_SIDE) {
+          } else if (obstacleDist < OBSTACLE_MARGIN_DANGER) {
             if (setColors[sensorIdx] != white) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::WHITE));
               setColors[sensorIdx] = white;
@@ -236,28 +235,28 @@ int main(int argc, char **argv) {
         }
       }
 
+      // calculate movement
       if (distLeft < GROUND_MARGIN || distRight < GROUND_MARGIN) {
-        if (turn == 0 && distLeft > distRight) {
+        if (turn == 0 && distLeft > distRight || (interrupted && turn == 1)) {
           turn = 1;
           sendMotorCmd(0, mymcm(60), CAN);
-        } else if (turn == 0) {
+        } else if (turn == 0 || (interrupted && turn == 2)) {
           turn = 2;
           sendMotorCmd(0, mymcm(-60), CAN);
         }
-      } else if (valueLeft < OBSTACLE_MARGIN || valueRight < OBSTACLE_MARGIN || valueSide < OBSTACLE_MARGIN_SIDE) {
-        if (turn == 0 && valueLeft > valueRight) {
-          turn = 1;
-          sendMotorCmd(0, mymcm(60), CAN);
-        } else if (turn == 0) {
-          turn = 2;
-          sendMotorCmd(0, mymcm(-60), CAN);
-        }
+        interrupted = false;
+      } else if (valueLeft < OBSTACLE_MARGIN || valueRight < OBSTACLE_MARGIN) {
+        sendMotorCmd(0, mymcm(0), CAN);
+        interrupted = true;
       } else if (turn != 0) {
         turn = 0;
         sendMotorCmd(mymcm(8), 0, CAN);
+        interrupted = false;
       } else {
         sendMotorCmd(mymcm(8), 0, CAN);
+        interrupted = false;
       }
+
     } else if (counter < 4) {
       counter++;
       usleep(50000);
