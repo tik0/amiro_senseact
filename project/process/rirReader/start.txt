@@ -38,6 +38,9 @@ There are published two values: the obstacle and the edge value. Given the senso
      - ''e = s - a''
    - ''else''
      - ''e = 0''
+ - e = e / (g - a) * 10000
+
+Important is the difference between these two sensor values: The obstacle value as the real distance to the ground offset in sensor ticks. The edge value is a relative value between the ground and the air offset. The "measured" value in range [air offset, ground offset] will be normalized to [0,1]. Due to integer communication it is ranged up by 10000 (saving the next 4 decimal places).
 
 The ground and edge values are published seperately via RSB. They can be used directly for the obstacle and the edge model without any additional generalization.
 
