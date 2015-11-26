@@ -263,6 +263,8 @@ int main(int argc, char **argv) {
       } else if (turn != 0) {
         turn = 0;
         sendMotorCmd(mymcm(8), 0, CAN);
+      } else {
+        sendMotorCmd(mymcm(8), 0, CAN);
       }
     } else if (counter < 4) {
       counter++;
