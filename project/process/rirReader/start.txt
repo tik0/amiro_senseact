@@ -10,7 +10,7 @@ This is a cmake project, so just type:
 
 ===== Basic Functionality =====
 
-The rirReader publishes proximity values based on the obstacle model (ref!) and the edge model (ref!). Due to big differences in the measurement behavior of the sensors, their measured values have to be generalized for the models. In this case simple offsets are used, which have to be calculated for each sensor before using the rirReader the first time.
+The rirReader publishes proximity values based on the [[includes:sensorModels:startVCNL4020.txt|obstacle and edge model]]. Due to big differences in the measurement behavior of the sensors, their measured values have to be generalized for the models. In this case simple offsets are used, which have to be calculated for each sensor before using the rirReader the first time.
 
 The sensor values are read directly from the CAN. The rirReader only uses RSB for publishing the generalized values.
 
