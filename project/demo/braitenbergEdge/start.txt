@@ -6,7 +6,7 @@ IMPORTANT: Make sure that you measured IR offsets of the ground and of the air (
 ===== Run the Demo =====
 
   - ''. ./build.sh .''
-  - ''./copyPrograms.sh''
+  - ''./copyPrograms.sh <ip adress>''
   - ''./run.sh'' on the AMiRo
   - ''./stop.sh'' on the AMiRo for stopping
 

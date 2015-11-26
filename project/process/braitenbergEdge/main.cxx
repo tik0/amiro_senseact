@@ -55,20 +55,21 @@ using namespace std;
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
+#include <sensorModels/VCNL4020Models.h>
 
 using namespace rsb;
 using namespace rsb::patterns;
 
 
 // margins
-#define OBSTACLE_MARGIN 100
-#define OBSTACLE_MARGIN_SIDE 7500
-#define GROUND_MARGIN 6
-#define GROUND_MARGIN_DANGER 3
+#define OBSTACLE_MARGIN 0.09
+#define OBSTACLE_MARGIN_SIDE 0.015
+#define GROUND_MARGIN 0.06
+#define GROUND_MARGIN_DANGER 0.03
 
 // edge model 6cm
-#define EDGEMODEL_M 6.359946153158588
-#define EDGEMODEL_B 0.401918238192352
+//#define EDGEMODEL_M 6.359946153158588
+//#define EDGEMODEL_B 0.401918238192352
 
 // Offsets for AMiRo 36 
 static int GROUND_OFFSETS[] = {2437, 2463, 2483, 2496, 2457, 2443, 2508, 2352};
@@ -116,9 +117,9 @@ void splitString(const std::string &str, vector<std::string> &parts, const std::
     }
 }
 
-float edgeDist(int senValue) {
+/*float edgeDist(int senValue) {
   return EDGEMODEL_M * ((float)senValue)/10000.0 + EDGEMODEL_B;
-}
+}*/
 
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN) {
   
@@ -202,29 +203,36 @@ int main(int argc, char **argv) {
       boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
       boost::shared_ptr<std::vector<int>> sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
 
+      float valueLeft = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(3));
+      float valueRight = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(4));
+      float valueSide = VCNL4020Models::obstacleModel(0, max(sensorValuesObstacle->at(2), sensorValuesObstacle->at(5)));
+      float distLeft = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
+      float distRight = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
+//      INFO_MSG("left: " << valueLeft << ", right: " << valueRight << ", side: " << valueSide);
       for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
-        INFO_MSG( (int) sensorIdx << ": " << sensorValuesObstacle->at(sensorIdx) << "/" << sensorValuesGround->at(sensorIdx));
+//        INFO_MSG( (int) sensorIdx << ": " << sensorValuesObstacle->at(sensorIdx) << "/" << sensorValuesGround->at(sensorIdx));
 
         if (showColors) {
-          float senDist = edgeDist(sensorValuesGround->at(sensorIdx));
+          float obstacleDist = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(sensorIdx));
+          float edgeDist = VCNL4020Models::edgeModel(sensorValuesGround->at(sensorIdx));
           int led = sensorIdx+4;
           if (led >= 8) led -= 8;
-          if (senDist < GROUND_MARGIN_DANGER) {
+          if (edgeDist < GROUND_MARGIN_DANGER) {
             if (setColors[sensorIdx] != red) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::RED));
               setColors[sensorIdx] = red;
             }
-          } else if (senDist < GROUND_MARGIN) {
+          } else if (edgeDist < GROUND_MARGIN) {
             if (setColors[sensorIdx] != orange) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::ORANGE));
               setColors[sensorIdx] = orange;
             }
-          } else if (sensorValuesObstacle->at(sensorIdx) > OBSTACLE_MARGIN_SIDE) {
+          } else if (obstacleDist < OBSTACLE_MARGIN_SIDE) {
             if (setColors[sensorIdx] != white) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::WHITE));
               setColors[sensorIdx] = white;
             }
-          } else if (sensorValuesObstacle->at(sensorIdx) > OBSTACLE_MARGIN) {
+          } else if (obstacleDist < OBSTACLE_MARGIN) {
             if (setColors[sensorIdx] != blue) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
               setColors[sensorIdx] = blue;
@@ -236,12 +244,6 @@ int main(int argc, char **argv) {
         }
       }
 
-      int valueLeft = sensorValuesObstacle->at(3);
-      int valueRight = sensorValuesObstacle->at(4);
-      int valueSide = max(sensorValuesObstacle->at(2), sensorValuesObstacle->at(5));
-      float distLeft = edgeDist(sensorValuesGround->at(3));
-      float distRight = edgeDist(sensorValuesGround->at(4));
-      INFO_MSG("left: " << valueLeft << ", right: " << valueRight << ", side: " << valueSide);
       if (distLeft < GROUND_MARGIN || distRight < GROUND_MARGIN) {
         if (turn == 0 && distLeft > distRight) {
           turn = 1;
@@ -250,8 +252,8 @@ int main(int argc, char **argv) {
           turn = 2;
           sendMotorCmd(0, mymcm(-60), CAN);
         }
-      } else if (valueLeft > OBSTACLE_MARGIN || valueRight > OBSTACLE_MARGIN || valueSide > OBSTACLE_MARGIN_SIDE) {
-        if (turn == 0 && valueLeft < valueRight) {
+      } else if (valueLeft < OBSTACLE_MARGIN || valueRight < OBSTACLE_MARGIN || valueSide < OBSTACLE_MARGIN_SIDE) {
+        if (turn == 0 && valueLeft > valueRight) {
           turn = 1;
           sendMotorCmd(0, mymcm(60), CAN);
         } else if (turn == 0) {

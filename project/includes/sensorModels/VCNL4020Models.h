@@ -24,9 +24,9 @@ namespace VCNL4020Models {
 		return sqrt(VCNL4020MODELS_OBSTACLEMODEL_ALPHA * cosxi / divi + VCNL4020MODELS_OBSTACLEMODEL_DELTA * cosxi);
 	}
 
-	// calculates the distance [m] to the next edge given the normalized edge value factored by 10000
+	// calculates the distance [m] to the next edge given the normalized edge value factored by 10000 (as integer)
 	float edgeModel(int senValue) {
-		return VCNL4020MODELS_EDGEMODEL_M * ((float)senValue)/10000.0 + VCNL4020MODELS_EDGEMODEL_B;
+		return (VCNL4020MODELS_EDGEMODEL_M * ((float)senValue)/10000.0 + VCNL4020MODELS_EDGEMODEL_B) / 100;
 	}
 }
 
