@@ -6,7 +6,7 @@ By using parameters the ring proximity sensors or the floor proximity sensors ca
 
 ===== Special Measurement for rirReader =====
 
-For the calcuation of the offsets of the [[process:rirReader:start|rirReader]] for the [[includes:sensorModels:startVCNL4020.txt|obstacle and edge model]], the following steps have to be done:
+For the calcuation of the offsets of the [[process:rirReader:start|rirReader]] for the [[includes:sensorModels:startVCNL4020|obstacle and edge model]], the following steps have to be done:
  - Calculate ground offset:
    - Place the robot on the robot's ground (table, floor, etc.) without any obstacles (including cables, etc.) and edges around the robot (for VCNL4020 proximity sensor the range should be ca. 25 cm)
    - Start measurement with: ''$ measureOffsetTest -cf irConfig.conf --ignoreFloor''
