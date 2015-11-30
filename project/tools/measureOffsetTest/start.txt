@@ -7,16 +7,16 @@ By using parameters the ring proximity sensors or the floor proximity sensors ca
 ===== Special Measurement for rirReader =====
 
 For the calcuation of the offsets of the [[process:rirReader:start|rirReader]] for the [[includes:sensorModels:startVCNL4020|obstacle and edge model]], the following steps have to be done:
- - Calculate ground offset:
-   - Place the robot on the robot's ground (table, floor, etc.) without any obstacles (including cables, etc.) and edges around the robot (for VCNL4020 proximity sensor the range should be ca. 25 cm)
-   - Start measurement with: ''$ measureOffsetTest -cf irConfig.conf --ignoreFloor''
-   - Wait until measurement is finished (some minutes)
- - Calculate air offset:
-   - Place the robot in the air (for example on top of a thin object), so that there are no objects and edges in the range as before and that there are no grounds in range (for VCNL4020 the robot should be at a height of ca. 20 cm)
-   - Start measurement with: ''$ measureOffsetTest -cf irEmpty.conf --ignoreFloor''
-   - Wait until measurement is finished (some minutes)
- - Move the files "irConfig.conf" and "irEmpty.conf" to the directory of the rirReader
- - Optional: Delete other measurement file: ''$ rm measurementsRingAndFoor.txt''
+  - Calculate ground offset:
+    - Place the robot on the robot's ground (table, floor, etc.) without any obstacles (including cables, etc.) and edges around the robot (for VCNL4020 proximity sensor the range should be ca. 25 cm)
+    - Start measurement with: ''$ measureOffsetTest -cf irConfig.conf --ignoreFloor''
+    - Wait until measurement is finished (some minutes)
+  - Calculate air offset:
+    - Place the robot in the air (for example on top of a thin object), so that there are no objects and edges in the range as before and that there are no grounds in range (for VCNL4020 the robot should be at a height of ca. 20 cm)
+    - Start measurement with: ''$ measureOffsetTest -cf irEmpty.conf --ignoreFloor''
+    - Wait until measurement is finished (some minutes)
+  - Move the files "irConfig.conf" and "irEmpty.conf" to the directory of the rirReader
+  - Optional: Delete other measurement file: ''$ rm measurementsRingAndFoor.txt''
 
 ===== Parameters =====
 
