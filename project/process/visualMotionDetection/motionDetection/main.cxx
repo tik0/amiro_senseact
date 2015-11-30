@@ -356,11 +356,15 @@ int main (int argc, char * const argv[])
 
             // Send the image
             if (sendingPic) {
+                Mat flippedPic;
                 if (debugging) {
-                    imencode(".jpg", debugImage, buf, compression_params);
+                    flip(debugImage, flippedPic, 0);
+//                    imencode(".jpg", debugImage, buf, compression_params);
                 } else {
-                    imencode(".jpg", result, buf, compression_params);
+                    flip(result, flippedPic, 0);
+//                    imencode(".jpg", result, buf, compression_params);
                 }
+                imencode(".jpg", flippedPic, buf, compression_params);
                 shared_ptr<std::string> frameJpg(new std::string(buf.begin(), buf.end()));
                 imageInformer->publish(frameJpg);
             }
