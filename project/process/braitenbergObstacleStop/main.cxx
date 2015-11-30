@@ -1,7 +1,11 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : -
+// Description : Performs a basic braitenberg-like edge avoidanve and stops
+//               in front of obstacles. Gets sensor values from RIR-Reader
+//               seperated in obstacle and edge values. It uses the obstacle
+//               and edge avoidence behavior. Steering and light commands are
+//               given via CAN.
 //============================================================================
 
 //#define TRACKING
@@ -21,7 +25,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/date_time.hpp>
 
-
 #include <rsb/filter/OriginFilter.h>
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
@@ -29,9 +32,9 @@
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
+#include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/QueuePushHandler.h>
-
 
 using namespace rsb;
 
@@ -55,11 +58,13 @@ using namespace std;
 #include <sensorModels/VCNL4020Models.h>
 
 using namespace rsb;
+using namespace rsb::converter;
+using namespace rsb::util;
 using namespace rsb::patterns;
 
 
 // margins
-#define OBSTACLE_MARGIN 0.15
+#define OBSTACLE_MARGIN 0.1
 #define OBSTACLE_MARGIN_DANGER 0.05
 #define GROUND_MARGIN 0.06
 #define GROUND_MARGIN_DANGER 0.03
@@ -71,9 +76,16 @@ static int AIR_OFFSETS[] = {2213, 2316, 2341, 2329, 2331, 2290, 2335, 2152};
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 std::string proxSensorInscopeGround = "/rir_prox/ground";
+std::string obstacleRecognitionOutscope = "/frontObject/command";
+
+// protocol defines
+std::string COMMAND_START = "START";
+std::string COMMAND_STOP = "STOP";
+std::string COMMAND_QUIT = "QUIT";
 
 // show colors
-bool showColors = true;
+bool showColors = false;
+bool stopDrive = false;
 
 enum colorType {
 	black,
@@ -112,7 +124,9 @@ void splitString(const std::string &str, vector<std::string> &parts, const std::
 
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN) {
   
-  CAN.setTargetSpeed(speed, angle);
+  if (!stopDrive) {
+    CAN.setTargetSpeed(speed, angle);
+  }
   DEBUG_MSG( "v: " << speed << "w: " << angle);
 }
 
@@ -127,6 +141,7 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
+      ("dontDrive,d", "The motor commands won't be sent.")
       ("showColors,c", "Shows measured environment with LEDs.");
 
   // allow to give the value as a positional argument
@@ -146,6 +161,7 @@ int main(int argc, char **argv) {
   po::notify(vm);
 
   showColors = vm.count("showColors");
+  stopDrive = vm.count("dontDrive");
 
   INFO_MSG("Initialize RSB");
 
@@ -157,6 +173,11 @@ int main(int argc, char **argv) {
   // Register new converter for std::vector<int>
   boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
   rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+
+  // ------------ Informer ------------------------
+
+  // Create obstacle recognition
+  Informer<std::string>::Ptr obstacleRecognition = getFactory().createInformer<std::string> (Scope(obstacleRecognitionOutscope));
 
   // ------------ Listener ----------------------
 
@@ -256,6 +277,16 @@ int main(int argc, char **argv) {
         sendMotorCmd(mymcm(8), 0, CAN);
         interrupted = false;
       }
+
+      // send command
+      std::string command;
+      if (interrupted) {
+        command = COMMAND_START;
+      } else {
+        command = COMMAND_STOP;
+      }
+      boost::shared_ptr<std::string> StringPtr(new std::string(command));
+      obstacleRecognition->publish(StringPtr);
 
     } else if (counter < 4) {
       counter++;

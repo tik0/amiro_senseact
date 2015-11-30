@@ -26,6 +26,13 @@ ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 #     ${LIBV4l2_LIBRARY_DIRS}
 # )
 
+# Get modules
+SET (BOOST_COMPONENTS regex date_time program_options system thread)
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
+
+# Get the compiler specific includes and store them in GXX_INCLUDES
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
+
 # Set the include pathe
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
@@ -40,13 +47,16 @@ include_directories(
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
     ${GXX_INCLUDES}
+    ${Boost_INCLUDE_DIR}
 )
 
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
 
 # Add folders to build and run CMakeLists.txt in it
 #add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
@@ -72,6 +82,7 @@ target_link_libraries (
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
     ${RSTSANDBOX_LIBRARIES}
+    ${Boost_LIBRARIES}
     #${OpenCV_LIBS}
     #   OPENCV
     opencv_imgproc
