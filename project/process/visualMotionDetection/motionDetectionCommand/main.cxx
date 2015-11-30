@@ -20,7 +20,7 @@
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 
 // protocol defines
@@ -33,6 +33,7 @@ using namespace std;
 //using namespace cv;
 using namespace rsb;
 using namespace rsb::converter;
+using namespace rsb::util;
 
 #define INFO_MSG_
 // #define DEBUG_MSG_
@@ -79,7 +80,7 @@ int main(int argc, char **argv) {
     INFO_MSG( "Image scope: " << g_sImageScope);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    rsb::Factory &factory = rsb::Factory::getInstance();
+    Factory &factory = getFactory(); //Factory::getInstance();
 
     // Create the command informer
     Informer<std::string>::Ptr informer = getFactory().createInformer<std::string> (Scope(g_sOutScope));
@@ -88,13 +89,13 @@ int main(int argc, char **argv) {
     rsb::ListenerPtr imageListener = factory.createListener(g_sImageScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > imageQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-    imageListener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(imageQueue)));
+    imageListener->addHandler(HandlerPtr(new QueuePushHandler<std::string>(imageQueue)));
 
     // Create and start the listener for detections
     rsb::ListenerPtr detectListener = factory.createListener(g_sInScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > detectQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-    detectListener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(detectQueue)));
+    detectListener->addHandler(HandlerPtr(new QueuePushHandler<std::string>(detectQueue)));
 
     // Pop the images and show them
     while (true) {
