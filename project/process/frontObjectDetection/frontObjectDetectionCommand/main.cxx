@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 
     imageListener->addHandler(HandlerPtr(new QueuePushHandler<std::string>(imageQueue)));
 
-    namedWindow(g_sImageScope, WINDOW_NORMAL);
+    cv::namedWindow(g_sImageScope, CV_WINDOW_NORMAL);
 
     // Pop the images and show them
     while (true) {
@@ -110,9 +110,11 @@ int main(int argc, char **argv) {
                     break;
                 case 8:
                     command = COMMAND_STOP;
+                    INFO_MSG("Send stop object detection command.");
                     break;
                 case 13:
                     command = COMMAND_START;
+                    INFO_MSG("Send start object detection command.");
                     break;
                 default:
                     command = "";

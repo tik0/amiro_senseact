@@ -203,7 +203,7 @@ int main (int argc, char * const argv[]) {
                 boost::shared_ptr<std::vector<int> > sensorValuesObstacle = boost::static_pointer_cast<std::vector<int> >(proxQueueObstacle->pop());
                 float leftDist = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(3)) + 0.05;
                 float rightDist = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(4)) + 0.05;
-                std::cout << "dists: " << leftDist << " - " << rightDist << " (" << sensorValuesObstacle->at(3) << " - " << sensorValuesObstacle->at(4) << ")" << std::endl;
+//                std::cout << "dists: " << leftDist << " - " << rightDist << " (" << sensorValuesObstacle->at(3) << " - " << sensorValuesObstacle->at(4) << ")" << std::endl;
 
                 float lx = leftDist*cos(5.0*M_PI/8.0);
                 float ly = leftDist*sin(5.0*M_PI/8.0);
@@ -214,12 +214,12 @@ int main (int argc, char * const argv[]) {
                 float newAngle = -atan(ty/tx) + camAngleX/2.0;
                 if (newAngle < 0) newAngle = 0;
                 if (newAngle > camAngleX) newAngle = camAngleX;
-                std::cout << "angle: " << (newAngle*180/M_PI) << std::endl;
+//                std::cout << "angle: " << (newAngle*180/M_PI) << std::endl;
 
                 objectPosition = newAngle/camAngleX * objectFrame.cols;
                 if (objectPosition < 0) objectPosition = 0;
                 if (objectPosition >= objectFrame.cols) objectPosition = objectFrame.cols-1;
-                std::cout << "Pos in picture: " << objectPosition << " (of " << objectFrame.cols << ")" << std::endl;
+//                std::cout << "Pos in picture: " << objectPosition << " (of " << objectFrame.cols << ")" << std::endl;
 
                 // mark focus
                 if (debugging) {
