@@ -64,10 +64,13 @@ using namespace rsb::patterns;
 
 
 // margins
-#define OBSTACLE_MARGIN 0.1
+float OBSTACLE_MARGIN = 0.15;
 #define OBSTACLE_MARGIN_DANGER 0.05
 #define GROUND_MARGIN 0.06
 #define GROUND_MARGIN_DANGER 0.03
+
+// speeds
+int driveSpeed = 8; // cm/s
 
 // Offsets for AMiRo 36 
 static int GROUND_OFFSETS[] = {2437, 2463, 2483, 2496, 2457, 2443, 2508, 2352};
@@ -141,6 +144,8 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
+      ("speed,s", po::value<int>(&driveSpeed), "Drive speed in cm/s (default: 8 cm/s).")
+      ("obstacleMargin,o", po::value<float>(&OBSTACLE_MARGIN), "Margin for obstacle distance in meters (default: 0.15 m).")
       ("dontDrive,d", "The motor commands won't be sent.")
       ("showColors,c", "Shows measured environment with LEDs.");
 
@@ -269,12 +274,12 @@ int main(int argc, char **argv) {
       } else if (valueLeft < OBSTACLE_MARGIN || valueRight < OBSTACLE_MARGIN) {
         sendMotorCmd(0, mymcm(0), CAN);
         interrupted = true;
-      } else if (turn != 0) {
-        turn = 0;
-        sendMotorCmd(mymcm(8), 0, CAN);
-        interrupted = false;
       } else {
-        sendMotorCmd(mymcm(8), 0, CAN);
+        if (turn != 0) {
+          turn = 0;
+        }
+        usleep(500000);
+        sendMotorCmd(mymcm(driveSpeed), 0, CAN);
         interrupted = false;
       }
 
