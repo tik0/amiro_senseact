@@ -1,3 +1,9 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Statemachine of the GEPTRO table application.
+//============================================================================
+
 // Messages
 #define INFO_MSG_
 #define DEBUG_MSG_

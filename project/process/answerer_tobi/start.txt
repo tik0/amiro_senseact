@@ -1,6 +1,8 @@
 ====== answerer_tobi ======
 
-This is the ToBI state machine simulation. It can simulate all functions which are used by the [[process:openChallenge2015:start|openChallenge state machine]]. The functions cannot be deactivated.
+This is the ToBI state machine simulation. It can simulate all functions of ToBI, which are used by the [[process:openChallenge2015:start|openChallenge state machine]]. The functions cannot be deactivated.
+
+Additionally this simulation can be used for command application for the [[process:stateMachineGEPTRO:start|GEPTRO statemachine]].
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
 | --spread, -s | String | "localhost" | IP of remote spread server. |
