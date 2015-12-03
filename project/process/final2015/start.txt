@@ -1,6 +1,6 @@
 ====== final2015 ======
 
-This is the basic state machine for the RoboCup@Home 2015 Final project. Please use the [[demo:final2015:start|Final 2015 Demo]]. For testing and giving commands the [[process:answerer_tobi:start| ToBI simulation]] can be used.
+This is the basic state machine for the RoboCup@Home 2015 Final project. Please use the [[demo:final2015:start|Final 2015 Demo]]. It also includes scripts for testing and giving commands.
 
 ===== States =====
 
