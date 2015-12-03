@@ -50,7 +50,7 @@ cpufreq-set -g performance
 
 # start only listening statemachines
 ./answerer --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
-./openChallengeGEPTRO_2nd --robotID $robotID &
+./stateMachineGEPTRO --robotID $robotID &
 
 sleep 1
 
