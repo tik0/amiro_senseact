@@ -10,7 +10,7 @@ The RSB connection between the statemachine and the external command program is 
 
 ===== State Behaviors =====
 
-At first the statemachine starts with an initial behavior which includes exploration and object detection. Afterwards the delivery or transport command can be given by the external command program.
+At first the statemachine starts with an initial behavior, which includes exploration and object detection. Afterwards the delivery or transport command can be given by the external command program.
 
 ^ Symbol ^ Description ^
 | D | Polling RSB connection |

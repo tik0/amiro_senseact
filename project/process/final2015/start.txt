@@ -7,7 +7,7 @@ This is the basic state machine for the RoboCup@Home 2015 Final project. Please 
 ^ State ^ Description ^ Transitions ^
 | idle | Starting the statemachine. | __init:__ directly |
 | turn | Turns the robot. | __stopped:__ directly |
-| init | Initializes all flags. | __following:__ if follow command has been received; __waypoint:__ if waypoint command has been received |
+| init | Initializes all flags. | __stopped:__ directly; __following:__ if follow command has been received; __waypoint:__ if waypoint command has been received |
 | following | Following the next object. | __stopped:__ if stop command for following has been received; __waypoint:__ if waypoint command has been received; __turn:__ if turn command has been received |
 | waypoint | Serving as waypoint. | __stopped:__ if stop command for waypoint has been received; __following:__ if follow command has been received; __turn:__ if turn command has been received |
 | stopped | Waiting for commands. | __following:__ if follow command has been received; __waypoint:__ if waypoint command has been received; __turn:__ if turn command has been received |
