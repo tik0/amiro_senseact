@@ -130,9 +130,6 @@ std::string sOutScopeTobi = "/tobiamiro";
 std::string sInScopeTobi = "/amiro";
 std::string sInScopeTobi2nd = "tobi";
 
-// Output for debugging
-std::string sOutScopeState = "/amiroState";
-
 // Sensor scopes
 std::string sInScopeLidar = "/lidar";
 std::string sInScopeOdometry = "/odo";
@@ -162,7 +159,6 @@ bool rsbInputLocalPlanner = false;
 
 int processSM(void);
 
-int robotID = 0;
 twbTracking::proto::Pose2D objectPos;
 
 int objectCount = 0;
@@ -173,10 +169,6 @@ bool skipLP = false;
 bool skipDet = false;
 bool skipTrans = false;
 bool skipDeli = false;
-
-double tableDepth = 0.7; // cm
-double startPosition = 0.10; /*cm start position*/
-double endPosition = 0.20;
 
 // Object detection
 double minimalAngle = 0;
@@ -206,11 +198,6 @@ int main(int argc, char **argv) {
 
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
-        ("outscopeState,s", po::value < std::string > (&sOutScopeState), "Scope for sending the current state internaly.")
-        ("robotID,d", po::value < int > (&robotID), "Robot ID.")
-        ("tableDepth", po::value < double > (&tableDepth), "Table depth.")
-        ("startPosition", po::value < double > (&tableDepth), "Start Position.")
-        ("endPosition", po::value < double > (&endPosition), "End Position.")
         ("skipExploration", "Skipping all parts for Exploration.")
         ("skipBlobbing", "Skipping all parts for Blob Detection.")
         ("skipLocalPlanner", "Skipping all parts for Local Planner.")
