@@ -22,6 +22,8 @@ This is the basic state machine for the GEPTRO project. It is the main part of t
 | objectTransport | Sends start recognition and waits for transport finish notice. | objectTransportFinish: if transport has been finished |
 | objectTransportFinish | Sends transport finish notice and waits for recognition. | initDone: if transport finish recognition has been received |
 
+The state behaviors are descripted more in detail in the [[process:stateMachineGEPTRO:StateDescriptions|State Behavior Description]].
+
 ===== Application Parameters =====
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
