@@ -1,6 +1,6 @@
 ====== Building the GEPTRO Table Application Environment for AMiRo ======
 
-This is the GEPTRO Table Application. The AMiRo explores the table and detects all objects. Afterwards it delivers a requested object.
+This is the GEPTRO Table Application. The AMiRo explores the table and detects all objects. Afterwards it delivers a requested object. For more detailed behavior information, please check the [[process:stateMachineGEPTRO:start|GEPTRO statemachine]].
 
 ===== Run the project =====
 
