@@ -45,11 +45,9 @@ At first the statemachine starts with an initial behavior, which just includes i
 | "initwaypoint"(D) | -> | stopped | | |
 | "initwaypointrec"(RS) | <- | stopped | -> | "init" (waypoint scope) |
 | | -?-> | waypoint | <-?- | |
-| | | waypoint | <- | "entered" (waypoint scope) |
-| "entered" (if status changed!) | <- | waypoint | | |
+| "entered" (if status changed!) | <- | waypoint | <- | "entered" (waypoint scope) |
 | | -?-> | waypoint | <-?- | |
-| | | waypoint | <- | "left" (waypoint scope) | 
-| "left" (if status changed!) | <- | waypoint | | |
+| "left" (if status changed!) | <- | waypoint | <- | "left" (waypoint scope) |
 | | -?-> | waypoint | <-?- | | 
 | "stopwaypoint"(D) | -> | waypoint | -> | "stop" (waypoint scope) |
 | "stopwaypointrec"(RS) | <- | waypoint | | |
