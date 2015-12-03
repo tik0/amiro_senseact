@@ -1,7 +1,8 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : -
+// Description : This is the proximity sensor logger. It can be used for
+//               offset calculation for the rirReader.
 //============================================================================
 
 #define INFO_MSG_
