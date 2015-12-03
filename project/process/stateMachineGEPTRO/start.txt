@@ -5,22 +5,22 @@ This is the basic state machine for the GEPTRO project. It is the main part of t
 ===== States =====
 
 ^ State ^ Description ^ Transitions ^
-| idle | Waits for init command | init: if init command has been received |
-| init | Initializes the state machine. | explorationStart: directly |
-| explorationStart | Sends exploration start command to exploration program. | exploration: directly |
-| exploration | Waits for exploration finish notice and starts blob detection. | blobDetection: if exploration has been finished |
-| blobDetection | Loads blobs from map program. | objectDetectionStart: directly |
-| objectDetectionStart | Sends object detection start command to object detection program. | objectDetectionInit: directly |
-| objectDetectionInit | Waits for object count of object detection. | objectDetectionMain: if object count has been finished |
-| objectDetectionMain | Sends object recognitions of every detected object. | initDone: if all objects have been recognized |
-| initDone | Sends initial finish notice. | waiting: directly |
-| waiting | Waits for next command. | objectDeliveryStart: if object delivery command has been received; objectTransportStart: if object transport command has been received |
-| objectDeliveryStart | Sends delivery start command to object delivery program. | objectDelivery: directly |
-| objectDelivery | Sends start recognition and waits for delivery finish notice. | objectDeliveryFinish: if delivery has been finished |
-| objectDeliveryFinish | Sends delivery finish notice and waits for recognition. | initDone: if delivery finish recognition has been received |
-| objectTransportStart | Sends transport start command to object transport program. | objectTransport: directly |
-| objectTransport | Sends start recognition and waits for transport finish notice. | objectTransportFinish: if transport has been finished |
-| objectTransportFinish | Sends transport finish notice and waits for recognition. | initDone: if transport finish recognition has been received |
+| idle | Waits for init command | __init:__ if init command has been received |
+| init | Initializes the state machine. | __explorationStart:__ directly |
+| explorationStart | Sends exploration start command to exploration program. | __exploration:__ directly |
+| exploration | Waits for exploration finish notice and starts blob detection. | __blobDetection:__ if exploration has been finished |
+| blobDetection | Loads blobs from map program. | __objectDetectionStart:__ directly |
+| objectDetectionStart | Sends object detection start command to object detection program. | __objectDetectionInit:__ directly |
+| objectDetectionInit | Waits for object count of object detection. | __objectDetectionMain:__ if object count has been finished |
+| objectDetectionMain | Sends object recognitions of every detected object. | __initDone:__ if all objects have been recognized |
+| initDone | Sends initial finish notice. | __waiting:__ directly |
+| waiting | Waits for next command. | __objectDeliveryStart:__ if object delivery command has been received; __objectTransportStart:__ if object transport command has been received |
+| objectDeliveryStart | Sends delivery start command to object delivery program. | __objectDelivery:__ directly |
+| objectDelivery | Sends start recognition and waits for delivery finish notice. | __objectDeliveryFinish:__ if delivery has been finished |
+| objectDeliveryFinish | Sends delivery finish notice and waits for recognition. | __initDone:__ if delivery finish recognition has been received |
+| objectTransportStart | Sends transport start command to object transport program. | __objectTransport:__ directly |
+| objectTransport | Sends start recognition and waits for transport finish notice. | __objectTransportFinish:__ if transport has been finished |
+| objectTransportFinish | Sends transport finish notice and waits for recognition. | __initDone:__ if transport finish recognition has been received |
 
 The state behaviors are descripted more in detail in the [[process:stateMachineGEPTRO:StateDescriptions|State Behavior Description]].
 
