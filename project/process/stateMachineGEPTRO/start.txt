@@ -1,6 +1,6 @@
 ====== stateMachineGEPTRO ======
 
-This is the basic state machine for the GEPTRO project. It is the main part of the GEPTRO project. Please use the [[demo:geptroOpenChallenge_all:start|GEPTRO demo]].
+This is the basic state machine for the GEPTRO project. It is the main part of the GEPTRO project. Please use the [[demo:geptroOpenChallenge_all:start|GEPTRO demo]]. For testing and giving commands the [[process:answerer:start| answerer tool]] can be used.
 
 ===== States =====
 
@@ -14,8 +14,7 @@ This is the basic state machine for the GEPTRO project. It is the main part of t
 | objectDetectionInit | Waits for object count of object detection. | objectDetectionMain: if object count has been finished |
 | objectDetectionMain | Sends object recognitions of every detected object. | initDone: if all objects have been recognized |
 | initDone | Sends initial finish notice. | waiting: directly |
-| waiting | Waits for next command. | objectDeliveryStart: if object delivery command has been received
-objectTransportStart: if object transport command has been received |
+| waiting | Waits for next command. | objectDeliveryStart: if object delivery command has been received; objectTransportStart: if object transport command has been received |
 | objectDeliveryStart | Sends delivery start command to object delivery program. | objectDelivery: directly |
 | objectDelivery | Sends start recognition and waits for delivery finish notice. | objectDeliveryFinish: if delivery has been finished |
 | objectDeliveryFinish | Sends delivery finish notice and waits for recognition. | initDone: if delivery finish recognition has been received |

@@ -5,6 +5,6 @@ WARNING: This project is deprecated and is just for development tests! The edges
 This is the basic braitenberg behavior. In contrast to the [[process:braitenbergEdge:start|normal braitenbergEdge]] it reads the sensor values seperates them in obstacle and ground values by itself.
 
 ^ Parameter ^ Description ^
-| --loadOffsets, -l | Shows measured environment with LEDs. |
+| --loadOffsets, -l | Loads offset from the file "irConfig.conf". |
 
 For additional parameter information type ''braitenbergEdge_wrir -h''.
