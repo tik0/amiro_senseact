@@ -1,5 +1,8 @@
 ====== braitenbergEdge ======
 
-This is the basic braitenberg behavior. It gets the sensor values by the [[process:rirReader:start|Ring Proximity Reader]] which are seperated in obstacle and ground values.
+This is the basic braitenberg behavior. It gets the sensor values by the [[process:rirReader:start|Ring Proximity Reader]] which are seperated in obstacle and ground values. For running the whole project, please use the [[demo:braitenbergEdge:start|braitenbergEdge demo]].
+
+^ Parameter ^ Description ^
+| --showColors, -c | Loads offset from the file "irConfig.conf". |
 
 For additional parameter information type ''braitenbergEdge -h''.
