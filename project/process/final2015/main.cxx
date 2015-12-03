@@ -1,3 +1,10 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : albauer <albauer@techfak.uni-bielefeld.de>,
+//               mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Statemachine of the RoboCup@Home 2015 Final.
+//============================================================================
+
 // Messages
 #define INFO_MSG_
 #define DEBUG_MSG_
