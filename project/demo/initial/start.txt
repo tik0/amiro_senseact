@@ -1,14 +1,17 @@
-====== Building the Open Challenge 2015 Environment for AMiRo ======
+====== Building the Initial Project for AMiRo ======
 
 This is a demo which works together with Tobi.
 The scenario is the delivery of goods from a table to a position from where Tobi can grab them.
 
-===== Run the demo =====
+===== Build and Copy the Demo =====
 
-  - ''. ./build.sh .''
-  - ''./copyPrograms.sh''
-  - ''./runIRConfig.sh'' on the AMiRo for calculating the table offsets
-                         (make sure that the AMiRo is standing on the table without any objects in range)
-  - ''./runIREmpty.sh'' on the AMiRo for calculating the air offsets
-                        (make sure that the AMiRo has nothing in range including the table)
-  - Use the "-h" option for detailed information about useage of the programs "edgeMeasurement" and "senseRingProximity".
+  - ''./build.sh''
+  - ''./copyPrograms.sh <IP address>''
+  - Use the "-h" option for detailed information about usage of the programs [[tools:edgeMeasurement:start|edgeMeasurement]] and [[sense:senseRingProximity:start|senseRingProximity]].
+
+===== Calculating the Sensor Offsets for the rirReader =====
+
+For the [[process:rirReader:start|rirReader]] this tool can calculate the ground and air offsets for the [[includes:sensorModels:startVCNL4020|sensor obstacle and edge model]] (for specific measurements, please also check the [[tools:measureOffsetTest:start|measureOffsetTest documentation]]):
+  - ''./runIRConfig.sh'' on the AMiRo for calculating the ground offsets (make sure that the AMiRo is standing on the table without any objects in range)
+  - ''./runIREmpty.sh'' on the AMiRo for calculating the air offsets (make sure that the AMiRo has nothing in range including the table)
+
