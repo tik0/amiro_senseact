@@ -6,7 +6,7 @@ This is the state behavior description of the [[process:final2015:start|RoboCup@
 
 For the communication between the statemachine and the execution program there is used a basic RSB connection. The RSB types, which are used, are different for each communication.
 
-The RSB connection between the statemachine and the external command program is based on the type String. Additionally every command or information has to be repeated until a recognition notice has been received, due to possible lost information via wireless connection.
+The RSB connection between the statemachine and the external command program is based on the type String. Additionally every command or information (except waypoint status changes due to possible high frequency) has to be repeated until a recognition notice has been received, due to possible lost information via wireless connection.
 
 The commands are simply structured. Each behavior can be started by an "init" and be stopped by a "stop" command. For switching between two behaviors it isn't necessary to send a stop command.
 
@@ -61,6 +61,6 @@ The behaviors can be switched without sending a stop command. An example for swi
 | | -?-> | following | | |
 | "initwaypoint"(D) | -> | following | -> | "stop" (follow scope) |
 | "initwaypointrec"(RS) | <- | following | -> | "init" (waypoint scope) |
-| | -?-> | waypoint | | |
+| | -?-> | waypoint | <-?- | |
 
 
