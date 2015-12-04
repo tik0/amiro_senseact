@@ -1,7 +1,9 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : mbarther
-// Description : -
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : The robot drives to every object and tries to detect it. If
+//               the detection failed, the robot will try the detection from
+//               another position.
 //============================================================================
 
 #define INFO_MSG_
