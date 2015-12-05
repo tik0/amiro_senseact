@@ -16,17 +16,17 @@ For application interaction there are keys defined for sending commands.
 For communication there are RSB scopes defined.
 
 ^ Name ^ Type ^ Default scope ^ Description ^
-| Image scope | String | ''/motionDetection/image'' | Scope for receiving the camera frame with motion marker (maybe additional the binary motion matrix) which has to be activated. |
-| Detection scope | String | ''/motionDetection/detected'' | Scope for receiving the detection signal. |
-| Command scope | String | ''/motionDetection/command'' | Scope for sending commands. |
+| Image scope | String | "/motionDetection/image" | Scope for receiving the camera frame with motion marker (maybe additional the binary motion matrix) which has to be activated. |
+| Detection scope | String | "/motionDetection/detected" | Scope for receiving the detection signal. |
+| Command scope | String | "/motionDetection/command" | Scope for sending commands. |
 
 ===== Parameters =====
 
 For parameter information type ''motionDetectionCommand -h''.
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
-| --imagescope, -i | String | ''/motionDetection/image'' | Sets the scope for receiving camera frames. |
-| --inscope, -s | String | ''/motionDetection/detected'' | Sets the scope for receiving detection signal. |
-| --outscope, -c | String | ''/motionDetection/command'' | Sets the scope for sending commands. |
+| --imagescope, -i | String | "/motionDetection/image" | Sets the scope for receiving camera frames. |
+| --inscope, -s | String | "/motionDetection/detected" | Sets the scope for receiving detection signal. |
+| --outscope, -c | String | "/motionDetection/command" | Sets the scope for sending commands. |
 
 

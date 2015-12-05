@@ -24,9 +24,9 @@ For external applications it is possible to send string commands.
 For communication there are RSB scopes defined.
 
 ^ Name ^ Type ^ Default scope ^ Description ^
-| Image scope | String | ''/objectDetection/image'' | Scope for sending the camera frame. |
-| Detection scope | String | ''/objectDetection/detected'' | Scope for sending the detection result. |
-| Command scope | String | ''/objectDetection/command'' | Scope for receiving commands. |
+| Image scope | String | "/objectDetection/image" | Scope for sending the camera frame. |
+| Detection scope | String | "/objectDetection/detected" | Scope for sending the detection result. |
+| Command scope | String | "/objectDetection/command" | Scope for receiving commands. |
 
 ===== Saving Objects =====
 
