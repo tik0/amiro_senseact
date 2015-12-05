@@ -9,4 +9,4 @@ spread -c amirospread &
 
 sleep 5
 
-./objectSavingAMiRo -d 6 --loadingDirectly &
+./objectDetection -d 6 --loadingDirectly &

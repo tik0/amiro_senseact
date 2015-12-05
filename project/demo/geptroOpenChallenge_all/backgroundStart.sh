@@ -13,7 +13,7 @@ spread &
 sleep 5
 
 # start all loading programs
-./objectSavingAMiRo -d 6 -s --loadingDirectly &
+./objectDetection -d 6 -s --loadingDirectly &
 
 #wait
 #cpufreq-set -g ondemand

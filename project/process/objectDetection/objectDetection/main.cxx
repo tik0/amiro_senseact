@@ -1,3 +1,10 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : This tool saves snapshots for objects and can detect an
+//               object by using the SURF algorithm.
+//============================================================================
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -379,7 +386,6 @@ int main(int argc, char **argv) {
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
             ("outscope,o", po::value < std::string > (&g_sOutScope),"Scope for sending images")
-            ("continue", "Reads the picture the whole time")
             ("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving commands")
             ("loadingDirectory,l", po::value < std::string > (&directory),"Directory from where the data can be loaded.")
             ("device,d", po::value < int > (&g_iDevice),"Number of device")
