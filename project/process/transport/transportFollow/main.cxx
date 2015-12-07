@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : mbarther
-// Description : -
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Following behavior of the transport scenario.
 //============================================================================
 
 //#define TRACKING
@@ -126,13 +126,10 @@ std::vector<int> motorCmd(3,0);
 
 
 // scopenames for rsb
-std::string proxSensorInscope = "/rir_prox";
+std::string proxSensorInscope = "/rir_prox/obstacle";
 std::string trackingInscope = "/murox/roboterlocation";
-std::string odometryInscope = "/odometrydata";
 std::string FollowerInscope = "/Transport/Follow";
 std::string GuideInscope = "/Transport/Guide";
-std::string pathResponseInscope = "/pathResponse";
-std::string pathOutScope = "/path";
 std::string mapServerScope = "/mapGenerator";
 std::string rsbOutScope = "/motor/02";
 std::string spreadhost = "127.0.0.1";
@@ -241,21 +238,12 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
 
-	// prepare RSB listener for path responses
-	rsb::ListenerPtr pathResponseListener = factory.createListener(pathResponseInscope);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>>pathResponseQueue(
-			new rsc::threading::SynchronizedQueue<boost::shared_ptr<bool>>(1));
-	pathResponseListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<bool>(pathResponseQueue)));
-
 	// prepare rsb listener for progress data
         rsb::ListenerPtr progressListener = factory.createListener(GuideInscope, extspreadconfig);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>>progressQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D>>(1));
 	progressListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2D>(progressQueue)));
 
 	// ---------------- Informer ---------------------
-
-	// create rsb informer to publish the robots path
-	rsb::Informer<twbTracking::proto::Pose2DList>::Ptr pathInformer = factory.createInformer<twbTracking::proto::Pose2DList>(pathOutScope);
 
 	// mapGenertor server
 	RemoteServerPtr mapServer = factory.createRemoteServer(mapServerScope);

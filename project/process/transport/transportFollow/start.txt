@@ -1,0 +1,38 @@
+====== Transport Follow ======
+
+This tool is the following behavior of the transport scenario, which is described in the [[process:transport:start|transport documentation]]. Basically the robot follows another robot by only using its proximity sensors.
+
+===== Building =====
+
+This is a cmake project, so just type:
+  - ''cmake .''
+  - ''make''
+
+===== Basic Functionality of the Scenario =====
+
+
+
+===== Following Behavior =====
+
+
+
+===== RSB Scopes =====
+
+^ Name ^ Default Scope ^ Description ^
+| Obstacle Scope | /rir_prox/obstacle | Scope for receiving generalized proximity values for the obstacle model. |
+| Tracking Data | /murox/roboterlocation | Scope for receiving tracking position. |
+| Progress Output | /Transport/Follow | Scope for sending progress information to guide. |
+| Progress Input | /Transport/Guide | Scope for receiving progress information from guide. |
+| Map Server | /mapGenerator | Scope of the map server for path calculation. |
+| Motor Command | /motor/02 | Scope for sending motor commands to motor control. |
+
+===== Parameters =====
+
+^ Parameter ^ Type ^ Default Value ^ Description ^
+| --id | Integer | 0 | Tracking ID for AMiRo. |
+| --mpp | Float | 0.0025 | Meter per pixel. |
+| --finaleID | Integer | 9 | Tracking ID for finale position. |
+| --initializeMin, -m | - | - | Initialize the direction for the following task by using the minimum of the proximity sensors. |
+| --initializePos, -p | - | - | Initialize the direction for the following task by using the Guide's position. |
+| --host | String | "127.0.0.1" | Host for Programatik Spread. |
+| --port| String | "4803" | Port for Programatik Spread. |

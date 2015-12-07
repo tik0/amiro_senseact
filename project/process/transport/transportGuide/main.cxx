@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : mbarther
-// Description : -
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Guide behavior of the transport scenario.
 //============================================================================
 
 //#define TRACKING
@@ -66,9 +66,8 @@ int trackingMarkerID = 0;
 float meterPerPixel = 1.0/400.0;
 
 // scopenames for rsb
-std::string proxSensorInscope = "/rir_prox";
+std::string proxSensorInscope = "/rir_prox/obstacle";
 std::string trackingInscope = "/murox/roboterlocation";
-std::string odometryInscope = "/odometrydata";
 std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";
 std::string mapServerScope = "/mapGenerator";
