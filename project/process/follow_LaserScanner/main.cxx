@@ -1,3 +1,13 @@
+//============================================================================
+// Name        : main.cxx
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Drives to the next (closest) object by using the distance
+//               data of a laser scanner and stops in front of it in a
+//               specified distance. If the object moves away, the robot
+//               will follow. If the object comes closer, the robot will
+//               drive backwards to hold the specified distance.
+//============================================================================
+
 #define INFO_MSG_
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
@@ -68,7 +78,6 @@ int neighbourLasers;
 // following constants
 float followMinDist = 300; // mm
 float followMinBackDist = 200; // mm
-//float followMinDistSide = 0.09; // meters
 float followDistSlowingDown = 200; // mm
 int forwardSpeed = 500; // mm/s
 int forwardMinSpeed = 150; // mm/s
@@ -84,16 +93,11 @@ void motorActionMilli(int speed, int turn) {
 
 
 void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
-/*  laser_count_++;
-  if ((laser_count_ % throttle_scans_) != 0)
-    return;
-*/
   rsbScan = *data;
 }
 
 
 void convertScan(rst::vision::LocatedLaserScan &scan, ts_sensor_data_t &data) {
-//  ts_sensor_data_t data;
   if (scan.scan_angle_end() < scan.scan_angle_start()){
     // flip readings
     endAngle = scan.scan_angle_start();
@@ -117,32 +121,6 @@ void convertScan(rst::vision::LocatedLaserScan &scan, ts_sensor_data_t &data) {
 }
 
 
-/*
-void convertScan(rst::vision::LocatedLaserScan &scan, rst::vision::LocatedLaserScan &data) {
-//  ts_sensor_data_t data;
-  if (scan.scan_angle_end() < scan.scan_angle_start()){
-    // flip readings
-    endAngle = scan.scan_angle_start();
-    startAngle = scan.scan_angle_end();
-    for(int i=0; i < scan.scan_values_size(); i++)
-      data.set_scan_values(i, scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
-  } else {
-    startAngle = scan.scan_angle_start();
-    endAngle = scan.scan_angle_end();
-    for(int i=0; i < scan.scan_values_size(); i++)
-      data.set_scan_values(i, scan.scan_values(i)*METERS_TO_MM);
-  }
-  if (firstScan) {
-    laserCount = scan.scan_values_size();
-    minValueScan = (int) (scan.scan_values_min()*METERS_TO_MM);
-    laserAngleDist = (endAngle-startAngle)/(laserCount-1);
-    orientationLaser = laserCount/2;
-    neighbourLasers = (60 * M_PI/180)/laserAngleDist;
-    printf("\nLaser data:\n - #Laser: %i\n - Start angle: %frad\n - End angle: %frad\n - laser distance: %frad\n - Min Value: %imm\n\n", laserCount, startAngle, endAngle, laserAngleDist, minValueScan);
-  }
-}
-*/
-
 void calculateDrivingBehavior(ts_sensor_data_t &scan) {
   int shortId = -1;
   int shortDist = -1;
@@ -154,33 +132,14 @@ void calculateDrivingBehavior(ts_sensor_data_t &scan) {
   if (endLaser >= laserCount) {
     endLaser = laserCount-1;
   }
-//  for (int laser=0; laser < laserCount; laser++) {
+
   for (int laser=startLaser; laser <= endLaser; laser++) {
     if ((shortId < 0 || scan.d[laser] < shortDist) && scan.d[laser] > minValueScan) {
       shortId = laser;
       shortDist = scan.d[laser];
     }
   }
-/*
-void calculateDrivingBehavior(rst::vision::LocatedLaserScan &scan) {
-  int shortId = -1;
-  int shortDist = -1;
-  int startLaser = orientationLaser-neighbourLasers;
-  int endLaser = orientationLaser+neighbourLasers;
-  if (startLaser < 0) {
-    startLaser = 0;
-  }
-  if (endLaser >= laserCount) {
-    endLaser = laserCount-1;
-  }
-//  for (int laser=0; laser < laserCount; laser++) {
-  for (int laser=startLaser; laser <= endLaser; laser++) {
-    if ((shortId < 0 || scan.scan_values(laser) < shortDist) && scan.scan_values(laser) > minValueScan) {
-      shortId = laser;
-      shortDist = scan.scan_values(laser);
-    }
-  }
-*/
+
   if (shortId < 0) {
     motorActionMilli(0,0);
     printf("No minimum found!\n");
@@ -241,21 +200,8 @@ int main(int argc, const char **argv){
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("startNow,s", "Starts the following immediately without waiting of scopes.")
-    ("debug","Activates debugging information")
-    ("lidarinscope,l", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data");
-/*    ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
-    ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
-    ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
-    ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
-    ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
-    ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
-    ("transX", po::value < double > (&transX),"Translation of the lidar in x [m]")
-    ("transY", po::value < double > (&transY),"Translation of the lidar in y [m]")
-    ("transZ", po::value < double > (&transZ),"Translation of the lidar in z [m]")
-    ("rotX", po::value < double > (&rotX),"Rotation of the lidar around x (roll) [rad]")
-    ("rotY", po::value < double > (&rotY),"Rotation of the lidar around y (pitch) [rad]")
-    ("rotZ", po::value < double > (&rotZ),"Rotation of the lidar around z (yaw) [rad]");
-*/
+    ("debug","Activates debugging information.")
+    ("lidarinscope,l", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

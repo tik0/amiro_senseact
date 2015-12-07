@@ -28,7 +28,7 @@ v4l2-ctl -d/dev/v4l-subdev8 --set-ctrl=vertical_flip=1
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar &
 
 # following from 'project/process/followToBI/'
-./followToBI --lidarinscope /lidar &
+./follow_LaserScanner --lidarinscope /lidar &
 
 # waypoint program from 'project/sandbox/waypoint/'
 ./waypoint --lidarinscope /lidar &

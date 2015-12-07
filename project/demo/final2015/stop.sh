@@ -4,7 +4,7 @@
 killall -9 final2015
 
 # kill all acting programs
-killall -9 followToBI
+killall -9 follow_LaserScanner
 killall -9 waypoint
 
 # kill all sensing programs
