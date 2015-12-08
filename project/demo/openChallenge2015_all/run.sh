@@ -33,7 +33,7 @@ cpufreq-set -g performance
 
 # start only listening statemachines
 ./answerer --skipExploration --skipDetection --skipDelivery &
-./openChallengeGEPTRO_2nd --robotID ${ID} --bigMap --mapServerIsRemote --mapServerScope /CoreSlamServer --obstacleServerReq getObjectsList &
+./stateMachineGEPTRO --robotID ${ID} --bigMap --mapServerIsRemote --mapServerScope /CoreSlamServer --obstacleServerReq getObjectsList &
 
 sleep 1
 

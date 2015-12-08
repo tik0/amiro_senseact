@@ -4,7 +4,7 @@
 killall -9 answerer_tobi
 
 # kill all listening statemachines
-killall -9 openChallengeGEPTRO_2nd
+killall -9 stateMachineGEPTRO
 killall -9 answerer
 
 # kill all secondary moving programs
