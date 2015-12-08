@@ -8,13 +8,46 @@ This is a cmake project, so just type:
   - ''cmake .''
   - ''make''
 
-===== Basic Functionality of the Scenario =====
+===== Basic Functionality in the Scenario =====
 
-
+  - At beginning the final transport position is initialized by an additional marker
+  - "Waiting" (doing some basic behavior)
+  - Doesn't get a position any more -> Object has been placed on top of it
+  - Calculating path to final transport position
+  - Calculating start position in front of it (1 cm distance)
+  - Transmitting start position
+  - Waiting for recognition from other robot (now called Guide)
+  - Transmitting own position
+  - Waiting for arrival of Guide
+  - Turning towards Guide
+  - Transmitting final transport position
+  - Doing following behavior until Guide arrived final position
+  - Transmitting disconnection
+  - Exit tool
 
 ===== Following Behavior =====
 
+The inverse sensor model for the proximity sensors is dependent on the angular approach. For calculating the distance to the center of the guide, numerical approaches have to be used, due to the trigonometric functions in the inverse sensor model. But this is too hard, because the calculation isn't done once and has to be as fast as possible.
 
+Finally a vector based approach has been used. In this case, there aren't used the angular information of the proximity sensors. They are just used, as they measured an object just in front of them. For the distance and angle calculation the two frontal proximity sensors //lf// (left one) and //rf// (right one) are used:
+  - left distance //ld// = inverseSensorModel(0, //lf//)
+  - right distance //rd// = inverseSensorModel(0, //rf//)
+  - position x //posX// = [//ld//*cos(pi/8) + //rd//*cos(-pi/8)] / 2
+  - position y //posY// = [//ld//*sin(pi/8) + //rd//*sin(-pi/8)] / 2
+  - distance //d// = sqrt(//posX//*//posX// + //posY//*//posY//) - //robot radius// / 2
+  - angle //a// = atan(//posY// / //posX//)
+
+With the distance //d// and the angle //a// the driving behavior can be calculated very precisely to follow the guide. But the frontal proximity sensors can be influenced by other objects at the side of the transporter. In this case the angle //a// will be pulled to the side and the distance //d// may become smaller. To avoid these errors, the next proximity sensors at the sides are used to correct the distance and angle calculation. Both correction functions are ranged linear functions, which are developed with many measurements in different scenarios. Please have a look into chapter "Development". Finally the correction with the proximity sensors at the sides //ls// (left one) and //rs// (right one) can be calculated as follows:
+  - left side distance //lsd// = inverseSensorModel(0, //ls//)
+  - right side distance //rsd// = inverseSensorModel(0, //rs//)
+  - //d// += distanceCorrection(//lsd//) + distanceCorrection(//rsd//)
+  - //a// += angleCorrection(//lsd//) - angleCorrection(//rsd//)
+
+Now the robot can follow the Guide, even if there are objects at the side. Due to the small ranges of the proximity sensors, the motor velocities have to be slowed down. The maximum forward speed of the robot is 8 cm/s, the minimum forward speed is 3 cm/s.
+
+===== Development =====
+
+For the development of the following behavior, there are done many measurements in different scenarios. For detailed information, please have a look into the folder "Development", which contains many measurement files, matlab scripts and the results in diagrams. The calculated correction function with matlab has been used as a start function. Due to measurement errors, it had to be optimized in the final program.
 
 ===== RSB Scopes =====
 

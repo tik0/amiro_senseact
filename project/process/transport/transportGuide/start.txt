@@ -8,9 +8,20 @@ This is a cmake project, so just type:
   - ''cmake .''
   - ''make''
 
-===== Basic Functionality =====
+===== Basic Functionality in the Scenario =====
 
-
+  - "Waiting" (doing some basic behavior)
+  - Receiving start position
+  - Transmits OK (as recognition)
+  - Receiving position of other robot (now called Transporter)
+  - Driving to start position (maybe driving around the Transporter)
+  - Transmits OK (as arrival signal)
+  - Receiving final transport position
+  - Calculating path to final transport position
+  - Driving to final transport position (followed by Transporter)
+  - Transmitting OK (as arrival at final position)
+  - Receiving disconnection
+  - Exit tool
 
 ===== RSB Scopes =====
 

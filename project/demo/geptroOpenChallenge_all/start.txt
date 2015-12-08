@@ -27,3 +27,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:motorControl:start|motorControl]] | Program for controlling motor commands. |
 | [[sense:senseFloorProximity:start|senseFloorProximity]] | Program for reading floor proximity values. |
 | [[process:objectDetection:objectDetection:start|objectDetection]] | Program for image comparison for object detection. |
+
+===== Problem with Transport =====
+
+For the final application, the robots should also transport objects on top of them. The behavior and communication is written in the [[process:transport:start|transport project]], but it couldn't be included due to realization problems in this demo. Finally, altough the transport project is functional, the robots only delivered objects by pushing them.
