@@ -44,7 +44,7 @@ static struct timeval tv;
 static rsb::ListenerPtr listenerPtr;
 static rsb::HandlerPtr  handlerPtr;
 static rsb::ParticipantConfig config;
-static rsb::Factory& factory = rsb::Factory::getInstance();
+static rsb::Factory& factory = rsb::getFactory(); //rsb::Factory::getInstance();
 // RSB WS interaction
 static bool newRsbData = false;
 static std::string newRsbPayload;
