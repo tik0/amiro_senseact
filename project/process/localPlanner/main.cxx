@@ -1,6 +1,7 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : fpatzelt <fpatzelt@techfak.uni-bielefeld.de>
+// Author      : fpatzelt <fpatzelt@techfak.uni-bielefeld.de>,
+//               mbarther <mbarther@techfak.uni-bielefeld.de>
 // Description : Central control of the robots map building and exploration.
 //============================================================================
 
