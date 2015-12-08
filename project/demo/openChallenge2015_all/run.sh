@@ -25,7 +25,7 @@ cpufreq-set -g performance
 
 # start all primary moving programs
 ./localPlanner -p /localization -i /path -r /pathResponse > /dev/null &
-./exploDriveEdge -l &
+./exploDriveEdge &
 
 # start all secondary moving programs
 ./drivingObjectDetection --bigMap --mapServerIsRemote --mapServerScope /CoreSlamServer --pathRequest path --robotID ${ID} &

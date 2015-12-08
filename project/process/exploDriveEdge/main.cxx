@@ -1,7 +1,9 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : mbarther
-// Description : -
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : The robot drives forward to the next edge and turns to the
+//               right. This procedure is repeated as often as set (on
+//               default it's done twice).
 //============================================================================
 
 //#define TRACKING
@@ -140,8 +142,7 @@ int main(int argc, char **argv) {
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
       ("edgeCount,e", po::value <int> (&edgeCount), "Count of edges the robot should drive (default = 2).")
-      ("positionInscope", po::value <std::string> (&odometryInscope), "Inscope for position data of SLAM localization.")
-      ("loadOffsets,l", "Loads offset from the file 'irConfig.conf'.");
+      ("positionInscope", po::value <std::string> (&odometryInscope), "Inscope for position data of SLAM localization.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
