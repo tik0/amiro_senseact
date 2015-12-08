@@ -6,8 +6,10 @@ This is the GEPTRO Table Application. The AMiRo explores the table and detects a
 
   - ''. ./build.sh .''
   - ''./copyPrograms.sh <IP address>''
+  - ''./backgroundStart.sh'' on the AMiRo (starting programs like object detection, which needs much time to load the object images)
   - ''./run.sh'' on the AMiRo
   - ''./stop.sh'' on the AMiRo for stopping
+  - ''./allStop.sh'' on the AMiRo (stopping everything, which has been started with ''background.sh'')
 
 One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
 
