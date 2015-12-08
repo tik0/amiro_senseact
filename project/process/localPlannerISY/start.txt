@@ -1,4 +1,4 @@
-====== Local Planner ======
+====== Local Planner of GEPTRO Table Application ======
 
 The Local Planner receives paths and steers the robot along these. For this purpose only the current robot position received from tracking is used.
 It sends a rsb signal when a path is finished.
