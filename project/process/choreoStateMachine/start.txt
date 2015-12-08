@@ -33,7 +33,8 @@ The filename of a choreography has to be //[songname][position].xml//, where pos
 
 Example:
 
-''<!--<?xml version="1.0"> -->
+<code>
+<!--<?xml version="1.0"> -->
 <choreo> 
   <choreoStep>
     <v>0</v>
@@ -68,4 +69,5 @@ Example:
   <choreoinclude>
     <choreopart>Choreopart.xml</choreopart>
   </choreoinclude>
-</choreo>''
+</choreo>
+</code>
