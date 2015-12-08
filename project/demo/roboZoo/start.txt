@@ -16,9 +16,9 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 
 ===== Songnumbers =====
 
-0: Kung Fu Fighting
-1: In the Summertime
-2: Let's Twist Again
-4: Macarena
-5: Gonna Make You Sweat
+  * Song 0: Kung Fu Fighting
+  * Song 1: In the Summertime
+  * Song 2: Let's Twist Again
+  * Song 4: Macarena
+  * Song 5: Gonna Make You Sweat
 
