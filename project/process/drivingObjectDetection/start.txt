@@ -1,6 +1,6 @@
 ====== drivingObjectDetection ======
 
-This is the object detection behavior. The robot drives to every object and tries to detect it (by using the [[process:objectDetection:objectSavingAMiRo:start|object detection]]). It is very important, that all objects are known to the robot, otherwise the robot will try to detect the objects forever.
+This is the object detection behavior. The robot drives to every object and tries to detect it (by using the [[process:objectDetection:objectDetection:start|object detection]]). It is very important, that all objects are known to the robot, otherwise the robot will try to detect the objects forever.
 
 ===== Basic behavior =====
 
