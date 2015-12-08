@@ -15,9 +15,9 @@ For application interaction there are keys defined for sending commands.
 ^ Key ^ Description ^
 | s | Sending the save command. |
 | o | Sending the delete command. |
-| space | Sending the comparison command. |
+| space | Sending the detection command. |
 | l | Sending the load command. |
-| esc | Quits the motion detection and the application itself. |
+| esc | Quits the object detection and the application itself. |
 
 ===== RSB Scopes =====
 
