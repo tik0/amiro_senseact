@@ -10,6 +10,7 @@ pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(RST rst0.11)
 pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+pkg_check_modules(LIBV4l2 libv4l2)
 pkg_check_modules(OPENCV opencv)
 
 # Need to add, because rst manual said so:
@@ -28,6 +29,7 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${RST_INCLUDE_DIRS}                                             # RST types
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
+    ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
@@ -65,7 +67,8 @@ target_link_libraries (
     # -- Own libraries
     vecIntConverter
     jpeg
+    ${LIBV4l2_LIBRARIES}
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wno-deprecated-declarations -O3)
+ADD_DEFINITIONS (-Wno-deprecated-declarations -O3 -funsafe-math-optimizations)
