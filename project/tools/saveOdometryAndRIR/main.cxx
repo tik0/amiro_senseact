@@ -1,8 +1,8 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : fpatzelt <fpatzelt@techfak.uni-bielefeld.de>
-// Description : Gets the robot position and sensor values over RSB,
-//               updates the occupancy grid map and send it over RSB
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Gets the robot position and sensor values over RSB and
+//               saves them into the file "RingProximityAndOdometry.txt".
 //============================================================================
 
 //#define TRACKING
