@@ -194,7 +194,6 @@ int main (int argc, char * const argv[]) {
         const char *dev_name = g_sDevice.c_str();
         char out_name[256];
         FILE *fout;
-        void *buffer;
 
         fd = v4l2_open(dev_name, O_RDWR, 0);
         if (fd < 0) {
@@ -223,12 +222,6 @@ int main (int argc, char * const argv[]) {
                 exit(EXIT_FAILURE);
         }
 
-        buffer = malloc(fmt.fmt.pix.sizeimage);
-        if (buffer == NULL) {
-                fprintf(stderr, "Cannot allocate buffer\n");
-                exit(EXIT_FAILURE);
-        }
-
 
   // Allocate a frame object to store the picture
    cv::Mat next_frame(fmt.fmt.pix.height, fmt.fmt.pix.width, CV_8UC3);
@@ -242,7 +235,7 @@ int main (int argc, char * const argv[]) {
     int objectPosition = 0;
     bool objectFound = false;
 
-    while (true) {
+    while ( true/* TODO in rsb0.12 rsc::misc::lastArrivedSignal() == rsc::misc::Signal::NO_SIGNAL*/) {
         // Save the current frame to the frame object
         length = v4l2_read(fd, (void*) frameTmp.data , fmt.fmt.pix.sizeimage);
         if (length == -1) {
@@ -420,6 +413,8 @@ int main (int argc, char * const argv[]) {
             }
         }
     }
-    return 0;    
+    // Free everything
+    v4l2_close(fd);
+    return 0/* TODO in rsb0.12 rsc::misc::lastArrivedSignal()*/;   
 }
 
