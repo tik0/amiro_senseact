@@ -6,5 +6,6 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseFloorProximity senseFloorProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/edgeMeasurement edgeMeasurement)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/measureOffsetTest measureOffsetTest)
