@@ -7,6 +7,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <converter/matConverter/matConverter.hpp>
 // Video 4 Linux
 #include <linux/videodev2.h>
@@ -24,7 +25,7 @@
 
 using namespace boost;
 using namespace std;
-//using namespace cv;
+using namespace cv;
 using namespace rsb;
 using namespace muroxConverter; // The namespace for the own converters
 using namespace rsb::converter;
@@ -90,7 +91,6 @@ int main(int argc, char **argv) {
         const char *dev_name = g_sDevice.c_str();
         char out_name[256];
         FILE *fout;
-        void *buffer;
         
         fd = v4l2_open(dev_name, O_RDWR, 0);
         if (fd < 0) {
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         fmt.fmt.pix.width       = 640;  // Maximum width
         fmt.fmt.pix.height      = 420;  // Maximum hight
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
         fmt.fmt.pix.field       = V4L2_FIELD_ANY;
         rc = v4l2_ioctl(fd, VIDIOC_S_FMT, &fmt);
         printf("Resolution: %d x %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
@@ -110,10 +110,10 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "Error: %d, %s\n", errno, strerror(errno));
                 exit(EXIT_FAILURE);
         }
-        if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24) {
-                fprintf(stderr, "Error: Libv4l did not accept format\n");
-                exit(EXIT_FAILURE);
-        }
+//         if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_UYVY) {
+//                 fprintf(stderr, "Error: Libv4l did not accept format\n");
+//                 exit(EXIT_FAILURE);
+//         }
 //      if ((fmt.fmt.pix.width != 320) || (fmt.fmt.pix.height != 240))
 //              printf("Warning: driver is sending image at %dx%d\n",
 //                      fmt.fmt.pix.width, fmt.fmt.pix.height);
@@ -124,34 +124,27 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
         }
 
-        buffer = malloc(fmt.fmt.pix.sizeimage);
-        if (buffer == NULL) {
-                fprintf(stderr, "Cannot allocate buffer\n");
-                exit(EXIT_FAILURE);
-        }
-
-
   // Allocate a frame object to store the picture
    shared_ptr<cv::Mat> frame(new cv::Mat( fmt.fmt.pix.height, fmt.fmt.pix.width, CV_8UC3));
+   cv::Mat frameTmp(fmt.fmt.pix.height, fmt.fmt.pix.width, CV_8UC2);
 
   // Process the cam forever
-  for (;;) {
+  while ( true/* TODO in rsb0.12 rsc::misc::lastArrivedSignal() == rsc::misc::Signal::NO_SIGNAL*/) {
 //     cv::waitKey(1);
     // Save the actual picture to the frame object
-                length = v4l2_read(fd, (void*) frame->data , fmt.fmt.pix.sizeimage);
+                length = v4l2_read(fd, (void*) frameTmp.data , fmt.fmt.pix.sizeimage);
                 if (length == -1) {
                         fprintf(stderr, "Error: %d, %s\n", errno, strerror(errno));
                         exit(EXIT_FAILURE);
                 }
-        //informer->publish(frame);
-     
+       cv::cvtColor(frameTmp,*frame,CV_YUV2BGR_YUY2);
+       informer->publish(frame);
 
   }
 
   // Free everything
-  free(buffer);
   v4l2_close(fd);
 
-  return 0;
+  return 0/* TODO in rsb0.12 rsc::misc::lastArrivedSignal()*/;
 
 }
