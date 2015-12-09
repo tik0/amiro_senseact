@@ -12,6 +12,8 @@
 // For program options
 #include <boost/program_options.hpp>
 
+//RSC
+#include <rsc/misc/SignalWaiter.h>
 
 #define INFO_MSG_
 // #define DEBUG_MSG_
@@ -75,23 +77,32 @@ int main(int argc, char **argv) {
 
   // Creating the cam object
   cv::VideoCapture cam;
+//   int ex = static_cast<int>(cam.get(CV_CAP_PROP_FOURCC));
+//   Size S = Size((int) cam.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
+//                 (int) cam.get(CV_CAP_PROP_FRAME_HEIGHT));
+//   // Transform from int to char via Bitwise operators
+//   char EXT[] = {(char)(ex & 0XFF),(char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24),0};
+//   INFO_MSG("Input frame resolution: Width=" << S.width << "  Height=" << S.height)
+//   INFO_MSG("Get video frame with following FOURCC code: " << EXT )
+  
+  cam.set(CV_CAP_PROP_CONVERT_RGB, static_cast<double>(0));
+
   // Open the device /dev/video<g_iDevice>
   cam.open(g_iDevice);
   // Allocate a frame object to store the picture
   shared_ptr<cv::Mat> frame(new cv::Mat);
 
   // Process the cam forever
-  for (; ;) {
+  while ( true/* TODO in rsb0.12 rsc::misc::lastArrivedSignal() == rsc::misc::Signal::NO_SIGNAL*/) {
     // Save the actual picture to the frame object
     cam >> *frame;
     // Send the data.
     informer->publish(frame);
-
   }
 
   // Free the cam
   cam.release();
 
-  return 0;
+  return 0/* TODO in rsb0.12 rsc::misc::lastArrivedSignal()*/;
 
 }
