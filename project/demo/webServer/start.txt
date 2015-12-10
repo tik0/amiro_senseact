@@ -2,7 +2,7 @@
 
 This demonstration shows the functionality of the [[tools:rsb_ws_bridge_amiro|rsb_ws_bridge_amiro]] functionality which is nothing but a webserver based on [[https://github.com/cesanta/mongoose|mongoose]] with an [[http://docs.cor-lab.de//rsb-manual/trunk/html/index.html|RSB]-[[https://de.wikipedia.org/wiki/WebSocket|WebSockets]]-bridge.
 
-This demo was also part of the finals demonstration [[demo:final2015|RoboCup@Home 2015 Final]].
+This demo was also part of the finals demonstration [[demo:final2015:start|RoboCup@Home 2015 Final]].
 By giving commands, the AMiRo can follow ToBI or serve as a waypoint.
 
 ===== Run the demo =====
@@ -17,7 +17,36 @@ By giving commands, the AMiRo can follow ToBI or serve as a waypoint.
 
 The website was composed using [[http://www.iui-js.org/|iui]] and you can investigate the different sensors of the AMiRo (only one at a time).
 
-TODO include image of the Website
+==== View ====
+
+=== Index ===
+
+{{:demo:webServer:webServerIndex.png?200|index.html}}
+
+=== Front Camera View ===
+
+{{:demo:webServer:webServerFrontCamera.png?200|camera.html}}
+
+==== Compatible browser clients ====
+
+=== Chrome ===
+
+Runs fine with version 46.0.2490.71 (64-bit).
+
+=== Firefox ===
+
+HTTP connection runs fine.
+Error occurs on the webserver site when opening a websockets connection:
+
+<code ini Errormessage>
+Send WS event with 40267 bytes
+MG_REQUEST
+process_request
+MG_REQUEST: conn->is_websocket
+Input:  (0)
+Socket input couldn't be interpretated.
+socket closed/136
+</code>
 
 ===== Included Programs =====
 
