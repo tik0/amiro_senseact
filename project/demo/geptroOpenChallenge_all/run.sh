@@ -30,7 +30,7 @@ sleep 1
 cpufreq-set -g performance
 
 # start all sensing programs
-./rirReader -l > /dev/null &
+./rirReader > /dev/null &
 ./senseFloorProximity &
 
 # start localization programs

@@ -33,29 +33,17 @@
 
 using namespace std;
 using namespace muroxConverter;
-// old offsets
-//static int IR_OFFSETS[] = {2481,2471,2494,2379,2421,2351,2477,2404};
-
-/* Offsets for AMiRo 9 */
-//static int IR_OFFSETS[] = {2406,2488,2290,2371,2342,2524,2423,2507};
-/* Offsets for AMiRo 2 */
-//static int IR_OFFSETS[] = {2500,2356,2433,2529,2507,2426,2450,2337};
-
-/* Offsets for AMiRo 3 */
-//static int IR_OFFSETS[] = {2503,2354,2433,2536,2509,2431,2448,2343};
-/* Offsets for AMiRo 14 */
-//static int IR_OFFSETS[] = {2503,2354,2433,2536,2509,2431,2448,2343};
-
-/* Offsets for AMiRo 11 */
-//static int IR_OFFSETS[] = {2568, 2502, 2467, 2415, 2444, 2424, 2340, 2342};
-/* Offsets for AMiRo 13 */
-//static int IR_OFFSETS[] = {2387, 2360, 2524, 2313, 2533, 2363, 2477, 2578};
-/* Offsets for AMiRo 14 */
-//static int IR_OFFSETS[] = {2494, 2347, 2427, 2501, 2494, 2410, 2444, 2331};
 
 /* Offsets for AMiRo 36 */
 static int GROUND_OFFSETS[] = {2437, 2463, 2483, 2496, 2457, 2443, 2508, 2352};
 static int AIR_OFFSETS[] = {2213, 2316, 2341, 2329, 2331, 2290, 2335, 2152};
+
+string irObstacleOffsetFile = "/home/root/initial/irConfig.conf";
+string irAirOffsetFile = "/home/root/initial/irEmpty.conf";
+
+string rsbOutScopeOriginal = "/rir_prox/original";
+string rsbOutScopeObstacle = "/rir_prox/obstacle";
+string rsbOutScopeGround = "/rir_prox/ground";
 
 void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGround, uint32_t rsbPeriod, bool print) {
 
@@ -66,6 +54,7 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
   converterRepository<std::string>()->registerConverter(converter);
   
   // Prepare RSB informer
+  rsb::Informer< std::vector<int> >::Ptr informerOriginalValues = factory.createInformer< std::vector<int> > (rsbOutScopeOriginal);
   rsb::Informer< std::vector<int> >::Ptr informerObstacleValues = factory.createInformer< std::vector<int> > (rsbOutScopeObstacle);
   rsb::Informer< std::vector<int> >::Ptr informerGroundValues = factory.createInformer< std::vector<int> > (rsbOutScopeGround);
 
@@ -88,12 +77,6 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
     if (fail == 0) {
       // claculate offsets in proximity values
       for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
-        /* turn order
-        proximityRingValue[0] = prvRead[7];
-        for (int i = 1; i < 8; i++) {
-            proximityRingValue[i] = prvRead[i-1];
-        }
-        */
 
         // calculate obstacle values
         if (proximityRingValue[sensorIdx] <= GROUND_OFFSETS[sensorIdx]) {
@@ -117,15 +100,18 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
       // print proximity data
       if (print) {
         for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
-          INFO_MSG((int)sensorIdx << ": " << obstacleValues[sensorIdx] << "/" << groundValues[sensorIdx] << " (" << groundValuesFac[sensorIdx] << ")");
+          INFO_MSG((int)sensorIdx << ": " << proximityRingValue[sensorIdx] << " - " << obstacleValues[sensorIdx] << " - " << groundValuesFac[sensorIdx]);
         }
       }
 
       // Datastructure for the RSB messages
+      boost::shared_ptr< std::vector<int> > vecDataOriginal = boost::shared_ptr<std::vector<int> >(new std::vector<int>(proximityRingValue.begin(),proximityRingValue.end()));
       boost::shared_ptr< std::vector<int> > vecDataObstacle = boost::shared_ptr<std::vector<int> >(new std::vector<int>(obstacleValues.begin(),obstacleValues.end()));
       boost::shared_ptr< std::vector<int> > vecDataGround = boost::shared_ptr<std::vector<int> >(new std::vector<int>(groundValuesFac.begin(),groundValuesFac.end()));
 
       // Send proximity data
+      informerOriginalValues->publish(vecDataOriginal);
+      boost::this_thread::sleep(boost::posix_time::milliseconds(2));
       informerObstacleValues->publish(vecDataObstacle);
       boost::this_thread::sleep(boost::posix_time::milliseconds(2));
       informerGroundValues->publish(vecDataGround);
@@ -160,18 +146,16 @@ int main(int argc, char **argv) {
 
   // Handle program options
   namespace po = boost::program_options;
-  
-  std::string rsbOutScopeObstacle = "/rir_prox/obstacle";
-  std::string rsbOutScopeGround = "/rir_prox/ground";
   uint32_t rsbPeriod = 0;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-    ("outscopeObstacle,o", po::value < std::string > (&rsbOutScopeObstacle), "Scope for sending generalized proximity values for the obstacle model.")
-    ("outscopeGround,g", po::value < std::string > (&rsbOutScopeGround), "Scope for sending generalized proximity values the egde model.")
-    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval in milliseconds (0 for maximum rate).")
+    ("outscopeOriginal,o", po::value<std::string> (&rsbOutScopeOriginal), "Scope for sending original proximity values.")
+    ("outscopeObstacle,e", po::value<std::string> (&rsbOutScopeObstacle), "Scope for sending generalized proximity values for the obstacle model.")
+    ("outscopeGround,g", po::value<std::string> (&rsbOutScopeGround), "Scope for sending generalized proximity values the egde model.")
+    ("period,t", po::value<uint32_t> (&rsbPeriod), "Update interval in milliseconds (0 for maximum rate).")
     ("print,p", "Prints read proximity values in the console.")
-    ("loadOffsets,l", "Loads offsets from the files 'irConfig.conf' and 'irEmpty.conf'.");
+    ("loadOffsetFile,l", po::value<std::string> (&irObstacleOffsetFile), "File name for the obstacle offsets (on deafult: /root/initial/irConfig.conf).");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -189,36 +173,34 @@ int main(int argc, char **argv) {
   // afterwards, let program options handle argument errors
   po::notify(vm);
 
-  if (vm.count("loadOffsets")) {
-    char input[100];
-    FILE *irConfig = fopen("irConfig.conf", "r");
-    if (irConfig) {
-      fgets(input, 100, irConfig);
-      INFO_MSG("Read 'irConfig.conf':");
-      vector<std::string> parts;
-      splitString(std::string(input), parts, "\t");
-      for (int part=0; part<parts.size(); part++) {
-        GROUND_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
-        INFO_MSG(" " << (part+1) << ") " << GROUND_OFFSETS[part]);
-      }
-    } else {
-      WARNING_MSG("Coudn't load 'irConfig.conf'! Now using standard offsets.");
+  char input[100];
+  FILE *irConfig = fopen(irObstacleOffsetFile.c_str(), "r");
+  if (irConfig) {
+    fgets(input, 100, irConfig);
+    INFO_MSG("Read '" << irObstacleOffsetFile << "':");
+    vector<std::string> parts;
+    splitString(std::string(input), parts, "\t");
+    for (int part=0; part<parts.size(); part++) {
+      GROUND_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
+      INFO_MSG(" " << (part+1) << ") " << GROUND_OFFSETS[part]);
     }
-    irConfig = fopen("irEmpty.conf", "r");
-    if (irConfig) {
-      fgets(input, 100, irConfig);
-      INFO_MSG("Read 'irEmpty.conf':");
-      vector<std::string> parts;
-      splitString(std::string(input), parts, "\t");
-      for (int part=0; part<parts.size(); part++) {
-        AIR_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
-        INFO_MSG(" " << (part+1) << ") " << AIR_OFFSETS[part]);
-      }
-    } else {
-      WARNING_MSG("Coudn't load 'irEmpty.conf'! Now using standard offsets.");
-    }
+  } else {
+    WARNING_MSG("Coudn't load '" << irObstacleOffsetFile << "'! Now using standard offsets.");
   }
-
+  irConfig = fopen(irAirOffsetFile.c_str(), "r");
+  if (irConfig) {
+    fgets(input, 100, irConfig);
+    INFO_MSG("Read '" << irAirOffsetFile << "':");
+    vector<std::string> parts;
+    splitString(std::string(input), parts, "\t");
+    for (int part=0; part<parts.size(); part++) {
+      AIR_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
+      INFO_MSG(" " << (part+1) << ") " << AIR_OFFSETS[part]);
+    }
+  } else {
+    WARNING_MSG("Coudn't load '" << irAirOffsetFile << "'! Now using standard offsets.");
+  }
+  
   justReadValues(rsbOutScopeObstacle, rsbOutScopeGround, rsbPeriod, vm.count("print"));
 
 

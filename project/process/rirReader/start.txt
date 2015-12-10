@@ -1,6 +1,8 @@
 ====== rirReader ======
 
-The rirReader (Ring-InfraRed-Reader) reads, generalizes and publishes proximity values. For each proximity sensor an obstacle and an edge value is published. These values are based on the [[includes:sensorModels:startVCNL4020|obstacle and edge model]].
+The rirReader (Ring-InfraRed-Reader) reads, generalizes and publishes proximity values. For each proximity sensor the original, obstacle and the edge value is published. The obstacle and edge values are based on the [[includes:sensorModels:startVCNL4020|obstacle and edge model]].
+
+For the generalization there are loaded ground and air offsets from different files. On default the ground offsets are loaded from ''/home/root/initial/irConfig.conf'' and the air offsets from ''/home/root/initial/irEmpty.conf''. Please have also a look into the [[demo:initial:start|initial demo]].
 
 ===== Building =====
 
@@ -19,11 +21,13 @@ The sensor values are read directly from the CAN. The rirReader only uses RSB fo
 The offsets are loaded from configuration files, which are written in csv format. Using the tab seperator ("\t") the files just list the offsets from first to last sensor. There is no head line!
 ''<offset sensor 1>\t<offset sensor 2>\t...\t<offset sensor 8>''
 
-There are used two types of offsets for each sensor. The first offset is the ground offset, which is used to decide, if there could be an obstacle or an edge. The second one is the air offset, which is used for the edge distance approach. The configuration files have to be in the same directory as the rirReader executable and must have the following names:
-  - ground offsets: ''irConfig.conf''
-  - air offsets: ''irEmpty.conf''
+There are used two types of offsets for each sensor. The first offset is the ground offset, which is used to decide, if there could be an obstacle or an edge. The second one is the air offset, which is used for the edge distance approach. On default the configuration files have to be in the directory of the [[demo:initial:start|initial demo]]:
+  - ground offsets: ''/home/root/initial/irConfig.conf''
+  - air offsets: ''/home/root/initial/irEmpty.conf''
 
-The offsets are the mean values of a measurement set. For such a measurement the tool [[tools:measureOffsetTest:start|measureOffsetTest]] can be used. It has a parameter to calculate the mean values and to write those configuration files directly. This tool has to be used twice, for each offset once, which is defined in scripts in the [[demo:initial:start| initial demo]].
+The path to the ground offsets configuration file can be changed by the parameter ''-l'' (see section "Parameters"). The air offsets configuration file cannot be changed!
+
+The offsets are the mean values of a measurement set. For such a measurement the tool [[tools:measureOffsetTest:start|measureOffsetTest]] can be used. It has a parameter to calculate the mean values and to write those configuration files directly. This tool has to be used twice, for each offset once, which is defined in scripts in the [[demo:initial:start|initial demo]].
 
 For the measurement of the ground offset, the robot has to be placed on the ground, which should be used (table, floor, etc.). There shouldn't be any obstacles (including cables!) or edges in range of the sensors (for the VCNL4020 proximity sensors it's a range about 25 cm around the robot). For the measurement of the air offset, the robot should be placed in the air by using e.g. thin objects, etc. (for the VCNL4020 proximity sensors the height should be about 20 cm). Of course, there shouldn't be any obstacles in the sensors' range, either!
 
@@ -48,14 +52,16 @@ The ground and edge values are published seperately via RSB. They can be used di
 ===== RSB Scopes =====
 
 ^ Name ^ Default Scope ^ Description ^
-| Obstacle Scope | /rir_prox/obstacle | Scope for sending generalized proximity values for the obstacle model. |
-| Edge Scope | /rir_prox/ground | Scope for sending generalized proximity values for the edge model. |
+| Original Values | /rir_prox/original | Scope for sending the original proximity sensor values. |
+| Obstacle Values | /rir_prox/obstacle | Scope for sending the generalized proximity sensor values for the obstacle model. |
+| Edge Values | /rir_prox/ground | Scope for sending the generalized proximity sensor values for the edge model. |
 
 ===== Parameters =====
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
-| --outscopeObstacle, -o | String | ''/rir_prox/obstacle'' | Scope for sending generalized proximity values for the obstacle model. |
-| --outscopeGround, -g | String | ''/rir_prox/ground'' | Scope for sending generalized proximity values for the edge model. |
+| --outscopeOriginal, -o | String | "/rir_prox/original" | Scope for sending original proximity values. |
+| --outscopeObstacle, -e | String | "/rir_prox/obstacle" | Scope for sending generalized proximity values for the obstacle model. |
+| --outscopeGround, -g | String | "/rir_prox/ground" | Scope for sending generalized proximity values for the edge model. |
 | --period, -t | Integer | 0 | Update interval in milliseconds (0 for maximum rate). |
 | --print, -p | - | - | Prints read proximity values in the console. |
-| --loadOffsets, -l | - | - | Loads offsets from the files 'irConfig.conf' and 'irEmpty.conf'. |
+| --loadOffsetFile, -l | String | "/home/root/initial/irConfig.conf" | File name for the obstacle offsets. |
