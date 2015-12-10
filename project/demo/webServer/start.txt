@@ -1,0 +1,29 @@
+====== Building the webserver demonstration for AMiRo ======
+
+This demonstration shows the functionality of the [[tools:rsb_ws_bridge_amiro|rsb_ws_bridge_amiro]] functionality which is nothing but a webserver based on [[https://github.com/cesanta/mongoose|mongoose]] with an [[http://docs.cor-lab.de//rsb-manual/trunk/html/index.html|RSB]-[[https://de.wikipedia.org/wiki/WebSocket|WebSockets]]-bridge.
+
+This demo was also part of the finals demonstration [[demo:final2015|RoboCup@Home 2015 Final]].
+By giving commands, the AMiRo can follow ToBI or serve as a waypoint.
+
+===== Run the demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh <IP address>''
+  - ''./run.sh'' on the AMiRo
+  - Browse with you PCs browser the AMiRos IP address
+  - ''./stop.sh'' on the AMiRo for stopping
+
+===== Website View =====
+
+The website was composed using [[http://www.iui-js.org/|iui]] and you can investigate the different sensors of the AMiRo (only one at a time).
+
+TODO include image of the Website
+
+===== Included Programs =====
+
+^ Program ^ Description ^
+| [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading the Hokuyo laser scanner. |
+| [[sense:senseCamJpg:start|senseCamJpg]] | Program for getting the camera images. |
+| [[tools:rsb_ws_bridge_amiro:start|rsb_ws_bridge_amiro]] | Server program for sending the camera images. |
+
+
