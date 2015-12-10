@@ -1,8 +1,7 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : tkorthals <tkorthals@cit-ec.uni-bielefeld.de>
-// Description : Reads the IR sensor data from a scope, then processes the data
-//               and send steering commands to the act node
+// Description : Request an occupancy grid map from a mapping server as cv::mat image
 //============================================================================
 
 
