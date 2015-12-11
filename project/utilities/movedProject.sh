@@ -17,20 +17,29 @@ done
 
 # function for usage information
 manual () {
-  echo "For using this script, please give the following arguments:"
-  echo " 1) path to old project (starting at ${startDirectory})"
-  echo " 2) path to new project (starting at ${startDirectory})"
-  echo " 3) -r : the replacements will be done without any notice about the changes"
-  echo "    otherwise: the replacement changes will be printed without doing the replacement itself"
+  echo "Call: ./moveProject.sh <old path> <new path> [OPTION]"
+  echo ""
+  echo "Necessary arguments:"
+  echo " <old path>   Path to old project (starting at ${startDirectory})."
+  echo " <new path>   Path to new project (starting at ${startDirectory})."
+  echo ""
+  echo "Options:"
+  echo " -h [--help]  Displays this manual."
+  echo " -r           The replacements will be done without any notice about the changes."
+  echo " no option    The replacement changes will be printed without doing the replacement."
 }
 
 # check if both parameters are given
 if [ -z "${1}" ]; then
+  echo "There are missing arguments! Please have a look into the following manual:"
+  echo ""
   manual
   exit 1
 fi
 
 if [ -z "${2}" ]; then
+  echo "There are missing arguments! Please have a look into the following manual:"
+  echo ""
   manual
   exit 1
 fi
@@ -38,10 +47,16 @@ fi
 # check if third parameter is "-r"
 if [ -z "${3}" ]; then
   justPrint=true
+elif [[ ( "${3}" == "-h" ) || ( "${3}" == "--help" ) ]]; then
+  manual
+  exit 1
 elif [ "${3}" == "-r" ]; then
   justPrint=false
 else
-  justPrint=true
+  echo "Unknown option! Please have a look into the following manual:"
+  echo ""
+  manual
+  exit 1
 fi
 
 # prepare old project's path and reference string for sed
