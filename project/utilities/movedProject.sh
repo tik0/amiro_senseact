@@ -7,7 +7,7 @@ startDirectory=$MUROX_PROJECT
 # check start directory
 sdirArr=$(echo $startDirectory | tr "/" "\n")
 sdirLength=0
-startDirectory=""
+startDirectory="/"
 for x in $sdirArr; do
   if [[ ${#x} -gt 0 ]]; then
     sdirLength=$(($sdirLength+1))
@@ -17,7 +17,7 @@ done
 
 # function for usage information
 manual () {
-  echo "Call: ./moveProject.sh <old path> <new path> [OPTION]"
+  echo "Call: ./moveProject.sh <old path> <new path> OPTION"
   echo ""
   echo "Necessary arguments:"
   echo " <old path>   Path to old project (starting at ${startDirectory})."
@@ -26,7 +26,7 @@ manual () {
   echo "Options:"
   echo " -h [--help]  Displays this manual."
   echo " -r           The replacements will be done without any notice about the changes."
-  echo " no option    The replacement changes will be printed without doing the replacement."
+  echo " -p           The replacement changes will be printed without doing the replacement."
 }
 
 # check if both parameters are given
@@ -44,14 +44,19 @@ if [ -z "${2}" ]; then
   exit 1
 fi
 
-# check if third parameter is "-r"
+# check third parameter
 if [ -z "${3}" ]; then
-  justPrint=true
+  echo "Missing option! Please have a look into the following manual:"
+  echo ""
+  manual
+  exit 1
 elif [[ ( "${3}" == "-h" ) || ( "${3}" == "--help" ) ]]; then
   manual
   exit 1
 elif [ "${3}" == "-r" ]; then
   justPrint=false
+elif [ "${3}" == "-p" ]; then
+  justPrint=true
 else
   echo "Unknown option! Please have a look into the following manual:"
   echo ""
@@ -87,7 +92,7 @@ done
 
 # check if new project exists
 fullProjectPath=$(echo "${startDirectory}${newProject}")
-if [ -d "$fullProjectPath" ]; then
+if [[ -d "$fullProjectPath" ]]; then
   echo "Replace old project $oldProject by new project $newProject."
   if $justPrint; then
     echo "The following changes would be done:"
