@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # kill all commanding statemachines
-killall -9 answerer_tobi
+killall -9 commandSimulation
 
 # kill all listening statemachines
 killall -9 stateMachineGEPTRO

@@ -19,7 +19,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:objectDelivery:start|objectDelivery]] | Program for delivering objects. |
 | [[process:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the OpenChallenge. |
 | [[process:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start|AMiRo Environment Simulation]] | AMiRo simulation for needed and not included execution programs. |
-| [[process:answerer_tobi:start|answerer_tobi]] | Simulation of ToBI, which gives the commands. |
+| [[process:stateMachineGEPTRO_CommandSimulation:start|Command Simulation]] | Simulation of ToBI, which gives the commands. |
 | [[process:exploDriveEdge:start|exploDriveEdge]] | Table exploration. |
 | [[process:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
 | [[process:rirReader:start|rirReader]] | Program for reading ring proximity values. |

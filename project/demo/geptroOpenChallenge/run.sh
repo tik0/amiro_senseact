@@ -55,7 +55,7 @@ cpufreq-set -g performance
 sleep 1
 
 # start commanding statemachine
-./answerer_tobi --robotID $robotID &
+./commandSimulation --robotID $robotID &
 
 wait
 cpufreq-set -g ondemand
