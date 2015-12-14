@@ -1,15 +1,35 @@
-====== Building the Open Challenge 2015 Environment for AMiRo ======
+====== Building the GEPTRO Table Application Environment for AMiRo ======
 
-This is a simulation of the statemachine of the AMiRo for the Open Challenge.
-The scenario is the delivery of goods from a table to a position from where Tobi can grab them.
+This is the GEPTRO Table Application. The AMiRo explores the table and detects all objects. Afterwards it delivers a requested object. For more detailed behavior information, please check the [[process:stateMachineGEPTRO:start|GEPTRO statemachine]].
 
-This can be improved by real programs!
-
-===== Run the simulation =====
+===== Run the project =====
 
   - ''. ./build.sh .''
-  - ''./copyPrograms.sh''
+  - ''./copyPrograms.sh <IP address>''
+  - ''./backgroundStart.sh'' on the AMiRo (starting programs like object detection, which needs much time to load the object images)
   - ''./run.sh'' on the AMiRo
   - ''./stop.sh'' on the AMiRo for stopping
+  - ''./allStop.sh'' on the AMiRo (stopping everything, which has been started with ''background.sh'')
 
 One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+
+===== Included Programs =====
+
+^ Program ^ Description ^
+| [[process:objectDelivery:start|objectDelivery]] | Program for delivering objects. |
+| [[process:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the GEPTRO project. |
+| [[process:answerer:start|answerer]] | Simulation for needed and not included execution programs. |
+| [[process:answerer_tobi:start|answerer_tobi]] | Simulation of external command program. |
+| [[process:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
+| [[process:rirReader:start|rirReader]] | Program for reading ring proximity values. |
+| [[act:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[process:mapGenerator:start|mapGenerator]] | Program for generating and storing the map. |
+| [[process:frontierExploration:start|frontierExploration]] | Program for exploration behavior. |
+| [[process:localPlannerISY:start|localPlannerISY]] | Program for planning paths in the map. |
+| [[process:motorControl:start|motorControl]] | Program for controlling motor commands. |
+| [[sense:senseFloorProximity:start|senseFloorProximity]] | Program for reading floor proximity values. |
+| [[process:objectDetection:objectDetection:start|objectDetection]] | Program for image comparison for object detection. |
+
+===== Problem with Transport =====
+
+For the final application, the robots should also transport objects on top of them. The behavior and communication is written in the [[process:transport:start|transport project]], but it couldn't be included due to realization problems in this demo. Finally, altough the transport project is functional, the robots only delivered objects by pushing them.

@@ -1,9 +1,31 @@
 #!/bin/sh
-killall -9 openChallenge2015
-killall -9 CoreSLAM
+
+# kill all commanding statemachines
+killall -9 answerer_tobi
+
+# kill all listening statemachines
+killall -9 stateMachineGEPTRO
+killall -9 answerer
+
+# kill all secondary moving programs
+killall -9 drivingObjectDetection
+killall -9 objectDelivery
+
+# kill all primary moving programs
 killall -9 exploDriveEdge
-killall -9 actAmiroMotor
-killall -9 senseRingProximity
+killall -9 localPlanner
+
+# kill localization
+killall -9 CoreSLAM
+
+# kill all sensing programs
+killall -9 rirReader
 killall -9 senseOdometry
 killall -9 senseHokuyo
-killall -9 spread
+
+sleep 1
+
+# stop all outputs
+./stopAMiRo
+
+

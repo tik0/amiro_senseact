@@ -4,23 +4,26 @@
 killall -9 answerer_tobi
 
 # kill all listening statemachines
-killall -9 openChallengeGEPTRO_2nd
+killall -9 stateMachineGEPTRO
 killall -9 answerer
 
-# kill all secondary moving programs
+# kill all third level moving programs
 killall -9 drivingObjectDetection
+killall -9 objectDelivery
+
+# kill all secondary moving programs
+killall -9 localPlannerISY
 
 # kill all primary moving programs
-#killall -9 localPlanner
+killall -9 motorControl
 
 # kill localization and exploration
-# killall ...
+killall -9 mapGenerator 
+killall -9 frontierExploration 
 
 # kill all sensing programs
 killall -9 rirReader
-
-# kill spread
-killall -9 spread
+killall -9 senseFloorProximity 
 
 sleep 1
 

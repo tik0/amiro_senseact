@@ -1,17 +1,27 @@
 #!/bin/sh
 
 if [ -z "${1}" ]; then
-  echo "Set a robot ID for the AMiRo"
+  echo "Set a robot ID for the AMiRo."
   exit 1
 fi
+robotID=${1}
 
 if [ -z "${2}" ]; then
-  echo "Set a tracking ID for the AMiRo"
+  echo "Set a tracking ID for the AMiRo."
   exit 1
 fi
-
-robotID=${1}
 trackingID=${2}
+
+if [ -z "${3}" ]; then
+  echo "Setting the destination ID to the tracking ID of the AMiRo (simply setting delivering destination to start position)."
+  destinationID=$trackingID
+else
+  destinationID=${3}
+fi
+
+host=localhost
+port=4823
+prox_obstacle=/rir_prox/obstacle/
 
 # kill maybe already started programs
 ./stop.sh
@@ -19,33 +29,36 @@ sleep 1
 
 cpufreq-set -g performance
 
-# start spread
-spread -c amirospread &
-sleep 5
-
 # start all sensing programs
-# TODO start sensing odometry!
-./rirReader -l > /dev/null &
+./rirReader > /dev/null &
+./senseFloorProximity &
 
 # start localization programs
-# TODO start map builder
-# TODO start exploration program
+./mapGenerator -r --id $trackingID --host $host --port $port --irin $prox_obstacle &
+#./mapGenerator -r --id $trackingID --host $host --port $port --irin $prox_obstacle -l finalmap1.jpg -e finalmap_edge1.jpg &
+./frontierExploration --id $trackingID --host $host --port $port --irin $prox_obstacle &
 
 # start all primary moving programs
-# start Local Planner
+./motorControl > /dev/null &
 
 # start all secondary moving programs
-./drivingObjectDetection --useTrackingData --trackingID ${trackingID} --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --skipPathPlanner --skipLocalPlanner --skipFinalRotation --skipDetection --skipCorrection --skipLocalization &
+./localPlannerISY --id $trackingID --host $host --port $port &
+
+# start all thrid level moving programs
+./drivingObjectDetection --useTrackingData --trackingID $trackingID --meterPerPixel 0.0025 --trackingInscope /murox/roboterlocation --pathOutScope /path --pathResponseInscope /pathResponse --mapServerScope /mapGenerator&
+./objectDelivery --host $host --port $port --destId $destinationID &
 
 # start only listening statemachines
-./answerer --skipDetection &
-./openChallengeGEPTRO_2nd --robotID ${robotID} --testWithAnswerer &
+./answerer --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
+./stateMachineGEPTRO --robotID $robotID &
 
 sleep 1
 
 # start commanding statemachine
-./answerer_tobi --robotID ${robotID} &
+./answerer_tobi --robotID $robotID &
 
 wait
 cpufreq-set -g ondemand
+
+
 
