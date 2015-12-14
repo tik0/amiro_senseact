@@ -133,6 +133,7 @@ int main(int argc, char **argv) {
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
+			     ("proximityScope,p", po::value<std::string>(&proxSensorInscope), "Scope for receiving proximity sensor values.")
 			     ("commandScope,c", po::value<std::string>(&commandInscope), "Scope for receiving commands.");
 
 	// allow to give the value as a positional argument

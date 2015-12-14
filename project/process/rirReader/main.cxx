@@ -150,7 +150,7 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
 
   // Create and start the command listener
   rsb::ListenerPtr listener = factory.createListener(rsbInScopeNewConfig);
-    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
   listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(commandQueue)));
 
   // Init the CAN interface

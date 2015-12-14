@@ -87,6 +87,12 @@ using namespace rsb;
 using namespace rsb::patterns;
 
 
+
+// following commands
+std::string FOLLOWCOMMAND_START = "START";
+std::string FOLLOWCOMMAND_STOP = "STOP";
+std::string FOLLOWCOMMAND_QUIT = "QUIT";
+
 // radius of the AMiRo in m
 float amiroRadius = 0.05;
 
@@ -127,6 +133,7 @@ std::vector<int> motorCmd(3,0);
 
 // scopenames for rsb
 std::string proxSensorInscope = "/rir_prox/obstacle";
+std::string followOutscope = "/follow/proximitysensors";
 std::string trackingInscope = "/murox/roboterlocation";
 std::string FollowerInscope = "/Transport/Follow";
 std::string GuideInscope = "/Transport/Guide";
@@ -253,6 +260,9 @@ int main(int argc, char **argv) {
 
 	// create rsb informer for motor control
 	rsb::Informer< std::vector<int> >::Ptr motorCmdInformer = factory.createInformer< std::vector<int> > (rsbOutScope);
+
+	// create rsb informer for following behavior
+	rsb::Informer<std::string>::Ptr informerCommandFollowing = factory.createInformer<std::string> (followOutscope);
 
 
 
@@ -460,38 +470,30 @@ int main(int argc, char **argv) {
 				}
 //				goOn = turningProc(sensorValues, CAN, motorCmdInformer) != STATE_FOLLOW;
 
-			} else {
-				// do following part
-				if (referenceRobotIsNear(sensorValues)) {
-					justWritten = false;
-//					std::cout << "Robot is near. State = " << state << std::endl;
-					switch (state) {
-						case STATE_TURNING:
-							state = followingProc(sensorValues, myCAN, motorCmdInformer);
-							break;
-						case STATE_FOLLOW:
-							state = followingProc(sensorValues, myCAN, motorCmdInformer);
-							break;
-						default:
-							state = followingProc(sensorValues, myCAN, motorCmdInformer);
-							break;
-					}
-				} else {
-					if (!justWritten) {
-						justWritten = true;
-						std::cout << "< No reference robot >"<< std::endl;
-					}
-					state = STATE_WATCHING;
-					motorActionMilli(0,0,myCAN,motorCmdInformer);
-				}
+			}
 
-				if(!progressQueue->empty()) {
-					guidePos = progressQueue->pop();
-					continueFollowing = guidePos->orientation() != PROTOCOL_OK;
-				}
+			if(!progressQueue->empty()) {
+				guidePos = progressQueue->pop();
+				continueFollowing = guidePos->orientation() != PROTOCOL_OK;
 			}
 		}
 	}
+
+	// start following behavior
+	boost::shared_ptr<std::string> StringPtr(new std::string(FOLLOWCOMMAND_START));
+	informerCommandFollowing->publish(StringPtr);
+
+	while (continueFollowing) {
+		usleep(200000);
+		if(!progressQueue->empty()) {
+			guidePos = progressQueue->pop();
+			continueFollowing = guidePos->orientation() != PROTOCOL_OK;
+		}
+	}
+
+	// stop following behavior
+	StringPtr = boost::shared_ptr<std::string>(new std::string(FOLLOWCOMMAND_STOP));
+	informerCommandFollowing->publish(StringPtr);
 
 	INFO_MSG("Finale position reached. Closing connection.");
 
@@ -503,6 +505,14 @@ int main(int argc, char **argv) {
 	for(int led=0; led<8; led++) {
 		myCAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
 	}
+
+	// quit following application
+	sleep(1);
+	StringPtr = boost::shared_ptr<std::string>(new std::string(FOLLOWCOMMAND_QUIT));
+	informerCommandFollowing->publish(StringPtr);
+
+	// stop motor (if necesary)
+	motorActionMilli(0, 0, myCAN, motorCmdInformer);
 
 	return EXIT_SUCCESS;
 }
