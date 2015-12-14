@@ -9,7 +9,7 @@
 // #define DEBUG_MSG_
 // #define SUCCESS_MSG_
 #define WARNING_MSG_
-// #define ERROR_MSG_
+#define ERROR_MSG_
 #include <MSG.h>
 
 #include <iostream>
@@ -35,9 +35,11 @@
 using namespace std;
 using namespace muroxConverter;
 
-/* Offsets for AMiRo 36 */
-static int GROUND_OFFSETS[] = {2437, 2463, 2483, 2496, 2457, 2443, 2508, 2352};
-static int AIR_OFFSETS[] = {2213, 2316, 2341, 2329, 2331, 2290, 2335, 2152};
+#define SENSOR_COUNT 8
+
+/* Start offsets for AMiRo */
+static int GROUND_OFFSETS[] = {2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450};
+static int AIR_OFFSETS[] = {2290, 2290, 2290, 2290, 2290, 2290, 2290, 2290};
 
 string irObstacleOffsetFile = "/home/root/initial/irConfig.conf";
 string irAirOffsetFile = "/home/root/initial/irEmpty.conf";
@@ -50,8 +52,6 @@ string rsbOutScopeNewConfigRes = "/rir_prox/newconfigResponse";
 
 string COMMAND_DONE = "DONE";
 string COMMAND_ERROR = "ERROR";
-
-
 
 
 void splitString(const std::string &str, vector<std::string> &parts, const std::string delimiters) {
@@ -70,23 +70,68 @@ void splitString(const std::string &str, vector<std::string> &parts, const std::
     }
 }
 
-bool loadIrConfig(std::string configPath) {
+bool loadIrConfig(std::string configPath, bool isObstacleConfig) {
+  // set offset type
+  string setOffsetType;
+  if (isObstacleConfig) {
+    setOffsetType = "ground";
+  } else {
+    setOffsetType = "air";
+  }
+
+  INFO_MSG("Read '" << configPath << "' (for " << setOffsetType << " offsets):");
+
+  // try to open file
   char input[100];
+  bool allDone = false;
   FILE *irConfig = fopen(configPath.c_str(), "r");
+
+  // check if file could be loaded
   if (irConfig) {
+
+    // read file
     fgets(input, 100, irConfig);
-    INFO_MSG("Read '" << irObstacleOffsetFile << "':");
     vector<std::string> parts;
     splitString(std::string(input), parts, "\t");
-    for (int part=0; part<parts.size(); part++) {
-      GROUND_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
-      INFO_MSG(" " << (part+1) << ") " << GROUND_OFFSETS[part]);
+
+    // check if there are values for each sensor
+    if (parts.size() != SENSOR_COUNT) {
+      ERROR_MSG("There are " << SENSOR_COUNT << " offsets needed, but " << parts.size() << " offsets found in '" << configPath << "'!");
+    } else {
+
+      // check if each value is an integer value
+      int testOffsets[SENSOR_COUNT];
+      allDone = true;
+      for (int part=0; part<parts.size(); part++) {
+        testOffsets[part] = atoi(std::string(parts[part]).c_str());
+        string errorMsg = "";
+        string inputPart = std::to_string(testOffsets[part]);
+        if (testOffsets[part] <= 0) {
+          allDone = false;
+          errorMsg = " (error value!)";
+          inputPart = parts[part];
+        }
+        INFO_MSG(" " << (part+1) << ") " << inputPart << errorMsg);
+      }
+      if (allDone) {
+        // set new offsets
+        for (int part=0; part<parts.size(); part++) {
+          if (isObstacleConfig) {
+            GROUND_OFFSETS[part] = testOffsets[part];
+          } else {
+            AIR_OFFSETS[part] = testOffsets[part];
+          }
+        } 
+        return true;
+      } else {
+        ERROR_MSG("The offsets aren't integer values!");
+      }
     }
-    return true;
   } else {
-    WARNING_MSG("Coudn't load '" << configPath << "'! Now using standard offsets.");
-    return false;
+    ERROR_MSG("Coudn't load file '" << configPath << "'!");
   }
+  WARNING_MSG("Continuing using old offsets!");
+  return false;
 }
 
 void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGround, uint32_t rsbPeriod, bool print) {
@@ -170,7 +215,7 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
     if (!commandQueue->empty()) {
       std::string newConfig = *commandQueue->pop().get();
       INFO_MSG("New Config Path received: " << newConfig);
-      bool done = loadIrConfig(newConfig);
+      bool done = loadIrConfig(newConfig, true);
       if (done) {
         boost::shared_ptr<std::string> StringPtr(new std::string(COMMAND_DONE));
         informerCommandResponse->publish(StringPtr);
@@ -199,6 +244,8 @@ int main(int argc, char **argv) {
     ("outscopeOriginal,o", po::value<std::string> (&rsbOutScopeOriginal), "Scope for sending original proximity values.")
     ("outscopeObstacle,e", po::value<std::string> (&rsbOutScopeObstacle), "Scope for sending generalized proximity values for the obstacle model.")
     ("outscopeGround,g", po::value<std::string> (&rsbOutScopeGround), "Scope for sending generalized proximity values the egde model.")
+    ("inscopeCommand,i", po::value<std::string> (&rsbInScopeNewConfig), "Scope for receiving new configuration path command.")
+    ("outscopeResponse,r", po::value<std::string> (&rsbOutScopeNewConfigRes), "Scope for sending command response.")
     ("period,t", po::value<uint32_t> (&rsbPeriod), "Update interval in milliseconds (0 for maximum rate).")
     ("print,p", "Prints read proximity values in the console.")
     ("loadOffsetFile,l", po::value<std::string> (&irObstacleOffsetFile), "File name for the obstacle offsets (on deafult: /root/initial/irConfig.conf).");
@@ -219,24 +266,27 @@ int main(int argc, char **argv) {
   // afterwards, let program options handle argument errors
   po::notify(vm);
 
-  loadIrConfig(irObstacleOffsetFile);
-  char input[100];
-  FILE *irEmpty = fopen(irAirOffsetFile.c_str(), "r");
-  if (irEmpty) {
-    fgets(input, 100, irEmpty);
-    INFO_MSG("Read '" << irAirOffsetFile << "':");
-    vector<std::string> parts;
-    splitString(std::string(input), parts, "\t");
-    for (int part=0; part<parts.size(); part++) {
-      AIR_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
-      INFO_MSG(" " << (part+1) << ") " << AIR_OFFSETS[part]);
-    }
-  } else {
-    WARNING_MSG("Coudn't load '" << irAirOffsetFile << "'! Now using standard offsets.");
-  }
-  
-  justReadValues(rsbOutScopeObstacle, rsbOutScopeGround, rsbPeriod, vm.count("print"));
+  // print parameter input
+  INFO_MSG("Scopes for sending proximity sensor values:");
+  INFO_MSG(" - original: " << rsbOutScopeOriginal);
+  INFO_MSG(" - obstacle: " << rsbOutScopeObstacle);
+  INFO_MSG(" - edge:     " << rsbOutScopeGround);
+  INFO_MSG("");
+  INFO_MSG("Actual offset configuration files:");
+  INFO_MSG(" - ground offsets: " << irObstacleOffsetFile);
+  INFO_MSG(" - air offsets:    " << irAirOffsetFile);
+  INFO_MSG("");
+  INFO_MSG("Scopes for setting new ground offsets:");
+  INFO_MSG(" - command scope:  " << rsbInScopeNewConfig);
+  INFO_MSG(" - response scope: " << rsbOutScopeNewConfigRes);
+  INFO_MSG("");
 
+  // loading configurations
+  loadIrConfig(irObstacleOffsetFile, true);
+  loadIrConfig(irAirOffsetFile, false);
+  
+  // loop
+  justReadValues(rsbOutScopeObstacle, rsbOutScopeGround, rsbPeriod, vm.count("print"));
 
   return EXIT_SUCCESS;
 }
