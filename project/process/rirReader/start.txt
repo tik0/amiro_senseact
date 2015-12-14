@@ -25,11 +25,20 @@ There are used two types of offsets for each sensor. The first offset is the gro
   - ground offsets: ''/home/root/initial/irConfig.conf''
   - air offsets: ''/home/root/initial/irEmpty.conf''
 
-The path to the ground offsets configuration file can be changed by the parameter ''-l'' (see section "Parameters"). The air offsets configuration file cannot be changed!
+The path to the ground offsets configuration file can be changed by the parameter ''-l'' (see section "Parameters") and at runtime over RSB (see section "Change Sensor Offsets at Runtime"). The air offsets configuration file cannot be changed!
 
 The offsets are the mean values of a measurement set. For such a measurement the tool [[tools:measureOffsetTest:start|measureOffsetTest]] can be used. It has a parameter to calculate the mean values and to write those configuration files directly. This tool has to be used twice, for each offset once, which is defined in scripts in the [[demo:initial:start|initial demo]].
 
 For the measurement of the ground offset, the robot has to be placed on the ground, which should be used (table, floor, etc.). There shouldn't be any obstacles (including cables!) or edges in range of the sensors (for the VCNL4020 proximity sensors it's a range about 25 cm around the robot). For the measurement of the air offset, the robot should be placed in the air by using e.g. thin objects, etc. (for the VCNL4020 proximity sensors the height should be about 20 cm). Of course, there shouldn't be any obstacles in the sensors' range, either!
+
+==== Change Sensor Offsets at Runtime ====
+
+While the air offsets are fixed, the ground offsets can be changed at runtime over RSB. In this case just the path to the new configuration file, which includes the new ground offsets, has to be sent as a string over the "New Config Command" scope.
+
+If the tool has received the path, it will response over the "Command Response" scope with the following answers:
+^ Response Code ^ Description ^
+| DONE | The path and the file are correct and the offset values are set. |
+| ERROR | There was a problem with the path or the file. The offsets couldn't be set. The old offsets are used. |
 
 ==== Published Sensor Values ====
 
@@ -55,6 +64,8 @@ The ground and edge values are published seperately via RSB. They can be used di
 | Original Values | /rir_prox/original | Scope for sending the original proximity sensor values. |
 | Obstacle Values | /rir_prox/obstacle | Scope for sending the generalized proximity sensor values for the obstacle model. |
 | Edge Values | /rir_prox/ground | Scope for sending the generalized proximity sensor values for the edge model. |
+| New Config Command | /rir_prox/newconfig | Scope for receiving the path (String) of the new configuration file with ground offsets. |
+| Command Response | /rir_prox/newconfigResponse | Scope for sending the command response. |
 
 ===== Parameters =====
 

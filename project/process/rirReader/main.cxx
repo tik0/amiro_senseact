@@ -13,7 +13,6 @@
 #include <MSG.h>
 
 #include <iostream>
-#include <boost/thread.hpp>
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -22,6 +21,8 @@
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
+#include <rsc/threading/SynchronizedQueue.h>
+#include <rsb/QueuePushHandler.h>
 
 // Include own converter
 #include <converter/vecIntConverter/main.hpp>
@@ -44,6 +45,49 @@ string irAirOffsetFile = "/home/root/initial/irEmpty.conf";
 string rsbOutScopeOriginal = "/rir_prox/original";
 string rsbOutScopeObstacle = "/rir_prox/obstacle";
 string rsbOutScopeGround = "/rir_prox/ground";
+string rsbInScopeNewConfig = "/rir_prox/newconfig";
+string rsbOutScopeNewConfigRes = "/rir_prox/newconfigResponse";
+
+string COMMAND_DONE = "DONE";
+string COMMAND_ERROR = "ERROR";
+
+
+
+
+void splitString(const std::string &str, vector<std::string> &parts, const std::string delimiters) {
+    // Skip delimiters at beginning.
+    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    // Find first "non-delimiter".
+    std::string::size_type pos = str.find_first_of(delimiters, lastPos);
+
+    while (std::string::npos != pos || std::string::npos != lastPos) {
+        // Found a token, add it to the vector.
+        parts.push_back(str.substr(lastPos, pos - lastPos));
+        // Skip delimiters.  Note the "not_of"
+        lastPos = str.find_first_not_of(delimiters, pos);
+        // Find next "non-delimiter"
+        pos = str.find_first_of(delimiters, lastPos);
+    }
+}
+
+bool loadIrConfig(std::string configPath) {
+  char input[100];
+  FILE *irConfig = fopen(configPath.c_str(), "r");
+  if (irConfig) {
+    fgets(input, 100, irConfig);
+    INFO_MSG("Read '" << irObstacleOffsetFile << "':");
+    vector<std::string> parts;
+    splitString(std::string(input), parts, "\t");
+    for (int part=0; part<parts.size(); part++) {
+      GROUND_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
+      INFO_MSG(" " << (part+1) << ") " << GROUND_OFFSETS[part]);
+    }
+    return true;
+  } else {
+    WARNING_MSG("Coudn't load '" << configPath << "'! Now using standard offsets.");
+    return false;
+  }
+}
 
 void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGround, uint32_t rsbPeriod, bool print) {
 
@@ -57,6 +101,12 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
   rsb::Informer< std::vector<int> >::Ptr informerOriginalValues = factory.createInformer< std::vector<int> > (rsbOutScopeOriginal);
   rsb::Informer< std::vector<int> >::Ptr informerObstacleValues = factory.createInformer< std::vector<int> > (rsbOutScopeObstacle);
   rsb::Informer< std::vector<int> >::Ptr informerGroundValues = factory.createInformer< std::vector<int> > (rsbOutScopeGround);
+  rsb::Informer<std::string>::Ptr informerCommandResponse = factory.createInformer<std::string> (rsbOutScopeNewConfigRes);
+
+  // Create and start the command listener
+  rsb::ListenerPtr listener = factory.createListener(rsbInScopeNewConfig);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+  listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(commandQueue)));
 
   // Init the CAN interface
   ControllerAreaNetwork CAN;
@@ -117,27 +167,23 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
       informerGroundValues->publish(vecDataGround);
     }
 
+    if (!commandQueue->empty()) {
+      std::string newConfig = *commandQueue->pop().get();
+      INFO_MSG("New Config Path received: " << newConfig);
+      bool done = loadIrConfig(newConfig);
+      if (done) {
+        boost::shared_ptr<std::string> StringPtr(new std::string(COMMAND_DONE));
+        informerCommandResponse->publish(StringPtr);
+      } else {
+        boost::shared_ptr<std::string> StringPtr(new std::string(COMMAND_ERROR));
+        informerCommandResponse->publish(StringPtr);
+      }
+    }
+
     // Sleep for a while
     boost::this_thread::sleep( boost::posix_time::milliseconds(rsbPeriod) );
   }
 
-}
-
-
-void splitString(const std::string &str, vector<std::string> &parts, const std::string delimiters) {
-    // Skip delimiters at beginning.
-    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-    // Find first "non-delimiter".
-    std::string::size_type pos = str.find_first_of(delimiters, lastPos);
-
-    while (std::string::npos != pos || std::string::npos != lastPos) {
-        // Found a token, add it to the vector.
-        parts.push_back(str.substr(lastPos, pos - lastPos));
-        // Skip delimiters.  Note the "not_of"
-        lastPos = str.find_first_not_of(delimiters, pos);
-        // Find next "non-delimiter"
-        pos = str.find_first_of(delimiters, lastPos);
-    }
 }
 
 
@@ -173,23 +219,11 @@ int main(int argc, char **argv) {
   // afterwards, let program options handle argument errors
   po::notify(vm);
 
+  loadIrConfig(irObstacleOffsetFile);
   char input[100];
-  FILE *irConfig = fopen(irObstacleOffsetFile.c_str(), "r");
-  if (irConfig) {
-    fgets(input, 100, irConfig);
-    INFO_MSG("Read '" << irObstacleOffsetFile << "':");
-    vector<std::string> parts;
-    splitString(std::string(input), parts, "\t");
-    for (int part=0; part<parts.size(); part++) {
-      GROUND_OFFSETS[part] = atoi(std::string(parts[part]).c_str());
-      INFO_MSG(" " << (part+1) << ") " << GROUND_OFFSETS[part]);
-    }
-  } else {
-    WARNING_MSG("Coudn't load '" << irObstacleOffsetFile << "'! Now using standard offsets.");
-  }
-  irConfig = fopen(irAirOffsetFile.c_str(), "r");
-  if (irConfig) {
-    fgets(input, 100, irConfig);
+  FILE *irEmpty = fopen(irAirOffsetFile.c_str(), "r");
+  if (irEmpty) {
+    fgets(input, 100, irEmpty);
     INFO_MSG("Read '" << irAirOffsetFile << "':");
     vector<std::string> parts;
     splitString(std::string(input), parts, "\t");
