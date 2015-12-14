@@ -32,7 +32,7 @@ cpufreq-set -g performance
 ./objectDelivery --useSLAMData --bigMap --positionInscope /localization --pathOut /path --pathRe /pathResponse --mapServer /CoreSlamServer --mapServerIsRemote --robotID ${ID} &
 
 # start only listening statemachines
-./answerer --skipExploration --skipDetection --skipDelivery &
+./amiroEnvironment --skipExploration --skipDetection --skipDelivery &
 ./stateMachineGEPTRO --robotID ${ID} --bigMap --mapServerIsRemote --mapServerScope /CoreSlamServer --obstacleServerReq getObjectsList &
 
 sleep 1

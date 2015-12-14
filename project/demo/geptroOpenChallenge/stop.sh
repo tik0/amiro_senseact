@@ -5,7 +5,7 @@ killall -9 answerer_tobi
 
 # kill all listening statemachines
 killall -9 stateMachineGEPTRO
-killall -9 answerer
+killall -9 amiroEnvironment
 
 # kill all third level moving programs
 killall -9 drivingObjectDetection

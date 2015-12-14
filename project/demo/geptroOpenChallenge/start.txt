@@ -18,7 +18,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 ^ Program ^ Description ^
 | [[process:objectDelivery:start|objectDelivery]] | Program for delivering objects. |
 | [[process:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the GEPTRO project. |
-| [[process:answerer:start|answerer]] | Simulation for needed and not included execution programs. |
+| [[process:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start|AMiRo Environment Simulation]] | AMiRo simulation for needed and not included execution programs. |
 | [[process:answerer_tobi:start|answerer_tobi]] | Simulation of external command program. |
 | [[process:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
 | [[process:rirReader:start|rirReader]] | Program for reading ring proximity values. |

@@ -49,7 +49,7 @@ cpufreq-set -g performance
 ./objectDelivery --host $host --port $port --destId $destinationID &
 
 # start only listening statemachines
-./answerer --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
+./amiroEnvironment --skipDetection --skipBlobbing --skipLocalPlanner --skipDelivery &
 ./stateMachineGEPTRO --robotID $robotID &
 
 sleep 1
