@@ -76,6 +76,7 @@ for x in $oldArr; do
     oldProject=$(echo "$oldProject$x/")
   fi
 done
+oldPath=$(echo "$oldPath ")
 
 # prepare new project's path and reference string for sed
 newArr=$(echo $2 | tr "/" "\n")
@@ -89,6 +90,7 @@ for x in $newArr; do
     newProject=$(echo "$newProject$x/")
   fi
 done
+newPath=$(echo "$newPath ")
 
 # check if new project exists
 fullProjectPath=$(echo "${startDirectory}${newProject}")
