@@ -13,6 +13,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <boost/shared_ptr.hpp>
 #include "mapUpdate.hpp"
+#include <sensorModels/VCNL4020Models.h>
 
 // Class that contains methods to update a obstacle grid map.
 class MapGenerator {
@@ -31,10 +32,6 @@ public:
 	void generateObstacleMap(cv::Mat &map, cv::Mat &obstacleMap);
 
 private:
-	// inverse sensor Modell, return predicted distance to obstacle
-	float invSensorModel(float angle, float sensorValue);
-	// error of the predicted distance
-	float getDistErrorSensorModel(float dist, float angle);
 	// calculate the smallest periodical angle in [-pi,pi]
 	float getSmallestAngleDiff(float angle1, float angle2);
 	// normalize the given angle to [-pi,pi]
@@ -59,13 +56,6 @@ private:
 	static const int GRID_VALUE_MAX;
 	static const int GRID_VALUE_MIN;
 	static const int GRID_VALUE_UNSURE;
-
-	// IR-sensor constants
-	static const float IR_CONVERTER_CALC_ALPHA;
-	static const float IR_CONVERTER_CALC_BETA;
-	static const float IR_CONVERTER_CALC_DELTA;
-	static const float IR_CONVERTER_CALC_XI;
-	static const float IR_CONVERTER_CALC_MEAS_VARIANCE;
 
 	static const int BLOCKED_THESHOLD = 112;
 	static const int OPEN_THESHOLD = 127;

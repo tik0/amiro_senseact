@@ -66,7 +66,6 @@ int trackingMarkerID = 0;
 float meterPerPixel = 1.0/400.0;
 
 // scopenames for rsb
-std::string proxSensorInscope = "/rir_prox/obstacle";
 std::string trackingInscope = "/murox/roboterlocation";
 std::string pathResponseInscope = "/pathResponse";
 std::string pathOutScope = "/path";

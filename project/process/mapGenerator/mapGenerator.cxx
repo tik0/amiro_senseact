@@ -21,13 +21,6 @@ const float MapGenerator::maxSensorAngle = M_PI * 60.0 / 180.0;
 // sensor position offset from front in radian
 const float MapGenerator::sensorPositionOffset = M_PI * 7.0 / 8.0;
 
-// IR-sensor constants
-const float MapGenerator::IR_CONVERTER_CALC_ALPHA = 0.942693757414292;
-const float MapGenerator::IR_CONVERTER_CALC_BETA = -16.252241893638708;
-const float MapGenerator::IR_CONVERTER_CALC_DELTA = 0;
-const float MapGenerator::IR_CONVERTER_CALC_XI = 1.236518540376969;
-const float MapGenerator::IR_CONVERTER_CALC_MEAS_VARIANCE = 20.886268537074187;
-
 const int MapGenerator::GRID_VALUE_MAX = 127;
 const int MapGenerator::GRID_VALUE_MIN = -128;
 const int MapGenerator::GRID_VALUE_UNSURE = 0;
@@ -106,9 +99,9 @@ MapUpdate MapGenerator::createMapUpdate(const boost::shared_ptr<std::vector<int>
 						float relCellSize = cellSize * (abs(sin(cellAngle)) + abs(cos(cellAngle)));
 
 						// use the inverse sensor model to predict the obstacle distance
-						float predDist = invSensorModel(cellAngle, (float) sensorValues->at(s));
+						float predDist = VCNL4020Models::obstacleModel(cellAngle, (float) sensorValues->at(s));
 						float diffDist = abs(cellDist - predDist);
-						float err = getDistErrorSensorModel(predDist, cellAngle);
+						float err = VCNL4020Models::obstacleErrorModel(predDist, cellAngle);
 
 						// check whether the cell is free or blocked
 						if (diffDist < relCellSize) {
@@ -240,32 +233,6 @@ void MapGenerator::generateObstacleMap(cv::Mat &map, cv::Mat &obstacleMap) {
 	// calculate the final map with eroded obstacles and show it
 	cv::subtract(f1, o1, obstacleMap);
 
-}
-
-// calculate the distance to an obstacle given the obstacles angle relative to the sensor and the sensor value
-float MapGenerator::invSensorModel(float angle, float sensorValue) {
-
-	float cosxi = cos(IR_CONVERTER_CALC_XI * angle);
-	if (cosxi < 0) {
-		cosxi *= -1;
-	}
-	float divi = sensorValue - IR_CONVERTER_CALC_BETA;
-	if (divi <= 0) {
-		divi = 1;
-	}
-	return sqrt(IR_CONVERTER_CALC_ALPHA * cosxi / divi + IR_CONVERTER_CALC_DELTA * cosxi);
-}
-
-// error of the predicted distance
-float MapGenerator::getDistErrorSensorModel(float dist, float angle) {
-	float sig = sqrt(IR_CONVERTER_CALC_MEAS_VARIANCE);
-
-	// calculate error
-	float cosxi = abs(cos(IR_CONVERTER_CALC_XI * angle));
-	float diffdistdelta = dist * dist / cosxi - IR_CONVERTER_CALC_DELTA;
-	float error = (diffdistdelta * diffdistdelta) / (2 * dist * IR_CONVERTER_CALC_ALPHA * sqrt(1 / cosxi)) * sig;
-
-	return error;
 }
 
 // normalize a angle to [-pi,pi]

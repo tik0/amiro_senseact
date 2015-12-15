@@ -15,13 +15,6 @@
 #include <algorithm>
 #include <math.h>
 
-// inverse sensor model constants
-#define IR_CONVERTER_CALC_ALPHA 0.942693757414292
-#define IR_CONVERTER_CALC_BETA -16.252241893638708
-#define IR_CONVERTER_CALC_DELTA 0
-#define IR_CONVERTER_CALC_XI 1.236518540376969
-#define IR_CONVERTER_CALC_MEAS_VARIANCE 20.886268537074187 //7.283035954107597
-
 // estimation correction
 #define CORRECTION_RANGESTART 0.01
 #define CORRECTION_RANGEEND 0.06
@@ -81,6 +74,7 @@ using namespace std;
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
+#include <sensorModels/VCNL4020Models.h>
 #include <extspread.hpp>
 
 using namespace rsb;
@@ -144,8 +138,6 @@ std::string spreadport = "4803";
 
 
 // method prototypes
-float invSensorModel(float angle, float sensorValue);
-float getDistErrorSensorModel(float dist, float angle);
 float getSmallestAngleDiff(float angl1, float angle2);
 twbTracking::proto::Pose2D readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID);
 bool isBeingTracked(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingID);
@@ -449,10 +441,10 @@ int main(int argc, char **argv) {
 
 			if (vm.count("initializeMin") && goOn) {
 				// do initialization part by minimum of proximity sensors
-				float minDist = invSensorModel(0, sensorValues->at(0));
+				float minDist = VCNL4020Models::obstacleModel(0, sensorValues->at(0));
 				float minIdx = 0;
 				for (int idx=1; idx<8; idx++) {
-					float newMin = invSensorModel(0, sensorValues->at(idx));
+					float newMin = VCNL4020Models::obstacleModel(0, sensorValues->at(idx));
 					if (minDist > newMin) {
 						minDist = newMin;
 						minIdx = idx;
@@ -557,7 +549,7 @@ int motorActionMilli(int speed, int turn, ControllerAreaNetwork &CAN, rsb::Infor
 bool referenceRobotIsNear(boost::shared_ptr<std::vector<int>> sensorValues) {
 	bool itIs = false;
 	for (int idx=0; idx < numSensors; idx++) {
-		if (invSensorModel(0, sensorValues->at(idx)) < maxSensorRange) {
+		if (VCNL4020Models::obstacleModel(0, sensorValues->at(idx)) < maxSensorRange) {
 			itIs = true;
 			break;
 		}
@@ -570,7 +562,7 @@ std::vector<int> focusReferenceRobot(boost::shared_ptr<std::vector<int>> sensorV
 	int idxs[8];
 	int idxsCount = 0;
 	for (int idx=focusStart; idx < focusEnd; idx++) {
-		if (invSensorModel(0, sensorValues->at(idx)) < maxSensorRange) {
+		if (VCNL4020Models::obstacleModel(0, sensorValues->at(idx)) < maxSensorRange) {
 			idxs[idxsCount] = idx;
 			idxsCount++;
 		}
@@ -642,10 +634,10 @@ int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAr
 		if (left == 3 && count == 2) {
 //			std::cout << "2 Sensors:" << std::endl;
 			// if both front sensors have refernce robot in range
-			float lDist = invSensorModel(0, sensorValues->at(left));
-			float rDist = invSensorModel(0, sensorValues->at(left+1));
-			float lSide = invSensorModel(0, sensorValues->at(left-1));
-			float rSide = invSensorModel(0, sensorValues->at(left+2));
+			float lDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left));
+			float rDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
+			float lSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
+			float rSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left+2));
 			float posX = (lDist*cos(M_PI/8.0) + rDist*cos(-M_PI/8.0))/2.0;
 			float posY = (lDist*sin(M_PI/8.0) + rDist*sin(-M_PI/8.0))/2.0;
 			dist = sqrt(posX*posX + posY*posY) - amiroRadius/2.0;
@@ -660,20 +652,20 @@ int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAr
 			float sideDist;
 			if (left == 3) {
 //				std::cout << "Left Sensor:" << std::endl;
-				sideDist = invSensorModel(0, sensorValues->at(left-1));
+				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
 				angle = M_PI/8.0;
 //				std::cout << "angle ori: " << angle;
 				angle += angleCorrection(sideDist);
 //				std::cout << " - angle cor: " << angle << std::endl;
 			} else {
 //				std::cout << "Right Sensor:" << std::endl;
-				sideDist = invSensorModel(0, sensorValues->at(left+1));
+				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
 				angle = - M_PI/8.0;
 //				std::cout << "angle ori: " << angle;
 				angle -= angleCorrection(sideDist);
 //				std::cout << " - angle cor: " << angle << std::endl;
 			}
-			dist = invSensorModel(0, sensorValues->at(left));
+			dist = VCNL4020Models::obstacleModel(0, sensorValues->at(left));
 //			std::cout << "dist ori: " << dist;
 			dist += distCorrection(sideDist);
 //			std::cout << " - dist cor: " << dist << std::endl;
@@ -728,37 +720,6 @@ int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAr
 		motorActionMilli(0, 0, CAN, motorCmdInformer);
 		return STATE_WATCHING;
 	}
-}
-
-
-
-// calculate the distance to an obstacle given the obstacles angle relative to the sensor and the sensor value
-float invSensorModel(float angle, float sensorValue) {
-
-	float cosxi = cos(IR_CONVERTER_CALC_XI * angle);
-	if (cosxi < 0) {
-		cosxi *= -1;
-	}
-	float divi = sensorValue - IR_CONVERTER_CALC_BETA;
-	if (divi <= 0) {
-		divi = 1;
-	}
-	return sqrt(
-	IR_CONVERTER_CALC_ALPHA * cosxi / divi + IR_CONVERTER_CALC_DELTA * cosxi);
-}
-
-float getDistErrorSensorModel(float dist, float angle) {
-	float sig = sqrt(IR_CONVERTER_CALC_MEAS_VARIANCE);
-
-	// calculate error
-	float cosxi = cos(IR_CONVERTER_CALC_XI * angle);
-	if (cosxi < 0) {
-		cosxi *= -1;
-	}
-	float diffdistdelta = dist * dist / cosxi - IR_CONVERTER_CALC_DELTA;
-	float error = (diffdistdelta * diffdistdelta) / (2 * dist * IR_CONVERTER_CALC_ALPHA * sqrt(1 / cosxi)) * sig;
-
-	return error;
 }
 
 float getSmallestAngleDiff(float angle1, float angle2) {

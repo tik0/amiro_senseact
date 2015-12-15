@@ -56,6 +56,7 @@ using namespace std;
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
+#include <sensorModels/VCNL4020Models.h>
 
 using namespace rsb;
 using namespace rsb::patterns;
@@ -67,10 +68,6 @@ using namespace rsb::patterns;
 #define GROUND_MARGIN 6
 #define GROUND_MARGIN_DANGER 5
 #define EDGE_DIFF 0.4
-
-// edge model 6cm
-#define EDGEMODEL_M 6.359946153158588
-#define EDGEMODEL_B 0.401918238192352
 
 // velocities
 #define VEL_FORWARD 8
@@ -118,11 +115,6 @@ std::string stateTypeString[] {
   "turn",
   "finalize"
 };
-
-
-float edgeDist(int senValue) {
-  return EDGEMODEL_M * ((float)senValue)/10000.0 + EDGEMODEL_B;
-}
 
 void sendMotorCmd(int speed, int angle, ControllerAreaNetwork &CAN) {
   
@@ -273,7 +265,7 @@ int main(int argc, char **argv) {
               pose2D->set_id(0);
               // Search table edge
               for (int senIdx=0; senIdx<8; senIdx++) {
-                float ed = edgeDist(sensorValuesGround->at(senIdx));
+                float ed = VCNL4020Models::edgeModel(sensorValuesGround->at(senIdx));
                 if (ed < minEdgeDist) {
                   minEdgeIdx = senIdx;
                   minEdgeDist = ed;
@@ -289,8 +281,8 @@ int main(int argc, char **argv) {
               state = STfindDirection;
               break;
             case STfindDirection:
-              edgeDistL = edgeDist(sensorValuesGround->at(7));
-              edgeDistR = edgeDist(sensorValuesGround->at(0));
+              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(7));
+              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(0));
               if (turn == 0 && edgeDistL < edgeDistR - EDGE_DIFF) {
                 turn = 1;
                 sendMotorCmd(0, mymcm(VEL_TURNING_SLOW), CAN);
@@ -312,8 +304,8 @@ int main(int argc, char **argv) {
               sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
               state = STdriveEdge;
             case STdriveEdge:
-              edgeDistL = edgeDist(sensorValuesGround->at(3));
-              edgeDistR = edgeDist(sensorValuesGround->at(4));
+              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
+              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
               if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
                 sendMotorCmd(0, 0, CAN);
                 usleep(500000);
@@ -321,8 +313,8 @@ int main(int argc, char **argv) {
               }
               break;
             case STcheckEdge:
-              edgeDistL = edgeDist(sensorValuesGround->at(3));
-              edgeDistR = edgeDist(sensorValuesGround->at(4));
+              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
+              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
               if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
                 INFO_MSG("Edge detected");
                 state = STcorrectEdge;
@@ -332,7 +324,7 @@ int main(int argc, char **argv) {
               }
               break;
             case STcorrectEdge:
-              edgeDistR = edgeDist(sensorValuesGround->at(3));
+              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
               edgeDistL = edgeDistL*cos(M_PI/8);
               edgeDistR = GROUND_MARGIN_DANGER - edgeDistR;
               INFO_MSG("Distance to edge: " << edgeDistL << " cm (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
@@ -358,8 +350,8 @@ int main(int argc, char **argv) {
               DEBUG_MSG("Saved position " << pose2D->x() << "/" << pose2D->y() << " with " << pose2D->orientation() << " rad and ID " << pose2D->id());
               break;
             case STturn:
-              edgeDistL = edgeDist(sensorValuesGround->at(1));
-              edgeDistR = edgeDist(sensorValuesGround->at(2));
+              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(1));
+              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(2));
               if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) < EDGE_DIFF) {
                 turn = 0;
                 sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
