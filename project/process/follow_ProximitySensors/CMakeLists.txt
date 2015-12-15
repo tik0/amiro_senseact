@@ -19,13 +19,6 @@ pkg_check_modules(RSTSANDBOX rstsandbox0.11)
 # Need to add, because rst manual said so:
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
-# Not needed. The libraries will be set manualy
-# link_directories(
-#     ${RSB_LIBRARY_DIRS}
-#     ${OPENCV_LIBRARY_DIRS}
-#     ${LIBV4l2_LIBRARY_DIRS}
-# )
-
 # Set the include pathe
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
@@ -35,7 +28,6 @@ include_directories(
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
-    "$ENV{MUROX_INCLUDE_DIRS}/extspread"		            # Programatik spread
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
@@ -46,23 +38,17 @@ include_directories(
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-
-# Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
 
 file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.hpp $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.cxx)
-
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS})
 
 # Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
@@ -98,7 +84,6 @@ target_link_libraries (
     boost_thread
     # -- Own libraries
     vecIntConverter
-    matConverter
     ${PROTO_LIBRARIES}
 
 )

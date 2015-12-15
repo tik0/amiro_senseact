@@ -15,13 +15,6 @@
 #include <algorithm>
 #include <math.h>
 
-// inverse sensor model constants
-#define IR_CONVERTER_CALC_ALPHA 0.942693757414292
-#define IR_CONVERTER_CALC_BETA -16.252241893638708
-#define IR_CONVERTER_CALC_DELTA 0
-#define IR_CONVERTER_CALC_XI 1.236518540376969
-#define IR_CONVERTER_CALC_MEAS_VARIANCE 20.886268537074187 //7.283035954107597
-
 // estimation correction
 #define CORRECTION_RANGESTART 0.01
 #define CORRECTION_RANGEEND 0.06
@@ -31,17 +24,6 @@
 #define CORRECTION_ANGLEGRADIANT 0.805021 //0.0205021
 #define CORRECTION_SIDEMEASSTART 0.004878
 #define CORRECTION_SIDEMEASGRADIANT 0.67324
-
-
-// Guide-Follower protocol
-#define PROTOCOL_ERROR 0
-#define PROTOCOL_OK 1
-#define PROTOCOL_DISCONNECT 2
-
-// state defines
-#define STATE_WATCHING 0
-#define STATE_TURNING  1
-#define STATE_FOLLOW   2
 
 
 #include <iostream>
@@ -63,25 +45,15 @@
 
 using namespace rsb;
 
-#include <rst/geometry/Pose.pb.h>
-#include <rst/geometry/Translation.pb.h>
-#include <rst/geometry/Rotation.pb.h>
-using namespace rst::geometry;
-
 #include <converter/vecIntConverter/main.hpp>
-//#include <converter/matConverter/matConverter.hpp>
 using namespace muroxConverter;
 
 using namespace std;
 
-#include <Types.h>
-
-#include <types/twbTracking.pb.h>
-
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
-#include <extspread.hpp>
+#include <sensorModels/VCNL4020Models.h>
 
 using namespace rsb;
 using namespace rsb::patterns;
@@ -115,12 +87,10 @@ std::string commandInscope = "/follow/proximitysensors";
 
 
 // method prototypes
-float invSensorModel(float angle, float sensorValue);
-float getDistErrorSensorModel(float dist, float angle);
 void motorActionMilli(int speed, int turn, ControllerAreaNetwork &CAN);
 bool referenceRobotIsNear(boost::shared_ptr<std::vector<int>> sensorValues);
 std::vector<int> focusReferenceRobot(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN, int focusStart, int focusEnd);
-int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN);
+void followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN);
 float distCorrection(float sideDist);
 float angleCorrection(float sideDist);
 
@@ -152,9 +122,12 @@ int main(int argc, char **argv) {
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
 
-	INFO_MSG("Initialize RSB");
+        INFO_MSG("Listening to the scopes:");
+        INFO_MSG(" - Proximity Sensors: " << proxSensorInscope);
+        INFO_MSG(" - Command Input:     " << commandInscope);
+        INFO_MSG("");
 
-	boost::shared_ptr<twbTracking::proto::Pose2D> finalePos(new twbTracking::proto::Pose2D());
+	INFO_MSG("Initialize RSB");
 
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
@@ -256,7 +229,7 @@ void motorActionMilli(int speed, int turn, ControllerAreaNetwork &CAN) {
 bool referenceRobotIsNear(boost::shared_ptr<std::vector<int>> sensorValues) {
 	bool itIs = false;
 	for (int idx=0; idx < numSensors; idx++) {
-		if (invSensorModel(0, sensorValues->at(idx)) < maxSensorRange) {
+		if (VCNL4020Models::obstacleModel(0, sensorValues->at(idx)) < maxSensorRange) {
 			itIs = true;
 			break;
 		}
@@ -269,7 +242,7 @@ std::vector<int> focusReferenceRobot(boost::shared_ptr<std::vector<int>> sensorV
 	int idxs[8];
 	int idxsCount = 0;
 	for (int idx=focusStart; idx < focusEnd; idx++) {
-		if (invSensorModel(0, sensorValues->at(idx)) < maxSensorRange) {
+		if (VCNL4020Models::obstacleModel(0, sensorValues->at(idx)) < maxSensorRange) {
 			idxs[idxsCount] = idx;
 			idxsCount++;
 		}
@@ -302,7 +275,7 @@ std::vector<int> focusReferenceRobot(boost::shared_ptr<std::vector<int>> sensorV
 	return result;
 }
 
-int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN) {
+void followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN) {
 	std::vector<int> val = focusReferenceRobot(sensorValues, CAN, 3, 5);
 	int left = val.at(0);
 	int count = val.at(1);
@@ -311,10 +284,10 @@ int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAr
 		float dist, angle;
 		if (left == 3 && count == 2) {
 			// if both front sensors have refernce robot in range
-			float lDist = invSensorModel(0, sensorValues->at(left));
-			float rDist = invSensorModel(0, sensorValues->at(left+1));
-			float lSide = invSensorModel(0, sensorValues->at(left-1));
-			float rSide = invSensorModel(0, sensorValues->at(left+2));
+			float lDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left));
+			float rDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
+			float lSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
+			float rSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left+2));
 			float posX = (lDist*cos(M_PI/8.0) + rDist*cos(-M_PI/8.0))/2.0;
 			float posY = (lDist*sin(M_PI/8.0) + rDist*sin(-M_PI/8.0))/2.0;
 			dist = sqrt(posX*posX + posY*posY) - amiroRadius/2.0;
@@ -324,15 +297,15 @@ int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAr
 		} else {
 			float sideDist;
 			if (left == 3) {
-				sideDist = invSensorModel(0, sensorValues->at(left-1));
+				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
 				angle = M_PI/8.0;
 				angle += angleCorrection(sideDist);
 			} else {
-				sideDist = invSensorModel(0, sensorValues->at(left+1));
+				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
 				angle = - M_PI/8.0;
 				angle -= angleCorrection(sideDist);
 			}
-			dist = invSensorModel(0, sensorValues->at(left));
+			dist = VCNL4020Models::obstacleModel(0, sensorValues->at(left));
 			dist += distCorrection(sideDist);
 		}
 
@@ -366,50 +339,12 @@ int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAr
 			motorActionMilli(0, 2*(3.5-left)*turningSpeed, CAN);
 		} else {
 			motorActionMilli(0, 0, CAN);
-			return STATE_WATCHING;
 		}
-
-		return STATE_FOLLOW;
 
 	} else {
 		motorActionMilli(0, 0, CAN);
-		return STATE_WATCHING;
 	}
 }
-
-
-
-
-// calculate the distance to an obstacle given the obstacles angle relative to the sensor and the sensor value
-float invSensorModel(float angle, float sensorValue) {
-
-	float cosxi = cos(IR_CONVERTER_CALC_XI * angle);
-	if (cosxi < 0) {
-		cosxi *= -1;
-	}
-	float divi = sensorValue - IR_CONVERTER_CALC_BETA;
-	if (divi <= 0) {
-		divi = 1;
-	}
-	return sqrt(
-	IR_CONVERTER_CALC_ALPHA * cosxi / divi + IR_CONVERTER_CALC_DELTA * cosxi);
-}
-
-float getDistErrorSensorModel(float dist, float angle) {
-	float sig = sqrt(IR_CONVERTER_CALC_MEAS_VARIANCE);
-
-	// calculate error
-	float cosxi = cos(IR_CONVERTER_CALC_XI * angle);
-	if (cosxi < 0) {
-		cosxi *= -1;
-	}
-	float diffdistdelta = dist * dist / cosxi - IR_CONVERTER_CALC_DELTA;
-	float error = (diffdistdelta * diffdistdelta) / (2 * dist * IR_CONVERTER_CALC_ALPHA * sqrt(1 / cosxi)) * sig;
-
-	return error;
-}
-
-
 
 float distCorrection(float sideDist) {
 	if (sideDist <= CORRECTION_RANGEEND) {
