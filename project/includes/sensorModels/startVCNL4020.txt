@@ -2,20 +2,27 @@
 
 The VCNL4020 sensors from Vishay are infrared based proximity sensors. There are defined two sensor models.
 
-===== Obstacle Model =====
+===== Obstacle Model and Obstacle Error Model =====
 
 The obstacle model gives an approach of the position of the distance of an object (basic color is white). Due to the circular distance approximation change, an angle to the sensor's normal has to be given for a approximated point of the obstacle.
 
 Function call:
-''float obstacleModel (float angle, float sensorValue)''
+''float [m] obstacleModel (float angle [rad], float sensorValue [sensorTicks])''
 
-The ''angle'' is the angular difference to the sensor's normal and the ''sensorValue'' is the (generalized) value given by the sensor. The function ''obstacleModel'' gives the distance to the obstacle in meters.
+The ''angle'' is the angular difference between the obstacle and the sensor's normal and the ''sensorValue'' is the (generalized) value given by the sensor. The function ''obstacleModel'' gives the distance to the obstacle.
+
+Additionally the error of the calculated distance can be calculated by the obstacle error model. It calculates the standard deviation of the given distance in meters (due to the gaussian distribution assumption of the measurement error).
+
+Function call:
+''float [m] obstacleErrorModel(float dist [m], float angle [rad])''
+
+The parameter ''dist'' is the distance to the obstacle. The ''angle'' is the angular difference between the obstacle and the sensor's normal (as in the obstacle model). The function ''obstacleErrorModel'' finally gives the standard deviation of the given distance ''dist''.
 
 ===== Edge Model =====
 
 The edge model gives an approach of the distance to an edge direct in front of the sensor. There aren't any angluar precisions.
 
 Function call:
-''float edgeModel (int sensorValue)''
+''float [m] edgeModel (int sensorValue ["normalized"])''
 
-The ''sensorValue'' isn't the measured value of the sensor directly. This value represents the measured value in reference to the measurement in the air and the measurement of the ground (no obstacles around). The measured value can be in range of [air measurement, ground measurement] and will be generalized by normalization to [0, 1]. Due to integer communication this value is multiplied by 10000. The function ''edgeModel'' gives the distance to the edge in meters.
+The ''sensorValue'' isn't the measured value of the sensor directly. This value represents the measured value in reference to the measurement in the air and the measurement of the ground (no obstacles around). The measured value can be in range of [air measurement, ground measurement] and will be generalized by normalization to [0, 1]. Due to integer communication this value is multiplied by 10000. The function ''edgeModel'' gives the distance to the edge.
