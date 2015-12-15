@@ -7,7 +7,7 @@ The VCNL4020 sensors from Vishay are infrared based proximity sensors. There are
 The obstacle model gives an approach of the position of the distance of an object (basic color is white). Due to the circular distance approximation change, an angle to the sensor's normal has to be given for a approximated point of the obstacle.
 
 Function call:
-''float [m] obstacleModel (float angle [rad], float sensorValue [sensorTicks])''
+''float [m] obstacleModel (float angle [rad], float sensorValue [sensor Ticks])''
 
 The ''angle'' is the angular difference between the obstacle and the sensor's normal and the ''sensorValue'' is the (generalized) value given by the sensor. The function ''obstacleModel'' gives the distance to the obstacle.
 
