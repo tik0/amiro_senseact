@@ -5,7 +5,7 @@ sleep 1
 
 cpufreq-set -g performance
 
-./rirReader -l > /dev/null &
+./rirReader > /dev/null &
 sleep 1
 ./braitenbergEdge -c
 
