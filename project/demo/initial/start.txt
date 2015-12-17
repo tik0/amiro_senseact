@@ -9,7 +9,7 @@ The scenario is the delivery of goods from a table to a position from where Tobi
   - ''./copyPrograms.sh <IP address>''
   - Use the "-h" option for detailed information about usage of the programs (see section "Included Programs").
 
-===== Calculating the Sensor Offsets for the rirReader =====
+===== Calculating the Sensor Offsets for the senseRingProximity Program =====
 
 For the [[sense:senseRingProximity:start|senseRingProximity program]] this tool can calculate the ground and air offsets for the [[includes:sensorModels:startVCNL4020|sensor obstacle and edge model]] (for specific measurements, please also check the [[tools:measureOffsetTest:start|measureOffsetTest documentation]]):
   - ''./runIRConfig.sh'' on the AMiRo for calculating the ground offsets (make sure that the AMiRo is standing on the table without any objects in range)

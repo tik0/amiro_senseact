@@ -1,6 +1,6 @@
 ====== senseRingProximity ======
 
-The rirReader (Ring-InfraRed-Reader) reads, generalizes and publishes proximity values. For each proximity sensor the original, obstacle and the edge value is published. The obstacle and edge values are based on the [[includes:sensorModels:startVCNL4020|obstacle and edge model]].
+This tool reads, generalizes and publishes proximity values. For each proximity sensor the original, obstacle and the edge value is published. The obstacle and edge values are based on the [[includes:sensorModels:startVCNL4020|obstacle and edge model]].
 
 For the generalization there are loaded ground and air offsets from different files. On default the ground offsets are loaded from ''/home/root/initial/irConfig.conf'' and the air offsets from ''/home/root/initial/irEmpty.conf''. Please have also a look into the [[demo:initial:start|initial demo]].
 
@@ -12,9 +12,9 @@ This is a cmake project, so just type:
 
 ===== Basic Functionality =====
 
-The rirReader publishes proximity values based on the [[includes:sensorModels:startVCNL4020|obstacle and edge model]]. Due to big differences in the measurement behavior of the sensors, their measured values have to be generalized for the models. In this case simple offsets are used, which have to be calculated for each sensor before using the rirReader the first time.
+This tool publishes proximity values based on the [[includes:sensorModels:startVCNL4020|obstacle and edge model]]. Due to big differences in the measurement behavior of the sensors, their measured values have to be generalized for the models. In this case simple offsets are used, which have to be calculated for each sensor before using the senseRingProximity program the first time.
 
-The sensor values are read directly from the CAN. The rirReader only uses RSB for publishing the generalized values.
+The sensor values are read directly from the CAN. This tool only uses RSB for publishing the generalized values.
 
 ==== Sensor Offsets ====
 
