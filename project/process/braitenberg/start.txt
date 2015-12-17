@@ -1,6 +1,6 @@
 ====== Braitenberg ======
 
-This is the braitenberg behavior for obstacle and edge avoidance. By argument it can also be given, if the robot shall stop in front of an obstacle (see section "Parameters"). The sensor values, which are seperated in obstacle and ground values, are given by the [[sense:senseRingProximity:start|Ring Proximity Reader]]. The [[includes:sensorModels:startVCNL4020Models|obstacle and edge models]] are used for data interpretation.
+This is the braitenberg behavior for obstacle and edge avoidance. By argument it can also be given, if the robot shall stop in front of an obstacle (see section "Parameters"). The sensor values, which are seperated in obstacle and ground values, are given by the [[sense:senseRingProximity:start|Ring Proximity Reader]]. The [[includes:sensorModels:startVCNL4020|obstacle and edge models]] are used for data interpretation.
 
 To run this program it is recommended to use the [[demo:braitenberg:start|braitenberg demo]].
 
@@ -26,7 +26,7 @@ With this braitenberg behavior the robot can send recognition commands, if it sh
 | --inscopeEdges | String | "/rir_prox/ground" | Scope for receiving edge values for the edge model. |
 | --outscopeCommands | String | "/frontObject/command" | Scope for sending commands on recognition, if an obstacle has been detected and the robot stops in front of it. |
 | --stopObstacles | - | - | Flag, if the robot should stop in front of an obstacle. |
-| --obstacleStopMargin, -o | Float | 0.15 | Margin for obstacle distance in meters (minimum: 0.09 m). |
+| --obstacleStopMargin, -o | Float | 0.15 | Margin for stop distance in front of obstacles in meters (minimum: 0.09 m). |
 | --dontDrive, -d | - | - | The motor commands won't be sent. |
 | --overturn | - | - | The robot turns farther than necessary (better for exploration behaviors). |
 | --showColors, -c | - | - | Shows measured environment with LEDs. |

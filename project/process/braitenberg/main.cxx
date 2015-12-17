@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
       ("inscopeEdges", po::value<string>(&proxSensorInscopeGround), "Scope for receiving edge values for the edge model.")
       ("outscopeCommands", po::value<string>(&obstacleRecognitionOutscope), "Scope for sending commands on recognition, if an obstacle has been detected and the robot stops in front of it.")
       ("stopObstacles", "Flag, if the robot should stop in front of an obstacle.")
-      ("obstacleStopMargin,o", po::value<float>(&OBSTACLE_STOP_MARGIN), "Margin for obstacle distance in meters (default: 0.15 m; minimum: 0.09 m).")
+      ("obstacleStopMargin,o", po::value<float>(&OBSTACLE_STOP_MARGIN), "Margin for stop distance in front of obstacles in meters (default: 0.15 m; minimum: 0.09 m).")
       ("dontDrive,d", "The motor commands won't be sent.")
       ("overturn", "The robot turns farther than necessary (better for exploration behaviors).")
       ("showColors,c", "Shows measured environment with LEDs.");
