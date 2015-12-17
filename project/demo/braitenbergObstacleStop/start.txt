@@ -18,4 +18,4 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:braitenbergObstacleStop:start|braitenbergObstacleStop]] | Program of braitenberg behavior with stopping in front of obstacles. |
 | [[process:frontObjectDetection:frontObjectDetection:start|frontObjectDetection]] | Program of object detection in front of the robot by suing the proximity sensors. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
-| [[act:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |

@@ -17,5 +17,5 @@ add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/CoreSLAMBasic CoreSLAM)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/localPlanner localPlanner)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/objectDetection/objectDetection objectDetection)
-add_subdirectory ($ENV{MUROX_PROJECT}/act/stopAMiRo stopAMiRo)
+add_subdirectory ($ENV{MUROX_PROJECT}/tools/stopAMiRo stopAMiRo)
 

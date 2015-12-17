@@ -28,4 +28,4 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:CoreSLAMBasic:start|CoreSLAM]] | SLAM algorithm, which stores the map. |
 | [[process:localPlanner:start|localPlanner]] | Program for planning paths in the map. |
 | [[process:objectDetection:objectDetection:start|objectDetection]] | Program for image comparison for object detection. |
-| [[act:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
