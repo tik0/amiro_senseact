@@ -4,14 +4,6 @@
 #include <math.h>
 
 namespace VCNL4020Models {
-	/** \brief Sensor count */
-	static const int SENSOR_COUNT = 8;
-	/** \brief Angular distance between the sensors */
-	static const float SENSOR_DIST_ANGULAR = M_PI/4.0;
-	/** \brief Angular distance between the AMiRo's front and the next (left or right) sensor */
-	static const float SENSOR_ANGULAR_FRONT_OFFSET = M_PI/8.0;
-	/** \brief Angular orientation of the first sensor with AMiRo's orientation parallel to x axis */
-	static const float SENSOR_ANGULAR_POS_FIRST = M_PI - M_PI/8.0;
 
 	/** \brief Alpha constant of the obstacle model */
 	static const float VCNL4020MODELS_OBSTACLEMODEL_ALPHA = 0.942693757414292;

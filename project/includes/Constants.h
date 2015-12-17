@@ -135,6 +135,70 @@ namespace constants {
    */
   enum wheelIdx {LEFT_WHEEL = 0, RIGHT_WHEEL = 1};
 }
+
+namespace ringproximity {
+
+  /** \brief Sensor count on the proximity sensor ring.
+   *
+   * Top view with sensor IDs (F:Front, B:Back):
+   *      ___
+   *     3   4
+   *   /   F   \
+   *  2         5
+   *  |         |
+   *  1         6
+   *   \   B   /
+   *     0___7
+   */
+  static const int SENSOR_COUNT = 8;
+
+  /** \brief Angular distance between the sensors.
+   *
+   * Top view with sensor IDs (F:Front, B:Back):
+   *      ___
+   *     3   4
+   *   /   F   \
+   *  2         5
+   *  |         |
+   *  1         6
+   *   \   B   /
+   *     0___7
+   */
+  static const float SENSOR_DIST_ANGULAR = M_PI/4.0;
+
+  /** \brief Angular distance between the AMiRo's front and the next (left or right) sensor.
+   * 
+   * On the ring there isn't a sensor directly measuring the front, but there are two measuring the front
+   * with an angular difference to the front of 22.5°.
+   *
+   * Top view of the front (*:Sensor, +:Center):
+   *      ___
+   *     *   *
+   *   /       \
+   *  *         *
+   *  |    +    |
+   */
+  static const float SENSOR_ANGULAR_FRONT_OFFSET = M_PI/8.0;
+
+  /** \brief Angular orientation of the first sensor.
+   *
+   * The first sensor is the first left sensor at the back.
+   * Top view with sensor IDs and the robot coordinate system orientation (F:Front, B:Back, +:Center):
+   *      ___
+   *     3   4             ^ x
+   *   /   F   \           |
+   *  2         5          |
+   *  |    +    |          |
+   *  1         6          |
+   *   \   B   /   <-------+--
+   *     0___7       y     |
+   *
+   * The robot coordinate system is in the center of the robot.
+   * Due to the robot coordinate system, the angular orientation of the first sensor is 157.5°.
+   */
+  static const float SENSOR_ANGULAR_POS_FIRST = M_PI - M_PI/8.0;
+}
+
 }
 
 #endif /* AMIRO_CONSTANTS_H_ */
