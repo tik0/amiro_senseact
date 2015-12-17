@@ -13,7 +13,9 @@ IMPORTANT: Make sure that you measured IR offsets of the ground and of the air (
     * ''./runObstacleStop.sh'' for stopping in front of obstacles (the robot turns in front of edges and continues driving)
   - ''./stop.sh'' on the AMiRo for stopping
 
-One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication.
+
+Additionally, the program [[process:frontObjectDetection:frontObjectDetectionCommand:start|frontObjectDetectionCommand]] can be used for receiving the sent images and obstacle recognitions.
 
 ===== Included Programs =====
 
