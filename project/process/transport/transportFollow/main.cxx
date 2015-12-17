@@ -31,11 +31,6 @@
 #define PROTOCOL_OK 1
 #define PROTOCOL_DISCONNECT 2
 
-// state defines
-#define STATE_WATCHING 0
-#define STATE_TURNING  1
-#define STATE_FOLLOW   2
-
 
 #include <iostream>
 #include <boost/thread.hpp>
@@ -62,7 +57,6 @@ using namespace rsb;
 using namespace rst::geometry;
 
 #include <converter/vecIntConverter/main.hpp>
-//#include <converter/matConverter/matConverter.hpp>
 using namespace muroxConverter;
 
 using namespace std;
@@ -138,28 +132,21 @@ std::string spreadport = "4803";
 
 
 // method prototypes
-float getSmallestAngleDiff(float angl1, float angle2);
 twbTracking::proto::Pose2D readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID);
 bool isBeingTracked(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingID);
 int motorActionMilli(int speed, int turn, ControllerAreaNetwork &CAN, rsb::Informer< std::vector<int> >::Ptr motorCmdInformer);
-bool referenceRobotIsNear(boost::shared_ptr<std::vector<int>> sensorValues);
-std::vector<int> focusReferenceRobot(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN, int focusStart, int focusEnd);
-int turningProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN, rsb::Informer< std::vector<int> >::Ptr motorCmdInformer);
-int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN, rsb::Informer< std::vector<int> >::Ptr motorCmdInformer);
-float distCorrection(float sideDist);
-float angleCorrection(float sideDist);
 
 /*
  * Algorithm:
- * - Get transport command (?)
- * - Calculate path to final position (-)
- * - Get start position s on path with distance d = diameter + 1 cm (-)
- * - Transmit start position s to Guide (-)
- * - Wait until Guide transmits OK (-)
+ * - Get transport command
+ * - Calculate path to final position
+ * - Get start position s on path with distance d = diameter + 1 cm
+ * - Transmit start position s to Guide
+ * - Wait until Guide transmits OK
  * - Initialize orientation ahead Guide
- * - Transmit final position to Guide (-)
+ * - Transmit final position to Guide
  * - Follow Guide until Guide transmits OK
- * - End transport command (-)
+ * - End transport command
  */
 
 int main(int argc, char **argv) {
@@ -430,38 +417,34 @@ int main(int argc, char **argv) {
 	}
 
 	
-	bool goOn = true;
+	bool goOn = vm.count("initializeMin");
 
-	while (continueFollowing || state != STATE_WATCHING) {
+	while (continueFollowing && goOn) {
 		// check for new inputs
 		if (!proxQueue->empty()) {
 
 			// read proximity values
 			boost::shared_ptr<std::vector<int>> sensorValues = boost::static_pointer_cast<std::vector<int> >(proxQueue->pop());
 
-			if (vm.count("initializeMin") && goOn) {
-				// do initialization part by minimum of proximity sensors
-				float minDist = VCNL4020Models::obstacleModel(0, sensorValues->at(0));
-				float minIdx = 0;
-				for (int idx=1; idx<8; idx++) {
-					float newMin = VCNL4020Models::obstacleModel(0, sensorValues->at(idx));
-					if (minDist > newMin) {
-						minDist = newMin;
-						minIdx = idx;
-					}
+			// do initialization part by minimum of proximity sensors
+			float minDist = VCNL4020Models::obstacleModel(0, sensorValues->at(0));
+			float minIdx = 0;
+			for (int idx=1; idx<8; idx++) {
+				float newMin = VCNL4020Models::obstacleModel(0, sensorValues->at(idx));
+				if (minDist > newMin) {
+					minDist = newMin;
+					minIdx = idx;
 				}
-				if (minIdx == 3 || minIdx == 4) {
-					// position reached
-					motorActionMilli(0, 0, myCAN, motorCmdInformer);
-					goOn = false;
-					progressInformer->publish(finalePos);
-				} else if (minIdx < 3) {
-					motorActionMilli(0, turningSpeed, myCAN, motorCmdInformer);
-				} else {
-					motorActionMilli(0, -turningSpeed, myCAN, motorCmdInformer);
-				}
-//				goOn = turningProc(sensorValues, CAN, motorCmdInformer) != STATE_FOLLOW;
-
+			}
+			if (minIdx == 3 || minIdx == 4) {
+				// position reached
+				motorActionMilli(0, 0, myCAN, motorCmdInformer);
+				goOn = false;
+				progressInformer->publish(finalePos);
+			} else if (minIdx < 3) {
+				motorActionMilli(0, turningSpeed, myCAN, motorCmdInformer);
+			} else {
+				motorActionMilli(0, -turningSpeed, myCAN, motorCmdInformer);
 			}
 
 			if(!progressQueue->empty()) {
@@ -475,13 +458,13 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<std::string> StringPtr(new std::string(FOLLOWCOMMAND_START));
 	informerCommandFollowing->publish(StringPtr);
 
-	while (continueFollowing) {
+	do {
 		usleep(200000);
 		if(!progressQueue->empty()) {
 			guidePos = progressQueue->pop();
 			continueFollowing = guidePos->orientation() != PROTOCOL_OK;
 		}
-	}
+	} while (continueFollowing);
 
 	// stop following behavior
 	StringPtr = boost::shared_ptr<std::string>(new std::string(FOLLOWCOMMAND_STOP));
@@ -544,227 +527,4 @@ int motorActionMilli(int speed, int turn, ControllerAreaNetwork &CAN, rsb::Infor
   motorCmdInformer->publish(motorCmdData);
 //  CAN.setTargetSpeed(speed*10000, turn*10000);
   return EXIT_SUCCESS;
-}
-
-bool referenceRobotIsNear(boost::shared_ptr<std::vector<int>> sensorValues) {
-	bool itIs = false;
-	for (int idx=0; idx < numSensors; idx++) {
-		if (VCNL4020Models::obstacleModel(0, sensorValues->at(idx)) < maxSensorRange) {
-			itIs = true;
-			break;
-		}
-	}
-	return itIs;
-}
-
-std::vector<int> focusReferenceRobot(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN, int focusStart, int focusEnd) {
-	std::vector<int> result (2,0);	
-	int idxs[8];
-	int idxsCount = 0;
-	for (int idx=focusStart; idx < focusEnd; idx++) {
-		if (VCNL4020Models::obstacleModel(0, sensorValues->at(idx)) < maxSensorRange) {
-			idxs[idxsCount] = idx;
-			idxsCount++;
-		}
-	}
-	if (idxsCount > 0) {
-		//std::cout << "Sensorindizes: ";
-		for (int idx=0; idx < idxsCount-1; idx++) {
-//			std::cout << idxs[idx] << ", ";
-		}
-		//std::cout << idxs[idxsCount-1] << std::endl;
-
-		int left;
-		switch (idxsCount) {
-			case 1:
-				left = idxs[0];
-				break;
-			default:
-				if (idxs[0] == 0 && idxs[idxsCount-1] == numSensors-1) {
-					left = numSensors-1;
-				} else {
-					left = numSensors;
-					int startIdx = idxs[0];
-					for (int idx=1; idx < idxsCount; idx++) {
-						if (abs(idxs[idx]-startIdx) == 1) {
-							left = startIdx;
-							break;
-						} else {
-							startIdx = idxs[idx];
-						}
-					}
-				} 
-		}
-		//std::cout << "left = " << left << ", count = " << idxsCount << std::endl;
-		result.at(0) = left;
-		result.at(1) = idxsCount;
-	}
-	return result;
-}
-
-int turningProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN, rsb::Informer< std::vector<int> >::Ptr motorCmdInformer) {
-	std::vector<int> val = focusReferenceRobot(sensorValues, CAN, 0, 8);
-	int left = val.at(0);
-	int count = val.at(1);
-	if (left == numSensors) {
-		//std::cout << "ERROR! No two next sensors can have detection!" << std::endl;
-		return STATE_WATCHING;
-	} else if (count == 1 && left < 4 || count == 2 && left < 3) {
-		motorActionMilli(0, turningSpeed, CAN, motorCmdInformer);
-		return STATE_TURNING;
-	} else if (count == 1 && left > 3 || count == 2 && left > 3) {
-		motorActionMilli(0, -turningSpeed, CAN, motorCmdInformer);
-		return STATE_TURNING;
-	} else {
-		motorActionMilli(0, 0, CAN, motorCmdInformer);
-		if (count == 2 && left == 3) {
-			return STATE_FOLLOW;
-		}
-	}
-	return STATE_WATCHING;
-}
-
-int followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerAreaNetwork &CAN, rsb::Informer< std::vector<int> >::Ptr motorCmdInformer) {
-	std::vector<int> val = focusReferenceRobot(sensorValues, CAN, 3, 5);
-	int left = val.at(0);
-	int count = val.at(1);
-	if ((left == 3 && count == 2) || ((left == 3 || left == 4) && count == 1)) {
-		// calculate distance and angle to reference robot
-		float dist, angle;
-		if (left == 3 && count == 2) {
-//			std::cout << "2 Sensors:" << std::endl;
-			// if both front sensors have refernce robot in range
-			float lDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left));
-			float rDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
-			float lSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
-			float rSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left+2));
-			float posX = (lDist*cos(M_PI/8.0) + rDist*cos(-M_PI/8.0))/2.0;
-			float posY = (lDist*sin(M_PI/8.0) + rDist*sin(-M_PI/8.0))/2.0;
-			dist = sqrt(posX*posX + posY*posY) - amiroRadius/2.0;
-//			std::cout << "dist ori: " << dist;
-			dist += distCorrection(lSide) + distCorrection(rSide);
-//			std::cout << " - dist cor: " << dist << std::endl;
-			angle = atan(posY/posX);
-//			std::cout << "angle ori: " << angle;
-			angle += angleCorrection(lSide) - angleCorrection(rSide);
-//			std::cout << " - angle cor: " << angle << std::endl;
-		} else {
-			float sideDist;
-			if (left == 3) {
-//				std::cout << "Left Sensor:" << std::endl;
-				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
-				angle = M_PI/8.0;
-//				std::cout << "angle ori: " << angle;
-				angle += angleCorrection(sideDist);
-//				std::cout << " - angle cor: " << angle << std::endl;
-			} else {
-//				std::cout << "Right Sensor:" << std::endl;
-				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
-				angle = - M_PI/8.0;
-//				std::cout << "angle ori: " << angle;
-				angle -= angleCorrection(sideDist);
-//				std::cout << " - angle cor: " << angle << std::endl;
-			}
-			dist = VCNL4020Models::obstacleModel(0, sensorValues->at(left));
-//			std::cout << "dist ori: " << dist;
-			dist += distCorrection(sideDist);
-//			std::cout << " - dist cor: " << dist << std::endl;
-		}
-//		std::cout << std::endl;
-
-		// drive towards reference robot
-		float alpha = angle;
-		float beta = M_PI/2 - angle;
-		float drivingRadius = dist*sin(beta)/sin(alpha);
-		float drivingDist = 2*drivingRadius*M_PI * alpha/(2*M_PI);
-
-		float rotationSpeed_N = (float)forwardSpeed/100*-alpha/drivingDist;
-		int rotationSpeed = rotationSpeed_N*100;
-/*		if (rotationSpeed > 0) {
-			rotationSpeed = min(rotationSpeed, turningSpeed);
-		} else {
-			rotationSpeed = max(rotationSpeed, -turningSpeed);
-		}
-*/		//std::cout << "Rotation speed: " << rotationSpeed_N << " rad/s" << std::endl;
-
-		if ((dist > followMinDist && count == 2) || dist > followMinDistSide) {
-			int speed = forwardSpeed;
-			if (dist < followMinDist+followDistSlowingDown && count == 2) {
-				float part = (dist-followMinDist)/followDistSlowingDown;
-				speed = forwardMinSpeed + (int)((forwardSpeed-forwardMinSpeed)*part*part); //sqrt(part*part*part));
-			} else if (dist < followMinDistSide+followDistSlowingDown) {
-				float part = (dist-followMinDistSide)/followDistSlowingDown;
-				speed = forwardMinSpeed + (int)((forwardSpeed-forwardMinSpeed)*part*part); //sqrt(part*part*part));
-			}
-			motorActionMilli(speed, rotationSpeed, CAN, motorCmdInformer);
-			//std::cout << "< FOLLOW >" << std::endl;
-		} else if (abs(angle) > rotationTolarence/2.0 && count == 2) {
-			if (rotationSpeed > 0) {
-				rotationSpeed = min(rotationSpeed, turnCorrectSpeed);
-			} else {
-				rotationSpeed = max(rotationSpeed, -turnCorrectSpeed);
-			}
-			motorActionMilli(0, rotationSpeed, CAN, motorCmdInformer);
-			//std::cout << "< slow turn >" << std::endl;
-		} else if (count == 1) {
-			motorActionMilli(0, 2*(3.5-left)*turningSpeed, CAN, motorCmdInformer);
-			//std::cout << "< max turn >" << std::endl;
-		} else {
-			motorActionMilli(0, 0, CAN, motorCmdInformer);
-			return STATE_WATCHING;
-		}
-
-		return STATE_FOLLOW;
-
-	} else {
-		motorActionMilli(0, 0, CAN, motorCmdInformer);
-		return STATE_WATCHING;
-	}
-}
-
-float getSmallestAngleDiff(float angle1, float angle2) {
-	// normalize aboth angles on [0,2*M_PI[
-	//TODO better solve this with ifelse or fmod
-	while (angle1 < 0) {
-		angle1 += 2 * M_PI;
-	}
-	while (angle1 >= 2 * M_PI) {
-		angle1 -= 2 * M_PI;
-	}
-	while (angle2 < 0) {
-		angle2 += 2 * M_PI;
-	}
-	while (angle2 >= 2 * M_PI) {
-		angle2 -= 2 * M_PI;
-	}
-
-	// get real difference
-	float diff = abs(angle1 - angle2);
-
-	// get periodic difference
-	if (diff > M_PI) {
-		diff = 2 * M_PI - diff;
-	}
-
-	return diff;
-}
-
-float distCorrection(float sideDist) {
-        //sideDist = (sideDist-CORRECTION_SIDEMEASSTART)/CORRECTION_SIDEMEASGRADIANT;
-	if (sideDist <= CORRECTION_RANGEEND) {
-		float fac = CORRECTION_RANGEEND-sideDist+CORRECTION_RANGESTART;
-		return fac*CORRECTION_DISTGRADIANT+CORRECTION_DISTSTART;
-	} else {
-		return 0.0;
-	}
-}
-
-float angleCorrection(float sideDist) {
-        //sideDist = (sideDist-CORRECTION_SIDEMEASSTART)/CORRECTION_SIDEMEASGRADIANT;
-	if (sideDist <= CORRECTION_RANGEEND) {
-		float fac = CORRECTION_RANGEEND-sideDist+CORRECTION_RANGESTART;
-		return fac*CORRECTION_ANGLEGRADIANT+CORRECTION_ANGLESTART;
-	} else {
-		return 0.0;
-	}
 }

@@ -38,12 +38,6 @@ include_directories(
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
-# Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-
-# Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
-
 file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)
 
@@ -84,9 +78,6 @@ target_link_libraries (
     boost_program_options
     boost_system
     boost_thread
-    # -- Own libraries
-    vecIntConverter
-    matConverter
     ${PROTO_LIBRARIES}
 
 )
