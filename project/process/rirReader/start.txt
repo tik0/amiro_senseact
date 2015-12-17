@@ -56,7 +56,7 @@ There are published two values: the obstacle and the edge value. Given the senso
 
 Important is the difference between these two sensor values: The obstacle value as the real distance to the ground offset in sensor ticks. The edge value is a relative value between the ground and the air offset. The "measured" value in range [air offset, ground offset] will be normalized to [0,1]. Due to integer communication it is ranged up by 10000 (saving the next 4 decimal places).
 
-The ground and edge values are published seperately via RSB. They can be used directly for the obstacle and the edge model without any additional generalization.
+On default, the ground and edge values are both calculated and published seperately via RSB. They can be used directly for the obstacle and the edge model without any additional generalization. By using application arguments (see section "Parameters"), the calculation and publication of the ground and the edge values can be turned off. The original values are always published.
 
 ===== RSB Scopes =====
 
@@ -78,3 +78,5 @@ The ground and edge values are published seperately via RSB. They can be used di
 | --period, -t | Integer | 0 | Update interval in milliseconds (0 for maximum rate). |
 | --print, -p | - | - | Prints read proximity values in the console. |
 | --loadOffsetFile, -l | String | "/home/root/initial/irConfig.conf" | File name for the obstacle offsets. |
+| --noObstacleValues | - | - | Flag, if the obstacle values for the obstacle model shouldn't be sent. |
+| --noEdgeValues | - | - | Flag, if the edge values for the edge model shouldn't be sent. |

@@ -134,7 +134,7 @@ bool loadIrConfig(std::string configPath, bool isObstacleConfig) {
   return false;
 }
 
-void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGround, uint32_t rsbPeriod, bool print) {
+void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGround, uint32_t rsbPeriod, bool print, bool noObstacleValues, bool noEdgeValues) {
 
   rsb::Factory& factory = rsb::Factory::getInstance();
 
@@ -157,11 +157,15 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
   ControllerAreaNetwork CAN;
 
   // Datastructure for the CAN messages
-  //std::vector<uint16_t> prvRead(8,0);
   std::vector<uint16_t> proximityRingValue(8,0);
   std::vector<uint16_t> obstacleValues(8,0);
   std::vector<uint16_t> groundValues(8,0);
   std::vector<uint16_t> groundValuesFac(8,0);
+
+  // Datastructure for the RSB messages
+  boost::shared_ptr< std::vector<int> > vecDataOriginal;
+  boost::shared_ptr< std::vector<int> > vecDataObstacle;
+  boost::shared_ptr< std::vector<int> > vecDataGround;
 
   int fail = 1;
   uint8_t sensorIdx = 0;
@@ -169,49 +173,73 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
     // Read the proximity data
     fail = CAN.getProximityRingValue(proximityRingValue);
 
+    // Convert for RSB message
+    vecDataOriginal = boost::shared_ptr<std::vector<int> >(new std::vector<int>(proximityRingValue.begin(),proximityRingValue.end()));
+
     if (fail == 0) {
       // claculate offsets in proximity values
       for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
 
-        // calculate obstacle values
-        if (proximityRingValue[sensorIdx] <= GROUND_OFFSETS[sensorIdx]) {
-          obstacleValues[sensorIdx] = 0;
-        } else {
-          obstacleValues[sensorIdx] = proximityRingValue[sensorIdx] - GROUND_OFFSETS[sensorIdx];
+        if (!noObstacleValues) {
+          // calculate obstacle values
+          if (proximityRingValue[sensorIdx] <= GROUND_OFFSETS[sensorIdx]) {
+            obstacleValues[sensorIdx] = 0;
+          } else {
+            obstacleValues[sensorIdx] = proximityRingValue[sensorIdx] - GROUND_OFFSETS[sensorIdx];
+          }
+
+          // Convert for RSB message
+          vecDataObstacle = boost::shared_ptr<std::vector<int> >(new std::vector<int>(obstacleValues.begin(),obstacleValues.end()));
         }
 
-        // calculate ground values
-        if (proximityRingValue[sensorIdx] >= GROUND_OFFSETS[sensorIdx]) {
-          groundValues[sensorIdx] = GROUND_OFFSETS[sensorIdx] - AIR_OFFSETS[sensorIdx];
-        } else if (proximityRingValue[sensorIdx] < AIR_OFFSETS[sensorIdx]) {
-          groundValues[sensorIdx] = 0;
-        } else {
-          groundValues[sensorIdx] = proximityRingValue[sensorIdx] - AIR_OFFSETS[sensorIdx];
+        if (!noEdgeValues) {
+          // calculate ground values
+          if (proximityRingValue[sensorIdx] >= GROUND_OFFSETS[sensorIdx]) {
+            groundValues[sensorIdx] = GROUND_OFFSETS[sensorIdx] - AIR_OFFSETS[sensorIdx];
+          } else if (proximityRingValue[sensorIdx] < AIR_OFFSETS[sensorIdx]) {
+            groundValues[sensorIdx] = 0;
+          } else {
+            groundValues[sensorIdx] = proximityRingValue[sensorIdx] - AIR_OFFSETS[sensorIdx];
+          }
+          groundValuesFac[sensorIdx] = (uint16_t)(((float)groundValues[sensorIdx]) / ((float)(GROUND_OFFSETS[sensorIdx] - AIR_OFFSETS[sensorIdx])) * 10000.0);
+
+          // Convert for RSB message
+          vecDataGround = boost::shared_ptr<std::vector<int> >(new std::vector<int>(groundValuesFac.begin(),groundValuesFac.end()));
         }
-        groundValuesFac[sensorIdx] = (uint16_t)(((float)groundValues[sensorIdx]) / ((float)(GROUND_OFFSETS[sensorIdx] - AIR_OFFSETS[sensorIdx])) * 10000.0);
 
       }
+
 
       // print proximity data
       if (print) {
         for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
-          INFO_MSG((int)sensorIdx << ": " << proximityRingValue[sensorIdx] << " - " << obstacleValues[sensorIdx] << " - " << groundValuesFac[sensorIdx]);
+          if (!noObstacleValues && !noEdgeValues) {
+            INFO_MSG((int)sensorIdx << ": " << proximityRingValue[sensorIdx] << " - " << obstacleValues[sensorIdx] << " - " << groundValuesFac[sensorIdx]);
+          } else if (!noObstacleValues) {
+            INFO_MSG((int)sensorIdx << ": " << proximityRingValue[sensorIdx] << " - " << obstacleValues[sensorIdx]);
+          } else if (!noEdgeValues) {
+            INFO_MSG((int)sensorIdx << ": " << proximityRingValue[sensorIdx] << " - " << groundValuesFac[sensorIdx]);
+          } else {
+            INFO_MSG((int)sensorIdx << ": " << proximityRingValue[sensorIdx]);
+          }
         }
       }
 
-      // Datastructure for the RSB messages
-      boost::shared_ptr< std::vector<int> > vecDataOriginal = boost::shared_ptr<std::vector<int> >(new std::vector<int>(proximityRingValue.begin(),proximityRingValue.end()));
-      boost::shared_ptr< std::vector<int> > vecDataObstacle = boost::shared_ptr<std::vector<int> >(new std::vector<int>(obstacleValues.begin(),obstacleValues.end()));
-      boost::shared_ptr< std::vector<int> > vecDataGround = boost::shared_ptr<std::vector<int> >(new std::vector<int>(groundValuesFac.begin(),groundValuesFac.end()));
 
       // Send proximity data
       informerOriginalValues->publish(vecDataOriginal);
-      boost::this_thread::sleep(boost::posix_time::milliseconds(2));
-      informerObstacleValues->publish(vecDataObstacle);
-      boost::this_thread::sleep(boost::posix_time::milliseconds(2));
-      informerGroundValues->publish(vecDataGround);
+      if (!noObstacleValues) {
+        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        informerObstacleValues->publish(vecDataObstacle);
+      }
+      if (!noEdgeValues) {
+        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        informerGroundValues->publish(vecDataGround);
+      }
     }
 
+
+    // Check for commands
     if (!commandQueue->empty()) {
       std::string newConfig = *commandQueue->pop().get();
       INFO_MSG("New Config Path received: " << newConfig);
@@ -248,7 +276,9 @@ int main(int argc, char **argv) {
     ("outscopeResponse,r", po::value<std::string> (&rsbOutScopeNewConfigRes), "Scope for sending command response.")
     ("period,t", po::value<uint32_t> (&rsbPeriod), "Update interval in milliseconds (0 for maximum rate).")
     ("print,p", "Prints read proximity values in the console.")
-    ("loadOffsetFile,l", po::value<std::string> (&irObstacleOffsetFile), "File name for the obstacle offsets (on deafult: /root/initial/irConfig.conf).");
+    ("loadOffsetFile,l", po::value<std::string> (&irObstacleOffsetFile), "File name for the obstacle offsets (on deafult: /root/initial/irConfig.conf).")
+    ("noObstacleValues", "Flag, if the obstacle values for the obstacle model shouldn't be sent.")
+    ("noEdgeValues", "Flag, if the edge values for the edge model shouldn't be sent.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -286,7 +316,7 @@ int main(int argc, char **argv) {
   loadIrConfig(irAirOffsetFile, false);
   
   // loop
-  justReadValues(rsbOutScopeObstacle, rsbOutScopeGround, rsbPeriod, vm.count("print"));
+  justReadValues(rsbOutScopeObstacle, rsbOutScopeGround, rsbPeriod, vm.count("print"), vm.count("noObstacleValues"), vm.count("noEdgeValues"));
 
   return EXIT_SUCCESS;
 }
