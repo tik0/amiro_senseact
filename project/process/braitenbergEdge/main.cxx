@@ -55,7 +55,9 @@ using namespace std;
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
+#include <Constants.h>
 #include <sensorModels/VCNL4020Models.h>
+using namespace amiro;
 
 using namespace rsb;
 using namespace rsb::patterns;
@@ -201,7 +203,7 @@ int main(int argc, char **argv) {
       float distLeft = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
       float distRight = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
 //      INFO_MSG("left: " << valueLeft << ", right: " << valueRight << ", side: " << valueSide);
-      for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
+      for (sensorIdx = 0; sensorIdx < ringproximity::SENSOR_COUNT; sensorIdx++) {
 //        INFO_MSG( (int) sensorIdx << ": " << sensorValuesObstacle->at(sensorIdx) << "/" << sensorValuesGround->at(sensorIdx));
 
         if (showColors) {

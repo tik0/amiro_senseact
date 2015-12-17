@@ -56,7 +56,9 @@ using namespace std;
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
+#include <Constants.h>
 #include <sensorModels/VCNL4020Models.h>
+using namespace amiro;
 
 using namespace rsb;
 using namespace rsb::patterns;
@@ -264,7 +266,7 @@ int main(int argc, char **argv) {
               pose2D->set_orientation(0);
               pose2D->set_id(0);
               // Search table edge
-              for (int senIdx=0; senIdx<8; senIdx++) {
+              for (int senIdx=0; senIdx<ringproximity::SENSOR_COUNT; senIdx++) {
                 float ed = VCNL4020Models::edgeModel(sensorValuesGround->at(senIdx));
                 if (ed < minEdgeDist) {
                   minEdgeIdx = senIdx;
@@ -325,7 +327,7 @@ int main(int argc, char **argv) {
               break;
             case STcorrectEdge:
               edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
-              edgeDistL = edgeDistL*cos(M_PI/8);
+              edgeDistL = edgeDistL*cos(ringproximity::SENSOR_ANGULAR_FRONT_OFFSET);
               edgeDistR = GROUND_MARGIN_DANGER - edgeDistR;
               INFO_MSG("Distance to edge: " << edgeDistL << " cm (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
               if (edgeDistR > 0) {

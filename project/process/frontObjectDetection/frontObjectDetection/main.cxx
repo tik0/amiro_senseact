@@ -72,7 +72,9 @@ using namespace cv;
 
 #include <jpeglib.h>
 
+#include <Constants.h>
 #include <sensorModels/VCNL4020Models.h>
+using namespace amiro;
 
 static std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 static std::string g_sImageScope = "/frontObject/image";
@@ -121,7 +123,7 @@ int main (int argc, char * const argv[]) {
             ("imagescope,i", po::value<std::string> (&g_sImageScope),"Scope for sending images.")
             ("proxscope,p", po::value<std::string> (&proxSensorInscopeObstacle),"Scope for receiving obstacle proximity sensor values.")
             ("commandscope,c", po::value<std::string> (&g_sInScope),"Scope for receiving commands.")
-            ("device,d", po::value<std::string> (&g_sDevice),"Location of device (e.g. /dev/video6).")
+            ("device,d", po::value<std::string> (&g_sDevice),"Location of camera device (default: /dev/video6).")
             ("sendNthFrame,n", po::value<unsigned int> (&g_uiSendNthFrame),"Send only every n'th frame for visualization for performance (3).")
             ("quality,q", po::value<unsigned int> (&g_uiQuality),"Quality of JPEG compression [0 .. 100].")
             ("colorThreshold,t", po::value<float> (&colorDifference),"Color threshold for region growing (default: 50).")
@@ -154,8 +156,8 @@ int main (int argc, char * const argv[]) {
     INFO_MSG("JPEG Quality: " << g_uiQuality);
 
     float camAngleX = acos(1 - camSideDist*camSideDist / (2 * (camGroundDist*camGroundDist + camSideDist*camSideDist/4)));
-    float camAngleOffset = (camAngleX - M_PI/4.0) / 2.0;
-    float camSensorFactor = camAngleX/(M_PI/4.0);
+    float camAngleOffset = (camAngleX - ringproximity::SENSOR_DIST_ANGULAR) / 2.0;
+    float camSensorFactor = camAngleX/(ringproximity::SENSOR_DIST_ANGULAR);
 
     // Compress image parameter
     vector<uchar> buf;
@@ -264,10 +266,10 @@ int main (int argc, char * const argv[]) {
             float rightDist = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(4)) + 0.05;
 //                std::cout << "dists: " << leftDist << " - " << rightDist << " (" << sensorValuesObstacle->at(3) << " - " << sensorValuesObstacle->at(4) << ")" << std::endl;
 
-            float lx = leftDist*cos(5.0*M_PI/8.0);
-            float ly = leftDist*sin(5.0*M_PI/8.0);
-            float rx = rightDist*cos(3.0*M_PI/8.0);
-            float ry = rightDist*sin(3.0*M_PI/8.0);
+            float lx = leftDist*cos(5.0 * ringproximity::SENSOR_ANGULAR_FRONT_OFFSET);
+            float ly = leftDist*sin(5.0 * ringproximity::SENSOR_ANGULAR_FRONT_OFFSET);
+            float rx = rightDist*cos(3.0 * ringproximity::SENSOR_ANGULAR_FRONT_OFFSET);
+            float ry = rightDist*sin(3.0 * ringproximity::SENSOR_ANGULAR_FRONT_OFFSET);
             float tx = rx-lx;
             float ty = ry-ly;
             float newAngle = -atan(ty/tx) + camAngleX/2.0;
@@ -388,7 +390,7 @@ int main (int argc, char * const argv[]) {
                 flip(objectFrame, flippedPic, 0);
             }
             imencode(".jpg", flippedPic, buf, compression_params);
-            shared_ptr<std::string> frameJpg(new std::string(buf.begin(), buf.end()));
+            boost::shared_ptr<std::string> frameJpg(new std::string(buf.begin(), buf.end()));
             imageInformer->publish(frameJpg);
         }
 

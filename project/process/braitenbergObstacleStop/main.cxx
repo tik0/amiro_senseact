@@ -55,7 +55,9 @@ using namespace std;
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
+#include <Constants.h>
 #include <sensorModels/VCNL4020Models.h>
+using namespace amiro;
 
 using namespace rsb;
 using namespace rsb::converter;
@@ -229,7 +231,7 @@ int main(int argc, char **argv) {
 
       // set colors
       if (showColors) {
-        for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
+        for (sensorIdx = 0; sensorIdx < ringproximity::SENSOR_COUNT; sensorIdx++) {
           float obstacleDist = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(sensorIdx));
           float edgeDist = VCNL4020Models::edgeModel(sensorValuesGround->at(sensorIdx));
           int led = sensorIdx+4;
