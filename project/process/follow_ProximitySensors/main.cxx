@@ -66,8 +66,6 @@ std::string COMMAND_QUIT = "QUIT";
 // radius of the AMiRo in m
 float amiroRadius = 0.05;
 
-// number of sensors
-int numSensors = 8;
 // maximal range in m
 float maxSensorRange = 0.175;
 
@@ -228,7 +226,7 @@ void motorActionMilli(int speed, int turn, ControllerAreaNetwork &CAN) {
 
 bool referenceRobotIsNear(boost::shared_ptr<std::vector<int>> sensorValues) {
 	bool itIs = false;
-	for (int idx=0; idx < numSensors; idx++) {
+	for (int idx=0; idx < VCNL4020Models::SENSOR_COUNT; idx++) {
 		if (VCNL4020Models::obstacleModel(0, sensorValues->at(idx)) < maxSensorRange) {
 			itIs = true;
 			break;
@@ -254,10 +252,10 @@ std::vector<int> focusReferenceRobot(boost::shared_ptr<std::vector<int>> sensorV
 				left = idxs[0];
 				break;
 			default:
-				if (idxs[0] == 0 && idxs[idxsCount-1] == numSensors-1) {
-					left = numSensors-1;
+				if (idxs[0] == 0 && idxs[idxsCount-1] == VCNL4020Models::SENSOR_COUNT-1) {
+					left = VCNL4020Models::SENSOR_COUNT-1;
 				} else {
-					left = numSensors;
+					left = VCNL4020Models::SENSOR_COUNT;
 					int startIdx = idxs[0];
 					for (int idx=1; idx < idxsCount; idx++) {
 						if (abs(idxs[idx]-startIdx) == 1) {
@@ -288,8 +286,8 @@ void followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerA
 			float rDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
 			float lSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
 			float rSide = VCNL4020Models::obstacleModel(0, sensorValues->at(left+2));
-			float posX = (lDist*cos(M_PI/8.0) + rDist*cos(-M_PI/8.0))/2.0;
-			float posY = (lDist*sin(M_PI/8.0) + rDist*sin(-M_PI/8.0))/2.0;
+			float posX = (lDist*cos(VCNL4020Models::SENSOR_ANGULAR_FRONT_OFFSET) + rDist*cos(-VCNL4020Models::SENSOR_ANGULAR_FRONT_OFFSET))/2.0;
+			float posY = (lDist*sin(VCNL4020Models::SENSOR_ANGULAR_FRONT_OFFSET) + rDist*sin(-VCNL4020Models::SENSOR_ANGULAR_FRONT_OFFSET))/2.0;
 			dist = sqrt(posX*posX + posY*posY) - amiroRadius/2.0;
 			dist += distCorrection(lSide) + distCorrection(rSide);
 			angle = atan(posY/posX);
@@ -298,11 +296,11 @@ void followingProc(boost::shared_ptr<std::vector<int>> sensorValues, ControllerA
 			float sideDist;
 			if (left == 3) {
 				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left-1));
-				angle = M_PI/8.0;
+				angle = VCNL4020Models::SENSOR_ANGULAR_FRONT_OFFSET;
 				angle += angleCorrection(sideDist);
 			} else {
 				sideDist = VCNL4020Models::obstacleModel(0, sensorValues->at(left+1));
-				angle = - M_PI/8.0;
+				angle = -VCNL4020Models::SENSOR_ANGULAR_FRONT_OFFSET;
 				angle -= angleCorrection(sideDist);
 			}
 			dist = VCNL4020Models::obstacleModel(0, sensorValues->at(left));
