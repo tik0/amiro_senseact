@@ -6,6 +6,6 @@ for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
     rm -rf $line
   fi
 done
-rm *~
+rm -f *~
 rmcmake
 

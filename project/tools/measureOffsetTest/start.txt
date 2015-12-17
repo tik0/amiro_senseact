@@ -4,9 +4,9 @@ This tool can be used for measuring proximity sensor values. On default there ar
 
 By using parameters the ring proximity sensors or the floor proximity sensors can be ignored for time improvement. Additional the means of the ring proximity sensors can be calculated and saved in an extra file.
 
-===== Special Measurement for rirReader =====
+===== Special Measurement for senseRingProximity Program =====
 
-For the calcuation of the offsets of the [[process:rirReader:start|rirReader]] for the [[includes:sensorModels:startVCNL4020|obstacle and edge model]], the following steps have to be done (using the [[demo:initial:start|initial demo]] is recommended):
+For the calcuation of the offsets of the [[sense:senseRingProximity:start|senseRingProximity program]] for the [[includes:sensorModels:startVCNL4020|obstacle and edge model]], the following steps have to be done (using the [[demo:initial:start|initial demo]] is recommended):
   - Calculate ground offset:
     - Place the robot on the robot's ground (table, floor, etc.) without any obstacles (including cables, etc.) and edges around the robot (for VCNL4020 proximity sensor the range should be ca. 25 cm)
     - Start measurement with ''$ measureOffsetTest -cf irConfig.conf --ignoreFloor'' (or use the script "runIRConfig.sh" of the [[demo:initial:start|initial demo]])
@@ -15,7 +15,7 @@ For the calcuation of the offsets of the [[process:rirReader:start|rirReader]] f
     - Place the robot in the air (for example on top of a thin object), so that there are no objects and edges in the range as before and that there are no grounds in range (for VCNL4020 the robot should be at a height of ca. 20 cm)
     - Start measurement with ''$ measureOffsetTest -cf irEmpty.conf --ignoreFloor'' (or use the script "runIREmpty.sh" of the [[demo:initial:start|initial demo]])
     - Wait until measurement is finished (some minutes)
-  - Move the files "irConfig.conf" and "irEmpty.conf" to the directory of the rirReader
+  - If not done in [[demo:initial:start|initial demo]]: Move the files "irConfig.conf" and "irEmpty.conf" to the initial directory (''/root/home/initial/'')
   - Optional: Delete other measurement file: ''$ rm measurementsRingAndFoor.txt''
 
 ===== Parameters =====

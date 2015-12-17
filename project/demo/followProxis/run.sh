@@ -5,7 +5,7 @@ sleep 1
 
 cpufreq-set -g performance
 
-./rirReader > /dev/null &
+./senseRingProximity > /dev/null &
 sleep 1
 ./following
 

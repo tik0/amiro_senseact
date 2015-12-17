@@ -6,6 +6,6 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/process/follow_ProximitySensors following)
-add_subdirectory ($ENV{MUROX_PROJECT}/process/rirReader rirReader)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/stopAMiRo stopAMiRo)
 

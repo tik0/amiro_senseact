@@ -4,7 +4,7 @@ openChallengeGEPTRO_2nd
 CoreSLAM
 exploDriveEdge
 drivingObjectDetection
-rirReader
+senseRingProximity
 senseHokuyo
 senseOdometry
 stopAMiRo

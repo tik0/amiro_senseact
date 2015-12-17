@@ -22,7 +22,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:stateMachineGEPTRO_CommandSimulation:start|Command Simulation]] | Simulation of ToBI, which gives the commands. |
 | [[process:exploDriveEdge:start|exploDriveEdge]] | Table exploration. |
 | [[process:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
-| [[process:rirReader:start|rirReader]] | Program for reading ring proximity values. |
+| [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
 | [[sense:senseOdometry:start|senseOdometry]] | Program for reading odometry values. |
 | [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading the Hokuyo Laser Scanner. |
 | [[process:CoreSLAMBasic:start|CoreSLAM]] | SLAM algorithm, which stores the map. |

@@ -1,6 +1,6 @@
 localPlannerISY
 mapGenerator
-rirReader
+senseRingProximity
 stopAMiRo
 frontierExploration
 motorControl

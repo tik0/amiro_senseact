@@ -19,7 +19,7 @@ killall -9 localPlanner
 killall -9 CoreSLAM
 
 # kill all sensing programs
-killall -9 rirReader
+killall -9 senseRingProximity
 killall -9 senseOdometry
 killall -9 senseHokuyo
 

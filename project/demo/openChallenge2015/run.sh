@@ -16,7 +16,7 @@ cpufreq-set -g performance
 # start all sensing programs
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar --publishNthScan 3 > /dev/null &
 ./senseOdometry -o /odom > /dev/null &
-./rirReader > /dev/null &
+./senseRingProximity > /dev/null &
 
 # start localization programs
 # ./CoreSLAM --lidarinscope /lidar --localizationOutScope /localization --serverScope /CoreSlamServer --mapServerReq map --remoteHost localhost --remotePort 4823 --senImage 0 --delta 0.01 --hole_width 0.05 &

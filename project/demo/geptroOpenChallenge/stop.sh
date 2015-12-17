@@ -22,7 +22,7 @@ killall -9 mapGenerator
 killall -9 frontierExploration 
 
 # kill all sensing programs
-killall -9 rirReader
+killall -9 senseRingProximity
 killall -9 senseFloorProximity 
 
 sleep 1

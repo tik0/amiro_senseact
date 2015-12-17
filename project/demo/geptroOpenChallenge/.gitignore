@@ -2,7 +2,7 @@ amiroEnvironment
 commandSimulation
 stateMachineGEPTRO
 drivingObjectDetection
-rirReader
+senseRingProximity
 stopAMiRo
 localPlannerISY
 mapGenerator

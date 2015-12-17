@@ -17,5 +17,5 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 
 ^ Program ^ Description ^
 | [[process:follow_ProximitySensors:start|following]] | Program of following behavior only based on proximity sensors. |
-| [[process:rirReader:start|rirReader]] | Program for reading ring proximity values. |
+| [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
 | [[act:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |

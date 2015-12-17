@@ -5,7 +5,7 @@ sleep 1
 
 cpufreq-set -g performance
 
-./rirReader -l > /dev/null &
+./senseRingProximity > /dev/null &
 sleep 1
 ./braitenbergObstacleStop -c -o 0.17 -s 5 &
 ./frontObjectDetection -sd 6 &

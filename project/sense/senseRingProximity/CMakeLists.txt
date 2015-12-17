@@ -8,6 +8,7 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 find_package(PkgConfig)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(OPENCV opencv)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)
@@ -20,21 +21,25 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
+    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     ${GXX_INCLUDES}
     ${Boost_INCLUDE_DIR}
 )
 
+# Add folders to build and run CMakeLists.txt in it
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
+
 # Define the source
 SET (SOURCE main.cxx)
-
-# Add sources to build
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecIntConverterSource.cmake")
 
 LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}
     ${RSC_LIBRARY_DIRS}
+    ${OPENCV_LIBRARY_DIRS}
 )
 
 # add the executable
@@ -45,7 +50,12 @@ target_link_libraries (
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
     ${Boost_LIBRARIES}
+    ${OPENCV_LIBRARIES}
+    jpeg
+    # -- Own libraries
+    vecIntConverter
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wno-deprecated-declarations -O2 -std=c++11)
+#ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11 -Wcpp)
+ADD_DEFINITIONS (-Wno-deprecated-declarations -O3 -std=c++11)

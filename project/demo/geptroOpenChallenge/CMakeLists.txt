@@ -10,7 +10,7 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/stateMachineGEPTRO stateMachineGEP
 add_subdirectory ($ENV{MUROX_PROJECT}/process/stateMachineGEPTRO_AMiRoEnvironmentSimulation amiroEnvironment)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/stateMachineGEPTRO_CommandSimulation commandSimulation)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/drivingObjectDetection drivingObjectDetection)
-add_subdirectory ($ENV{MUROX_PROJECT}/process/rirReader rirReader)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/stopAMiRo stopAMiRo)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/mapGenerator mapGenerator)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/frontierExploration frontierExploration)

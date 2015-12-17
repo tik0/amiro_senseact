@@ -25,6 +25,6 @@ To view the map use the program [[tools:showMap:start|showMap]].
   * [[process:frontierExploration:start|frontierExploration]]
   * [[process:localPlannerISY:start|localPlannerISY]]
   * [[process:motorControl:start|motorControl]]
-  * [[process:rirReader:start|rirReader]]
+  * [[sense:senseRingProximity:start|senseRingProximity]]
   * [[sense:senseFloorProximity:start|senseFloorProximity]]
   * [[act:stopAMiRo:start|stopAMiRo]]
