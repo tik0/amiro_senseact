@@ -1,4 +1,4 @@
-====== rirReader ======
+====== senseRingProximity ======
 
 The rirReader (Ring-InfraRed-Reader) reads, generalizes and publishes proximity values. For each proximity sensor the original, obstacle and the edge value is published. The obstacle and edge values are based on the [[includes:sensorModels:startVCNL4020|obstacle and edge model]].
 
