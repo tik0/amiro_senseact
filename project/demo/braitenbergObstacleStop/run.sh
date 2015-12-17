@@ -8,7 +8,7 @@ cpufreq-set -g performance
 ./senseRingProximity > /dev/null &
 sleep 1
 ./braitenbergObstacleStop -c -o 0.17 -s 5 &
-./frontObjectDetection -sd 6 &
+./frontObjectDetection -s &
 
 wait
 cpufreq-set -g ondemand

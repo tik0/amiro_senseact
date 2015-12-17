@@ -71,4 +71,4 @@ target_link_libraries (
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wno-deprecated-declarations -O3 -funsafe-math-optimizations)
+ADD_DEFINITIONS (-Wno-deprecated-declarations -O3 -funsafe-math-optimizations -std=c++11)

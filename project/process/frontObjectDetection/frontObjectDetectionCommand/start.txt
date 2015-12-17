@@ -16,15 +16,15 @@ For application interaction there are keys defined for sending commands.
 For communication there are RSB scopes defined.
 
 ^ Name ^ Type ^ Default scope ^ Description ^
-| Image scope | String | ''/frontObject/image'' | Scope for receiving the camera frame with object marker (maybe additional processing images) which has to be activated. |
-| Command scope | String | ''/frontObject/command'' | Scope for sending commands. |
+| Image scope | String | /frontObject/image | Scope for receiving the camera frame with object marker (maybe additional processing images) which has to be activated. |
+| Command scope | String | /frontObject/command | Scope for sending commands. |
 
 ===== Parameters =====
 
 For parameter information type ''motionDetectionCommand -h''.
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
-| --imagescope, -i | String | ''/frontObject/image'' | Sets the scope for receiving camera frames. |
-| --outscope, -c | String | ''/frontObject/command'' | Sets the scope for sending commands. |
+| --imagescope, -i | String | "/frontObject/image" | Sets the scope for receiving camera frames. |
+| --outscope, -c | String | "/frontObject/command" | Sets the scope for sending commands. |
 
 
