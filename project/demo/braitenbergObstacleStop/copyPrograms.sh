@@ -8,7 +8,8 @@ for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
   scp ${line}/${line} root@${IP}:~/${NAME}
 done
 
-scp run.sh root@${IP}:~/${NAME}
+scp runStandard.sh root@${IP}:~/${NAME}
+scp runObstacleStop.sh root@${IP}:~/${NAME}
 scp stop.sh root@${IP}:~/${NAME}
 # Copy config
 scp rsb.conf root@${IP}:~/${NAME}

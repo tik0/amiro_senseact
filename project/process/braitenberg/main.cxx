@@ -1,19 +1,19 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : Performs a basic braitenberg-like edge avoidanve and stops
-//               in front of obstacles. Gets sensor values from RIR-Reader
-//               seperated in obstacle and edge values. It uses the obstacle
-//               and edge avoidence behavior. Steering and light commands are
-//               given via CAN.
+// Description : Performs a basic braitenberg-like edge and obstacle
+//               avoidance. By given parameter it can be also told to stop
+//               in front of obstacles. Gets sensor values seperated in
+//               obstacle and edge values. It uses the obstacle and edge
+//               models. Steering and light commands are given via CAN.
 //============================================================================
 
 //#define TRACKING
 #define INFO_MSG_
 // #define DEBUG_MSG_
 // #define SUCCESS_MSG_
-#define WARNING_MSG_
-// #define ERROR_MSG_
+// #define WARNING_MSG_
+#define ERROR_MSG_
 #include <MSG.h>
 #include <functional>
 #include <algorithm>
@@ -66,17 +66,17 @@ using namespace rsb::patterns;
 
 
 // margins
-float OBSTACLE_MARGIN = 0.15;
+float OBSTACLE_STOP_MARGIN = 0.15;
+#define OBSTACLE_MARGIN 0.09
 #define OBSTACLE_MARGIN_DANGER 0.05
+#define OBSTACLE_MARGIN_SIDE 0.015
 #define GROUND_MARGIN 0.06
 #define GROUND_MARGIN_DANGER 0.03
 
 // speeds
 int driveSpeed = 8; // cm/s
 
-// Offsets for AMiRo 36 
-static int GROUND_OFFSETS[] = {2437, 2463, 2483, 2496, 2457, 2443, 2508, 2352};
-static int AIR_OFFSETS[] = {2213, 2316, 2341, 2329, 2331, 2290, 2335, 2152};
+bool stopObstacles = false;
 
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
@@ -86,7 +86,6 @@ std::string obstacleRecognitionOutscope = "/frontObject/command";
 // protocol defines
 std::string COMMAND_START = "START";
 std::string COMMAND_STOP = "STOP";
-std::string COMMAND_QUIT = "QUIT";
 
 // show colors
 bool showColors = false;
@@ -147,7 +146,11 @@ int main(int argc, char **argv) {
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
       ("speed,s", po::value<int>(&driveSpeed), "Drive speed in cm/s (default: 8 cm/s).")
-      ("obstacleMargin,o", po::value<float>(&OBSTACLE_MARGIN), "Margin for obstacle distance in meters (default: 0.15 m).")
+      ("inscopeObstacles", po::value<string>(&proxSensorInscopeObstacle), "Scope for receiving obstacle values for the obstacle model.")
+      ("inscopeEdges", po::value<string>(&proxSensorInscopeGround), "Scope for receiving edge values for the edge model.")
+      ("outscopeCommands", po::value<string>(&obstacleRecognitionOutscope), "Scope for sending commands on recognition, if an obstacle has been detected and the robot stops in front of it.")
+      ("stopObstacles", "Flag, if the robot should stop in front of an obstacle.")
+      ("obstacleStopMargin,o", po::value<float>(&OBSTACLE_STOP_MARGIN), "Margin for obstacle distance in meters (default: 0.15 m; minimum: 0.09 m).")
       ("dontDrive,d", "The motor commands won't be sent.")
       ("showColors,c", "Shows measured environment with LEDs.");
 
@@ -167,10 +170,25 @@ int main(int argc, char **argv) {
   // afterwards, let program options handle argument errors
   po::notify(vm);
 
+  stopObstacles = vm.count("stopObstacles");
   showColors = vm.count("showColors");
   stopDrive = vm.count("dontDrive");
 
-  INFO_MSG("Initialize RSB");
+  if (OBSTACLE_STOP_MARGIN < OBSTACLE_MARGIN) {
+    OBSTACLE_STOP_MARGIN = OBSTACLE_MARGIN;
+  }
+
+  INFO_MSG("Scopes:");
+  INFO_MSG(" - obstacles: " << proxSensorInscopeObstacle);
+  INFO_MSG(" - edges:     " << proxSensorInscopeGround);
+  INFO_MSG(" - commands:  " << obstacleRecognitionOutscope);
+  INFO_MSG("");
+  if (stopObstacles) {
+    INFO_MSG("--> Stopping in front of obstacles.");
+  } else {
+    INFO_MSG("--> Standard Behavior.");
+  }
+  INFO_MSG("");
 
   // Get the RSB factory
   rsb::Factory& factory = rsb::Factory::getInstance();
@@ -224,6 +242,7 @@ int main(int argc, char **argv) {
       // get obstacle distance
       float valueLeft = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(3));
       float valueRight = VCNL4020Models::obstacleModel(0, sensorValuesObstacle->at(4));
+      float valueSide = VCNL4020Models::obstacleModel(0, max(sensorValuesObstacle->at(2), sensorValuesObstacle->at(5)));
 
       // get edge distance
       float distLeft = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
@@ -251,7 +270,7 @@ int main(int argc, char **argv) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::WHITE));
               setColors[sensorIdx] = white;
             }
-          } else if (obstacleDist < OBSTACLE_MARGIN) {
+          } else if ((obstacleDist < OBSTACLE_STOP_MARGIN && stopObstacles) || obstacleDist < OBSTACLE_MARGIN) {
             if (setColors[sensorIdx] != blue) {
               CAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
               setColors[sensorIdx] = blue;
@@ -273,9 +292,18 @@ int main(int argc, char **argv) {
           sendMotorCmd(0, mymcm(-60), CAN);
         }
         interrupted = false;
-      } else if (valueLeft < OBSTACLE_MARGIN || valueRight < OBSTACLE_MARGIN) {
+      } else if (stopObstacles && (valueLeft < OBSTACLE_STOP_MARGIN || valueRight < OBSTACLE_STOP_MARGIN)) {
         sendMotorCmd(0, mymcm(0), CAN);
         interrupted = true;
+      } else if (valueLeft < OBSTACLE_MARGIN || valueRight < OBSTACLE_MARGIN || valueSide < OBSTACLE_MARGIN_SIDE) {
+        if (turn == 0 && valueLeft > valueRight) {
+          turn = 1;
+          sendMotorCmd(0, mymcm(60), CAN);
+        } else if (turn == 0) {
+          turn = 2;
+          sendMotorCmd(0, mymcm(-60), CAN);
+        }
+        interrupted = false;
       } else {
         if (turn != 0) {
           turn = 0;
@@ -300,7 +328,7 @@ int main(int argc, char **argv) {
       usleep(50000);
     } else {
       sendMotorCmd(0, 0, CAN);
-      WARNING_MSG("Didn't received any sensor data for more than 200 ms. Just stopping!");
+      ERROR_MSG("Didn't received any sensor data for more than 200 ms. Just stopping!");
       for(int led=0; led<8; led++) {
         CAN.setLightColor(led, amiro::Color(amiro::Color::BLACK));
       }
