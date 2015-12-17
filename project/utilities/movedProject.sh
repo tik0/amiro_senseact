@@ -4,6 +4,8 @@
 oldDirectory=$(pwd)
 startDirectory=$MUROX_PROJECT
 
+allFolders=(act demo includes process sandbox sense tools)
+
 # check start directory
 sdirArr=$(echo $startDirectory | tr "/" "\n")
 sdirLength=0
@@ -173,8 +175,12 @@ checkDirectory () {
 # change to main project directory
 cd $startDirectory
 
-# check all subdirectories
-checkDirectory
+# check all defined subdirectories
+for folder in ${allFolders[*]}; do
+  cd $folder
+  checkDirectory
+  cd $startDirectory
+done
 
 # change back
 cd $oldDirectory
