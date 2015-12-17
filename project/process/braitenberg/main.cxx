@@ -77,6 +77,7 @@ float OBSTACLE_STOP_MARGIN = 0.15;
 int driveSpeed = 8; // cm/s
 
 bool stopObstacles = false;
+bool overturn = false;
 
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
@@ -152,6 +153,7 @@ int main(int argc, char **argv) {
       ("stopObstacles", "Flag, if the robot should stop in front of an obstacle.")
       ("obstacleStopMargin,o", po::value<float>(&OBSTACLE_STOP_MARGIN), "Margin for obstacle distance in meters (default: 0.15 m; minimum: 0.09 m).")
       ("dontDrive,d", "The motor commands won't be sent.")
+      ("overturn", "The robot turns farther than necessary (better for exploration behaviors).")
       ("showColors,c", "Shows measured environment with LEDs.");
 
   // allow to give the value as a positional argument
@@ -173,6 +175,7 @@ int main(int argc, char **argv) {
   stopObstacles = vm.count("stopObstacles");
   showColors = vm.count("showColors");
   stopDrive = vm.count("dontDrive");
+  overturn = vm.count("overturn");
 
   if (OBSTACLE_STOP_MARGIN < OBSTACLE_MARGIN) {
     OBSTACLE_STOP_MARGIN = OBSTACLE_MARGIN;
@@ -308,7 +311,9 @@ int main(int argc, char **argv) {
         if (turn != 0) {
           turn = 0;
         }
-        usleep(500000);
+        if (overturn) {
+          usleep(500000);
+        }
         sendMotorCmd(mymcm(driveSpeed), 0, CAN);
         interrupted = false;
       }
