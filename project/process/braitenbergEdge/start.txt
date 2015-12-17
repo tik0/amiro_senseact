@@ -1,8 +1,0 @@
-====== braitenbergEdge ======
-
-This is the basic braitenberg behavior. It gets the sensor values by the [[sense:senseRingProximity:start|Ring Proximity Reader]] which are seperated in obstacle and ground values. For running the whole project, please use the [[demo:braitenbergEdge:start|braitenbergEdge demo]].
-
-^ Parameter ^ Description ^
-| --showColors, -c | Shows measured environment with LEDs. |
-
-For additional parameter information type ''braitenbergEdge -h''.
