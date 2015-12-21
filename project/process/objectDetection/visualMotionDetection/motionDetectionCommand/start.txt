@@ -1,6 +1,6 @@
 ====== Motion Detection Command ======
 
-This application communicates with the [[process:visualMotionDetection:motionDetection:start|Motion Detection Application]] and serves as an interface program between user and roboter. It receives and shows the camera frames and outputs a statement in the console if a motion detection signal has been received. Typing specified keys, the specified commands can be sent. By giving the quit command the application quits itself, too.
+This application communicates with the [[process:objectDetection:visualMotionDetection:motionDetection:start|Motion Detection Application]] and serves as an interface program between user and roboter. It receives and shows the camera frames and outputs a statement in the console if a motion detection signal has been received. Typing specified keys, the specified commands can be sent. By giving the quit command the application quits itself, too.
 
 ===== Command Keys =====
 

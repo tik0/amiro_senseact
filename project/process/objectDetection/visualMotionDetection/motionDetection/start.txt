@@ -2,7 +2,7 @@
 
 This application detects motion by using a camera. It always uses the actual frame and two foreign ones for difference calculation. The (thresholded) differences are defined as motion. By giving commands the application can start and stop the motion detection or can be quit.
 
-The [[process:visualMotionDetection:motionDetectionCommand:start|Motion Detection Command]] serves as an interface application for users.
+The [[process:objectDetection:visualMotionDetection:motionDetectionCommand:start|Motion Detection Command]] serves as an interface application for users.
 
 ===== Commands =====
 
