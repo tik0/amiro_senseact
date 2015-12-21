@@ -12,7 +12,7 @@ This is the basic state machine for the RoboCup@Home 2015 Final project. Please 
 | waypoint | Serving as waypoint. | __stopped:__ if stop command for waypoint has been received; __following:__ if follow command has been received; __turn:__ if turn command has been received |
 | stopped | Waiting for commands. | __following:__ if follow command has been received; __waypoint:__ if waypoint command has been received; __turn:__ if turn command has been received |
 
-The state behaviors are descripted more in detail in the [[process:final2015:StateDescriptions|State Behavior Description]].
+The state behaviors are descripted more in detail in the [[process:statemachines:final2015:StateDescriptions|State Behavior Description]].
 
 ===== Application Parameters =====
 

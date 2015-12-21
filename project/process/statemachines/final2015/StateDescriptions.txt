@@ -1,6 +1,6 @@
 ====== State Behavior Description ======
 
-This is the state behavior description of the [[process:final2015:start|RoboCup@Home 2015 Final Statemachine]].
+This is the state behavior description of the [[process:statemachines:final2015:start|RoboCup@Home 2015 Final Statemachine]].
 
 ===== RSB Connection Types =====
 
