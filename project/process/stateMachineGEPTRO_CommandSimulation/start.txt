@@ -1,6 +1,6 @@
 ====== Command Simulation of GEPTRO State Machine ======
 
-This is the ToBI state machine simulation. It can simulate all functions of ToBI, which are used by the [[process:stateMachineGEPTRO:start|state machine]] of the RoboCup@Home 2015 OpenChallenge or of the GEPTRO table application. The functions cannot be deactivated.
+This is the ToBI state machine simulation. It can simulate all functions of ToBI, which are used by the [[process:statemachines:stateMachineGEPTRO:start|state machine]] of the RoboCup@Home 2015 OpenChallenge or of the GEPTRO table application. The functions cannot be deactivated.
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
 | --spread, -s | String | "localhost" | IP of remote spread server. |

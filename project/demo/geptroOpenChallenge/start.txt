@@ -1,6 +1,6 @@
 ====== Building the GEPTRO Table Application Environment for AMiRo ======
 
-This is the GEPTRO Table Application. The AMiRo explores the table and detects all objects. Afterwards it delivers a requested object. For more detailed behavior information, please check the [[process:stateMachineGEPTRO:start|GEPTRO statemachine]].
+This is the GEPTRO Table Application. The AMiRo explores the table and detects all objects. Afterwards it delivers a requested object. For more detailed behavior information, please check the [[process:statemachines:stateMachineGEPTRO:start|GEPTRO statemachine]].
 
 ===== Run the project =====
 
@@ -17,7 +17,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 
 ^ Program ^ Description ^
 | [[process:objectDelivery:start|objectDelivery]] | Program for delivering objects. |
-| [[process:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the GEPTRO project. |
+| [[process:statemachines:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the GEPTRO project. |
 | [[process:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start|AMiRo Environment Simulation]] | AMiRo simulation for needed and not included execution programs. |
 | [[process:stateMachineGEPTRO_CommandSimulation:start|Command Simulation]] | Simulation of external command program. |
 | [[process:statemachines:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |

@@ -1,6 +1,6 @@
 ====== Building the RoboCup@Home 2015 OpenChallenge for AMiRo ======
 
-This is the RoboCup@Home 2015 OpenChallenge. The AMiRo explores the table and detects all objects. Afterwards it delivers a requested object to its start position. For more detailed behavior information, please check the [[process:stateMachineGEPTRO:start|OpenChallenge statemachine]].
+This is the RoboCup@Home 2015 OpenChallenge. The AMiRo explores the table and detects all objects. Afterwards it delivers a requested object to its start position. For more detailed behavior information, please check the [[process:statemachines:stateMachineGEPTRO:start|OpenChallenge statemachine]].
 
 ===== Run the project =====
 
@@ -17,7 +17,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 
 ^ Program ^ Description ^
 | [[process:objectDelivery:start|objectDelivery]] | Program for delivering objects. |
-| [[process:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the OpenChallenge. |
+| [[process:statemachines:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the OpenChallenge. |
 | [[process:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start|AMiRo Environment Simulation]] | AMiRo simulation for needed and not included execution programs. |
 | [[process:stateMachineGEPTRO_CommandSimulation:start|Command Simulation]] | Simulation of ToBI, which gives the commands. |
 | [[process:exploDriveEdge:start|exploDriveEdge]] | Table exploration. |

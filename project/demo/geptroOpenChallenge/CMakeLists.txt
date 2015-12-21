@@ -6,7 +6,7 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/process/objectDelivery objectDelivery)
-add_subdirectory ($ENV{MUROX_PROJECT}/process/stateMachineGEPTRO stateMachineGEPTRO)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/stateMachineGEPTRO stateMachineGEPTRO)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/stateMachineGEPTRO_AMiRoEnvironmentSimulation amiroEnvironment)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/stateMachineGEPTRO_CommandSimulation commandSimulation)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/drivingObjectDetection drivingObjectDetection)
