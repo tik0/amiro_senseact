@@ -15,12 +15,12 @@ IMPORTANT: Make sure that you measured IR offsets of the ground and of the air (
 
 One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication.
 
-Additionally, the program [[process:frontObjectDetection:frontObjectDetectionCommand:start|frontObjectDetectionCommand]] can be used for receiving the sent images and obstacle recognitions.
+Additionally, the program [[process:objectDetection:frontObjectDetection:frontObjectDetectionCommand:start|frontObjectDetectionCommand]] can be used for receiving the sent images and obstacle recognitions.
 
 ===== Included Programs =====
 
 ^ Program ^ Description ^
 | [[process:braitenberg:start|braitenberg]] | Program of braitenberg behavior. |
-| [[process:frontObjectDetection:frontObjectDetection:start|frontObjectDetection]] | Program of object detection in front of the robot by suing the proximity sensors. |
+| [[process:objectDetection:frontObjectDetection:frontObjectDetection:start|frontObjectDetection]] | Program of object detection in front of the robot by suing the proximity sensors. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
 | [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |

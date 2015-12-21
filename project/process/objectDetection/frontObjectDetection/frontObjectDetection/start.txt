@@ -2,7 +2,7 @@
 
 This application detects the next object in front of the robot. It always uses the actual frame and the actual proximity sensor values from the [[sense:senseRingProximity:start|senseRingProximity program]]. By giving commands the application can start and stop the object detection or can be quit.
 
-The [[process:frontObjectDetection:frontObjectDetectionCommand:start|Front Object Detection Command]] serves as an interface application for users.
+The [[process:objectDetection:frontObjectDetection:frontObjectDetectionCommand:start|Front Object Detection Command]] serves as an interface application for users.
 
 ===== Commands =====
 

@@ -1,6 +1,6 @@
 ====== frontObjectDetectionCommand ======
 
-This application communicates with the [[process:frontObjectDetection:frontObjectDetection:start|Front Object Detection Application]] and serves as an interface program between user and roboter. It receives and shows the camera frames. Typing specified keys, the specified commands can be sent. By giving the quit command the application quits itself, too.
+This application communicates with the [[process:objectDetection:frontObjectDetection:frontObjectDetection:start|Front Object Detection Application]] and serves as an interface program between user and roboter. It receives and shows the camera frames. Typing specified keys, the specified commands can be sent. By giving the quit command the application quits itself, too.
 
 ===== Command Keys =====
 
