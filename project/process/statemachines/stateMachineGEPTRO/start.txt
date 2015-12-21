@@ -1,6 +1,6 @@
 ====== stateMachineGEPTRO ======
 
-This is the basic state machine for the GEPTRO project. It is the main part of the GEPTRO project. Please use the [[demo:geptroOpenChallenge:start|GEPTRO demo]]. For testing and giving commands the [[process:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start| AMiRo Environment Simulation]] can be used.
+This is the basic state machine for the GEPTRO project. It is the main part of the GEPTRO project. Please use the [[demo:geptroOpenChallenge:start|GEPTRO demo]]. For testing and giving commands the [[process:statemachines:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start| AMiRo Environment Simulation]] can be used.
 
 ===== States =====
 
