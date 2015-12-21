@@ -1,2 +1,0 @@
-#!/bin/bash
-exec @vdemo_prefix@/bin/vdemo2 @VDEMO_demofile@
