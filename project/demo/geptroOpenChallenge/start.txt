@@ -20,7 +20,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the GEPTRO project. |
 | [[process:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start|AMiRo Environment Simulation]] | AMiRo simulation for needed and not included execution programs. |
 | [[process:stateMachineGEPTRO_CommandSimulation:start|Command Simulation]] | Simulation of external command program. |
-| [[process:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
+| [[process:statemachines:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
 | [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
 | [[process:mapGenerator:start|mapGenerator]] | Program for generating and storing the map. |
