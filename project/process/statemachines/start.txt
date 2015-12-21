@@ -1,6 +1,6 @@
 ====== Statemachine Programs ======
 
-In this subdirectory there are included all programs for detecting objects:
+In this subdirectory there are included all state machines:
   * [[process:statemachines:choreoStateMachine:start|Choreography]]: Choreography reader for RoboCup@Home 2015 RoboZoo.
   * [[process:statemachines:coastalNavigationWithDrinkOrder:start|Coastal Navigation (Drink Order)]]: <Description>
   * [[process:statemachines:drivingObjectDetection:start|Driving Object Detection]]: Driving to every object for detection.
