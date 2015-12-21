@@ -1,6 +1,6 @@
 ====== Object Detection Command ======
 
-This application communicates with the [[process:objectDetection:objectDetection:start|Object Detection Application]] and serves as an interface program between user and roboter. It receives and shows the camera frames and outputs the detection results. Typing specified keys, the specified commands can be sent. By giving the quit command the application quits itself, too.
+This application communicates with the [[process:objectDetection:objectDetection:objectDetection:start|Object Detection Application]] and serves as an interface program between user and roboter. It receives and shows the camera frames and outputs the detection results. Typing specified keys, the specified commands can be sent. By giving the quit command the application quits itself, too.
 
 ===== Building =====
 
