@@ -1,7 +1,7 @@
 ====== Show Map ======
 
 ShowMap builds and visualizes a occupancy grid map from MapUpdates received from a running exploration.
-Paths received from the [[process:localPlannerISY:start|localPlanner]] are visualized.
+Paths received from the [[process:exploration:localPlannerISY:start|localPlanner]] are visualized.
 
 ===== Run showMap =====
 

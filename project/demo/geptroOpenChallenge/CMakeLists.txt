@@ -14,7 +14,7 @@ add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximit
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/stopAMiRo stopAMiRo)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/mapping/mapGenerator mapGenerator)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/exploration/frontierExploration frontierExploration)
-add_subdirectory ($ENV{MUROX_PROJECT}/process/localPlannerISY localPlannerISY)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/exploration/localPlannerISY localPlannerISY)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/motorControl motorControl)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseFloorProximity senseFloorProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/objectDetection/objectDetection/objectDetection objectDetection)
