@@ -1,6 +1,6 @@
 ====== Transport Follow ======
 
-This tool is the following behavior of the transport scenario, which is described in the [[process:transport:start|transport documentation]]. Basically the robot follows another robot by only using its proximity sensors (have a look into the [[process:follow_ProximitySensors:start|follow proximity sensors project]]).
+This tool is the following behavior of the transport scenario, which is described in the [[process:transport:start|transport documentation]]. Basically the robot follows another robot by only using its proximity sensors (have a look into the [[process:actingBehavior:follow_ProximitySensors:start|follow proximity sensors project]]).
 
 ===== Building =====
 
@@ -21,7 +21,7 @@ This is a cmake project, so just type:
   - Waiting for arrival of Guide
   - Turning towards Guide
   - Transmitting final transport position
-  - Doing [[process:follow_ProximitySensors:start|following behavior]] until Guide arrived final position
+  - Doing [[process:actingBehavior:follow_ProximitySensors:start|following behavior]] until Guide arrived final position
   - Transmitting disconnection
   - Exit tool
 
