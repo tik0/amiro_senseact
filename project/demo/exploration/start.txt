@@ -22,7 +22,7 @@ To view the map use the program [[tools:showMap:start|showMap]].
 ===== Components =====
 
   * [[process:mapping:mapGenerator:start|mapGenerator]]
-  * [[process:frontierExploration:start|frontierExploration]]
+  * [[process:exploration:frontierExploration:start|frontierExploration]]
   * [[process:localPlannerISY:start|localPlannerISY]]
   * [[process:motorControl:start|motorControl]]
   * [[sense:senseRingProximity:start|senseRingProximity]]

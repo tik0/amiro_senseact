@@ -24,7 +24,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
 | [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
 | [[process:mapping:mapGenerator:start|mapGenerator]] | Program for generating and storing the map. |
-| [[process:frontierExploration:start|frontierExploration]] | Program for exploration behavior. |
+| [[process:exploration:frontierExploration:start|frontierExploration]] | Program for exploration behavior. |
 | [[process:localPlannerISY:start|localPlannerISY]] | Program for planning paths in the map. |
 | [[process:motorControl:start|motorControl]] | Program for controlling motor commands. |
 | [[sense:senseFloorProximity:start|senseFloorProximity]] | Program for reading floor proximity values. |
