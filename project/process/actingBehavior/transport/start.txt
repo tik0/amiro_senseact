@@ -5,8 +5,8 @@ The following behavior by using proximity sensors is included in the transport t
 ===== Programs =====
 
 For the following by using proximity sensors there are two programs:
-  * [[process:transport:transportFollow:start|follow]]: The program for the following behavior.
-  * [[process:transport:transportGuide:start|guide]]: The program for the guide.
+  * [[process:actingBehavior:transport:transportFollow:start|follow]]: The program for the following behavior.
+  * [[process:actingBehavior:transport:transportGuide:start|guide]]: The program for the guide.
 
 ===== Transport Scenario with Two AMiRos =====
 
