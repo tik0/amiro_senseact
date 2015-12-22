@@ -9,7 +9,7 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/actingBehavior/objectDelivery obje
 add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/stateMachineGEPTRO stateMachineGEPTRO)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/stateMachineGEPTRO_AMiRoEnvironmentSimulation amiroEnvironment)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/stateMachineGEPTRO_CommandSimulation commandSimulation)
-add_subdirectory ($ENV{MUROX_PROJECT}/process/exploDriveEdge exploDriveEdge)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/exploration/exploDriveEdge exploDriveEdge)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/drivingObjectDetection drivingObjectDetection)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseOdometry senseOdometry)
