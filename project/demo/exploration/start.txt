@@ -21,7 +21,7 @@ To view the map use the program [[tools:showMap:start|showMap]].
 
 ===== Components =====
 
-  * [[process:mapGenerator:start|mapGenerator]]
+  * [[process:mapping:mapGenerator:start|mapGenerator]]
   * [[process:frontierExploration:start|frontierExploration]]
   * [[process:localPlannerISY:start|localPlannerISY]]
   * [[process:motorControl:start|motorControl]]
