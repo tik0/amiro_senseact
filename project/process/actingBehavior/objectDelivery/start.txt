@@ -1,6 +1,6 @@
 ====== Object Delivery ======
 
-Given the [[process:mapping:mapGenerator:start|mapGenerator]] and [[process:localPlanner:start|localPlanner]] programs are running this program makes the robot deliver any object that can be found in the environment (by the mapGenerator program) when it is requested for delivery (e.g. by a state machine) via RSB. This object will be approached and delivered by pushing it to a predefined position (place destination marker before start!). Therefore, a "pushing path" is requested from the mapGenerator and decomposed into its straight segments along which the object is consecutively pushed.
+Given the [[process:mapping:mapGenerator:start|mapGenerator]] and [[process:exploration:localPlanner:start|localPlanner]] programs are running this program makes the robot deliver any object that can be found in the environment (by the mapGenerator program) when it is requested for delivery (e.g. by a state machine) via RSB. This object will be approached and delivered by pushing it to a predefined position (place destination marker before start!). Therefore, a "pushing path" is requested from the mapGenerator and decomposed into its straight segments along which the object is consecutively pushed.
 
 ===== Color Codes =====
 
