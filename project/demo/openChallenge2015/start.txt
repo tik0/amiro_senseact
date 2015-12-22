@@ -16,7 +16,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[process:objectDelivery:start|objectDelivery]] | Program for delivering objects. |
+| [[process:actingBehavior:objectDelivery:start|objectDelivery]] | Program for delivering objects. |
 | [[process:statemachines:stateMachineGEPTRO:start|stateMachineGEPTRO]] | Statemachine of the OpenChallenge. |
 | [[process:statemachines:stateMachineGEPTRO_AMiRoEnvironmentSimulation:start|AMiRo Environment Simulation]] | AMiRo simulation for needed and not included execution programs. |
 | [[process:statemachines:stateMachineGEPTRO_CommandSimulation:start|Command Simulation]] | Simulation of ToBI, which gives the commands. |
