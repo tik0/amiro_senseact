@@ -1,6 +1,6 @@
 ====== Building the Braitenberg vehicle for AMiRo ======
 
-This is a demo of the braitenberg with obstacle and edge avoidence. In this case the [[process:braitenberg:start|braitenberg behavior]] is used. 
+This is a demo of the braitenberg with obstacle and edge avoidence. In this case the [[process:exploration:braitenberg:start|braitenberg behavior]] is used. 
 
 IMPORTANT: Make sure that you measured IR offsets of the ground and of the air (see [[demo:initial:start|initial demo]]). Otherwise the robot isn't able to stop in front of edges and obstacles!
 
@@ -20,7 +20,7 @@ Additionally, the program [[process:objectDetection:frontObjectDetection:frontOb
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[process:braitenberg:start|braitenberg]] | Program of braitenberg behavior. |
+| [[process:exploration:braitenberg:start|braitenberg]] | Program of braitenberg behavior. |
 | [[process:objectDetection:frontObjectDetection:frontObjectDetection:start|frontObjectDetection]] | Program of object detection in front of the robot by suing the proximity sensors. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
 | [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
