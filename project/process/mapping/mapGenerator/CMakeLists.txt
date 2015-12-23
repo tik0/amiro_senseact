@@ -63,7 +63,7 @@ if (NOT TARGET matConverter)
 endif()
 
 if (NOT TARGET mapUpdateConverter)
-    add_subdirectory (../../includes/converter/mapUpdateConverter lib/mapUpdateConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/mapUpdateConverter lib/mapUpdateConverter)
 endif()
 
 file(GLOB SOURCES *.cxx)

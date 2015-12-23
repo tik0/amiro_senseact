@@ -13,7 +13,7 @@
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
 // #define ERROR_MSG_
-#include "../../includes/MSG.h"
+#include "MSG.h"
 
 #include <iostream>
 #include <boost/thread.hpp>
