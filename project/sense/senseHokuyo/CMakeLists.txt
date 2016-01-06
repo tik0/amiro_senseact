@@ -44,9 +44,9 @@ include_directories(include
 
 # Define the source
 SET (SOURCE main.cxx)
-SET (SOURCE ${SOURCE} $ENV{MUROX_PROJECT}/tools/HokuyoInterface/Hokuyo.cc)
-SET (SOURCE ${SOURCE} $ENV{MUROX_PROJECT}/tools/HokuyoInterface/SerialDevice.cc)
-SET (SOURCE ${SOURCE} $ENV{MUROX_PROJECT}/tools/HokuyoInterface/HokuyoReader.cc)
+SET (SOURCE ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/libs/HokuyoInterface/Hokuyo.cc)
+SET (SOURCE ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/libs/HokuyoInterface/SerialDevice.cc)
+SET (SOURCE ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/libs/HokuyoInterface/HokuyoReader.cc)
 
 LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}

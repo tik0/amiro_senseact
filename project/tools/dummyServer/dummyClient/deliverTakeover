@@ -1,2 +1,0 @@
-#!/bin/bash
-rsb-sendcpp0.11 /tabletop/BB0/deliver/takeover ./rsb.conf

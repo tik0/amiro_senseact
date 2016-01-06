@@ -1,5 +1,5 @@
 #!/bin/bash
-killall CoreSLAM
-killall sendTwistControls
-killall gzclient
-killall spread
+killall -9 CoreSLAM
+killall -9 sendTwistControls
+killall -9 gzclient
+killall -9 spread

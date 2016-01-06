@@ -5,8 +5,8 @@ string (REGEX MATCH "[^/]+$" PROJECT_NAME "${CMAKE_CURRENT_BINARY_DIR}")
 message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseOdometry senseOdometry)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/sendOdometryProtoPose sendOdometryProtoPose)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseCamJpg senseCamJpg)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
-
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseFloorProximity senseFloorProximity)

@@ -12,7 +12,7 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/stateMachineGEPTRO_C
 add_subdirectory ($ENV{MUROX_PROJECT}/process/exploration/exploDriveEdge exploDriveEdge)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/statemachines/drivingObjectDetection drivingObjectDetection)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
-add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseOdometry senseOdometry)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/sendOdometryProtoPose sendOdometryProtoPose)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/mapping/CoreSLAMBasic CoreSLAM)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/exploration/localPlanner localPlanner)

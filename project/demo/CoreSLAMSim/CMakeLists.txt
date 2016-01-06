@@ -5,5 +5,5 @@ string (REGEX MATCH "[^/]+$" PROJECT_NAME "${CMAKE_CURRENT_BINARY_DIR}")
 message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory (../../process/CoreSLAM CoreSLAM)
-add_subdirectory (../../tools/sendTwistControls sendTwistControls)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/CoreSLAM CoreSLAM)
+add_subdirectory ($ENV{MUROX_PROJECT}/tools/sendTwistControls sendTwistControls)

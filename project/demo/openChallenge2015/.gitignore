@@ -6,7 +6,7 @@ exploDriveEdge
 drivingObjectDetection
 senseRingProximity
 senseHokuyo
-senseOdometry
+sendOdometryProtoPose
 stopAMiRo
 localPlanner
 objectDetection

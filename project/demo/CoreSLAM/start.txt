@@ -1,9 +1,8 @@
 ====== Building the CoreSLAM Environment for AMiRo ======
 
-This is a demo which streams the local camera device via RSB and displays it with another process.
-It only consists of two applications.
-One for opening the camera device, compressing the image and sending it via RSB.
-And another which grabs the compressed images from the RSB scope and display them via OpenCV
+This is a [[process:mapping:CoreSLAM:start|CoreSLAM]] demonstration which runs with the Hokuyo URG04-LX.
+The map is periodically send as an jpg image to the scope ''--mapAsImageOutScope /AMiRo_Hokuyo/image'', which can be displayed by [[tools:showCamJpg:start|showCamJpg]].
+AMiRo is steered via remote keyboard commands from you PC using [[tools:sendControls:start|sendControls]] which sends it commands to the scope ''/motor''.
 
 ===== Run the demo =====
 
@@ -12,4 +11,10 @@ And another which grabs the compressed images from the RSB scope and display the
   - ''./run.sh'' on the AMiRo
   - ''./stop.sh'' on the AMiRo for stopping
 
-One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+===== Included Programs =====
+
+^ Program ^ Description ^
+| [[sense:sendOdometryProtoPose:start|sendOdometryProtoPose]] | Program for reading odometry values. |
+| [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading the Hokuyo Laser Scanner. |
+| [[act:actAmiroMotor:start|actAmiroMotor]] | Program for reading steering vectors from a RSB scope and send them via CAN as motor commands. |
+| [[process:mapping:CoreSLAMBasic:start|CoreSLAMBasic]] | An advanced CoreSLAM algorithm. |

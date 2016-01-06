@@ -22,3 +22,8 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
   * Song 4: Macarena
   * Song 5: Gonna Make You Sweat
 
+===== Included Programs =====
+
+^ Program ^ Description ^
+| [[process:statemachines:choreoStateMachine:start|choreoStateMachine]] | A statemachine for the AMiRo dancing choreography. |
+| [[tools:stopAMiRo:start|stopAMiRo]] | A handy tool to stop the AMiRo. |

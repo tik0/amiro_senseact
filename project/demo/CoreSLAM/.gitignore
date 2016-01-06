@@ -1,4 +1,4 @@
 actAmiroMotor
 CoreSLAMBasic
 senseHokuyo
-senseOdometry
+sendOdometryProtoPose

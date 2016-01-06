@@ -1,26 +1,15 @@
-[submodule "project/includes/eigen"]
-	path = project/includes/eigen
-	url = https://github.com/vancegroup-mirrors/eigen.git
-	branch = hg/3.2
 [submodule "project/tools/HokuyoInterface"]
-	path = project/tools/HokuyoInterface
+	path = project/includes/libs/HokuyoInterface
 	url = https://github.com/tik0/HokuyoInterface.git
-[submodule "project/includes/orocos_kinematics_dynamics"]
-	path = project/includes/orocos_kinematics_dynamics
-	url = https://github.com/orocos/orocos_kinematics_dynamics.git
-[submodule "project/includes/cvplot"]
-	path = project/includes/cvplot
-	url = https://code.google.com/p/cvplot/
 [submodule "project/tools/mongoose"]
-	path = project/tools/mongoose
+	path = project/includes/libs/mongoose
 	url = https://github.com/cesanta/mongoose.git
-[submodule "project/tools/rsb_ws_bridge_claas"]
-	path = project/tools/rsb_ws_bridge_claas
-	url = https://github.com/tik0/rsb_ws_bridge_claas.git
-	branch = oneMachine
 [submodule "project/tools/rsb_ws_bridge_amiro/mongoose"]
   path = project/tools/rsb_ws_bridge_amiro/mongoose
   url = https://github.com/cesanta/mongoose.git
 [submodule "project/tools/rsb_ws_bridge_amiro/ProtoBuf.js"]
   path = project/tools/rsb_ws_bridge_amiro/ProtoBuf.js
   url = https://github.com/dcodeIO/ProtoBuf.js.git
+[submodule "project/includes/cvplot"]
+	path = project/includes/cvplot
+	url = https://github.com/tik0/cvplot.git

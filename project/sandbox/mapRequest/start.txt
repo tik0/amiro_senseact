@@ -1,6 +1,0 @@
-====== mapRequest ======
-
-This application is a helper tool for the final2015 demo.
-It requests the map as image from the CoreSLAM application.
-
-Run like ''./mapRequest --serverScope /CoreSlamServer --serverRequestName map''

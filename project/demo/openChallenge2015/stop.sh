@@ -20,7 +20,7 @@ killall -9 CoreSLAM
 
 # kill all sensing programs
 killall -9 senseRingProximity
-killall -9 senseOdometry
+killall -9 sendOdometryProtoPose
 killall -9 senseHokuyo
 
 sleep 1

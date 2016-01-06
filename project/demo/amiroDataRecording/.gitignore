@@ -1,4 +1,4 @@
-senseOdometry
+sendOdometryProtoPose
 senseHokuyo
 senseCamJpg
 senseRingProximity

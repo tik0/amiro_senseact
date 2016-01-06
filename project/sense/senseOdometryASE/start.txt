@@ -1,4 +1,0 @@
-====== senseOdometryASE ======
-
-Special version of sensing the odometry for the ASE lecture.
-Sensing the odometry and send it via a vector.

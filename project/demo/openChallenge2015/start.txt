@@ -23,7 +23,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:exploration:exploDriveEdge:start|exploDriveEdge]] | Table exploration. |
 | [[process:statemachines:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
-| [[sense:senseOdometry:start|senseOdometry]] | Program for reading odometry values. |
+| [[sense:sendOdometryProtoPose:start|sendOdometryProtoPose]] | Program for reading odometry values. |
 | [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading the Hokuyo Laser Scanner. |
 | [[process:mapping:CoreSLAMBasic:start|CoreSLAM]] | SLAM algorithm, which stores the map. |
 | [[process:exploration:localPlanner:start|localPlanner]] | Program for planning paths in the map. |
