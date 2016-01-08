@@ -2,3 +2,4 @@ sendOdometryProtoPose
 senseHokuyo
 senseCamJpg
 senseRingProximity
+senseFloorProximity
