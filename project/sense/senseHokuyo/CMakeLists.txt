@@ -38,7 +38,7 @@ include_directories(include
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
     ${GXX_INCLUDES}
     ${Boost_INCLUDE_DIR}
-    "$ENV{MUROX_PROJECT}/tools/HokuyoInterface"
+    "$ENV{MUROX_INCLUDE_DIRS}/libs/HokuyoInterface"
     ${EIGEN_INCLUDE_DIRS}
 )
 
