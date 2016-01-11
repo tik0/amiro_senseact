@@ -27,7 +27,7 @@ There are used two types of offsets for each sensor. The first offset is the gro
 
 The path to the ground offsets configuration file can be changed by the parameter ''-l'' (see section "Parameters") and at runtime over RSB (see section "Change Sensor Offsets at Runtime"). The air offsets configuration file cannot be changed!
 
-The offsets are the mean values of a measurement set. For such a measurement the tool [[tools:measureOffsetTest:start|measureOffsetTest]] can be used. It has a parameter to calculate the mean values and to write those configuration files directly. This tool has to be used twice, for each offset once, which is defined in scripts in the [[demo:initial:start|initial demo]].
+The offsets are the mean values of a measurement set. For such a measurement the tool [[tools:robotTools:measureOffsetTest:start|measureOffsetTest]] can be used. It has a parameter to calculate the mean values and to write those configuration files directly. This tool has to be used twice, for each offset once, which is defined in scripts in the [[demo:initial:start|initial demo]].
 
 For the measurement of the ground offset, the robot has to be placed on the ground, which should be used (table, floor, etc.). There shouldn't be any obstacles (including cables!) or edges in range of the sensors (for the VCNL4020 proximity sensors it's a range about 25 cm around the robot). For the measurement of the air offset, the robot should be placed in the air by using e.g. thin objects, etc. (for the VCNL4020 proximity sensors the height should be about 20 cm). Of course, there shouldn't be any obstacles in the sensors' range, either!
 

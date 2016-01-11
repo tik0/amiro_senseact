@@ -11,7 +11,7 @@ The scenario is the delivery of goods from a table to a position from where Tobi
 
 ===== Calculating the Sensor Offsets for the senseRingProximity Program =====
 
-For the [[sense:senseRingProximity:start|senseRingProximity program]] this tool can calculate the ground and air offsets for the [[includes:sensorModels:startVCNL4020|sensor obstacle and edge model]] (for specific measurements, please also check the [[tools:measureOffsetTest:start|measureOffsetTest documentation]]):
+For the [[sense:senseRingProximity:start|senseRingProximity program]] this tool can calculate the ground and air offsets for the [[includes:sensorModels:startVCNL4020|sensor obstacle and edge model]] (for specific measurements, please also check the [[tools:robotTools:measureOffsetTest:start|measureOffsetTest documentation]]):
   - ''./runIRConfig.sh'' on the AMiRo for calculating the ground offsets (make sure that the AMiRo is standing on the table without any objects in range)
   - ''./runIREmpty.sh'' on the AMiRo for calculating the air offsets (make sure that the AMiRo has nothing in range including the table)
 
@@ -20,6 +20,6 @@ For the [[sense:senseRingProximity:start|senseRingProximity program]] this tool 
 ^ Program ^ Description ^
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading the ring proximity sensors. |
 | [[sense:senseFloorProximity:start|senseFloorProximity]] | Program for reading the floor proximity sensors. |
-| [[tools:edgeMeasurement:start|edgeMeasurement]] | Program for only measuring the edge distance. |
-| [[tools:measureOffsetTest:start|measureOffsetTest]] | Program for creating measurement sets of 500 measurements of the ring and floor proximity sensors. |
+| [[tools:robotTools:edgeMeasurement:start|edgeMeasurement]] | Program for only measuring the edge distance. |
+| [[tools:robotTools:measureOffsetTest:start|measureOffsetTest]] | Program for creating measurement sets of 500 measurements of the ring and floor proximity sensors. |
 
