@@ -6,8 +6,8 @@ Thus, an aditional program for displaying the maps from the implemented mapping-
 
 So, it consists of four applications.
 One, the [[simulation:start|simulator]] itself, which offers all interfaces to a simulated AMiRo and its lidar.
-Two, a programm [[tools:sendTwistControls:start|sendTwistControls]], which allows by wasd controll to steer the robot.
-Three, a programm [[tools:showCamJpg:start|showCamJpg]] is used to show the map updates.
+Two, a programm [[tools:hmi:sendControlsProtoTwist:start|sendTwistControls]], which allows by wasd controll to steer the robot.
+Three, a programm [[tools:hmi:showCamJpg:start|showCamJpg]] is used to show the map updates.
 At last, the [[process:mapping:CoreSLAMBasic:start|CoreSLAMBasic]] implementation, which reads the lidar scans and the odometry to do the mapping and localisation.
 
 
@@ -29,5 +29,5 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 
 ^ Program ^ Description ^
 | [[process:mapping:CoreSLAMBasic:start|CoreSLAMBasic]] | An advanced CoreSLAM algorithm. |
-| [[tools:sendTwistControls:start|sendTwistControls]] | Program for sending motor commands. |
-| [[tools:showCamJpg:start|showCamJpg]] | Program for displaying compressed images. |
+| [[tools:hmi:sendControlsProtoTwist:start|sendTwistControls]] | Program for sending motor commands. |
+| [[tools:hmi:showCamJpg:start|showCamJpg]] | Program for displaying compressed images. |

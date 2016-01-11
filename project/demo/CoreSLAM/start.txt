@@ -1,8 +1,8 @@
 ====== Building the CoreSLAM Environment for AMiRo ======
 
 This is a [[process:mapping:CoreSLAM:start|CoreSLAM]] demonstration which runs with the Hokuyo URG04-LX.
-The map is periodically send as an jpg image to the scope ''--mapAsImageOutScope /AMiRo_Hokuyo/image'', which can be displayed by [[tools:showCamJpg:start|showCamJpg]].
-AMiRo is steered via remote keyboard commands from you PC using [[tools:sendControls:start|sendControls]] which sends it commands to the scope ''/motor''.
+The map is periodically send as an jpg image to the scope ''--mapAsImageOutScope /AMiRo_Hokuyo/image'', which can be displayed by [[tools:hmi:showCamJpg:start|showCamJpg]].
+AMiRo is steered via remote keyboard commands from you PC using [[tools:hmi:sendControlsVecInt:start|sendControls]] which sends it commands to the scope ''/motor''.
 
 ===== Run the demo =====
 

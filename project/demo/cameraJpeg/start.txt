@@ -24,8 +24,8 @@ And another which grabs the compressed images from the RSB scope and display the
 
 This demo can also be run by programs, which do not compress/decompress the images, but sending the raw OpenCV Mat container over the RSB scopes:
 
-  - [[sense:senseCamV4l:start|senseCamV4l]] --> [[tools:showCam:start|showCam]]
-  - [[sense:senseCamV4l:start|senseCam]] --> [[tools:showCam:start|showCam]]
+  - [[sense:senseCamV4l:start|senseCamV4l]] --> [[tools:hmi:showCam:start|showCam]]
+  - [[sense:senseCamV4l:start|senseCam]] --> [[tools:hmi:showCam:start|showCam]]
 
 ===== Run the demo =====
 

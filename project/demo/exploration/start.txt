@@ -17,7 +17,7 @@ This is a demo which runs map building with Frontier Exploration for the isy pro
     - ''./stopExplo.sh'' to stop the exploration (this does not kill the spreads)
 
 
-To view the map use the program [[tools:showMap:start|showMap]].
+To view the map use the program [[tools:hmi:showMapGeptro:start|showMap]].
 
 ===== Components =====
 

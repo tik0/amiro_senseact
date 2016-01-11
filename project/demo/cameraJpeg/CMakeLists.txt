@@ -6,4 +6,4 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory (../../sense/senseCamJpg senseCamJpg)
-add_subdirectory (../..//tools/showCamJpg showCamJpg)
+add_subdirectory (../../tools/hmi/showCamJpg showCamJpg)

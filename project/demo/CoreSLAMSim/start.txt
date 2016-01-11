@@ -3,7 +3,7 @@
 This is a demo shows a working simulator with one AMiRo and a [[demo:CoreSLAMSim:start|CoreSLAMSim]] implementation.
 It only consists of three applications.
 One, the [[simulation:start|simulator]] itself, which offers all interfaces to a simulated AMiRo and its lidar.
-Two, a programm [[tools:sendTwistControls:start|sendTwistControls]], which allows by wasd controll to steer the robot.
+Two, a programm [[tools:hmi:sendControlsProtoTwist:start|sendTwistControls]], which allows by wasd controll to steer the robot.
 At last, the [[demo:CoreSLAMSim:start|CoreSLAMSim]] implementation, which reads the lidar scans and the odometry to do the mapping and localisation.
 
 
@@ -30,4 +30,4 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 
 ^ Program ^ Description ^
 | [[process:mapping:CoreSLAM:start|CoreSLAM]] | A CoreSLAM algorithm. |
-| [[tools:sendTwistControls:start|sendTwistControls]] | Program for sending motor commands. |
+| [[tools:hmi:sendControlsProtoTwist:start|sendTwistControls]] | Program for sending motor commands. |
