@@ -23,4 +23,4 @@ Additionally, the program [[process:objectDetection:frontObjectDetection:frontOb
 | [[process:exploration:braitenberg:start|braitenberg]] | Program of braitenberg behavior. |
 | [[process:objectDetection:frontObjectDetection:frontObjectDetection:start|frontObjectDetection]] | Program of object detection in front of the robot by suing the proximity sensors. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
-| [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |

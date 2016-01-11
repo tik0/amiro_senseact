@@ -20,4 +20,4 @@ To build the converter, just add them to your ''CMakeLists.txt'' file as follows
 </file> 
 
 The usage of such converter can be seen in [[sense:senseCam:start|senseCam]].
-There exist also template converter like the ''vecConverter'', which do not need to be precompiled (See [[tools:sendRandomIntVector:start|sendRandomIntVector]] for an example).
+There exist also template converter like the ''vecConverter'', which do not need to be precompiled (See [[tools:misc:sendRandomIntVector:start|sendRandomIntVector]] for an example).

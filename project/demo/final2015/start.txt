@@ -34,7 +34,7 @@ ToBI <- AMiRo ID 1 <- AMiRo ID 0
 | [[sense:waypoint:start|waypoint]] | Program for serving as waypoint. |
 | [[process:actingBehavior:follow_LaserScanner:start|follow_LaserScanner]] | Program for following ToBI (by using a laser scanner). |
 | [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading the Hokuyo laser scanner. |
-| [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
 | [[sense:senseCamJpg:start|senseCamJpg]] | Program for getting the camera images. |
 | [[tools:rsb_ws_bridge_amiro:start|rsb_ws_bridge_amiro]] | Server program for sending the camera images. |
 

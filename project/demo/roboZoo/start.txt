@@ -26,4 +26,4 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 
 ^ Program ^ Description ^
 | [[process:statemachines:choreoStateMachine:start|choreoStateMachine]] | A statemachine for the AMiRo dancing choreography. |
-| [[tools:stopAMiRo:start|stopAMiRo]] | A handy tool to stop the AMiRo. |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | A handy tool to stop the AMiRo. |

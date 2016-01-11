@@ -11,4 +11,4 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/exploration/localPlannerISY localP
 add_subdirectory ($ENV{MUROX_PROJECT}/process/motorControl motorControl)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseFloorProximity senseFloorProximity)
-add_subdirectory ($ENV{MUROX_PROJECT}/tools/stopAMiRo stopAMiRo)
+add_subdirectory ($ENV{MUROX_PROJECT}/tools/robotTools/stopAMiRo stopAMiRo)

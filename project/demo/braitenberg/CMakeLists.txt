@@ -8,5 +8,5 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 add_subdirectory ($ENV{MUROX_PROJECT}/process/exploration/braitenberg braitenberg)
 add_subdirectory ($ENV{MUROX_PROJECT}/process/objectDetection/frontObjectDetection/frontObjectDetection frontObjectDetection)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
-add_subdirectory ($ENV{MUROX_PROJECT}/tools/stopAMiRo stopAMiRo)
+add_subdirectory ($ENV{MUROX_PROJECT}/tools/robotTools/stopAMiRo stopAMiRo)
 

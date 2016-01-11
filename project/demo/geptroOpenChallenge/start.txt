@@ -22,7 +22,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 | [[process:statemachines:stateMachineGEPTRO_CommandSimulation:start|Command Simulation]] | Simulation of external command program. |
 | [[process:statemachines:drivingObjectDetection:start|drivingObjectDetection]] | Program for object detection behavior. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
-| [[tools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
 | [[process:mapping:mapGenerator:start|mapGenerator]] | Program for generating and storing the map. |
 | [[process:exploration:frontierExploration:start|frontierExploration]] | Program for exploration behavior. |
 | [[process:exploration:localPlannerISY:start|localPlannerISY]] | Program for planning paths in the map. |

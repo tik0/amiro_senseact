@@ -27,4 +27,4 @@ To view the map use the program [[tools:hmi:showMapGeptro:start|showMap]].
   * [[process:motorControl:start|motorControl]]
   * [[sense:senseRingProximity:start|senseRingProximity]]
   * [[sense:senseFloorProximity:start|senseFloorProximity]]
-  * [[tools:stopAMiRo:start|stopAMiRo]]
+  * [[tools:robotTools:stopAMiRo:start|stopAMiRo]]
