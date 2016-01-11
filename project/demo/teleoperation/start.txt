@@ -22,5 +22,5 @@ std::string g_sOutScopeSteering = "/STEERING";
 
 ^ Program ^ Description ^
 | [[act:actAmiroMotor:start|actAmiroMotor]] | Program for reading steering vectors from a RSB scope and send them via CAN as motor commands. |
-| [[process:teleoperationWebserver:start|teleoperationWebserver]] | A libwebsockets based webserver. |
+| [[process:misc:teleoperationWebserver:start|teleoperationWebserver]] | A libwebsockets based webserver. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Reading the ring proximity sensors and send the values via RSB. |

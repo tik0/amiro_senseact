@@ -1,3 +1,3 @@
 #!/bin/sh
-./braitenbergAmiro &
+./braitenberg2a &
 wait

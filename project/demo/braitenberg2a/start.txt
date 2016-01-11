@@ -12,4 +12,4 @@ This is a demo of the braitenberg 2a vehicle, using the ring proximity sensors o
   ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[process:braitenbergAmiro:start|braitenbergAmiro]] | A simple braitenberg vehicle 2a implementation. |
+| [[process:exploration:braitenberg2a:start|braitenberg2a]] | A simple braitenberg vehicle 2a implementation. |

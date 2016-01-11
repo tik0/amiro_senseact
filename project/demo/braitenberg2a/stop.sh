@@ -1,2 +1,2 @@
 #!/bin/sh
-killall -9 braitenbergAmiro
+killall -9 braitenberg2a
