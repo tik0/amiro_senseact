@@ -5,10 +5,10 @@
 	path = project/includes/libs/mongoose
 	url = https://github.com/cesanta/mongoose.git
 [submodule "project/tools/rsb_ws_bridge_amiro/mongoose"]
-  path = project/tools/rsb_ws_bridge_amiro/mongoose
+	path = project/process/misc/rsb_ws_bridge_amiro/mongoose
   url = https://github.com/cesanta/mongoose.git
 [submodule "project/tools/rsb_ws_bridge_amiro/ProtoBuf.js"]
-  path = project/tools/rsb_ws_bridge_amiro/ProtoBuf.js
+	path = project/process/misc/rsb_ws_bridge_amiro/ProtoBuf.js
   url = https://github.com/dcodeIO/ProtoBuf.js.git
 [submodule "project/includes/cvplot"]
 	path = project/includes/cvplot
