@@ -2,13 +2,15 @@
 
 The VCNL4020 sensors from Vishay are infrared based proximity sensors. There are defined two sensor models.
 
+{{ :includes:sensorModels:VCNL4020-Sensor.png?300 }}
+
 ===== General Sensor Behavior =====
 
-<picture and schematic of sensor>
+{{ :includes:sensorModels:VCNL4020-Schematic.png?300 }}
 
 The VCNL4020 sensors from Vishay are infrared based proximity sensors. An infrared LED emittes infrared light, whose intensity of the reflection in the environment can be received. The sensor calculates an internal offset of the environment's infrared light intensity for only measuring the intensity of the reflected light of the emitter. The VCNL4020 has also included an ambient light sensor, but its usage itsn't installed in the AMiRo yet.
 
-<schematic of the cone>
+{{ :includes:sensorModels:VCNL4020-Cone.png?300 }}
 
 Due to the scattering of the infrared light (up to 60 degrees from the sensor's normal), there isn't any information about the precise direction, where the light has been reflected. If an object is moved angularly around the sensor by measuring the same sensor value, the distance between object and sensor will become smaller while increasing the angle between the objects direction and the sensor's normal. This behavior is shown in the figure above and can be descripted as the sensor's measurment cone.
 
