@@ -14,8 +14,10 @@ This is a cmake project, so just type:
 
 ===== RSB Scopes =====
 
-^ Scope (default name)      ^ Description ^
-|/motor/[priority] | Inscope for motor commands |
+For communication there are RSB scopes defined.
+
+^ Name ^ Type ^ Default scope ^ Description ^
+| Motor scope | std::vec<int> | "/motor/[priority]" | Inscope for motor commands. |
 
 ===== How to give a command =====
 
