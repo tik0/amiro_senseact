@@ -2,7 +2,7 @@
 
 This program performs a Frontier Exploration.
 To do this it requests frontier paths from the [[process:mapping:mapGenerator:start|mapGenerator]] and publishes them to the [[process:exploration:localPlannerISY:start|localPlanner]].
-It also implements an edge following. For this purpose steering signals are directly send to [[process:motorControl:start|motorControl]].
+It also implements an edge following. For this purpose steering signals are directly send to [[act:motorControl:start|motorControl]].
 
 ===== RSB Scopes =====
 
