@@ -34,6 +34,8 @@ using namespace amiro;
 class ControllerAreaNetwork {
  public:
   ControllerAreaNetwork() {
+    this->filterIsPromiscuous = false;
+    this->filterIsFrigid = false;
 
     memset(&this->ifr, 0x0, sizeof(this->ifr));
     memset(&this->addr, 0x0, sizeof(this->addr));
@@ -53,17 +55,23 @@ class ControllerAreaNetwork {
     /* bind socket to the can0 interface */
     ::bind(s, (struct sockaddr *)&this->addr, sizeof(addr));
 
-    /* Disable all incomming frames */
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+    /* Enable all incomming frames */
+    setPromiscuousFilter();
+
+    /* Disable loopback */
+    const int loopback = 0; /* 0 = disabled, 1 = enabled (default) */
+    setsockopt(s, SOL_CAN_RAW, CAN_RAW_LOOPBACK, &loopback, sizeof(loopback));
 
     /* Listen to own sending */
-//    setsockopt(s, SOL_CAN_RAW, CAN_RAW_RECV_OWN_MSGS, &recv_own_msgs, sizeof(recv_own_msgs));
+    const int recv_own_msgs = 0; /* 0 = disabled  (default), 1 = enabled */
+    setsockopt(s, SOL_CAN_RAW, ~CAN_RAW_RECV_OWN_MSGS, &recv_own_msgs, sizeof(recv_own_msgs));
   }
   ~ControllerAreaNetwork() {
     close(s);
   }
 
  public:
+
   void setTargetSpeed(int v, int w) {
     /* first fill, then send the CAN frame */
     this->frame.can_id = 0;
@@ -81,36 +89,41 @@ class ControllerAreaNetwork {
      }
   }
   
-  types::position getOdometry() {
-    
-    struct can_filter rfilter[1];
-
-    /* Set the filter for the message */
-    rfilter[0].can_id   = ((CAN::ODOMETRY_ID & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::DI_WHEEL_DRIVE_ID;
-//    rfilter[0].can_id   = 0x383u;
-    rfilter[0].can_mask = CAN_SFF_MASK;
-
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
-
-    /* Listen to the socket */
-    const int nbytes = read(s, &frame, sizeof(frame));
+  types::position getOdometry(bool useFilter = false) {
     types::position robotPosition;
-    // TODO Make proper error handling, so that the calling function knows that the data is not correct
-    if (nbytes > 0) {
-      /* Process the data */
-      robotPosition.x = (frame.data[0] << 8 | frame.data[1] << 16 | frame.data[2] << 24);
-      robotPosition.y = (frame.data[3] << 8 | frame.data[4] << 16 | frame.data[5] << 24);
-      robotPosition.f_z = (frame.data[6] << 8 | frame.data[7] << 16);
+    uint deviceID = CAN::ODOMETRY_ID;
+    uint boardID = CAN::DI_WHEEL_DRIVE_ID;
+    const int32_t canIdSize = 1;
+    uint canId[canIdSize] = {getCanId(deviceID, boardID)};
 
-    } else {
-      robotPosition.x = 0;
-      robotPosition.y = 0;
-      robotPosition.f_z = 0;
+    setMessageFilter(canId, canIdSize, useFilter);
+
+    /* Listen to the socket until we get a proper frame */
+    for (;;) {
+      const int nbytes = read(s, &frame, sizeof(frame));
+      if (frame.can_id == canId[0]) {
+        // TODO Make proper error handling, so that the calling function knows that the data is not correct
+        if (nbytes > 0) {
+          /* Process the data */
+          robotPosition.x = (frame.data[0] << 8 | frame.data[1] << 16 | frame.data[2] << 24);
+          robotPosition.y = (frame.data[3] << 8 | frame.data[4] << 16 | frame.data[5] << 24);
+          robotPosition.f_z = (frame.data[6] << 8 | frame.data[7] << 16);
+
+        } else {
+          robotPosition.x = 0;
+          robotPosition.y = 0;
+          robotPosition.f_z = 0;
+          break;
+        }
+      }
     }
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+
+    if (useFilter) {
+      this->setFrigidFilter();
+    }
     return robotPosition;
   }
-
+  
   void setOdometry(types::position robotPosition) {
 
     // NOTE: for robotPosition only values between [0, 2 * pi * 1e6] are allowed
@@ -155,89 +168,107 @@ class ControllerAreaNetwork {
     this->transmitMessage(&frame);
   }
 
-  int getActualSpeed(int32_t &v, int32_t &w) {
-
+  int getActualSpeed(int32_t &v, int32_t &w, bool useFilter = false) {
     int returnValue = 0;
-    struct can_filter rfilter[1];
+    uint deviceID = CAN::ACTUAL_SPEED_ID;
+    uint boardID = CAN::DI_WHEEL_DRIVE_ID;
+    const int32_t canIdSize = 1;
+    uint canId[canIdSize] = {getCanId(deviceID, boardID)};
 
-    /* Set the filter for the message */
-    rfilter[0].can_id   = ((CAN::ACTUAL_SPEED_ID & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::DI_WHEEL_DRIVE_ID;
-    rfilter[0].can_mask = CAN_SFF_MASK;
+    setMessageFilter(canId, canIdSize, useFilter);
 
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
-
-    /* Listen to the socket */
-    const int nbytes = read(s, &frame, sizeof(frame));
-    /* Process the data */
-     if (nbytes != 8) {
-       memcpy(&v, &(frame.data[0]), 4);
-       memcpy(&w, &(frame.data[4]), 4);
-     } else {
-       returnValue = -1;
-     }
-
-    /* Disable all incomming frames */
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
-
-    return returnValue;
-
-  }
-  
-  int getProximityFloorValue(std::vector<uint16_t> &proximityValues) {
-
-    int returnValue = 0;
-    struct can_filter rfilter[1];
-
-    /* Set the filter for the message */
-    rfilter[0].can_id   = getCanFilter(CAN::PROXIMITY_FLOOR_ID, CAN::DI_WHEEL_DRIVE_ID);
-    rfilter[0].can_mask = CAN_SFF_MASK;
-
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
-
-    /* Listen to the socket */
-    const int nbytes = read(s, &frame, sizeof(frame));
-    /* Process the data */
-     if (nbytes != 8) {
-       memcpy(&proximityValues[0], &(frame.data[0]), 2);  // Front right
-       memcpy(&proximityValues[1], &(frame.data[2]), 2);  // Wheel right
-       memcpy(&proximityValues[2], &(frame.data[4]), 2);  // Wheel left
-       memcpy(&proximityValues[3], &(frame.data[6]), 2);  // Front left
-     } else {
-       returnValue = -1;
-     }
-
-    /* Disable all incomming frames */
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
-
-    return returnValue;
-
-  }
-
-  int getProximityRingValue(std::vector<uint16_t> &proximityValues) {
-
-    int returnValue = 0;
-    struct can_filter rfilter[8];
-
-    /* Set the filter for the message */
-    for (int idx = 0; idx < 8; ++idx ) {
-      rfilter[idx].can_id   = ((CAN::PROXIMITY_RING_ID(idx) & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::POWER_MANAGEMENT_ID;
-      rfilter[idx].can_mask = CAN_SFF_MASK;
-    }
-
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
-
-    for (int sensorIdx = 0; sensorIdx < 8; ++sensorIdx) {
+    /* Listen to the socket until we get a proper frame */
+    for (;;) {
       const int nbytes = read(s, &frame, sizeof(frame));
-       if (nbytes != 2) {
-         int index = decodeDeviceId(&frame) & 0x7;
-         memcpy(&proximityValues[index], &(frame.data[0]), 2);
-       } else {
-         returnValue = -1;
-       }
+      if (frame.can_id == canId[0]) {
+        /* Process the data */
+        if (nbytes != 8) {
+          memcpy(&v, &(frame.data[0]), 4);
+          memcpy(&w, &(frame.data[4]), 4);
+        } else {
+          returnValue = -1;
+          break;
+        }
+      }
     }
 
-    /* Disable all incomming frames */
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+    if (useFilter) {
+      this->setFrigidFilter();
+    }
+
+    return returnValue;
+
+  }
+
+  int getProximityFloorValue(std::vector<uint16_t> &proximityValues, bool useFilter = false) {
+
+    int returnValue = 0;
+    uint deviceID = CAN::PROXIMITY_FLOOR_ID;
+    uint boardID = CAN::DI_WHEEL_DRIVE_ID;
+    const int32_t canIdSize = 1;
+    uint canId[canIdSize] = {getCanId(deviceID, boardID)};
+
+    setMessageFilter(canId, canIdSize, useFilter);
+
+    /* Listen to the socket until we get a proper frame */
+    for (;;) {
+      const int nbytes = read(s, &frame, sizeof(frame));
+      if (frame.can_id == canId[0]) {
+        /* Process the data */
+        if (nbytes != 8) {
+          memcpy(&proximityValues[0], &(frame.data[0]), 2);  // Front right
+          memcpy(&proximityValues[1], &(frame.data[2]), 2);  // Wheel right
+          memcpy(&proximityValues[2], &(frame.data[4]), 2);  // Wheel left
+          memcpy(&proximityValues[3], &(frame.data[6]), 2);  // Front left
+        } else {
+          returnValue = -1;
+        }
+        break;
+      }
+    }
+
+    if (useFilter) {
+      this->setFrigidFilter();
+    }
+
+    return returnValue;
+
+  }
+
+  int getProximityRingValue(std::vector<uint16_t> &proximityValues, bool useFilter = false) {
+
+    int returnValue = 0;
+    uint deviceID = CAN::PROXIMITY_FLOOR_ID;
+    uint boardID = CAN::DI_WHEEL_DRIVE_ID;
+    const int32_t canIdSize = 8;
+    uint canId[canIdSize];
+    /* Set the filter for the message */
+    for (int idx = 0; idx < canIdSize; ++idx ) {
+      canId[idx] = getCanId(CAN::PROXIMITY_RING_ID(idx), CAN::POWER_MANAGEMENT_ID);
+    }
+
+    setMessageFilter(canId, canIdSize, useFilter);
+
+    /* Listen to the socket until we get a proper frame */
+    int sensorIdx = 0;
+    for (;;) {
+      const int nbytes = read(s, &frame, sizeof(frame));
+      if (frame.can_id == canId[sensorIdx]) {
+        if (nbytes != 2) {
+          memcpy(&proximityValues[sensorIdx], &(frame.data[0]), 2);
+        } else {
+          returnValue = -1;
+          break;
+        }
+        if (++sensorIdx >= canIdSize) {
+          break;
+        }
+      }
+    }
+
+    if (useFilter) {
+      this->setFrigidFilter();
+    }
 
     return returnValue;
   }
@@ -287,12 +318,34 @@ class ControllerAreaNetwork {
   }
 
  private:
-   
-  int getCanFilter(int deviceID, int boardID) {
+  int setMessageFilter(uint canId[], int32_t canIdSize, bool useFilter = false) {
+    if (useFilter) {
+      
+      if (this->filterIsPromiscuous) {
+        this->setFrigidFilter();
+      }
+
+      // TODO Is it even possible to set 64 filters for the mcp2115?
+      const int maxFilterSize = 64;
+      struct can_filter rfilter[maxFilterSize];
+
+      /* Set the filter for the message */
+      for (int filterIdx = 0; filterIdx < canIdSize; ++filterIdx) {
+        rfilter[filterIdx].can_id   = canId[filterIdx];
+        rfilter[filterIdx].can_mask = CAN_SFF_MASK;
+      }
+
+      setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(can_filter) * canIdSize);
+    } else if (this->filterIsFrigid) {
+      this->setPromiscuousFilter();
+    }
+  }
+  
+  uint getCanId(uint deviceID, uint boardID) {
     return ((deviceID & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | boardID;
   }
   
-  void encodeDeviceId(struct can_frame *frame, int device) {
+  void encodeDeviceId(struct can_frame *frame, uint device) {
     frame->can_id |= (device & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT;
   }
 
@@ -307,6 +360,43 @@ class ControllerAreaNetwork {
 
   void encodeBoardId(struct can_frame *frame, int board) {
     frame->can_id |= (board & CAN::BOARD_ID_MASK) << CAN::BOARD_ID_SHIFT;
+  }
+
+  bool filterIsFrigid;
+  bool filterIsPromiscuous;
+
+  void setFilterIsPromiscuous() {
+    filterIsPromiscuous = true;
+    filterIsFrigid = false;
+  }
+
+  void setFilterIsFrigid() {
+    filterIsPromiscuous = false;
+    filterIsFrigid = true;
+  }
+
+  inline int setFrigidFilter() {
+    /* Disable all incomming frames */
+    int returnValue = 0;
+    if (!this->filterIsFrigid) {
+      int returnValue = setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+      if(returnValue == 0) {
+        setFilterIsFrigid();
+      }
+    }
+    return returnValue;
+  }
+
+  inline int setPromiscuousFilter() {
+    /* Allow all incomming frames */
+    int returnValue = 0;
+    if (!this->filterIsPromiscuous) {
+      int returnValue = setsockopt(s, SOL_CAN_RAW, !CAN_RAW_FILTER, NULL, 0);
+      if(returnValue == 0) {
+        setFilterIsPromiscuous();
+      }
+    }
+    return returnValue;
   }
 
   struct ifreq ifr;
