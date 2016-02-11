@@ -1,8 +1,0 @@
-====== Motor Control ======
-
-Receives control commands with priority and sets the wheel velocities over can.
-
-===== RSB Scopes =====
-
-^ Scope (default name)      ^ Description ^
-|/motor/[priority] | Inscope for motor commands|
