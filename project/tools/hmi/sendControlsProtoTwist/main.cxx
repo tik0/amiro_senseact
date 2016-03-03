@@ -4,7 +4,7 @@
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
 // #define ERROR_MSG_
-#include "../../includes/MSG.h"
+#include "MSG.h"
 
 #include <iostream>
 #include <boost/thread.hpp>
@@ -34,7 +34,7 @@ using namespace rsb;
 using namespace rsb::converter;
  
 // For checking character pressed in the console
-#include "../../includes/kbhit.hpp"
+#include "kbhit.hpp"
 
 
 int main(int argc, const char **argv){
@@ -68,7 +68,7 @@ int main(int argc, const char **argv){
 
 
   // Get the RSB factory
-  rsb::Factory& factory = rsb::Factory::getInstance();
+  rsb::Factory& factory = rsb::getFactory();
   
   // Register 
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::kinematics::Twist> > converter(new rsb::converter::ProtocolBufferConverter<rst::kinematics::Twist>());
