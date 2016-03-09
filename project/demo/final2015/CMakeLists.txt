@@ -11,4 +11,4 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/actingBehavior/follow_LaserScanner
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/robotTools/stopAMiRo stopAMiRo)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseCamJpg senseCamJpg)
-add_subdirectory ($ENV{MUROX_PROJECT}/tools/rsb_ws_bridge_amiro rsb_ws_bridge_amiro)
+add_subdirectory ($ENV{MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro rsb_ws_bridge_amiro)
