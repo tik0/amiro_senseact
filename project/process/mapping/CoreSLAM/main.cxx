@@ -4,7 +4,7 @@
 // #define SUCCESS_MSG_
 #define WARNING_MSG_
 // #define ERROR_MSG_
-#include "../../includes/MSG.h"
+#include "MSG.h"
 
 #include <math.h>
 
@@ -337,11 +337,7 @@ int main(int argc, const char **argv){
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
 
-#if RSB_VERSION_NUMERIC<1200
-  rsb::Factory& factory = rsb::Factory::getInstance();
-#else
   rsb::Factory& factory = rsb::getFactory();
-#endif
   
   //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
   ///////////////////////////////////////////////////////////////////////////////

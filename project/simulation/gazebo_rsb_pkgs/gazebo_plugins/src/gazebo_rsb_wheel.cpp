@@ -88,6 +88,10 @@ namespace gazebo
       this->rightWheel->SetMaxForce(1, 0);
       this->rightWheel->SetMaxForce(2, this->rightWheelMaxForceN); // nm
 
+      // Print the forces
+      std::cout << "Forces Left Wheel (xyz): "<< this->leftWheel->GetMaxForce(0) << " " << this->leftWheel->GetMaxForce(1) << " " << this->leftWheel->GetMaxForce(2) << std::endl;
+      std::cout << "Forces Right Wheel (xyz): "<< this->rightWheel->GetMaxForce(0) << " " << this->rightWheel->GetMaxForce(1) << " " << this->rightWheel->GetMaxForce(2) << std::endl;
+
       // Listen to the update event. This event is broadcast every
       // simulation iteration.
       this->updateConnection = event::Events::ConnectWorldUpdateBegin(
@@ -109,18 +113,18 @@ namespace gazebo
         this->rightWheel->SetVelocity(2, (linVel.x() + baseWidth / 2.0f * angVel.c() ) / this->wheelRadius );
 
         // Print out target velocities
-        std::cout << "Vx = " << linVel.x() << " m/s , Wz = " << angVel.c() << " rad/s" << std::endl;
+        std::cout << "Target: Vx = " << linVel.x() << " m/s , Wz = " << angVel.c() << " rad/s" << std::endl;
         // Print out current real velocities
         this->vecLin = this->model->GetRelativeLinearVel();
         this->vecAng = this->model->GetRelativeAngularVel();
-        std::cout << "Vx = " << this->vecLin[0] << " m/s , Wz = " << this->vecAng[2] << " rad/s" << std::endl;
+        std::cout << "Current: Vx = " << this->vecLin[0] << " m/s , Wz = " << this->vecAng[2] << " rad/s" << std::endl;
         // Get the odometry
 //         math::Pose pose = this->model->GetInitialRelativePose();
         math::Pose pose = this->model->GetRelativePose();
 //         math::Pose pose = this->model->GetWorldPose();
-        std::cout << pose << std::flush << std::endl;
+        std::cout << "Relative pose" <<  pose << std::flush << std::endl;
         pose = this->model->GetWorldPose();
-        std::cout << pose << std::flush << std::endl;
+        std::cout << "Global pose" << pose << std::flush << std::endl;
       }
 
     }

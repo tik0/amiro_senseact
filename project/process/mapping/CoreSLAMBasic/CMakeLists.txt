@@ -12,16 +12,26 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.11)
-pkg_check_modules(OpenCV opencv)
-pkg_check_modules(EIGEN eigen3)
+
+# TODO: Check for ARM compilation
+# pkg_check_modules(RSB rsb0.13)
+# pkg_check_modules(RSC rsc0.13)
+# pkg_check_modules(PROTOBUF protobuf)
+# pkg_check_modules(RST rstsandbox0.13)
+# pkg_check_modules(OpenCV opencv)
+# pkg_check_modules(EIGEN eigen3)
 # FIND_PACKAGE(OpenCV REQUIRED)
 # FIND_PACKAGE(RSB REQUIRED)
 # FIND_PACKAGE(RSC REQUIRED)
 #  FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
+
+find_package(OpenCV REQUIRED)
+find_package(RSB REQUIRED)
+find_package(RSC REQUIRED)
+find_package(RST COMPONENTS sandbox)
+find_package(Protobuf REQUIRED)
+find_package(Eigen3 REQUIRED)
+
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
 # Set the include pathe
@@ -35,6 +45,7 @@ include_directories(include
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
     ${GXX_INCLUDES}
     ${EIGEN_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIR}
 )
 

@@ -9,7 +9,7 @@
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 
 using namespace boost;
@@ -59,14 +59,14 @@ int main(int argc, char **argv) {
     INFO_MSG( "Scope: " << g_sInScope)
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  rsb::Factory &factory = rsb::Factory::getInstance();
+  rsb::Factory &factory = rsb::getFactory();
 
   // Create and start the listener
   rsb::ListenerPtr listener = factory.createListener(g_sInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > imageQueue(
                       new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-  listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(imageQueue)));
+  listener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(imageQueue)));
 
   // Pop the images and show them
   while (true) {
