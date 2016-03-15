@@ -7,6 +7,7 @@
 #include "MSG.h"
 
 #include <math.h>
+#include <utils.h>
 
 #include <iostream>
 #include <boost/thread.hpp>
@@ -46,25 +47,13 @@ static int throttle_scans_ = 1;
 // Every deviation above that angle results in a pruning of the ray c
 static float rayPruningAngleDegree = 60; /* [0 .. 90] */
 float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
+static double mapOffset = 0;
 
 // Converting helpers
 #include <Eigen/Geometry>
 
 static double transX, transY, transZ;
 static double rotX, rotY, rotZ;
-
-inline Eigen::Quaterniond
-euler2Quaternion( const double roll,
-                  const double pitch,
-                  const double yaw )
-{
-    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
-
-    const Eigen::Quaterniond q = yawAngle * pitchAngle * rollAngle;
-    return q;
-}
 
 // Convinience
 static bool sendMapAsCompressedImage = false;
@@ -150,16 +139,20 @@ getOdomPose(ts_position_t& ts_pose)
   
   // Convert from quaternion to euler
   Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
-  Eigen::AngleAxisd lidar_angle(lidar_quat);
-  Eigen::Matrix<double,3,1> rpy = lidar_angle.toRotationMatrix().eulerAngles(0,1,2);
+  Eigen::Matrix<double,3,1> rpy;
+  conversion::quaternion2euler(&lidar_quat, &rpy);
   const double yaw = rpy(2);
+
+  DEBUG_MSG( "CoreSLAM(RPY): " <<  rpy(0) << ", "<< rpy(1) << ", "<< rpy(2))
+  DEBUG_MSG( "CoreSLAM(WXYZ): " <<  rotation.qw() << ", "<< rotation.qx() << ", "<< rotation.qy() << ", " << rotation.qz())
 
   ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
   ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
 
-  DEBUG_MSG( "Odom: x: " <<  translation.x() << "m   y: " << translation.y() << "m     theta: " << rotation.qz() << "°" )
-  DEBUG_MSG("ODOM POSE: " << ts_pose.x << " " << ts_pose.y << " " << ts_pose.theta)
+  DEBUG_MSG( "-------------------------------------------------------------------------------------------" )
+  DEBUG_MSG( "Odometry: x(m): " <<  translation.x() << " y(m): " << translation.y() << " theta(rad): " << yaw)
+  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
 
   return true;
 }
@@ -336,6 +329,7 @@ int main(int argc, const char **argv){
 
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
+  mapOffset = ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
 
   rsb::Factory& factory = rsb::getFactory();
   
@@ -422,7 +416,9 @@ int main(int argc, const char **argv){
       cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
       cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw odometry
       cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
-      DEBUG_MSG( "Pose " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
+      DEBUG_MSG( "---------------------------------")
+      DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
+      DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
       #ifndef __arm__
       cv::imshow("input", dstColor);
       cv::waitKey(1);
@@ -442,4 +438,3 @@ int main(int argc, const char **argv){
 
   return 0;
 }
-

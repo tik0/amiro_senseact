@@ -7,3 +7,4 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/process/mapping/CoreSLAM CoreSLAM)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/hmi/sendControlsProtoTwist sendTwistControls)
+add_subdirectory ($ENV{MUROX_PROJECT}/tools/hmi/showCamJpg showCamJpg)

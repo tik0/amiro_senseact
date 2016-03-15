@@ -11,6 +11,86 @@
 #include <rsb/Handler.h>
 
 #include <math.h>
+#include <Eigen/Geometry>
+
+namespace conversion
+{
+  const unsigned int NUMAXIS = 3;
+  /**
+    * @brief Conversion Quaternion to Euler angles
+    * 
+    * Considering Heading along z axis, pitch allow y axis and roll along x axis.
+    * 
+    * @author Timo Korthals
+    *
+    * @param[in] *q pointer to a quaternion vector.
+    * @param[out] *euler pointer to double. The three euler angles Convention Roll, Pitch, Yaw
+    *
+    * @return void
+    *
+    */
+    void quaternion2euler(Eigen::Quaternion< double >* q, Eigen::Matrix< double, NUMAXIS , 1  >* euler)
+    {
+      double sqx, sqy, sqz, sqw;
+
+      /** Square terms **/
+      sqx = pow (q->x(), 2);
+      sqy = pow (q->y(), 2);
+      sqz = pow (q->z(), 2);
+      sqw = pow (q->w(), 2);
+
+      (*euler)(0) = atan2 (2.0 * (q->y()*q->z() + q->x()*q->w()), (-sqx-sqy+sqz+sqw)); /** Roll **/
+      (*euler)(1) = asin (-2.0 * (q->x()*q->z() - q->y()*q->w())/(sqx+sqy+sqz+sqw)); /** Pitch **/
+      (*euler)(2) = atan2 (2.0 * (q->x()*q->y() + q->z()*q->w()), (sqx - sqy -sqz + sqw)); /** Yaw **/
+
+      return;
+    }
+    
+    /**
+    * @brief Conversion Euler angles to Quaternion
+    * 
+    * Considering Heading along z axis, pitch allow y axis and roll along x axis.
+    * 
+    * @author Timo Korthals
+    *
+    * @param[out] *euler pointer to double. The three euler angles, the convention is Roll, Pitch, Yaw
+    * @param[in] *q pointer to a quaternion vector.
+    *
+    * @return void
+    *
+    */
+    void euler2quaternion(Eigen::Matrix< double, NUMAXIS , 1  >* euler, Eigen::Quaternion< double >* q)
+    {
+      
+      double c1 = cos((*euler)(2)/2);
+      double s1 = sin((*euler)(2)/2);
+      double c2 = cos((*euler)(1)/2);
+      double s2 = sin((*euler)(1)/2);
+      double c3 = cos((*euler)(0)/2);
+      double s3 = sin((*euler)(0)/2);
+
+      q->w() = (double) (c1*c2*c3 + s1*s2*s3);
+      q->x() = (double) (c1*c2*s3 - s1*s2*c3);
+      q->y() = (double) (c1*s2*c3 + s1*c2*s3);
+      q->z() = (double) (s1*c2*c3 - c1*s2*s3);
+      
+      return;
+    }
+    
+    Eigen::Quaterniond
+rpy2Quaternion( const double roll,
+                  const double pitch,
+                  const double yaw )
+{
+    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
+
+    const Eigen::Quaterniond q = yawAngle * pitchAngle * rollAngle;
+    return q;
+}
+    
+}
 
 namespace utils
 {
