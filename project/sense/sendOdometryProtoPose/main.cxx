@@ -106,7 +106,9 @@ int main(int argc, char **argv) {
   for(;;) {
 
     // Read the odometry data
+    WARNING_MSG("Starting reading odometry");
     robotPosition = CAN.getOdometry();
+    WARNING_MSG("Odometry read!");
     // Convert it to rsb data
     odomData->mutable_translation()->set_x(static_cast<double>(robotPosition.x) * 1e-6);
     odomData->mutable_translation()->set_y(static_cast<double>(robotPosition.y) * 1e-6);
