@@ -57,7 +57,7 @@ Spread_Segment  192.168.255.255:4823 {
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    lennyEth       192.168.2.202
+    lenny          192.168.2.202
 }
 
 Spread_Segment  192.168.255.255:4823 {
