@@ -337,10 +337,18 @@ int main(int argc, char **argv) {
 	}*/
 	float borders[5];
 	borders[0] = angle;
-	borders[1] = rectPositionsPtr->pose(0).x()*cos(angle) - rectPositionsPtr->pose(0).y()*sin(angle);
-	borders[2] = rectPositionsPtr->pose(2).x()*cos(angle) - rectPositionsPtr->pose(2).y()*sin(angle);
+/*	borders[1] = rectPositionsPtr->pose(0).x()*cos(angle) - rectPositionsPtr->pose(0).y()*sin(angle);
+	borders[2] = rectPositionsPtr->pose(1).x()*cos(angle) - rectPositionsPtr->pose(1).y()*sin(angle);
 	borders[3] = rectPositionsPtr->pose(0).x()*sin(angle) + rectPositionsPtr->pose(0).y()*cos(angle);
-	borders[4] = rectPositionsPtr->pose(1).x()*sin(angle) + rectPositionsPtr->pose(1).y()*cos(angle);
+	borders[4] = rectPositionsPtr->pose(2).x()*sin(angle) + rectPositionsPtr->pose(2).y()*cos(angle);
+*/	borders[1] = rectPositionsPtr->pose(0).x();
+	borders[2] = rectPositionsPtr->pose(1).x();
+	borders[3] = rectPositionsPtr->pose(0).y();
+	borders[4] = rectPositionsPtr->pose(2).y()*(-1);
+        INFO_MSG("Edge positions:");
+        for (int i=0; i<3; i++) {
+		INFO_MSG(" - Pose " << i << ": " << rectPositionsPtr->pose(i).x() << "/" << rectPositionsPtr->pose(i).y());
+	}
 
 	while (true) {
 		if (!progressQueue->empty()) {
@@ -363,11 +371,11 @@ int main(int argc, char **argv) {
 				for (int i=0; i<objectPositionsPtr->pose_size(); i++) {
 					if (!objectChoosen[i]) {
 						float px = objectPositionsPtr->pose(i).x();
-						float py = objectPositionsPtr->pose(i).y();
+						float py = objectPositionsPtr->pose(i).y() * (-1);
 						INFO_MSG("Original position: " << px << "/" << py);
 						float pxA = px * cos(borders[0]) - py * sin(borders[0]);
 						float pyA = px * sin(borders[0]) + py * cos(borders[0]);
-						if (borders[1] <= pxA && pxA <= borders[2] && borders[3] <= pyA && pyA <= borders[4]) {
+						if (borders[1] <= px && px <= borders[2] && borders[3] <= py && py <= borders[4]) {
 							float diffY = py - ((float)ownPos.y)/1000000.0;
 							float diffX = px - ((float)ownPos.x)/1000000.0;
 							float dist = sqrt(diffY*diffY + diffX*diffX);
@@ -377,7 +385,7 @@ int main(int argc, char **argv) {
 							}
 						} else {
 							objectChoosen[i] = true;
-							WARNING_MSG("Object " << i << " is not on the table (" << borders[1] << " <= " << pxA << " <= " << borders[2] << ", " << borders[3] << " <= " << pyA << " <= " << borders[4] << ").");
+							WARNING_MSG("Object " << i << " is not on the table (" << borders[1] << " <= " << px << " <= " << borders[2] << ", " << borders[3] << " <= " << py << " <= " << borders[4] << ").");
 						}
 					}
 				}

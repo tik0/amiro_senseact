@@ -253,18 +253,12 @@ int main(int argc, char **argv) {
             stateL = state;
           }
 
-          float edgeDistL, edgeDistR;
+          float edgeDistL, edgeDistR, edgeDistFL, edgeDistFR;
           int minEdgeIdx = 0;
           float minEdgeDist = 10;
           int waitingTime_us = 0;
           switch (state) {
             case STturnEdge:
-              // Save position
-              pose2D = rectPositionsPtr->add_pose();
-              pose2D->set_x(0);
-              pose2D->set_y(0);
-              pose2D->set_orientation(0);
-              pose2D->set_id(0);
               // Search table edge
               for (int senIdx=0; senIdx<ringproximity::SENSOR_COUNT; senIdx++) {
                 float ed = VCNL4020Models::edgeModel(sensorValuesGround->at(senIdx));
@@ -273,36 +267,42 @@ int main(int argc, char **argv) {
                   minEdgeDist = ed;
                 }
               }
-              if (turn == 0 && minEdgeIdx < 7 && minEdgeIdx > 3) {
+/*              if (turn == 0 && minEdgeIdx < 7 && minEdgeIdx > 3) {
                 turn = 1;
                 sendMotorCmd(0, mymcm(VEL_TURNING_SLOW), CAN);
               } else if (turn == 0 && minEdgeIdx > 0 && minEdgeIdx < 4) {
                 turn = 2;
                 sendMotorCmd(0, mymcm(-VEL_TURNING_SLOW), CAN);
-              }
+              }*/
               state = STfindDirection;
               break;
             case STfindDirection:
               edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(7));
               edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(0));
-              if (turn == 0 && edgeDistL < edgeDistR - EDGE_DIFF) {
+/*              if (turn == 0 && edgeDistL < edgeDistR - EDGE_DIFF) {
                 turn = 1;
                 sendMotorCmd(0, mymcm(VEL_TURNING_SLOW), CAN);
               } else if (turn == 0 && edgeDistR < edgeDistL - EDGE_DIFF) {
                 turn = 2;
                 sendMotorCmd(0, mymcm(-VEL_TURNING_SLOW), CAN);
               } else if (abs(edgeDistR-edgeDistL) <= EDGE_DIFF && edgeDistR < GROUND_MARGIN && edgeDistL < GROUND_MARGIN) {
-                turn = 0;
+*/                turn = 0;
 //                sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
 //                state = STdriveEdge;
                 sendMotorCmd(0, 0, CAN);
                 state = STroundScan;
-              }
+//              }
               break;
             case STroundScan:
 //              waitingTime_us = (int)(((2.0*M_PI*1000.0) / ((float)VEL_TURNING*10.0)) * 1000000.0) - 200000; // us
 //              sendMotorCmd(0, mymcm(VEL_TURNING), CAN);
 //              usleep(waitingTime_us);
+              // Save position
+              pose2D = rectPositionsPtr->add_pose();
+              pose2D->set_x(0);
+              pose2D->set_y(0);
+              pose2D->set_orientation(0);
+              pose2D->set_id(0);
               sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
               state = STdriveEdge;
             case STdriveEdge:
@@ -328,20 +328,14 @@ int main(int argc, char **argv) {
             case STcorrectEdge:
               edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
               edgeDistL = edgeDistL*cos(ringproximity::SENSOR_ANGULAR_FRONT_OFFSET);
-              edgeDistR = GROUND_MARGIN_DANGER - edgeDistR;
-              INFO_MSG("Distance to edge: " << edgeDistL << " cm (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
+              edgeDistR = (GROUND_MARGIN_DANGER - edgeDistR) * 10;
+              INFO_MSG("Distance to edge: " << edgeDistL << " m (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
               if (edgeDistR > 0) {
                 sendMotorCmd(mymcm(-VEL_FORWARD_SLOW), 0, CAN);
                 usleep((int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000));
+                sendMotorCmd(0,0,CAN);
               }
-              turn = 2;
-              sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
-              if (edgeNum >= edgeCount-1) {
-                state = STfinalize;
-              } else {
-                state = STturn;
-              }
-              edgeNum++;
+              sleep(1);
               if (odomQueue->empty()) {
                 WARNING_MSG("No odometry available!");
               }
@@ -351,13 +345,24 @@ int main(int argc, char **argv) {
               pose2D->set_y(odomInput.mutable_translation()->y());
               pose2D->set_orientation(odomInput.mutable_rotation()->yaw());
               pose2D->set_id(edgeNum);
+              turn = 2;
+              sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
+              if (edgeNum >= edgeCount-1) {
+                state = STfinalize;
+              } else {
+                state = STturn;
+              }
+              edgeNum++;
               DEBUG_MSG("#Edges driven: " << (edgeNum) << " of " << edgeCount);
               DEBUG_MSG("Saved position " << pose2D->x() << "/" << pose2D->y() << " with " << pose2D->orientation() << " rad and ID " << pose2D->id());
               break;
             case STturn:
               edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(1));
               edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(2));
-              if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) < EDGE_DIFF) {
+              edgeDistFL = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
+              edgeDistFR = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
+              if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) < EDGE_DIFF
+                  && edgeDistFL > GROUND_MARGIN && edgeDistFR > GROUND_MARGIN) {
                 turn = 0;
                 sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
                 state = STdriveEdge;
