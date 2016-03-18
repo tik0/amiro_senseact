@@ -15,7 +15,7 @@ cpufreq-set -g performance
 
 # start all sensing programs
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar --publishNthScan 3 > /dev/null &
-./sendOdometryProtoPose -o /odom > /dev/null &
+./sendOdometryProtoPose -o /odom &
 ./senseRingProximity > /dev/null &
 
 # start localization programs

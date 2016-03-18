@@ -67,9 +67,9 @@ using namespace rsb::patterns;
 // margins
 #define OBSTACLE_MARGIN 100
 #define OBSTACLE_MARGIN_SIDE 7500
-#define GROUND_MARGIN 6
-#define GROUND_MARGIN_DANGER 5
-#define EDGE_DIFF 0.4
+#define GROUND_MARGIN 0.06
+#define GROUND_MARGIN_DANGER 0.05
+#define EDGE_DIFF 0.004
 
 // velocities
 #define VEL_FORWARD 8
@@ -342,6 +342,9 @@ int main(int argc, char **argv) {
                 state = STturn;
               }
               edgeNum++;
+              if (odomQueue->empty()) {
+                WARNING_MSG("No odometry available!");
+              }
               odomInput = *odomQueue->pop();
               pose2D = rectPositionsPtr->add_pose();
               pose2D->set_x(odomInput.mutable_translation()->x());

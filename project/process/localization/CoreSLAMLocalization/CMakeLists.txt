@@ -10,27 +10,24 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 # Get the compiler specific includes and store them in GXX_INCLUDES
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
-# Read the pkg-config modules
-FIND_PACKAGE(PkgConfig)
-
 # TODO: Check for ARM compilation
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
-pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.13)
-pkg_check_modules(OpenCV opencv)
-pkg_check_modules(EIGEN eigen3)
+# pkg_check_modules(RSB rsb0.13)
+# pkg_check_modules(RSC rsc0.13)
+# pkg_check_modules(PROTOBUF protobuf)
+# pkg_check_modules(RST rstsandbox0.13)
+# pkg_check_modules(OpenCV opencv)
+# pkg_check_modules(EIGEN eigen3)
 # FIND_PACKAGE(OpenCV REQUIRED)
 # FIND_PACKAGE(RSB REQUIRED)
 # FIND_PACKAGE(RSC REQUIRED)
 #  FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
 
-#find_package(OpenCV REQUIRED)
-#find_package(RSB REQUIRED)
-#find_package(RSC REQUIRED)
-#find_package(RST COMPONENTS sandbox)
-#find_package(Protobuf REQUIRED)
-#find_package(Eigen3 REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(RSB REQUIRED)
+find_package(RSC REQUIRED)
+find_package(RST COMPONENTS sandbox)
+find_package(Protobuf REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
@@ -52,11 +49,8 @@ include_directories(include
 # Define the source
 SET (SOURCE main.cxx)
 
-# Add sources to build
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
-
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h pathPlanner.cxx pathPlanner.hpp $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 
@@ -71,8 +65,6 @@ TARGET_LINK_LIBRARIES (
 )
 
 # Additional compiler flags
-# ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
-SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11 -funsafe-math-optimizations" )
-SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11 -funsafe-math-optimizations" )
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11)
 # Special flags for RST
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
