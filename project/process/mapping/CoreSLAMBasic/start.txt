@@ -9,3 +9,12 @@ The controler starts in an idle state and you can switch by sending strings to i
   - ''finish'' or ''localization'' Switch to localization
   - ''idle'' Switch to idle mode
   - ''<anyString>'' Remein in current state
+
+===== Mapping Server RPC =====
+  
+It is a server included, which can be used to get the current SLAM map and the erroded one for the obstacle detection.
+On ecan use the tool [[tools:hmi:cvMatRpc:start.txt|cvMatRpc]] to request the maps:
+
+  - Scope: ''/CoreSlamServer<id>''
+  - Map request string: ''map''
+  - Erroded map request string: ''mapObstacle''

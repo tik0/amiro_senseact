@@ -12,52 +12,61 @@
 #
 # This configures one spread daemon running on port 4823 on localhost.
 
-#Spread_Segment  127.0.0.255:4823 {
-#
-#	localhost		127.0.0.1
-#}
-
-Spread_Segment  192.168.255.255:4823 {    
-	amiro15		192.168.2.15     
-}
-
-Spread_Segment  192.168.255.255:4823 {    
-	amiro15_I	192.168.2.16     
-}
-
-Spread_Segment  192.168.255.255:4823 {    
-	amiro19		192.168.2.19     
+Spread_Segment  192.168.255.255:4823 {
+    amiro15        192.168.2.15
 }
 
 Spread_Segment  192.168.255.255:4823 {
-	amiro21		192.168.2.21
+    amiro19        192.168.2.19
 }
 
 Spread_Segment  192.168.255.255:4823 {
-	amiro28		192.168.2.28
+    amiro21        192.168.2.21
 }
 
 Spread_Segment  192.168.255.255:4823 {
-	amiro30		192.168.2.30
+    amiro28        192.168.2.28
 }
 
 Spread_Segment  192.168.255.255:4823 {
-	amiro36		192.168.2.36
+    amiro30        192.168.2.30
+}
+
+Spread_Segment  192.168.255.255:4823 {
+    amiro36        192.168.2.36
+}
+
+Spread_Segment  192.168.255.255:4823 {
+    amiro37        192.168.2.37
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-	amiro37		192.168.2.37     
+    muthrext       192.168.2.100     
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-    muthrext     192.168.2.100     
+    multivacext    192.168.2.101    
 }
 
-Spread_Segment  192.168.255.255:4823 {    
-    multivacext     192.168.2.101    
+Spread_Segment  192.168.255.255:4823 {
+    exner          192.168.2.200
 }
 
+Spread_Segment  192.168.255.255:4823 {
+    lennyEth       192.168.2.201
+}
 
+Spread_Segment  192.168.255.255:4823 {
+    lenny          192.168.2.202
+}
+
+Spread_Segment  192.168.255.255:4823 {
+    skynet         192.168.2.203
+}
+
+Spread_Segment  192.168.255.255:4823 {
+    marax          192.168.2.204
+}
 
 # Spread options
 #---------------------------------------------------------------------------
@@ -67,9 +76,9 @@ Spread_Segment  192.168.255.255:4823 {
 # (see EventLogFile).
 # Default setting is to enable PRINT and EXIT events only. 
 #The PRINT and EXIT types should always be enabled. The names of others are:
-#    	EXIT PRINT DEBUG DATA_LINK NETWORK PROTOCOL SESSION 
-#	CONFIGURATION MEMBERSHIP FLOW_CONTROL STATUS EVENTS 
-#	GROUPS MEMORY SKIPLIST ALL NONE	
+#        EXIT PRINT DEBUG DATA_LINK NETWORK PROTOCOL SESSION 
+#    CONFIGURATION MEMBERSHIP FLOW_CONTROL STATUS EVENTS 
+#    GROUPS MEMORY SKIPLIST ALL NONE    
 #    ALL and NONE are special and represent either enabling every type 
 #                                           or enabling none of them.
 #    You can also use a "!" sign to negate a type, 
@@ -79,14 +88,14 @@ Spread_Segment  192.168.255.255:4823 {
 
 # Set priority level of events to output to log file or screen
 # The possible levels are: 
-#	pDEBUG INFO WARNING ERROR CRITICAL FATAL
+#    pDEBUG INFO WARNING ERROR CRITICAL FATAL
 # Once selected all events tagged with that priority or higher will
 # be output. FATAL events are always output and cause the daemon to 
 # shut down. Some Events are tagged with a priority of PRINT which
 # causes them to print out no matter what priority level is set. 
 #
 # The default level used if nothing is set is INFO.
-	
+    
 #EventPriority =  INFO
 
 #Set whether to log to a file as opposed to stdout/stderr and what 
