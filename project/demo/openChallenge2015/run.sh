@@ -32,13 +32,13 @@ cpufreq-set -g performance
 ./objectDelivery --useSLAMData --bigMap --positionInscope /localization --pathOut /path --pathRe /pathResponse --mapServer /CoreSlamServer --mapServerIsRemote --robotID ${ID} &
 
 # start only listening statemachines
-./amiroEnvironment --skipExploration --skipDetection --skipDelivery &
-./stateMachineGEPTRO --robotID ${ID} --bigMap --mapServerIsRemote --mapServerScope /CoreSlamServer --obstacleServerReq getObjectsList &
+./amiroEnvironment --skipExploration --skipDelivery --skipDetection &
+./stateMachineGEPTRO --robotID ${ID} --objectOffset 2 --bigMap --mapServerIsRemote --mapServerScope /CoreSlamServer --obstacleServerReq getObjectsList &
 
 sleep 1
 
 # start commanding statemachine (simulation)
-./commandSimulation --robotID ${ID} &
+./commandSimulation --robotID ${ID} --objectOffset 2 --objectID 4 &
 
 wait
 cpufreq-set -g ondemand
