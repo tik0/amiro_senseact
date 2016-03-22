@@ -50,9 +50,10 @@ include_directories(include
 SET (SOURCE main.cxx)
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc pathplanner.cpp pathplanner.h)
 
-MESSAGE(INFO ${Boost_LIBRARIES})
+MESSAGE(INFO "${Boost_LIBRARIES}")
+MESSAGE(INFO "${OpenCV_LIBRARIES}")
 
 TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"

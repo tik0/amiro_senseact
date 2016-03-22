@@ -53,7 +53,7 @@ float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 static double mapOffset = 0;
 
 // Switch for localization
-static bool doMapUpdate = true;
+static bool doMapUpdate = false;
 
 // Converting helpers
 #include <Eigen/Geometry>
@@ -85,12 +85,17 @@ static std::string mapPGMPath = "";
 // RST Proto types
 //#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
 #include <types/LocatedLaserScan.pb.h>
-#include <rst/geometry/Pose.pb.h>
+//#include <rst/geometry/Pose.pb.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>  // resize
+
+#include "pathplanner.h"
+#include <iterator>
+// init path planner
+PathPlanner pathplanner = PathPlanner();
 
 using namespace boost;
 using namespace std;
@@ -103,8 +108,71 @@ std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
 static rst::geometry::Rotation odomRot;
 
-// Target pose
-static ts_position_t targetPose;
+ts_position_t pose;
+ts_position_t odom_pose;
+
+cv::Mat getOccupancyMap() {
+  // Convert the map to a cv::Mat image
+  cv::Mat map(cv::Size(ts_map_.size,ts_map_.size), CV_8UC1);
+  cv::Mat tmp = cv::Mat(ts_map_.size, ts_map_.size, CV_16UC1, static_cast<void*>(&ts_map_.map[0]));
+  tmp.convertTo(map, CV_8UC1, 255.0f / TS_NO_OBSTACLE);  // Convert to 8bit depth image
+
+  // Threshold image
+  for (ssize_t idx = 0; idx < map.rows * map.cols; ++idx)
+      map.at<uint8_t>(idx) = (map.at<uint8_t>(idx) > 126) ? 255 : 0; // note: 126 due to rounding errors
+
+  // Erode w.r.t. robot size
+  float robotRadiusInMeter = 0.05;
+  cv::Mat structuringElement = cv::getStructuringElement(cv::MORPH_ELLIPSE,
+                            cv::Size(2*robotRadiusInMeter/delta_ + 1, 2*robotRadiusInMeter/delta_ + 1),
+                            cv::Point(robotRadiusInMeter/delta_, robotRadiusInMeter/delta_));
+  cv::erode(map, map, structuringElement);
+
+  return map;
+}
+
+std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
+    // Convert from tinySLAM coordinates (mm) to pixel coordinates
+    cv::Point2i start(pose.x * MM_TO_METERS / delta_, pose.y * MM_TO_METERS / delta_);
+    cv::Point2i goal(targetPose.x * MM_TO_METERS / delta_, targetPose.y * MM_TO_METERS / delta_);
+    // Generate occupacy map
+    cv::Mat1b om = getOccupancyMap();
+    // Get path
+    std::list<cv::Point2i> path = pathplanner.getPath(start, goal, om);
+
+    // DEBUG START
+//#ifndef NDEBUG
+    cv::Mat clr(ts_map_.size, ts_map_.size, CV_8UC3);
+    cv::cvtColor(om, clr, cv::COLOR_GRAY2RGB, 3);
+
+    cv::circle(clr, start, 5, cv::Scalar(255,0,0), 2);
+    cv::circle(clr, goal, 5, cv::Scalar(0,255,0), 2);
+
+    for (auto r : path) {
+        clr.at<cv::Vec3b>(r) = cv::Vec3b(0,0,255);
+    }
+
+    imwrite("clr.png", clr);
+//#endif
+    // DEBUG END
+
+//#ifndef NDEBUG
+    // Optimize path
+    pathplanner.removeRedundantNodes(path);
+    pathplanner.optimizePath(path, om);
+
+    // DEBUG START
+    for (auto r : path) {
+        clr.at<cv::Vec3b>(r) = cv::Vec3b(0,255,0);
+    }
+    imwrite("opt.png", clr);
+    // DEBUG END
+//#endif
+
+    // TODO: convert to coordinates to outer space?
+    DEBUG_MSG("calculated path")
+    return path;
+}
 
 int convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
   
@@ -426,7 +494,7 @@ int main(int argc, const char **argv){
     ("rotY", po::value < double > (&rotY),"Rotation of the lidar around y (pitch) [rad]")
     ("rotZ", po::value < double > (&rotZ),"Rotation of the lidar around z (yaw) [rad]")
     ("loadMapFromImage", po::value < std::string > (&mapImagePath),"Load map from image file")
-    ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from PGM file")
+    ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from *16bit* PGM file")
     ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)");
 
   // allow to give the value as a positional argument
@@ -444,7 +512,6 @@ int main(int argc, const char **argv){
 
   // afterwards, let program options handle argument errors
   po::notify(vm);
-
 
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
@@ -513,12 +580,15 @@ int main(int argc, const char **argv){
   cv::Mat dstColor(size, CV_8UC3); // Color image
 
   rst::vision::LocatedLaserScan scan;
+
+  // path to goal
+  ts_position_t targetPose = { 8237.05, 13279.9, 0.236681 };
+  std::list<cv::Point2i> path;
+
   while( true ){
     // Fetch a new scan and store it to scan
     if (convertDataToScan(lidarQueue->pop(), scan))
       continue;
-    ts_position_t pose;
-    ts_position_t odom_pose;
     getOdomPose(odom_pose);
     // We can't initialize CoreSLAM until we've got the first scan
     if(!got_first_scan_)
@@ -531,35 +601,64 @@ int main(int argc, const char **argv){
       ///////////////////////////////////////////////
       if(addScan(scan, pose))
       {
-        DEBUG_MSG("scan processed");
-        DEBUG_MSG("Updated the map");
+        DEBUG_MSG("scan processed.");
+
+        if (path.empty()) {
+            DEBUG_MSG("Searching path to goal...")
+            path = getPath(targetPose);
+        }
       }
 
     }
 
     if (sendMapAsCompressedImage) {
+
+      // Convert to RGB image
       cv::Mat image = cv::Mat(ts_map_.size, ts_map_.size, CV_16U, static_cast<void*>(&ts_map_.map[0]));
       cv::resize(image,dst,size);//resize image
-      cv::flip(dst, dst, 0);  // horizontal flip
       dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
-      cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,(ts_map_.size - (pose.y * MM_TO_METERS / delta_)) * size.height / ts_map_.size);  // Draw MCMC position
+
+      // Draw tinySLAM position
+      cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
+                              pose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);  // Draw MCMC position
       cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
-      cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,(ts_map_.size - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / ts_map_.size);  // Draw odometry
+
+      // Draw odom position
+      cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
+                                  odom_pose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);  // Draw odometry
       cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
+
+      // Draw tinySLAM position
+      cv::Point targetPosition(targetPose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
+                               targetPose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);
+      cv::circle( dstColor, targetPosition, 0, cv::Scalar(pow(2,8)-1), 10, 8 );
+
+      // Draw waypoints
+      if (!path.empty()) {
+          for (auto p = path.begin(); p != std::prev(path.end()); p++) {
+              cv::Point q(p->x * size.width / ts_map_.size, p->y * size.height / ts_map_.size);
+              auto r = std::next(p);
+              cv::Point s(r->x * size.width / ts_map_.size, r->y * size.height / ts_map_.size);
+              cv::line(dstColor, q, s, cv::Scalar(255,0,0));
+          }
+      }
+
+      cv::flip(dstColor, dstColor, 0);  // horizontal flip
       DEBUG_MSG( "---------------------------------")
       DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
       DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
+      DEBUG_MSG( "Target pose: " << targetPose.x << ", " << targetPose.y << ", " << targetPose.theta)
       #ifndef __arm__
       cv::imshow("input", dstColor);
       cv::waitKey(1);
       #endif
       // Send the map as image
-      std::vector<uchar> buf;
-      std::vector<int> compression_params;
-      compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-      compression_params.push_back(85/*g_uiQuality [ 0 .. 100]*/);
-      imencode(".jpg", dstColor, buf, compression_params);
+//      std::vector<uchar> buf;
+//      std::vector<int> compression_params;
+//      compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+//      compression_params.push_back(85/*g_uiQuality [ 0 .. 100]*/);
+//      imencode(".jpg", dstColor, buf, compression_params);
 
       // Send the data.
 //      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
