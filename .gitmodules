@@ -13,3 +13,6 @@
 [submodule "project/includes/cvplot"]
 	path = project/includes/cvplot
 	url = https://github.com/tik0/cvplot.git
+[submodule "project/includes/libs/CoreSLAM"]
+	path = project/includes/libs/CoreSLAM
+	url = https://github.com/tik0/CoreSLAM.git
