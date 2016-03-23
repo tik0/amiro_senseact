@@ -8,6 +8,8 @@ This is the ToBI state machine simulation. It can simulate all functions of ToBI
 | --outscopeTobi, -o | String | "/tobiamiro" | Scope for sending the current state to tobi. |
 | --outscopeState, -s | String | "/amiroState" | Scope for sending the current state internaly. |
 | --inscopeTobi, -i | String | "/amiro" | Scope for recieving Tobis messages. |
+| --objectID | Integer | 3 | ID of the object, which shall be delivered. |
+| --objectOffset | Integer | 2 | Object count offset for ToBI's objects. |
 | --robotID, -d | Integer | 0 | Robot ID. |
 
 For additional information about the application parameters type ''answerer_tobi -h''.
