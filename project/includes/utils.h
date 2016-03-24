@@ -18,6 +18,21 @@
 #include <Constants.h>
 using namespace amiro::constants;
 
+#ifdef __OPENCV_HIGHGUI_HPP__
+namespace cv
+{
+// Show an image in a window with the given name.
+// The image will be flipped along its x-axis.
+// The window will appear at (x,y).
+void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
+  cv::Mat fmat;
+  cv::flip(mat, fmat, 0);
+  cv::imshow(winname, fmat);
+  cv::moveWindow(winname, x, y);
+}
+}
+#endif
+
 namespace conversion
 {
 #ifdef _TINYSLAM_H_

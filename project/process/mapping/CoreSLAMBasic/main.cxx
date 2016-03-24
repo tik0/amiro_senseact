@@ -1,6 +1,6 @@
 
 #define INFO_MSG_
-#define DEBUG_MSG_
+// #define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
  #define ERROR_MSG_
@@ -175,159 +175,148 @@ void changeObstacleMap(cv::Mat map) {
   // TODO Save given map into ts_map_.map!
 }
 
-// Show an image in a window with the given name.
-// The image will be flipped along its x-axis.
-// The window will appear at (x,y).
-void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
-  cv::Mat fmat;
-  cv::flip(mat, fmat, 0);
-  cv::imshow(winname, fmat);
-  cv::moveWindow(winname, x, y);
-}
-
 // callBack for path to point
 class pathCallback: public rsb::patterns::LocalServer::Callback<twbTracking::proto::Pose2D, twbTracking::proto::Pose2DList> {
-	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
-			boost::shared_ptr<twbTracking::proto::Pose2D> pose) {
-		INFO_MSG("Path Callback received.");
+  boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
+      boost::shared_ptr<twbTracking::proto::Pose2D> pose) {
+
+    INFO_MSG("Path Callback received.");
 /*
-		INFO_MSG("Path to " << pose.get()->x() << "/" << pose.get()->y() << " requested.");
-		// generate the obstacle map
-		cv::Mat obstacleMap(getObstacleMap());
-		const int erosion_size = pathObstacleErosion / delta_;
-		mapErosion(erosion_size, obstacleMap);
-		int xSize = obstacleMap.size().width*delta_;
-		int ySize = obstacleMap.size().height*delta_;
+    INFO_MSG("Path to " << pose.get()->x() << "/" << pose.get()->y() << " requested.");
+    // generate the obstacle map
+    cv::Mat obstacleMap(getObstacleMap());
+    const int erosion_size = pathObstacleErosion / delta_;
+    mapErosion(erosion_size, obstacleMap);
+    int xSize = obstacleMap.size().width*delta_;
+    int ySize = obstacleMap.size().height*delta_;
 
-		// convert pose to cv::point2f
-		// note: 3. coordinate is ignored
-		Point2f target(pose.get()->x()+xSize/2, pose.get()->y()+ySize/2);
+    // convert pose to cv::point2f
+    // note: 3. coordinate is ignored
+    Point2f target(pose.get()->x()+xSize/2, pose.get()->y()+ySize/2);
 
-		// convert robot position to cv::point3f
-		mtxOdom.lock();
-		Point3f robotPose(odomData->mutable_translation()->x(), odomData->mutable_translation()->y(), odomData->mutable_rotation()->yaw());
-		mtxOdom.unlock();
+    // convert robot position to cv::point3f
+    mtxOdom.lock();
+    Point3f robotPose(odomData->mutable_translation()->x(), odomData->mutable_translation()->y(), odomData->mutable_rotation()->yaw());
+    mtxOdom.unlock();
 
-		// calculate a path
-		// Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
-		INFO_MSG("Starting path calculation.");
-		std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, robotPose, target);
+    // calculate a path
+    // Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
+    INFO_MSG("Starting path calculation.");
+    std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, robotPose, target);
 
-		// convert that path to a pose2DList
-		INFO_MSG("Send path.");
-		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
-		for (Point2f p : path) {
-			twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
-			pose2D->set_x(p.x-xSize/2);
-			pose2D->set_y(p.y-ySize/2);
-			pose2D->set_orientation(0);
-			pose2D->set_id(0);
-		}
-		return pose2DList;*/
+    // convert that path to a pose2DList
+    INFO_MSG("Send path.");
+    rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
+    for (Point2f p : path) {
+      twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
+      pose2D->set_x(p.x-xSize/2);
+      pose2D->set_y(p.y-ySize/2);
+      pose2D->set_orientation(0);
+      pose2D->set_id(0);
+    }
+    return pose2DList;*/
 
-		return pose2DListPublish;
-	}
+    return pose2DListPublish;
+  }
 };
 
 
 void pathRequestFunction(twbTracking::proto::Pose2D pose) {
-		INFO_MSG("Path to " << pose.x() << "/" << pose.y() << " requested.");
-		// generate the obstacle map
-		cv::Mat obstacleMap(getObstacleMap());
-		//const int erosion_size = pathObstacleErosion / delta_;
-		//mapErosion(erosion_size, obstacleMap);
-		float xSize = ((float)obstacleMap.size().width) * delta_;
-		float ySize = ((float)obstacleMap.size().height) * delta_;
+    INFO_MSG("Path to " << pose.x() << "/" << pose.y() << " requested.");
+    // generate the obstacle map
+    cv::Mat obstacleMap(getObstacleMap());
+    //const int erosion_size = pathObstacleErosion / delta_;
+    //mapErosion(erosion_size, obstacleMap);
+    float xSize = ((float)obstacleMap.size().width) * delta_;
+    float ySize = ((float)obstacleMap.size().height) * delta_;
 
-		// convert pose to cv::point2f
-		// note: 3. coordinate is ignored
-		Point2f target(pose.x()+xSize/2.0, pose.y()+ySize/2.0);
+    // convert pose to cv::point2f
+    // note: 3. coordinate is ignored
+    Point2f target(pose.x()+xSize/2.0, pose.y()+ySize/2.0);
 
-		// convert robot position to cv::point3f
-		mtxOdom.lock();
-		Point3f robotPose(odomData->mutable_translation()->x(), odomData->mutable_translation()->y(), odomData->mutable_rotation()->yaw());
-		mtxOdom.unlock();
-		robotPose.x = robotPose.x + xSize/2.0;
-		robotPose.y = robotPose.y + ySize/2.0;
+    // convert robot position to cv::point3f
+    mtxOdom.lock();
+    Point3f robotPose(odomData->mutable_translation()->x(), odomData->mutable_translation()->y(), odomData->mutable_rotation()->yaw());
+    mtxOdom.unlock();
+    robotPose.x = robotPose.x + xSize/2.0;
+    robotPose.y = robotPose.y + ySize/2.0;
 
-		// calculate a path
-		// Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
-		INFO_MSG("Starting path calculation.");
-		std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, robotPose, target);
+    // calculate a path
+    // Erode the map by with an eliptic pattern of pixel radius erosion_size = <size in meter> / delta_;
+    INFO_MSG("Starting path calculation.");
+    std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, robotPose, target);
 
-		// convert that path to a pose2DList
-		INFO_MSG("Send path.");
-		//rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
-		pose2DListPublish->clear_pose();
-		for (Point2f p : path) {
-			twbTracking::proto::Pose2D *pose2D = pose2DListPublish->add_pose();
-			pose2D->set_x(p.x - xSize/2.0);
-			pose2D->set_y(p.y - ySize/2.0);
-			pose2D->set_orientation(0);
-			pose2D->set_id(0);
-		}
+    // convert that path to a pose2DList
+    INFO_MSG("Send path.");
+    //rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DListPublish(new twbTracking::proto::Pose2DList);
+    pose2DListPublish->clear_pose();
+    for (Point2f p : path) {
+      twbTracking::proto::Pose2D *pose2D = pose2DListPublish->add_pose();
+      pose2D->set_x(p.x - xSize/2.0);
+      pose2D->set_y(p.y - ySize/2.0);
+      pose2D->set_orientation(0);
+      pose2D->set_id(0);
+    }
 }
 
 // callBack for path to point
 class pushingPathCallback: public rsb::patterns::LocalServer::Callback<twbTracking::proto::Pose2DList, twbTracking::proto::Pose2DList> {
-	boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
-			boost::shared_ptr<twbTracking::proto::Pose2DList> inputPointList) {
+  boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/,
+      boost::shared_ptr<twbTracking::proto::Pose2DList> inputPointList) {
+/*    // convert pose to cv::point2f
+    Point3f startPos(inputPointList->pose(0).x(), inputPointList->pose(0).y(), 0);
+    Point2f target(inputPointList->pose(1).x(), inputPointList->pose(1).y());
 
-/*		// convert pose to cv::point2f
-		Point3f startPos(inputPointList->pose(0).x(), inputPointList->pose(0).y(), 0);
-		Point2f target(inputPointList->pose(1).x(), inputPointList->pose(1).y());
+    // generate the obstacle map
+    cv::Mat obstacleMap(getObstacleMap());
 
-		// generate the obstacle map
-		cv::Mat obstacleMap(getObstacleMap());
+    // calculate a path
+    std::vector<cv::Point2f> path = pathPlanner.getPathToTarget(obstacleMap, startPos, target);
 
-		// calculate a path
-		std::vector<cv::Point2f> path = pathPlanner.getPathToTarget(obstacleMap, startPos, target);
-
-		// convert that path to a pose2DList
-		rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
-		for (Point2f p : path) {
-			twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
-			pose2D->set_x(p.x);
-			pose2D->set_y(p.y);
-			pose2D->set_orientation(0);
-			pose2D->set_id(0);
-		}*/
-		return pose2DListPushPublish;
-	}
+    // convert that path to a pose2DList
+    rsb::Informer<twbTracking::proto::Pose2DList>::DataPtr pose2DList(new twbTracking::proto::Pose2DList);
+    for (Point2f p : path) {
+      twbTracking::proto::Pose2D *pose2D = pose2DList->add_pose();
+      pose2D->set_x(p.x);
+      pose2D->set_y(p.y);
+      pose2D->set_orientation(0);
+      pose2D->set_id(0);
+    }*/
+    return pose2DListPushPublish;
+  }
 };
 
 // callBack for path to point
 void pushingPathRequestFunction(twbTracking::proto::Pose2DList inputPointList) {
 
-	// generate the obstacle map
-	cv::Mat obstacleMap(getObstacleMap());
-	float xSize = ((float)obstacleMap.size().width) * delta_;
-	float ySize = ((float)obstacleMap.size().height) * delta_;
+  // generate the obstacle map
+  cv::Mat obstacleMap(getObstacleMap());
+  float xSize = ((float)obstacleMap.size().width) * delta_;
+  float ySize = ((float)obstacleMap.size().height) * delta_;
 
-	// convert pose to cv::point2f
-	Point3f startPos(inputPointList.pose(0).x()+xSize/2.0, inputPointList.pose(0).y()+ySize/2.0, 0);
-	Point2f target(inputPointList.pose(1).x()+xSize/2.0, inputPointList.pose(1).y()+ySize/2.0);
+  // convert pose to cv::point2f
+  Point3f startPos(inputPointList.pose(0).x()+xSize/2.0, inputPointList.pose(0).y()+ySize/2.0, 0);
+  Point2f target(inputPointList.pose(1).x()+xSize/2.0, inputPointList.pose(1).y()+ySize/2.0);
 
-	// calculate a path
-	std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, startPos, target);
+  // calculate a path
+  std::vector<cv::Point2f> path = pathPlanner->getPathToTarget(obstacleMap, startPos, target);
 
-	// convert that path to a pose2DList
-	pose2DListPushPublish->clear_pose();
-	for (Point2f p : path) {
-		twbTracking::proto::Pose2D *pose2D = pose2DListPushPublish->add_pose();
-		pose2D->set_x(p.x-xSize/2.0);
-		pose2D->set_y(p.y-ySize/2.0);
-		pose2D->set_orientation(0);
-		pose2D->set_id(0);
-	}
+  // convert that path to a pose2DList
+  pose2DListPushPublish->clear_pose();
+  for (Point2f p : path) {
+    twbTracking::proto::Pose2D *pose2D = pose2DListPushPublish->add_pose();
+    pose2D->set_x(p.x-xSize/2.0);
+    pose2D->set_y(p.y-ySize/2.0);
+    pose2D->set_orientation(0);
+    pose2D->set_id(0);
+  }
 };
 
 // callBack for path to point
 class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
   boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/, boost::shared_ptr<bool> draw_debug) {
 
-    *draw_debug = true;
-    if (draw_debug) {
+    if (*draw_debug) {
       // Get the obstacles
       cv::Mat map = getObstacleMap();
 
@@ -561,13 +550,13 @@ public:
 
 void insertObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
   cv::Mat map = getObstacleMap();
-  cv::circle(map, cv::Point2f(objectPtr->x()/delta_,objectPtr->y()/delta_), (objectPtr->orientation()-0.05)/delta_, cv::Scalar(-255),-1);
+  // cv::circle(map, cv::Point2f(objectPtr->x()/delta_,objectPtr->y()/delta_), (objectPtr->orientation()-0.05)/delta_, cv::Scalar(-255),-1);
   changeObstacleMap(map);
 }
 
 void deleteObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
   cv::Mat map = getObstacleMap();
-  cv::circle(map, cv::Point2f(objectPtr->x()/delta_,objectPtr->y()/delta_), (objectPtr->orientation()-0.05)/delta_, cv::Scalar(255),-1);
+  // cv::circle(map, cv::Point2f(objectPtr->x()/delta_,objectPtr->y()/delta_), (objectPtr->orientation()-0.05)/delta_, cv::Scalar(255),-1);
   changeObstacleMap(map);
 }
 
@@ -804,8 +793,8 @@ int main(int argc, const char **argv){
   std::string sObjectsOutputScope = "/objectsReq/answer";
   std::string sPushPathInputScope = "/pushPathServer/request";
   std::string sPushPathOutputScope = "/pushPathServer/answer";
-	std::string insertObjectInscope = "/mapGenerator/insertObject";
-	std::string deleteObjectInscope = "/mapGenerator/deleteObject";
+  std::string insertObjectInscope = "/mapGenerator/insertObject";
+  std::string deleteObjectInscope = "/mapGenerator/deleteObject";
   std::string pathServerReq = "path";
   std::string pushingPathServerReq = "getPushingPath";
   std::string obstacleServerReq = "getObjectsList";
@@ -963,13 +952,13 @@ int main(int argc, const char **argv){
   server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
 
 
-	// prepare RSB listener for commands to insert an object in the map
-	rsb::ListenerPtr insertObjectListener = factory.createListener(insertObjectInscope);
-	insertObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&insertObject)));
+  // prepare RSB listener for commands to insert an object in the map
+  rsb::ListenerPtr insertObjectListener = factory.createListener(insertObjectInscope);
+  insertObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&insertObject)));
 
-	// prepare RSB listener for commands to delete an object from the map
-	rsb::ListenerPtr deleteObjectListener = factory.createListener(deleteObjectInscope);
-	deleteObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&deleteObject)));
+  // prepare RSB listener for commands to delete an object from the map
+  rsb::ListenerPtr deleteObjectListener = factory.createListener(deleteObjectInscope);
+  deleteObjectListener->addHandler(rsb::HandlerPtr(new rsb::DataFunctionHandler<twbTracking::proto::Pose2D>(&deleteObject)));
 
   // Init the CAN controller
   ::CAN = new(ControllerAreaNetwork);
@@ -1051,8 +1040,8 @@ int main(int argc, const char **argv){
       imencode(".jpg", *mapImage, buf, compression_params);
 
       // Send the data.
-      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
-      informer->publish(frameJpg);
+      //rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+      //informer->publish(frameJpg);
     }
   }
 
