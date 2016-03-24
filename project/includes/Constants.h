@@ -82,6 +82,12 @@ namespace constants {
   /** \brief Amount of milliseconds per second */
   const int32_t millisecondsPerSecond = 1000;
   
+  /** \brief Amount of millimeter per meter */
+  const int32_t millimeterPerMeter = 1000;
+
+  /** \brief Amount of millimeter per meter */
+  const float meterPerMillimeter = 0.001f;
+
   /** \brief Distance between wheels in meter */
   const float wheelBaseDistanceSI = 0.069f;
   

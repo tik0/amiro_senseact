@@ -17,4 +17,5 @@ On ecan use the tool [[tools:hmi:cvMatRpc:start.txt|cvMatRpc]] to request the ma
 
   - Scope: ''/CoreSlamServer<id>''
   - Map request string: ''map''
-  - Erroded map request string: ''mapObstacle''
+  - Erroded map request string: ''erosion''
+  - Map with path and current location: ''mapPath''

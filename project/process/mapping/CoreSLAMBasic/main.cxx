@@ -1,6 +1,6 @@
 
 #define INFO_MSG_
-//#define DEBUG_MSG_
+#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
  #define ERROR_MSG_
@@ -21,6 +21,11 @@ extern "C"{
 #ifdef __cplusplus
 }
 #endif
+
+#include <Constants.h>
+using namespace amiro::constants;
+#include <utils.h>
+
 // Parameters needed for Marcov sampling
 static double sigma_xy_ = 0.01;  // m
 static double sigma_theta_ = 0.05;  // rad
@@ -30,13 +35,16 @@ static double hole_width_ = 0.1;  // m
 static double delta_ = 0.02;  // Meter per pixel
 static ts_map_t ts_map_;
 static ts_state_t state_;
-static ts_position_t position_;
-static ts_position_t first_odom_;
+// static ts_position_t position_;
+// static ts_position_t first_odom_;
 static ts_position_t prev_odom_;
+static ts_position_t pose;
+static ts_position_t odom_pose;
 static bool gotFirstOdometry = false;
 static ts_laser_parameters_t lparams_;
-#define METERS_TO_MM    1000
-#define MM_TO_METERS    0.001
+#define TS_POSE_HISTORY_SIZE    1000
+static ts_position_t ts_poseHistory[TS_POSE_HISTORY_SIZE];
+static size_t ts_poseHistorySize = 0;
 static bool got_first_scan_ = false;
 //static bool got_map_ = false;
 static int laser_count_ = 0;
@@ -142,15 +150,25 @@ void mapErosion(int erosion_size, cv::Mat &map) {
   cv::erode( map, map, element );
 }
 
-cv::Mat getObstacleMap() {
+cv::Mat getObstacleMap(bool colored = false, bool withUnknown = false) {
   // Convert the map to a cv::Mat image
-  cv::Mat map(cv::Size(TS_MAP_SIZE,TS_MAP_SIZE), CV_8UC1); // destination image for sending
+  const cv::Size size(TS_MAP_SIZE,TS_MAP_SIZE);
+  cv::Mat map(size, CV_8UC1); // destination image for sending
   cv::Mat tmp = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16UC1, static_cast<void*>(&ts_map_.map[0]));
   tmp.convertTo(map, CV_8UC1, 0.00390625);  // Convert to 8bit depth image
-  for (ssize_t idx = 0; idx < map.rows * map.cols; ++idx)
-    if (map.at<uint8_t>(idx) > 127) // Delete all unsure guesses
-      map.at<uint8_t>(idx) = 0xFF;
-  return map;
+  if (!withUnknown) {
+    for (ssize_t idx = 0; idx < map.rows * map.cols; ++idx)
+      if (map.at<uint8_t>(idx) > 127) // Delete all unsure guesses
+        map.at<uint8_t>(idx) = 0xFF;
+  }
+
+  if (colored) {
+    cv::Mat mapColor(size, CV_8UC3); // Color image
+    cv::cvtColor(map, mapColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
+    return mapColor;
+  } else {
+    return map;
+  }
 }
 
 void changeObstacleMap(cv::Mat map) {
@@ -308,88 +326,88 @@ void pushingPathRequestFunction(twbTracking::proto::Pose2DList inputPointList) {
 class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTracking::proto::Pose2DList> {
   boost::shared_ptr<twbTracking::proto::Pose2DList> call(const std::string& /*methodName*/, boost::shared_ptr<bool> draw_debug) {
 
-/*    // Get the obstacles
-    cv::Mat map = getObstacleMap();
-
-    // Expand them
-    const int erosion_size = detectionObstacleErosion / delta_;
-    mapErosion(erosion_size, map);
-    float xSize = ((float)map.size().width) * delta_;
-    float ySize = ((float)map.size().height) * delta_;
-
-    // Obstacle list
-    vector<vector<cv::Point2i> > contours;
-
-    // Temporary stuff
-    cv::Mat mask, thresholded, debug;
-
-    if (draw_debug) cv::cvtColor(map, debug, CV_GRAY2BGR);
-
-    // Get area inside of walls
-    cv::threshold(map,thresholded,127,255,cv::THRESH_BINARY);
-
-    thresholded.copyTo(mask);
-
-    cv::findContours(mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-    mask = Mat::zeros(map.size(),CV_8UC1);
-
-    cv::drawContours(mask, contours, -1, cv::Scalar(255),-1);
-
-    cv::Mat help = Mat::ones(map.size(),CV_8UC1)*255;
-
-    thresholded.copyTo(help,mask);
-
-    // Switch black & white
-    cv::Mat objects = Mat::ones(map.size(), CV_8UC1)*255;
-    cv::subtract(objects, help, objects);
-
-    // Find objects
-    cv::findContours(objects, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-    int numObjects = contours.size();
-    cv::Point2f centers[numObjects];
-    float objectRadius[numObjects];
-    cv::Moments moments;
-    boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList(new twbTracking::proto::Pose2DList);
-
-    for(int i = 0; i < numObjects; ++i) {
-      if (cv::contourArea(contours[i]) < 5) continue;
-
-      // Calculate objects center of gravity
-      moments = cv::moments(contours[i], true);
-      centers[i] = Point2f(moments.m10/moments.m00 , moments.m01/moments.m00);
-
-      // Get objects radius
-      cv::Point2f center;
-      cv::minEnclosingCircle(contours[i],center,objectRadius[i]);
-
-      // Add object as pose
-      twbTracking::proto::Pose2D *pose2D1 = pose2DList->add_pose();
-      pose2D1->set_x(centers[i].x * delta_ - xSize/2.0);
-      pose2D1->set_y(centers[i].y * delta_ - ySize/2.0);
-      pose2D1->set_orientation(objectRadius[i] * delta_);
-      pose2D1->set_id(0);
-
-      if (draw_debug) {
-        cv::drawContours(debug, contours, i, cv::Scalar(255,191,0),-1);
-        cv::circle(debug, centers[i], 3, cv::Scalar(139,0,0),-1);
-        cv::circle(debug, center, objectRadius[i], cv::Scalar(0,0,139),1);
-      }
-    }
-#ifndef __arm__
+    *draw_debug = true;
     if (draw_debug) {
+      // Get the obstacles
+      cv::Mat map = getObstacleMap();
+
+      // Expand them
+      const int erosion_size = detectionObstacleErosion / delta_;
+      mapErosion(erosion_size, map);
+      float xSize = ((float)map.size().width) * delta_;
+      float ySize = ((float)map.size().height) * delta_;
+
+      // Obstacle list
+      vector<vector<cv::Point2i> > contours;
+
+      // Temporary stuff
+      cv::Mat mask, thresholded, debug;
+
+      cv::cvtColor(map, debug, CV_GRAY2BGR);
+
+      // Get area inside of walls
+      cv::threshold(map,thresholded,127,255,cv::THRESH_BINARY);
+
+      thresholded.copyTo(mask);
+
+      cv::findContours(mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+      mask = Mat::zeros(map.size(),CV_8UC1);
+
+      cv::drawContours(mask, contours, -1, cv::Scalar(255),-1);
+
+      cv::Mat help = Mat::ones(map.size(),CV_8UC1)*255;
+
+      thresholded.copyTo(help,mask);
+
+      // Switch black & white
+      cv::Mat objects = Mat::ones(map.size(), CV_8UC1)*255;
+      cv::subtract(objects, help, objects);
+
+      // Find objects
+      cv::findContours(objects, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+      int numObjects = contours.size();
+      cv::Point2f centers[numObjects];
+      float objectRadius[numObjects];
+      cv::Moments moments;
+      boost::shared_ptr<twbTracking::proto::Pose2DList> pose2DList(new twbTracking::proto::Pose2DList);
+
+      for(int i = 0; i < numObjects; ++i) {
+        if (cv::contourArea(contours[i]) < 5) continue;
+
+        // Calculate objects center of gravity
+        moments = cv::moments(contours[i], true);
+        centers[i] = Point2f(moments.m10/moments.m00 , moments.m01/moments.m00);
+
+        // Get objects radius
+        cv::Point2f center;
+        cv::minEnclosingCircle(contours[i],center,objectRadius[i]);
+
+        // Add object as pose
+        twbTracking::proto::Pose2D *pose2D1 = pose2DList->add_pose();
+        pose2D1->set_x(centers[i].x * delta_ - xSize/2.0);
+        pose2D1->set_y(centers[i].y * delta_ - ySize/2.0);
+        pose2D1->set_orientation(objectRadius[i] * delta_);
+        pose2D1->set_id(0);
+
+        if (draw_debug) {
+          cv::drawContours(debug, contours, i, cv::Scalar(255,191,0),-1);
+          cv::circle(debug, centers[i], 3, cv::Scalar(139,0,0),-1);
+          cv::circle(debug, center, objectRadius[i], cv::Scalar(0,0,139),1);
+        }
+      }
+#ifndef __arm__
       imshowf("objects", debug);
       cv::waitKey(1);
-    }
 #endif
-    if (draw_debug) {
       std::vector<int> compression_params;
       compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
       compression_params.push_back(3);
       imwrite("detection.png", debug, compression_params);
       INFO_MSG("Server returns obstacle list")
-    }*/
+    }
+
     return pose2DListObjectsPublish;
   }
 };
@@ -458,29 +476,88 @@ void objectsRequestFunction() {
   }
 };
 
+namespace mapServerReq {
 
-// RSB Server function for the mapping server which replies with a 8bit map of the environment
-class mapServerObstacles: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
-public:
-  boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
-    boost::shared_ptr<cv::Mat> dst(new cv::Mat(getObstacleMap()));
-    // Expand them
+std::string req = "map"; // Map produced by CoreSLAM
+std::string erosion = "erosion"; // Eroded map of CoreSLAM
+std::string path = "mapPath"; // Map with driven path
+
+boost::shared_ptr<cv::Mat> getMap(bool erode = false, bool path = false, std::vector<cv::Point> *positions = NULL,
+                                  std::vector<std::string> *positionsText = NULL) {
+  const bool colored = (path || (positions != NULL)) ? true : false;
+
+  boost::shared_ptr<cv::Mat> dst(new cv::Mat(getObstacleMap(colored, true)));
+  if (erode) { // Expand them
     const int erosion_size = detectionObstacleErosion / delta_;
     mapErosion(erosion_size, *dst);
+  }
+  if (path) {
+    // Get the current path pointer (actually, we need a mutex here, but we dont have any creepy r/w constelations)
+    const int ts_poseHistorySizeCurrent = ts_poseHistorySize;
+
+    // Define the polygon
+    vector<cv::Point> path(ts_poseHistorySize);
+    for (int idx = 0; idx < ts_poseHistorySizeCurrent; ++idx) {
+      conversion::xyPose2cvPoint(float(ts_poseHistory[idx].x), float(ts_poseHistory[idx].y), float(delta_),
+                                 path.at(idx).x, path.at(idx).y);
+    }
+    const cv::Point* pathpt[1] = { &path[0] };
+    cv::polylines(*dst, pathpt, &ts_poseHistorySizeCurrent, 1 /*ncontours*/, false /*isClosed*/, cv::Scalar(255,0,0) /*red line*/);
+  }
+  if (positions != NULL) {
+    if (!positions->empty()) {
+      cv::Scalar colorMap;
+      for (size_t idx = 0; idx < positions->size(); ++idx) {
+        const int greyValue = 255.0f / positions->size() * idx;
+        cv::circle( *dst, positions->at(idx), (positions->size() - idx) * 4/*radius*/, cv::Scalar(greyValue, greyValue, greyValue));
+        // Draw the text
+        if (positionsText != NULL) {
+          if (positionsText->size() == positions->size()) {
+            const double fontScale = 1;
+            const int thickness = 1;
+            cv::putText(*dst, positionsText->at(idx), positions->at(idx), cv::FONT_HERSHEY_PLAIN, fontScale, Scalar::all(0), thickness,LINE_8);
+          } else {
+            ERROR_MSG("positionsText->size() != positions->size()")
+          }
+        }
+      }
+    }
+  }
+
+  return dst;
+}
+
+// RSB Server function for the mapping server which replies with a 8bit eroded map of the environment
+class mapEroded: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
+public:
+  boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
     INFO_MSG("Server returns obstacle map")
-    return dst;
+    return getMap(true);
   }
 };
 
 // RSB Server function for the mapping server which replies with a 8bit map of the environment
-class mapServer: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
+class map: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
 public:
   boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
-    boost::shared_ptr<cv::Mat> dst(new cv::Mat(getObstacleMap()));
     INFO_MSG("Server returns map")
-    return dst;
+    return getMap();
   }
 };
+
+// RSB Server function for the RGB map with path and current location
+class withCurrentPath: public rsb::patterns::LocalServer::Callback<void, cv::Mat> {
+public:
+  boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
+    INFO_MSG("Server returns map with driven path")
+    // Draw MCMC position
+    cv::Point robotPosition; conversion::xyPose2cvPoint(pose.x, pose.y, float(delta_), robotPosition.x, robotPosition.y);
+    std::vector<cv::Point> positions;
+    positions.push_back(robotPosition);
+    return getMap(false, true, &positions);
+  }
+};
+}
 
 void insertObject(boost::shared_ptr<twbTracking::proto::Pose2D> objectPtr) {
   cv::Mat map = getObstacleMap();
@@ -546,29 +623,39 @@ void controlCoreSLAMBehaviour(boost::shared_ptr<std::string> e) {
 static types::position robotInitPosition;
 static double mapOffset = 0;
 
+void storeOdomData(boost::shared_ptr<rst::geometry::Pose> event) {
+  mtxOdom.lock();
+    odomTrans = event->translation();
+    odomRot = event->rotation();
+  mtxOdom.unlock();
+}
+
 bool
 getOdomPose(ts_position_t& ts_pose)
 {
+  rst::geometry::Translation translation;
+  rst::geometry::Rotation rotation;
+  mtxOdom.lock();
+    translation = odomTrans;
+    rotation = odomRot;
+  mtxOdom.unlock();
 
-  // Read the odometry data (This function halts until some data was received)
-  types::position robotPosition = ::CAN->getOdometry();
+  // Convert from quaternion to euler
+  Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
+  Eigen::Matrix<double,3,1> rpy;
+  conversion::quaternion2euler(&lidar_quat, &rpy);
+  const double yaw = rpy(2);
 
-  // Set the Robot to the center of the map, independent from the first odometry message
-  if(!gotFirstOdometry) {
-    robotInitPosition.x = robotPosition.x;
-    robotInitPosition.y = robotPosition.y;
-    robotInitPosition.f_z = robotPosition.f_z;
-    gotFirstOdometry = true;
-  }
+  DEBUG_MSG( "CoreSLAM(RPY): " <<  rpy(0) << ", "<< rpy(1) << ", "<< rpy(2))
+  DEBUG_MSG( "CoreSLAM(WXYZ): " <<  rotation.qw() << ", "<< rotation.qx() << ", "<< rotation.qy() << ", " << rotation.qz())
 
-  const double translation_x = static_cast<double>(robotPosition.x - robotInitPosition.x) * 1e-3;
-  const double translation_y = static_cast<double>(robotPosition.y - robotInitPosition.y) * 1e-3;
-  const double yaw           = static_cast<double>(robotPosition.f_z) * 1e-6; // static_cast<double>(robotPosition.f_z - robotInitPosition.f_z) * 1e-6;
-  ts_pose.x = translation_x + mapOffset; // convert to mm
-  ts_pose.y = translation_y + mapOffset; // convert to mm
+  ts_pose.x = translation.x()*millimeterPerMeter + ((TS_MAP_SIZE/2)*delta_*millimeterPerMeter); // convert to mm
+  ts_pose.y = translation.y()*millimeterPerMeter + ((TS_MAP_SIZE/2)*delta_*millimeterPerMeter); // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
 
-  DEBUG_MSG("ODOM POSE: " << ts_pose.x << " mm " << ts_pose.y << " mm " << ts_pose.theta << " deg")
+  DEBUG_MSG( "-------------------------------------------------------------------------------------------" )
+  DEBUG_MSG( "Odometry: x(m): " <<  translation.x() << " y(m): " << translation.y() << " theta(rad): " << yaw)
+  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
 
   return true;
 }
@@ -580,7 +667,6 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
   // configure previous_odom
   if(!getOdomPose(prev_odom_))
      return false;
-  position_ = prev_odom_;
 
   // configure laser parameters
   lparams_.offset = 0.0;  // No offset of the lidar base
@@ -588,11 +674,11 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
   lparams_.angle_min = scan.scan_angle_start()  * 180/M_PI;
   lparams_.angle_max = scan.scan_angle_end()  * 180/M_PI;
   lparams_.detection_margin = 0;
-  lparams_.distance_no_detection = scan.scan_values_max() * METERS_TO_MM;
+  lparams_.distance_no_detection = scan.scan_values_max() * millimeterPerMeter;
 
   // new coreslam instance
   ts_map_init(&ts_map_);
-  ts_state_init(&state_, &ts_map_, &lparams_, &position_, sigma_xy_, sigma_theta_*180/M_PI, (int)(hole_width_*1000), 0, samples);
+  ts_state_init(&state_, &ts_map_, &lparams_, &prev_odom_, sigma_xy_, sigma_theta_*180/M_PI, (int)(hole_width_*1000), 0, samples);
 
   INFO_MSG("Initialized with sigma_xy=" << sigma_xy_<< ", sigma_theta=" << ", hole_width=" << hole_width_ << ", delta=" << delta_);
   INFO_MSG("Initialization complete");
@@ -607,8 +693,8 @@ void convertToScan(const rst::vision::LocatedLaserScan &scan , ts_scan_t &ranges
       // Must filter out short readings, because the mapper won't
       if(scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < scan.scan_values_max()){
         // HACK "+ 120" is a workaround, and works only for startStep 44 and enStep 725!!!!
-        ranges.x[ranges.nb_points] = cos((lparams_.angle_min + 120 )* M_PI/180.0f + i*delta_angle ) * (scan.scan_values(i)*METERS_TO_MM);
-        ranges.y[ranges.nb_points] = sin((lparams_.angle_min + 120) * M_PI/180.0f + i*delta_angle) * (scan.scan_values(i)*METERS_TO_MM);
+        ranges.x[ranges.nb_points] = cos((lparams_.angle_min + 120 )* M_PI/180.0f + i*delta_angle ) * (scan.scan_values(i)*millimeterPerMeter);
+        ranges.y[ranges.nb_points] = sin((lparams_.angle_min + 120) * M_PI/180.0f + i*delta_angle) * (scan.scan_values(i)*millimeterPerMeter);
         ranges.value[ranges.nb_points] = TS_OBSTACLE;
         ranges.nb_points++;
       }
@@ -646,10 +732,10 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   if(lparams_.angle_max < lparams_.angle_min){
     // flip readings
     for(int i=0; i < scan.scan_values_size(); i++)
-      data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
+      data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*millimeterPerMeter);
   }else{
     for(int i=0; i < scan.scan_values_size(); i++)
-      data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
+      data.d[i] = (int) (scan.scan_values(i)*millimeterPerMeter);
   }
 
 //  state_.position.theta = 90;
@@ -690,6 +776,11 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   DEBUG_MSG("SLAM POSE: " << (pose.x - mapOffset) * 1e-3 << " m " << (pose.y - mapOffset) * 1e-3 << " m " << pose.theta * M_PI / 180 << " rad")
   informerOdometry->publish(odomData);
 
+  // Copy the current pose, for the map server request with path drawn in
+  if (ts_poseHistorySize < TS_POSE_HISTORY_SIZE) {
+    ts_poseHistory[ts_poseHistorySize++] = pose;
+  }
+
   return true;
 }
 
@@ -699,6 +790,7 @@ int main(int argc, const char **argv){
   namespace po = boost::program_options;
   
   std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
+  std::string odomInScope = "/AMiRo_Hokuyo/gps";
 //  std::string odomInScope = "/AMiRo_Hokuyo/gps";
   std::string localizationOutScope = "/localization";
   std::string serverScope = "/AMiRo_Hokuyo/server/slam";
@@ -716,8 +808,6 @@ int main(int argc, const char **argv){
 	std::string deleteObjectInscope = "/mapGenerator/deleteObject";
   std::string pathServerReq = "path";
   std::string pushingPathServerReq = "getPushingPath";
-  std::string mapServerReq = "map";
-  std::string mapServerObstacleReq = "mapObstacle";
   std::string obstacleServerReq = "getObjectsList";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
@@ -727,11 +817,12 @@ int main(int argc, const char **argv){
   options.add_options()("help,h", "Display a help message.")
     ("robotID", po::value <int> (&robotID), "ID of robot for communication (default=0)")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
-//    ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
+    ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
     ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
     ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
-    ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
-    ("mapServerObstacleReq", po::value < std::string > (&mapServerObstacleReq), "Map server obstacle request string (Std.: mapObstacle)")
+    ("mapServerReq", po::value < std::string > (&mapServerReq::req), "Map server request string (Std.: map)")
+    ("mapServerObstacleReq", po::value < std::string > (&mapServerReq::erosion), "Map server obstacle request string (Std.: erosion)")
+    ("mapServerPathReq", po::value < std::string > (&mapServerReq::path), "Map server obstacle request string with path drawn in (Std.: path)")
     ("pathServerReq", po::value < std::string > (&pathServerReq), "Path server request string (Std.: path)")
     ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
@@ -774,8 +865,8 @@ int main(int argc, const char **argv){
   }
 
   // tinySLAM init
-  ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
-  mapOffset = ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM);
+  ts_map_set_scale(meterPerMillimeter/delta_);  // Set TS_MAP_SCALE at runtime
+  mapOffset = ((TS_MAP_SIZE/2)*delta_*millimeterPerMeter);
 
   // Create path planner
   PathPlanner pathPlannerObj(delta_);
@@ -859,12 +950,16 @@ int main(int argc, const char **argv){
   rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
   // Prepare RSB informer for sending the map as an compressed image
   informerOdometry = factory.createInformer<rst::geometry::PoseEuler> (localizationOutScope);
+  // Prepare RSB async listener for odometry messages
+  rsb::ListenerPtr listener = factory.createListener(odomInScope);
+  listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
   // Prepare RSB server for the map server
   rsb::patterns::LocalServerPtr server = factory.createLocalServer(serverScope, tmpPartConf, tmpPartConf);
   server->registerMethod(pathServerReq, rsb::patterns::LocalServer::CallbackPtr(new pathCallback()));
   server->registerMethod(pushingPathServerReq, rsb::patterns::LocalServer::CallbackPtr(new pushingPathCallback()));
-  server->registerMethod(mapServerReq, rsb::patterns::LocalServer::CallbackPtr(new mapServer()));
-  server->registerMethod(mapServerObstacleReq, rsb::patterns::LocalServer::CallbackPtr(new mapServerObstacles()));
+  server->registerMethod(mapServerReq::req, rsb::patterns::LocalServer::CallbackPtr(new mapServerReq::map()));
+  server->registerMethod(mapServerReq::erosion, rsb::patterns::LocalServer::CallbackPtr(new mapServerReq::mapEroded()));
+  server->registerMethod(mapServerReq::path, rsb::patterns::LocalServer::CallbackPtr(new mapServerReq::withCurrentPath()));
   server->registerMethod(obstacleServerReq, rsb::patterns::LocalServer::CallbackPtr(new objectsCallback()));
 
 
@@ -917,8 +1012,6 @@ int main(int argc, const char **argv){
 
     // Fetch a new scan and store it to scan
     scan = *(lidarQueue->pop());
-    ts_position_t pose;
-    ts_position_t odom_pose;
     getOdomPose(odom_pose);
     // We can't initialize CoreSLAM until we've got the first scan
     if(!got_first_scan_)
@@ -937,23 +1030,17 @@ int main(int argc, const char **argv){
     }
 
     if (sendMapAsCompressedImage) {
-      // Show the map as a cv Image
-      cv::Size size(TS_MAP_SIZE / 2,TS_MAP_SIZE / 2);
-      cv::Mat dst(size, CV_16S); // destination image for scaling
-      cv::Mat dstColor(size, CV_8UC3); // Color image
-
-      cv::Mat image = cv::Mat(TS_MAP_SIZE, TS_MAP_SIZE, CV_16U, static_cast<void*>(&ts_map_.map[0]));
-      cv::resize(image,dst,size);//resize image
-      cv::flip(dst, dst, 0);  // horizontal flip
-      dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
-      cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
-      cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw MCMC position
-      cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
-      cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / TS_MAP_SIZE,(TS_MAP_SIZE - (odom_pose.y * MM_TO_METERS / delta_)) * size.height / TS_MAP_SIZE);  // Draw odometry
-      cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
+      // Show the map as a cv Image with drawn in pose
+      cv::Point robotPosition; conversion::xyPose2cvPoint(pose.x, pose.y, float(delta_), robotPosition.x, robotPosition.y);  // Draw MCMC position
+      cv::Point robotOdomPosition; conversion::xyPose2cvPoint(odom_pose.x, odom_pose.y, float(delta_), robotOdomPosition.x, robotOdomPosition.y);  // Draw odometry
+      std::vector<cv::Point> positions; std::vector<std::string> positionsText;
+      positions.push_back(robotPosition); positionsText.push_back(std::string("S"));
+      positions.push_back(robotOdomPosition); positionsText.push_back(std::string("L"));
+      boost::shared_ptr<cv::Mat> mapImage(mapServerReq::getMap(false, true, &positions, &positionsText));
       DEBUG_MSG( "Pose " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
       #ifndef __arm__
-      cv::imshow("input", dstColor);
+      // cv::flip(*mapImage, *mapImage, 0);  // horizontal flip
+      cv::imshow("input", *mapImage);
       cv::waitKey(1);
       #endif
       // Send the map as image
@@ -961,7 +1048,7 @@ int main(int argc, const char **argv){
       std::vector<int> compression_params;
       compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
       compression_params.push_back(85/*g_uiQuality [ 0 .. 100]*/);
-      imencode(".jpg", dstColor, buf, compression_params);
+      imencode(".jpg", *mapImage, buf, compression_params);
 
       // Send the data.
       rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
