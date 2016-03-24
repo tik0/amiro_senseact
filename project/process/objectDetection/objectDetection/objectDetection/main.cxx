@@ -551,8 +551,10 @@ int main(int argc, char **argv) {
         } else {
           INFO_MSG("Unknown command.");
         }
+      } else {
+        usleep(100000);
       }
-
+      
     }
   }
 
