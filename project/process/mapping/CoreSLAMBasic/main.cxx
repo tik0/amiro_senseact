@@ -498,7 +498,7 @@ boost::shared_ptr<cv::Mat> getMap(bool erode = false, bool path = false, std::ve
     // Define the polygon
     vector<cv::Point> path(ts_poseHistorySize);
     for (int idx = 0; idx < ts_poseHistorySizeCurrent; ++idx) {
-      conversion::xyPose2cvPoint(float(ts_poseHistory[idx].x), float(ts_poseHistory[idx].y), float(delta_),
+      ::conversion::xyPose2cvPoint(float(ts_poseHistory[idx].x), float(ts_poseHistory[idx].y), float(delta_),
                                  path.at(idx).x, path.at(idx).y);
     }
     const cv::Point* pathpt[1] = { &path[0] };
@@ -515,7 +515,7 @@ boost::shared_ptr<cv::Mat> getMap(bool erode = false, bool path = false, std::ve
           if (positionsText->size() == positions->size()) {
             const double fontScale = 1;
             const int thickness = 1;
-            cv::putText(*dst, positionsText->at(idx), positions->at(idx), cv::FONT_HERSHEY_PLAIN, fontScale, Scalar::all(0), thickness,LINE_8);
+            cv::putText(*dst, positionsText->at(idx), positions->at(idx), cv::FONT_HERSHEY_PLAIN, fontScale, Scalar::all(0), thickness);
           } else {
             ERROR_MSG("positionsText->size() != positions->size()")
           }
@@ -551,7 +551,7 @@ public:
   boost::shared_ptr<cv::Mat> call(const std::string& /*methodName*/) {
     INFO_MSG("Server returns map with driven path")
     // Draw MCMC position
-    cv::Point robotPosition; conversion::xyPose2cvPoint(pose.x, pose.y, float(delta_), robotPosition.x, robotPosition.y);
+    cv::Point robotPosition; ::conversion::xyPose2cvPoint(pose.x, pose.y, float(delta_), robotPosition.x, robotPosition.y);
     std::vector<cv::Point> positions;
     positions.push_back(robotPosition);
     return getMap(false, true, &positions);
@@ -643,7 +643,7 @@ getOdomPose(ts_position_t& ts_pose)
   // Convert from quaternion to euler
   Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
   Eigen::Matrix<double,3,1> rpy;
-  conversion::quaternion2euler(&lidar_quat, &rpy);
+  ::conversion::quaternion2euler(&lidar_quat, &rpy);
   const double yaw = rpy(2);
 
   DEBUG_MSG( "CoreSLAM(RPY): " <<  rpy(0) << ", "<< rpy(1) << ", "<< rpy(2))
@@ -1031,8 +1031,8 @@ int main(int argc, const char **argv){
 
     if (sendMapAsCompressedImage) {
       // Show the map as a cv Image with drawn in pose
-      cv::Point robotPosition; conversion::xyPose2cvPoint(pose.x, pose.y, float(delta_), robotPosition.x, robotPosition.y);  // Draw MCMC position
-      cv::Point robotOdomPosition; conversion::xyPose2cvPoint(odom_pose.x, odom_pose.y, float(delta_), robotOdomPosition.x, robotOdomPosition.y);  // Draw odometry
+      cv::Point robotPosition; ::conversion::xyPose2cvPoint(pose.x, pose.y, float(delta_), robotPosition.x, robotPosition.y);  // Draw MCMC position
+      cv::Point robotOdomPosition; ::conversion::xyPose2cvPoint(odom_pose.x, odom_pose.y, float(delta_), robotOdomPosition.x, robotOdomPosition.y);  // Draw odometry
       std::vector<cv::Point> positions; std::vector<std::string> positionsText;
       positions.push_back(robotPosition); positionsText.push_back(std::string("S"));
       positions.push_back(robotOdomPosition); positionsText.push_back(std::string("L"));
