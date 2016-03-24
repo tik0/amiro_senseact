@@ -1,11 +1,10 @@
 #!/bin/sh
 
 if [ -z "${1}" ]; then
-  echo "Set an ID for the AMiRo"
-  exit 1
+  ID=""
+else
+  ID=${1}
 fi
-
-ID=${1}
 
 if [ "${ID}" -eq "${ID}" ] > /dev/null ; then
   rsb-sendcpp0.11 /tobiamiro${ID}/state states/turn.txt
