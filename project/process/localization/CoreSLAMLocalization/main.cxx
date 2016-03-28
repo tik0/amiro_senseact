@@ -1,4 +1,4 @@
-
+// ===== defines =====
 #define INFO_MSG_
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
@@ -13,6 +13,7 @@
 #endif
 #endif
 
+// ===== Includes =====
 #include <math.h>
 #include <utils.h>
 
@@ -21,8 +22,40 @@
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
-// for reading and writing maps
+// For reading and writing maps to file
 #include <fstream>
+
+// Converting helpers
+#include <Eigen/Geometry>
+
+// RSB
+#include <rsb/filter/OriginFilter.h>
+#include <rsb/Informer.h>
+#include <rsb/Factory.h>
+#include <rsb/Event.h>
+#include <rsb/Handler.h>
+#include <rsb/converter/Repository.h>
+#include <rsc/threading/SynchronizedQueue.h>
+#include <rsb/util/QueuePushHandler.h>
+
+// RST
+#include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
+
+// RST Proto types
+#include <types/LocatedLaserScan.pb.h>
+
+// OpenCV
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>  // resize
+
+#include "pathplanner.h"
+
+// To move AMiRo
+#include <ControllerAreaNetwork.h>
+
+#include <mutex> // std::mutex
 
 // tinySLAM
 #ifdef __cplusplus
@@ -32,6 +65,14 @@ extern "C"{
 #ifdef __cplusplus
 }
 #endif
+
+// ===== Namespaces =====
+using namespace std;
+using namespace rsb;
+using namespace rsb::converter;
+
+
+// ===== Global variables =====
 // Parameters needed for Marcov sampling
 static double sigma_xy_ = 0.01;  // m
 static double sigma_theta_ = 0.05;  // rad
@@ -69,12 +110,6 @@ static double mapOffset = 0;
 // Switch for localization
 static bool doMapUpdate = false;
 
-// Converting helpers
-#include <Eigen/Geometry>
-
-static double transX, transY, transZ;
-static double rotX, rotY, rotZ;
-
 // Convinience
 static bool sendMapAsCompressedImage = false;
 
@@ -82,46 +117,11 @@ static bool sendMapAsCompressedImage = false;
 static std::string mapImagePath = "";
 static std::string mapPGMPath = "";
 
-// RSB
-#include <rsb/filter/OriginFilter.h>
-#include <rsb/Informer.h>
-#include <rsb/Factory.h>
-#include <rsb/Event.h>
-#include <rsb/Handler.h>
-#include <rsb/converter/Repository.h>
-#include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/util/QueuePushHandler.h>
-
-// RST
-#include <rsb/converter/Repository.h>
-#include <rsb/converter/ProtocolBufferConverter.h>
-
-// RST Proto types
-//#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
-#include <types/LocatedLaserScan.pb.h>
-//#include <rst/geometry/Pose.pb.h>
-
-// OpenCV
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>  // resize
-
-#include "pathplanner.h"
-#include <iterator>
-
-#ifdef __arm__
-#include <ControllerAreaNetwork.h>
-ControllerAreaNetwork can;
-#endif
-
 // init path planner
 PathPlanner pathplanner = PathPlanner();
 
-using namespace std;
-using namespace rsb;
-using namespace rsb::converter;
+ControllerAreaNetwork can;
 
-#include <mutex>          // std::mutex
 std::mutex map_to_odom_mutex_;
 std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
@@ -132,6 +132,8 @@ ts_position_t odom_pose;
 
 // Global rsb imformer for debug images
 rsb::Informer<std::string>::Ptr informer;
+
+// ===== Functions =====
 
 cv::Mat getOccupancyMap() {
   DEBUG_MSG("Generating occupancy map...");
@@ -201,6 +203,81 @@ std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
 
     // TODO: convert to coordinates to outer space?
     return path;
+}
+
+uint64_t sendNewTargetPositionIn = 0; // timestamp in ms
+void drivePath(std::list<cv::Point2i> &path) {
+    // calculate distance to checkpoint
+    cv::Point2i immediatePosePX = path.front();
+    ts_position_t immediatePoseMM = {
+        PIXEL_TO_MM(immediatePosePX.x),
+        PIXEL_TO_MM(immediatePosePX.y),
+        0
+    };
+    DEBUG_MSG("Next waypoint: " << immediatePosePX << " (left: " << path.size() << ")");
+    DEBUG_MSG("in MM: " << immediatePoseMM.x << "," << immediatePoseMM.y);
+
+    float distanceMM = sqrt( (immediatePoseMM.x - pose.x) * (immediatePoseMM.x - pose.x)
+                           + (immediatePoseMM.y - pose.y) * (immediatePoseMM.y - pose.y) );
+
+    const float minDistanceToTarget = 0.1; // meter
+    DEBUG_MSG("distance to target: " << distanceMM << " mm");
+    if (distanceMM < METERS_TO_MM * minDistanceToTarget) {
+        // arrived at checkpoint -> remove it
+        DEBUG_MSG("Reached waypoint, deleting it");
+        path.pop_front();
+        sendNewTargetPositionIn = 0;
+    } else {
+        // update target position
+        double globalTargetAngle = atan2( immediatePoseMM.y - pose.y,
+                                          immediatePoseMM.x - pose.x); // in rad [-PI; +PI]
+        double globalRobotAngle = pose.theta * DEGREE_TO_RAD; // in rad [?? ; ??]
+        double relativeAngle = globalTargetAngle - globalRobotAngle; // in rad
+        // normalize angle to (-PI; +PI]
+        if (relativeAngle < -M_PI || relativeAngle >= M_PI) {
+            relativeAngle = fmod(relativeAngle + M_PI, 2*M_PI);
+            if (relativeAngle < 0)
+                relativeAngle += 2 * M_PI;
+            relativeAngle = relativeAngle - M_PI;
+        }
+
+        // declare parameters for setTargetPosition
+        types::position targetPosition;
+        uint16_t timeMS;
+
+        // firstly rotate to waypoint
+        DEBUG_MSG("Angle to target: " << relativeAngle);
+        if (abs(relativeAngle) > M_PI / 90) { // precision of rotation (PI/90 = 2°)
+            DEBUG_MSG("angle to waypoint too big -> rotating");
+            // package for setTargetPosition
+            targetPosition.x = 0;
+            targetPosition.f_z = relativeAngle * RAD_TO_URAD;
+
+            // calculate time from given speed
+            double rotationSpeed = 0.2; // rad/s
+            timeMS = SECONDS_TO_MS * (relativeAngle / rotationSpeed);
+            if (timeMS > 5000)
+                timeMS = 5000;
+        } else {
+            DEBUG_MSG("angle to waypoint small enough, driving towards it now");
+            // package for setTargetPosition
+            targetPosition.x = distanceMM * MM_TO_UM;
+            targetPosition.f_z = relativeAngle * RAD_TO_URAD;
+
+            // calculate time (derived from velocity)
+            double velocity_M_S = 0.1;
+            timeMS = SECONDS_TO_MS * ( (MM_TO_METERS * distanceMM) / velocity_M_S );
+        }
+
+        if (sendNewTargetPositionIn <= rsc::misc::currentTimeMillis()) {
+            DEBUG_MSG("Sending target position: " << targetPosition.x << " " << targetPosition.f_z << " (time: " << timeMS << ")")
+            can.setTargetPosition(targetPosition, timeMS);
+
+            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + timeMS;
+        } else {
+            DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
+        }
+    }
 }
 
 int convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
@@ -479,19 +556,8 @@ int main(int argc, const char **argv){
   
   std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
   std::string odomInScope = "/AMiRo_Hokuyo/gps";
-  std::string localizationOutScope = "/localization";
-  std::string serverScope = "/AMiRo_Hokuyo/server/slam";
-  std::string mapAsImageOutScope = "/AMiRo_Hokuyo/image";
-  std::string sExplorationScope = "/exploration";
-  std::string sExplorationCmdScope = "/command";
-  std::string sExplorationAnswerScope = "/answer";
-  std::string sPathInputScope = "/path/request";
-  std::string sPathOutputScope = "/path/answer";
+  std::string mapAsImageOutScope = "/CoreSLAMLocalization/image";
   std::string saveMapInScope = "/saveMap";
-  std::string pathServerReq = "path";
-  std::string mapServerReq = "map";
-  std::string mapServerObstacleReq = "mapObstacle";
-  std::string obstacleServerReq = "getObjectsList";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
 
@@ -499,29 +565,17 @@ int main(int argc, const char **argv){
   options.add_options()("help,h", "Display a help message.")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
     ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
-    ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
-    ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
-    ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
-    ("mapServerObstacleReq", po::value < std::string > (&mapServerObstacleReq), "Map server obstacle request string (Std.: mapObstacle)")
-    ("pathServerReq", po::value < std::string > (&pathServerReq), "Path server request string (Std.: path)")
-    ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
     ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
     ("mapAsImageOutScope", po::value < std::string > (&mapAsImageOutScope), "Scope for sending the map as compressed image to a remote spread daemon")
     ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
-    ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
+    ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [rad]")
     ("throttle_scans", po::value < int > (&throttle_scans_), "Only take every n'th scan")
     ("samples", po::value < int > (&samples), "Sampling steps of the marcov localization sampler")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
     ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
-    ("transX", po::value < double > (&transX),"Translation of the lidar in x [m]")
-    ("transY", po::value < double > (&transY),"Translation of the lidar in y [m]")
-    ("transZ", po::value < double > (&transZ),"Translation of the lidar in z [m]")
-    ("rotX", po::value < double > (&rotX),"Rotation of the lidar around x (roll) [rad]")
-    ("rotY", po::value < double > (&rotY),"Rotation of the lidar around y (pitch) [rad]")
-    ("rotZ", po::value < double > (&rotZ),"Rotation of the lidar around z (yaw) [rad]")
     ("loadMapFromImage", po::value < std::string > (&mapImagePath),"Load map from image file")
     ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from *16bit* PGM file")
     ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)");
@@ -603,7 +657,7 @@ int main(int argc, const char **argv){
 
   // ==== GLOBAL/EXTERNAL LISTENER AND INFORMER ====
   // Prepare RSB informer for sending the map as an compressed image
-  informer = factory.createInformer<std::string> ("/CoreSLAMLocalization/image", tmpPartConf);
+  informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
 
   // Prepare RSB listener for saving maps
   rsb::ListenerPtr saveMapListener = factory.createListener(saveMapInScope, tmpPartConf);
@@ -627,8 +681,6 @@ int main(int argc, const char **argv){
   ts_position_t targetPose = { 7237.05, 8279.9, 0.236681 };
   bool savedHomePose = false;
   std::list<cv::Point2i> path;
-
-  uint64_t sendNewTargetPositionIn = 0; // timestamp in ms
 
   while( true ){
     // Fetch a new scan and store it to scan
@@ -670,88 +722,10 @@ int main(int argc, const char **argv){
         }
     }
 
-
-    DEBUG_MSG("path.empty = " << path.empty() << " " << path.size())
-#ifdef __arm__
     // go to target (if available)
     if (!path.empty()) {
-        // calculate distance to checkpoint
-        cv::Point2i immediatePosePX = path.front();
-        ts_position_t immediatePoseMM = {
-            PIXEL_TO_MM(immediatePosePX.x),
-            PIXEL_TO_MM(immediatePosePX.y),
-            0
-        };
-        DEBUG_MSG("Next waypoint: " << immediatePosePX << " (left: " << path.size() << ")");
-        DEBUG_MSG("in MM: " << immediatePoseMM.x << "," << immediatePoseMM.y);
-
-        float distanceMM = sqrt( (immediatePoseMM.x - pose.x) * (immediatePoseMM.x - pose.x)
-                               + (immediatePoseMM.y - pose.y) * (immediatePoseMM.y - pose.y) );
-
-        const float minDistanceToTarget = 0.1; // meter
-        DEBUG_MSG("distance to target: " << distanceMM << " mm");
-        if (distanceMM < METERS_TO_MM * minDistanceToTarget) {
-            // arrived at checkpoint -> remove it
-            DEBUG_MSG("Reached waypoint, deleting it");
-            path.pop_front();
-            sendNewTargetPositionIn = 0;
-        } else {
-            // update target position
-            double globalTargetAngle = atan2( immediatePoseMM.y - pose.y,
-                                              immediatePoseMM.x - pose.x); // in rad [-PI; +PI]
-            DEBUG_MSG("globalTargetAngle: " << globalTargetAngle);
-            double globalRobotAngle = pose.theta * DEGREE_TO_RAD; // in rad [?? ; ??]
-            DEBUG_MSG("globalRobotAngle: " << globalRobotAngle);
-            double relativeAngle = globalTargetAngle - globalRobotAngle; // in rad
-            DEBUG_MSG("relativeAngle: " << relativeAngle);
-            // normalize angle to (-PI; +PI]
-            if (relativeAngle < -M_PI || relativeAngle >= M_PI) {
-                relativeAngle = fmod(relativeAngle + M_PI, 2*M_PI);
-                if (relativeAngle < 0)
-                    relativeAngle += 2 * M_PI;
-                relativeAngle = relativeAngle - M_PI;
-            }
-            DEBUG_MSG("relativeAngle(opt): " << relativeAngle);
-
-            // declare parameters for setTargetPosition
-            types::position targetPosition;
-            uint16_t timeMS;
-
-            // firstly rotate to waypoint
-            DEBUG_MSG("Angle to target: " << relativeAngle);
-            if (abs(relativeAngle) > M_PI / 90) { // precision of rotation (PI/90 = 2°)
-                DEBUG_MSG("angle to waypoint too big -> rotating");
-                // package for setTargetPosition
-                targetPosition.x = 0;
-                targetPosition.f_z = relativeAngle * RAD_TO_URAD;
-
-                // calculate time from given speed
-                double rotationSpeed = 0.2; // rad/s
-                timeMS = SECONDS_TO_MS * (relativeAngle / rotationSpeed);
-                if (timeMS > 5000)
-                    timeMS = 5000;
-            } else {
-                DEBUG_MSG("angle to waypoint small enough, driving towards it now");
-                // package for setTargetPosition
-                targetPosition.x = distanceMM * MM_TO_UM;
-                targetPosition.f_z = relativeAngle * RAD_TO_URAD;
-
-                // calculate time (derived from velocity)
-                double velocity_M_S = 0.1;
-                timeMS = SECONDS_TO_MS * ( (MM_TO_METERS * distanceMM) / velocity_M_S );
-            }
-
-            if (sendNewTargetPositionIn <= rsc::misc::currentTimeMillis()) {
-                DEBUG_MSG("Sending target position: " << targetPosition.x << " " << targetPosition.f_z << " (time: " << timeMS << ")")
-                can.setTargetPosition(targetPosition, timeMS);
-
-                sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + timeMS;
-            } else {
-                DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
-            }
-        }
+        drivePath(path);
     }
-#endif
 
     if (!saveMapQueue->empty()) {
         INFO_MSG("Received request to save map as PGM")

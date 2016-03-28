@@ -7,13 +7,14 @@ AMiRo is steered via remote keyboard commands from your PC using [[tools:hmi:key
 ===== Run the demo =====
 
   - ''. ./build.sh .''
-  - ''./copyPrograms.sh''
+  - ''./copyPrograms.sh IP_OF_AMIRO''
   - ''./run.sh'' on the AMiRo
   - ''./stop.sh'' on the AMiRo for stopping
+  - Note: the next bullets require running ''spread -c amirospread''
   - optionally showing the map your PC using ''./show-map.sh''
   - the AMiRo can be controlled by running ''./keyboard-control.sh' and using WASD keys
   - the appropiate RSB command for homing can send by running ''./homing.sh'' on your PC
-  - (Note: the last three bullets require running ''spread -c amirospread'')
+  - exporting the map can be done by running ''./save-map.sh'. It will be saved on the AMiRo as ''map.pgm''.
 
 ===== Included Programs =====
 
