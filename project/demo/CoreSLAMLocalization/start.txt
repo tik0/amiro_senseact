@@ -1,0 +1,24 @@
+====== Building the CoreSLAMLocalization for AMiRo ======
+
+This is a [[process:localization:CoreSLAMLocalization:start|CoreSLAMLocalization]] demonstration which runs with the Hokuyo URG04-LX.
+The map is periodically send as an jpg image to the scope ''--mapAsImageOutScope /AMiRo_Hokuyo/image'', which can be displayed by [[tools:hmi:showCamJpg:start|showCamJpg]].
+AMiRo is steered via remote keyboard commands from your PC using [[tools:hmi:keyboardControlledBehavior|keyboardControlledBehavior]] which sends it commands to the scope ''/motor''.
+
+===== Run the demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh''
+  - ''./run.sh'' on the AMiRo
+  - ''./stop.sh'' on the AMiRo for stopping
+  - optionally showing the map your PC using ''./show-map.sh''
+  - the AMiRo can be controlled by running ''./keyboard-control.sh' and using WASD keys
+  - the appropiate RSB command for homing can send by running ''./homing.sh'' on your PC
+  - (Note: the last three bullets require running ''spread -c amirospread'')
+
+===== Included Programs =====
+
+^ Program ^ Description ^
+| [[sense:sendOdometryProtoPose:start|sendOdometryProtoPose]] | Program for reading odometry values. |
+| [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading the Hokuyo Laser Scanner. |
+| [[act:actAmiroMotor:start|actAmiroMotor]] | Program for reading steering vectors from a RSB scope and send them via CAN as motor commands. |
+| [[process:localization:CoreSLAMLocalization:start|CoreSLAMLocalization]] | An localization based on CoreSLAM. |
