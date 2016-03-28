@@ -6,6 +6,9 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 project ("${PROJECT_NAME}")
 
+# Get modules
+SET (BOOST_COMPONENTS regex date_time program_options system thread)
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
@@ -26,7 +29,7 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
-    "../../includes"                                                # Other includes like converters and stuff
+    "../../../includes"                                             # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
@@ -34,7 +37,7 @@ include_directories(
 )
 
 # Add folders to build and run CMakeLists.txt in it
-add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
+add_subdirectory (../../../includes/converter/vecIntConverter lib/vecIntConverter)
 
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
@@ -50,13 +53,9 @@ link_directories (
 )
 target_link_libraries (
     "${PROJECT_NAME}"
-    rsb0.11
-    boost_regex-mt
-    boost_date_time-mt
-    boost_program_options-mt
-    boost_system-mt
-    boost_thread
-    rsc0.11
+    ${RSB_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${RSC_LIBRARIES}
     # -- Own libraries
     vecIntConverter
 )
@@ -71,3 +70,6 @@ SET (
     CMAKE_CXX_FLAGS
     -Wno-deprecated-declarations
 )
+
+# Set c++11 standard
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
