@@ -259,6 +259,7 @@ int main(int argc, char **argv) {
         ("obstacleServerReq", po::value <std::string> (&obstacleServerReq), "Function name of map server for obstacle map.")
         ("sObjectDetRectOutscope", po::value <std::string> (&sObjectDetRectOutscope), "Scope for sending rectangle data.")
         ("robotID,d", po::value <int> (&robotID), "Robot ID.")
+        ("objectOffset", po::value <int> (&objectOffsetForToBI), "Object offset for ToBI (default: 2).")
 	("bigMap", "Flag if the map is very big (the pathplanner needs more than 25 seconds).")
         ("mapServerIsRemote", "Flag, if the map server is a remote server (otherwise it uses local connection).")
         ("testWithAnswerer", "Prepares some constants for test with answerer.");
@@ -278,6 +279,10 @@ int main(int argc, char **argv) {
 
     // afterwards, let program options handle argument errors
     po::notify(vm);
+
+    if (objectOffsetForToBI < 0) {
+        objectOffsetForToBI = 0;
+    }
 
     testWithAnswerer = vm.count("testWithAnswerer");
     mapServerIsRemote = vm.count("mapServerIsRemote");
@@ -645,13 +650,13 @@ int processSM(void) {
 //                        WARNING_MSG(" -> Doesn't know the object.");
 //                    } else {
                         objectCount--;
-                        INFO_MSG(" -> Object " << objectDetectionAnswer->id() << " found! " << objectCount << " objects left.");
-                        objectDetected[objectDetectionAnswer->id()-objectOffsetForToBI-1] = true;
-                        objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][0] = objectDetectionAnswer->x();
-                        objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][1] = objectDetectionAnswer->y();
-                        objectPos[objectDetectionAnswer->id()-objectOffsetForToBI-1][2] = objectDetectionAnswer->orientation();
+                        INFO_MSG(" -> Object " << (objectDetectionAnswer->id()+objectOffsetForToBI) << " found! " << objectCount << " objects left.");
+                        objectDetected[objectDetectionAnswer->id()-1] = true;
+                        objectPos[objectDetectionAnswer->id()-1][0] = objectDetectionAnswer->x();
+                        objectPos[objectDetectionAnswer->id()-1][1] = objectDetectionAnswer->y();
+                        objectPos[objectDetectionAnswer->id()-1][2] = objectDetectionAnswer->orientation();
                         std::string objOutput = "";
-                        objOutput.append(outputRSBOutsideObjectDet).append(std::to_string(objectDetectionAnswer->id()));
+                        objOutput.append(outputRSBOutsideObjectDet).append(std::to_string(objectDetectionAnswer->id()+objectOffsetForToBI));
                         *stringPublisher = objOutput;
                         informerOutsideScope->publish(stringPublisher);
 //                        amiroState = objectDetectionStart;

@@ -61,4 +61,5 @@ For parameter information type ''objectDetection -h''.
 | --debug | - | - | Activates debugging which includes generated pictures and additional console information. |
 | --checkAll | - | - | All objects will be checked. |
 | --printPic | - | - | Prints a notice if a new picture has been taken. |
+| --countUp | - | - | Just gives random object number without using any detection algorithm. |
 

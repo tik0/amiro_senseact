@@ -13,24 +13,21 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
 
-# TODO: Check for ARM compilation
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
-pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.13)
-pkg_check_modules(OpenCV opencv)
-pkg_check_modules(EIGEN eigen3)
-# FIND_PACKAGE(OpenCV REQUIRED)
-# FIND_PACKAGE(RSB REQUIRED)
-# FIND_PACKAGE(RSC REQUIRED)
-#  FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
-
-#find_package(OpenCV REQUIRED)
-#find_package(RSB REQUIRED)
-#find_package(RSC REQUIRED)
-#find_package(RST COMPONENTS sandbox)
-#find_package(Protobuf REQUIRED)
-#find_package(Eigen3 REQUIRED)
+if ("$ENV{ARCH}" MATCHES arm)
+  pkg_check_modules(RSB rsb0.11)
+  pkg_check_modules(RSC rsc0.11)
+  pkg_check_modules(PROTOBUF protobuf)
+  pkg_check_modules(RST rstsandbox0.11)
+  pkg_check_modules(OpenCV opencv)
+  pkg_check_modules(EIGEN eigen3)
+else("$ENV{ARCH}" MATCHES arm)
+  find_package(OpenCV REQUIRED)
+  find_package(RSB REQUIRED)
+  find_package(RSC REQUIRED)
+  find_package(RST COMPONENTS sandbox)
+  find_package(Protobuf REQUIRED)
+  find_package(Eigen3 REQUIRED)
+endif("$ENV{ARCH}" MATCHES arm)
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
@@ -47,6 +44,7 @@ include_directories(include
     ${EIGEN_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIR}
+    "$ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM"
 )
 
 # Define the source
@@ -56,7 +54,7 @@ SET (SOURCE main.cxx)
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h pathPlanner.cxx pathPlanner.hpp $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_loop_closing.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_state.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_random.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_ext.c pathPlanner.cxx pathPlanner.hpp $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 

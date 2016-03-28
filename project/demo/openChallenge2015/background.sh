@@ -10,3 +10,4 @@ spread -c amirospread &
 sleep 5
 
 ./objectDetection -d 6 --loadingDirectly &
+

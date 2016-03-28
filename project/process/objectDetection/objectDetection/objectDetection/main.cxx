@@ -76,6 +76,7 @@ bool reversedSearchOrder = false;
 bool debugging = false;
 bool checkAllObjects = false;
 bool loadingDirectly = false;
+bool doFakeDetection = false;
 
 // init values for loading and comparing
 int objectCount = 0;
@@ -395,7 +396,8 @@ int main(int argc, char **argv) {
             ("reverseSearch,r", "Reverses search order of objects.")
             ("debug", "Activates debugging which includes generated pictures and additional console information.")
             ("checkAll", "All objects will be checked.")
-            ("printPic", "Prints a notice if a new picture has been taken.");
+            ("printPic", "Prints a notice if a new picture has been taken.")
+            ("countUp", "Just gives random object number without any detection algorithm.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -420,6 +422,7 @@ int main(int argc, char **argv) {
   debugging = vm.count("debug");
   checkAllObjects = vm.count("checkAll");
   loadingDirectly = vm.count("loadingDirectly");
+  doFakeDetection = vm.count("countUp");
     
   INFO_MSG("Output scope: " << g_sOutScope);
   INFO_MSG("Command scope: " << g_sInScope);
@@ -513,7 +516,13 @@ int main(int argc, char **argv) {
           if (!sendingPic) {
             cam >> frame;
           }
-          if (objectCount > 0 && !saving) {
+          if (doFakeDetection) {
+            printf("Doing fake detection and giving object count as detection number!");
+            std::string output = to_string(objectCount);
+            shared_ptr<std::string> StringPtr(new std::string(output));
+            detectedInformer->publish(StringPtr);
+
+          } else if (objectCount > 0 && !saving) {
             printf("Comparing:\n");
             int detObj = searchObjectsInScene(frame);
 
@@ -542,8 +551,10 @@ int main(int argc, char **argv) {
         } else {
           INFO_MSG("Unknown command.");
         }
+      } else {
+        usleep(100000);
       }
-
+      
     }
   }
 

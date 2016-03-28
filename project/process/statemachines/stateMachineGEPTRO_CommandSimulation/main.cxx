@@ -125,7 +125,7 @@ std::string inputRSBTransportSufFin = "finish";
 
 std::string outputRSBInit = "init";
 std::string outputRSBColor = "rbgyx";
-std::string outputRSBDelivery = "object3";
+std::string outputRSBDelivery = "object";
 std::string outputRSBTransport = "transport";
 std::string outputRSBRec = "rec";
 
@@ -142,6 +142,7 @@ bool transportRec = false;
 int processSM(void);
 
 int robotID = 0;
+int objectID = 3;
 
 int objectCount = 2;
 int objectOffsetForToBI = 2;
@@ -233,7 +234,9 @@ int main(int argc, char **argv) {
         ("outscopeTobi,o", po::value < std::string > (&sOutScopeTobi), "Scope for sending the current state to tobi.")
         ("outscopeState,s", po::value < std::string > (&sOutScopeState), "Scope for sending the current state internaly.")
         ("inscopeTobi,i", po::value < std::string > (&sInScopeTobi), "Scope for recieving Tobis messages.")
-        ("robotID,d", po::value < int > (&robotID), "Robot ID.");
+        ("objectID", po::value < int > (&objectID), "Object ID of the object, which shall be delivered (default: 3).")
+        ("objectOffset", po::value < int > (&objectOffsetForToBI), "Object count offset for ToBI (default: 2).")
+        ("robotID,d", po::value < int > (&robotID), "Robot ID (default: 0).");
 
 
     // allow to give the value as a positional argument
@@ -252,9 +255,19 @@ int main(int argc, char **argv) {
     // afterwards, let program options handle argument errors
     po::notify(vm);
 
+    if (objectOffsetForToBI < 0) {
+        objectOffsetForToBI = 0;
+    } 
+
+    if (objectID <= objectOffsetForToBI) {
+        ERROR_MSG("The object ID for delivery has to be greater than the object offset for ToBI (" << objectOffsetForToBI << ")");
+        exit(0);
+    }
+
     // prepare scopes for ToBI-AMIRo communication
     sOutScopeTobi.append(std::to_string(robotID));
     sInScopeTobi.append(std::to_string(robotID)).append(sInScopeTobi2nd);
+    outputRSBDelivery.append(std::to_string(objectID));
 
     // print all scopes
     INFO_MSG("List of all RSB scopes:");
@@ -373,25 +386,16 @@ int processSM(void) {
                 }
                 break;
             case objectWait:
-                if (objectDetected[0]) {
-                    INFO_MSG("Sending rec message of object 3.");
+                if (objectDetected[objectID-objectOffsetForToBI-1]) {
+                    INFO_MSG("Sending rec message of object " << objectID << ".");
                     sOutput = "";
-                    sOutput.append(inputRSBObject).append("3rec");
+                    sOutput.append(inputRSBObject).append(std::to_string(objectID)).append("rec");
                     *stringPublisher = sOutput;
                     informerOutsideScope->publish(stringPublisher);
-                    objectDetected[0] = false;
-                    objectDetectedRec[0] = true;
+                    objectDetected[objectID-objectOffsetForToBI-1] = false;
+                    objectDetectedRec[objectID-objectOffsetForToBI-1] = true;
                 }
-/*                if (objectDetected[1]) {
-                    INFO_MSG("Sending rec message of object 4.");
-                    sOutput = "";
-                    sOutput.append(inputRSBObject).append("4rec");
-                    *stringPublisher = sOutput;
-                    informerOutsideScope->publish(stringPublisher);
-                    objectDetected[1] = false;
-                    objectDetectedRec[1] = true;
-                }*/
-                if (objectDetectedRec[0]) { // && objectDetectedRec[1]) {
+                if (objectDetectedRec[objectID-objectOffsetForToBI-1]) {
                     amiroState = initDoneWait;
                 }
                 break;

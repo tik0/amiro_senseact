@@ -436,7 +436,8 @@ int main(int argc, char **argv) {
 				twbTracking::proto::Pose2D objectPosition = objectPositions->pose(i); // m
 
         	                bool objectDetected = false;
-				float detectionDist = robotRadius + robotObjectDist + objectPosition.orientation()/2.0; // m
+//				float detectionDist = robotRadius + robotObjectDist + objectPosition.orientation()/2.0; // m
+				float detectionDist = robotObjectDist + objectPosition.orientation()/2.0; // m
 				INFO_MSG("Focussing on object at position " << objectPosition.x() << "/" << objectPosition.y() << " with a radius of " << objectPosition.orientation() << " m");
 
 				// if the object hasn't been detected yet
@@ -568,7 +569,7 @@ int main(int argc, char **argv) {
 							detectionPositionPtr->set_x(objectPosition.x());
 							detectionPositionPtr->set_y(objectPosition.y());
 							detectionPositionPtr->set_orientation(((float)objectPosition.orientation())/1000000.0);
-							detectionPositionPtr->set_id((float)objNum+objOffset);
+							detectionPositionPtr->set_id((float)objNum);
 							progressInformer->publish(detectionPositionPtr);
 
 						} else if (!skipVC) {

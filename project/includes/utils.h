@@ -1,3 +1,5 @@
+// Always include this last!
+
 #ifndef UTILS_H
 #define UTILS_H
 
@@ -13,8 +15,36 @@
 #include <math.h>
 #include <Eigen/Geometry>
 
+#include <Constants.h>
+using namespace amiro::constants;
+
+#ifdef __OPENCV_HIGHGUI_HPP__
+namespace cv
+{
+// Show an image in a window with the given name.
+// The image will be flipped along its x-axis.
+// The window will appear at (x,y).
+void imshowf(const string & winname, cv::InputArray mat, int x = 0, int y = 0) {
+  cv::Mat fmat;
+  cv::flip(mat, fmat, 0);
+  cv::imshow(winname, fmat);
+  cv::moveWindow(winname, x, y);
+}
+}
+#endif
+
 namespace conversion
 {
+#ifdef _TINYSLAM_H_
+  template <typename T>
+  void xyPose2cvPoint(const float x, const float y, const float delta /*Discretization in meter*/,
+                      T &xImage, T &yImage) {
+    const cv::Size2f mapSize(float(TS_MAP_SIZE),float(TS_MAP_SIZE));
+    xImage = static_cast<T>(x * meterPerMillimeter / delta * mapSize.width  / float(TS_MAP_SIZE));
+    yImage = static_cast<T>(y * meterPerMillimeter / delta * mapSize.height / float(TS_MAP_SIZE));
+  }
+#endif
+
   const unsigned int NUMAXIS = 3;
   /**
     * @brief Conversion Quaternion to Euler angles
