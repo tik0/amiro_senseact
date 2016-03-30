@@ -61,8 +61,8 @@ public:
                //laserScanSimulation(laserScanSimulation), rsc::threading::PeriodicTask(ms), informerLaserSim(informerLaserSim) {
             
       this->laserScanSimulation = laserScanSimulation ; this->informerLaserSim = informerLaserSim;
-      /*
-      // driver initialize start
+      
+      //initialize depthstream
       rc = OpenNI::initialize();
       if (rc != STATUS_OK)
       {
@@ -76,51 +76,66 @@ public:
         printf("Couldn't open device\n%s\n", OpenNI::getExtendedError());
         //return 2;
       }
-
+      
       if (device.getSensorInfo(SENSOR_DEPTH) != NULL)
       {
-        rc = depth.create(device, SENSOR_DEPTH);
+	rc = depth.create(device, SENSOR_DEPTH);
         if (rc != STATUS_OK)
         {
           printf("Couldn't create depth stream\n%s\n", OpenNI::getExtendedError());
           //return 3;
         }
       }
-
+      
+      // open stream once to get camera parameters
+      this->fovH = depth.getHorizontalFieldOfView()*(180/M_PI);
+      this->fovV =  depth.getVerticalFieldOfView()*(180/M_PI);
+      
       rc = depth.start();
       if (rc != STATUS_OK)
       {
         printf("Couldn't start the depth stream\n%s\n", OpenNI::getExtendedError());
-        //return 4;
+       //return 4;
       }
       
-      // driver initialize end
-      */
-      
-      rc = OpenNI::initialize();
+      VideoStream* pStreamTemp = &depth;
+      int changedStreamDummy;
+      rc = OpenNI::waitForAnyStream(&pStreamTemp, 1, &changedStreamDummy, SAMPLE_READ_WAIT_TIMEOUT);
       if (rc != STATUS_OK)
       {
-        printf("Initialize failed\n%s\n", OpenNI::getExtendedError());
-        //return 1;
+        printf("Wait failed! (timeout is %d ms)\n%s\n", SAMPLE_READ_WAIT_TIMEOUT, OpenNI::getExtendedError());
+        //return;
       }
+      VideoFrameRef frameTemp;
+      rc = depth.readFrame(&frameTemp);
+      if (rc != STATUS_OK)
+      {
+        printf("Read failed!\n%s\n", OpenNI::getExtendedError());
+        //return;
+      }
+      
+      this->frameWidth = (int) frameTemp.getWidth();
+      this->frameHeight = (int) frameTemp.getHeight();
+  
+      pStreamTemp->stop();
+      depth.stop();
+      
+      float degreePerPixelH = this->fovH/((int) this->frameWidth);
+      float degreePerPixelV = this->fovV/((int) this->frameHeight);
 
-      rc = device.open(ANY_DEVICE);
-      if (rc != STATUS_OK)
-      {
-        printf("Couldn't open device\n%s\n", OpenNI::getExtendedError());
-        //return 2;
-      }
-      
-      if (device.getSensorInfo(SENSOR_DEPTH) != NULL)
-      {
-        rc = depth.create(device, SENSOR_DEPTH);
-        if (rc != STATUS_OK)
-        {
-          printf("Couldn't create depth stream\n%s\n", OpenNI::getExtendedError());
-          //return 3;
-        }
-      }
-      
+      const int scanSkip=1;
+      //const double radPerStep = (360.0 /*°*/ / 1024.0 /*Steps*/) * (M_PI /*rad*/ / 180.0f /*°*/);
+      const double radPerStep = (degreePerPixelH) * (M_PI /*rad*/ / 180.0f /*°*/);
+      const double radPerSkipStep = (degreePerPixelH) * (M_PI /*rad*/ / 180.0f /*°*/) * scanSkip;
+      const double startAngle =  -(this->fovH/2) * M_PI / 180.0f;
+      const double endAngle =  (this->fovH/2) * M_PI / 180.0f;
+      this->laserScanSimulation->set_scan_angle(this->fovH - radPerSkipStep);
+      this->laserScanSimulation->set_scan_angle_start(startAngle); //- radPerSkipStep / 2.0f);
+      this->laserScanSimulation->set_scan_angle_end(endAngle);//  + radPerSkipStep / 2.0f);
+      this->laserScanSimulation->set_scan_values_min(0.001); 
+      this->laserScanSimulation->set_scan_values_max(10.0);
+      this->laserScanSimulation->set_scan_angle_increment(radPerSkipStep);
+
   }     
 
     virtual ~ReadData() {
@@ -153,7 +168,7 @@ public:
         printf("Wait failed! (timeout is %d ms)\n%s\n", SAMPLE_READ_WAIT_TIMEOUT, OpenNI::getExtendedError());
         return;
       }
-
+      VideoFrameRef frame;
       rc = depth.readFrame(&frame);
       if (rc != STATUS_OK)
       {
@@ -169,27 +184,23 @@ public:
 
       DepthPixel* pDepth = (DepthPixel*)frame.getData();
 
-      std::vector< std::vector<float> > distances = simpleDistanceFinder(pDepth,(int) frame.getWidth(),(int) frame.getHeight());
+      std::vector< std::vector<float> > distances = simpleDistanceFinder(pDepth,this->frameWidth,this->frameHeight);
       
       // Reserve data
-      laserScanSimulation->mutable_scan_values()->Reserve(distances.size());
+      this->laserScanSimulation->mutable_scan_values()->Reserve(distances.size());
       for(int idx = 1; idx <= distances.size(); ++idx)
       {
-        laserScanSimulation->mutable_scan_values()->Add(0.0f);
+        this->laserScanSimulation->mutable_scan_values()->Add(0.0f);
       }
       for(int idx = 0; idx < distances.size(); idx++) 
       {
         // Convert the data from millimeter to meter
-        laserScanSimulation->mutable_scan_values()->Set(idx, static_cast<float>( distances.at(idx).at(1) / 1000.0f));
+        this->laserScanSimulation->mutable_scan_values()->Set(idx, static_cast<float>( distances.at(idx).at(1) / 1000.0f));
         //INFO_MSG( "Laser: " <<  idx << "  ,  "<< static_cast<float>( distances.at(idx).at(1) / 1000.0f) );
-        /*if(idx%7==0)
-        {
-          INFO_MSG( "Laser: " << distances.at(idx).at(1) );
-        }*/
       }
       // Send the data.
-      informerLaserSim->publish(laserScanSimulation);
-      laserScanSimulation->clear_scan_values();
+      informerLaserSim->publish(this->laserScanSimulation);
+      this->laserScanSimulation->clear_scan_values();
 
       //close depth stream
       depth.stop();
@@ -197,9 +208,9 @@ public:
     
     std::vector< std::vector<float> > simpleDistanceFinder(DepthPixel* pDepth, int width, int height)
     {
-      float degreePerPixelH = fovH/width;
-      float degreePerPixelV = fovV/height;
-      std::vector< std::vector<float> > distances;
+      float degreePerPixelH = this->fovH/width;
+      float degreePerPixelV = this->fovV/height;
+      std::vector< std::vector<float> > distances(width);
       //iterate over the width of image
       for(int i=0; i < width ; i++)
       {
@@ -221,10 +232,19 @@ public:
         //convert angle in terms of laser data (emerging from one point)
         int pixelFromCenter= i - (width/2.0f) ;
         float angle = pixelFromCenter*degreePerPixelH;
-        std::vector<float> v;
-        v.push_back(angle);
+        std::vector<float> v(2);
+        /*
+	v.push_back(angle);
         v.push_back(minDist);
         distances.push_back(v);
+	*/
+	v.at(0) = angle;
+        v.at(1) = minDist;
+        distances.at(i) = v;
+	/*if(i%10==0)
+	{
+	  INFO_MSG( "Laser: " << angle <<  " : "<< minDist  << " : " << width << " : " <<height << " " << this->fovH );
+	}*/
       }  
       return distances;
     }
@@ -237,9 +257,15 @@ private:
     Status rc;
     VideoStream depth;
     Device device;
-    VideoFrameRef frame;
+    //default values, actual values come from constructor
+    // Field of View ASUS XTION PRO
+    //58 H, 45 V, 70 D (Horizontal, Vertical, Diagonal)
+    //ORBBEC
+    //60 horiz x 49.5 vert. (73 diagonal)
     float fovH = 60.0f;
     float fovV = 49.5f;
+    int frameWidth = 320;
+    int frameHeight = 240;
 };
 
 
@@ -278,29 +304,6 @@ int main(int argc, char **argv) {
     rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informerLaserSim = factory.createInformer<rst::vision::LocatedLaserScan> (outScope);
     rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation(new rst::vision::LocatedLaserScan);
     
-    // Field of View ASUS XTION PRO
-    //58 H, 45 V, 70 D (Horizontal, Vertical, Diagonal)
-    //ORBBEC
-    //60 horiz x 49.5 vert. (73 diagonal)
-    float fovH = 60.0f;
-    float fovV = 49.5f;
-    //TODO remove these hard coded values
-    float degreePerPixelH = fovH/((int) 320);
-    float degreePerPixelV = fovV/((int) 240);
-
-    const int scanSkip=1;
-    //const double radPerStep = (360.0 /*°*/ / 1024.0 /*Steps*/) * (M_PI /*rad*/ / 180.0f /*°*/);
-    const double radPerStep = (degreePerPixelH) * (M_PI /*rad*/ / 180.0f /*°*/);
-    const double radPerSkipStep = (degreePerPixelH) * (M_PI /*rad*/ / 180.0f /*°*/) * scanSkip;
-    const double startAngle =  -(fovH/2) * M_PI / 180.0f;
-    const double endAngle =  (fovH/2) * M_PI / 180.0f;
-    laserScanSimulation->set_scan_angle(fovH - radPerSkipStep);
-    laserScanSimulation->set_scan_angle_start(startAngle); //- radPerSkipStep / 2.0f);
-    laserScanSimulation->set_scan_angle_end(endAngle);//  + radPerSkipStep / 2.0f);
-    laserScanSimulation->set_scan_values_min(0.001); 
-    laserScanSimulation->set_scan_values_max(10.0);
-    laserScanSimulation->set_scan_angle_increment(radPerSkipStep);
-    
     rsc::threading::ThreadedTaskExecutor exec;
     exec.schedule( rsc::threading::TaskPtr( new ReadData( laserScanSimulation,informerLaserSim, intervalMs ) ) );
     while (true) 
@@ -310,7 +313,3 @@ int main(int argc, char **argv) {
   return 0;
 
 }
-
-/*rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr driver(rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation)
-{return laserScanSimulation;
-}*/
