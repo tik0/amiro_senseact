@@ -61,7 +61,8 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
-#include "CoreSLAM.h"
+#define TS_DYNAMIC_MAP_SIZE
+#include <libs/CoreSLAM/CoreSLAM.h>
 #ifdef __cplusplus
 }
 #endif
@@ -669,7 +670,6 @@ int main(int argc, const char **argv){
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> homingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
   homingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(homingQueue)));
 
-
   // Show the map as a cv Image
   cv::Size size(ts_map_.size / 2,ts_map_.size / 2);
   cv::Mat dst(size, CV_16S); // destination image for scaling
@@ -678,7 +678,7 @@ int main(int argc, const char **argv){
   rst::vision::LocatedLaserScan scan;
 
   // path to goal
-  ts_position_t targetPose = { 7237.05, 8279.9, 0.236681 };
+  ts_position_t targetPose = { 0, 0, 0 };
   bool savedHomePose = false;
   std::list<cv::Point2i> path;
 
