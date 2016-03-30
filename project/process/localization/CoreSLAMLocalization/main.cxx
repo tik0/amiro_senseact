@@ -1,4 +1,4 @@
-
+// ===== defines =====
 #define INFO_MSG_
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
@@ -6,6 +6,14 @@
 // #define ERROR_MSG_
 #include "MSG.h"
 
+// HACK for CMake/qtcreator
+#ifndef __arm__
+#ifdef IS_AMIRO
+#define __arm__
+#endif
+#endif
+
+// ===== Includes =====
 #include <math.h>
 #include <utils.h>
 
@@ -14,59 +22,11 @@
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
-// for reading and writing maps
+// For reading and writing maps to file
 #include <fstream>
-
-// tinySLAM
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "CoreSLAM.h"
-#ifdef __cplusplus
-}
-#endif
-// Parameters needed for Marcov sampling
-static double sigma_xy_ = 0.01;  // m
-static double sigma_theta_ = 0.35;  // rad
-static int samples = 100; // Number of resampling steps
-// parameters for coreslam
-static double hole_width_ = 0.1;  // m
-static double delta_ = 0.02;  // Meter per pixel
-static ts_map_t ts_map_;
-static ts_state_t state_;
-static ts_position_t position_;
-static ts_position_t prev_odom_;
-static ts_laser_parameters_t lparams_;
-#define METERS_TO_MM    1000
-#define MM_TO_METERS    0.001
-static bool got_first_scan_ = false;
-//static bool got_map_ = false;
-static int laser_count_ = 0;
-static int throttle_scans_ = 1;
-// Check "http://de.wikipedia.org/wiki/Sinussatz"!
-// c ist the first ray, b the second. If beta is 90°, it means that c is hitting a surface very perpendiular.
-// Every deviation of the 90° is an incident, which means that the surface is not perpendicular to the ray.
-// The value rayPruningAngleDegree gives the maximal allowed deviation from 90 degrees.
-// Every deviation above that angle results in a pruning of the ray c
-static float rayPruningAngleDegree = 60; /* [0 .. 90] */
-float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
-static double mapOffset = 0;
-
-// Switch for localization
-static bool doMapUpdate = false;
 
 // Converting helpers
 #include <Eigen/Geometry>
-
-static double transX, transY, transZ;
-static double rotX, rotY, rotZ;
-
-// Convinience
-static bool sendMapAsCompressedImage = false;
-
-// Paths to read map from
-static std::string mapImagePath = "";
-static std::string mapPGMPath = "";
 
 // RSB
 #include <rsb/filter/OriginFilter.h>
@@ -83,9 +43,7 @@ static std::string mapPGMPath = "";
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // RST Proto types
-//#include <rst0.11/stable/rst/vision/LaserScan.pb.h>
 #include <types/LocatedLaserScan.pb.h>
-//#include <rst/geometry/Pose.pb.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -93,16 +51,77 @@ static std::string mapPGMPath = "";
 #include <opencv2/imgproc/imgproc.hpp>  // resize
 
 #include "pathplanner.h"
-#include <iterator>
-// init path planner
-PathPlanner pathplanner = PathPlanner();
 
-using namespace boost;
+// To move AMiRo
+#include <ControllerAreaNetwork.h>
+
+#include <mutex> // std::mutex
+
+// tinySLAM
+#ifdef __cplusplus
+extern "C"{
+#endif
+#include "CoreSLAM.h"
+#ifdef __cplusplus
+}
+#endif
+
+// ===== Namespaces =====
 using namespace std;
 using namespace rsb;
 using namespace rsb::converter;
 
-#include <mutex>          // std::mutex
+
+// ===== Global variables =====
+// Parameters needed for Marcov sampling
+static double sigma_xy_ = 0.01;  // m
+static double sigma_theta_ = 0.05;  // rad
+static int samples = 100; // Number of resampling steps
+// parameters for coreslam
+static double hole_width_ = 0.1;  // m
+static double delta_ = 0.02;  // Meter per pixel
+static ts_map_t ts_map_;
+static ts_state_t state_;
+static ts_position_t position_;
+static ts_position_t prev_odom_;
+static ts_laser_parameters_t lparams_;
+#define METERS_TO_MM    1000
+#define METERS_TO_UM    1e6
+#define MM_TO_METERS    0.001
+#define MM_TO_UM        1000
+#define PIXEL_TO_MM(x) ( x * delta_ * METERS_TO_MM )
+#define PIXEL_TO_UM(x) ( x * delta_ * METERS_TO_UM )
+#define SECONDS_TO_MS   1000
+#define DEGREE_TO_RAD   M_PI / 180
+#define RAD_TO_URAD     1e6
+static bool got_first_scan_ = false;
+//static bool got_map_ = false;
+static int laser_count_ = 0;
+static int throttle_scans_ = 1;
+// Check "http://de.wikipedia.org/wiki/Sinussatz"!
+// c ist the first ray, b the second. If beta is 90°, it means that c is hitting a surface very perpendiular.
+// Every deviation of the 90° is an incident, which means that the surface is not perpendicular to the ray.
+// The value rayPruningAngleDegree gives the maximal allowed deviation from 90 degrees.
+// Every deviation above that angle results in a pruning of the ray c
+static float rayPruningAngleDegree = 60; /* [0 .. 90] */
+float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
+static double mapOffset = 0;
+
+// Switch for localization
+static bool doMapUpdate = false;
+
+// Convinience
+static bool sendMapAsCompressedImage = false;
+
+// Paths to read map from
+static std::string mapImagePath = "";
+static std::string mapPGMPath = "";
+
+// init path planner
+PathPlanner pathplanner = PathPlanner();
+
+ControllerAreaNetwork can;
+
 std::mutex map_to_odom_mutex_;
 std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
@@ -111,18 +130,30 @@ static rst::geometry::Rotation odomRot;
 ts_position_t pose;
 ts_position_t odom_pose;
 
+// Global rsb imformer for debug images
+rsb::Informer<std::string>::Ptr informer;
+
+// ===== Functions =====
+
 cv::Mat getOccupancyMap() {
+  DEBUG_MSG("Generating occupancy map...");
   // Convert the map to a cv::Mat image
   cv::Mat map(cv::Size(ts_map_.size,ts_map_.size), CV_8UC1);
   cv::Mat tmp = cv::Mat(ts_map_.size, ts_map_.size, CV_16UC1, static_cast<void*>(&ts_map_.map[0]));
   tmp.convertTo(map, CV_8UC1, 255.0f / TS_NO_OBSTACLE);  // Convert to 8bit depth image
 
   // Threshold image
-  for (ssize_t idx = 0; idx < map.rows * map.cols; ++idx)
-      map.at<uint8_t>(idx) = (map.at<uint8_t>(idx) > 126) ? 255 : 0; // note: 126 due to rounding errors
+  //for (ssize_t idx = 0; idx < map.rows * map.cols; ++idx)
+  //    map.at<uint8_t>(idx) = (map.at<uint8_t>(idx) > 127 /*126*/) ? 255 : 0; // note: 126 due to rounding errors
+  cv::threshold(map, map, 127, 255, CV_THRESH_BINARY);
+  DEBUG_MSG("done thresholding, eroding now...");
 
+  // Dilate to remove small errors
+  /*cv::dilate(map, map, cv::getStructuringElement(cv::MORPH_ELLIPSE,
+                                                 cv::Size(2,2),
+                                                 cv::Point(1,1)));*/
   // Erode w.r.t. robot size
-  float robotRadiusInMeter = 0.05;
+  float robotRadiusInMeter = 0.15; // note: including antenna and Hokuyo cable and some safety distance
   cv::Mat structuringElement = cv::getStructuringElement(cv::MORPH_ELLIPSE,
                             cv::Size(2*robotRadiusInMeter/delta_ + 1, 2*robotRadiusInMeter/delta_ + 1),
                             cv::Point(robotRadiusInMeter/delta_, robotRadiusInMeter/delta_));
@@ -137,41 +168,116 @@ std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
     cv::Point2i goal(targetPose.x * MM_TO_METERS / delta_, targetPose.y * MM_TO_METERS / delta_);
     // Generate occupacy map
     cv::Mat1b om = getOccupancyMap();
+    DEBUG_MSG("Got occupancy map");
+
+    // DEBUG START
+    if (sendMapAsCompressedImage) {
+        DEBUG_MSG("Sending occupancy map via rsb");
+        cv::Mat tmpMat(om.size(), CV_8UC3);
+        cv::cvtColor(om, tmpMat, CV_GRAY2RGB, 3);
+        cv::resize(tmpMat, tmpMat, cv::Size(tmpMat.size().height / 2, tmpMat.size().width / 2));
+
+        std::vector<uchar> buf;
+        std::vector<int> compression_params;
+        compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+        compression_params.push_back(85/*g_uiQuality [ 0 .. 100]*/);
+        imencode(".jpg", tmpMat, buf, compression_params);
+
+        // Send the data.
+        rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+        informer->publish(frameJpg);
+    }
+    // DEBUG END
+
     // Get path
     std::list<cv::Point2i> path = pathplanner.getPath(start, goal, om);
 
-    // DEBUG START
-//#ifndef NDEBUG
-    cv::Mat clr(ts_map_.size, ts_map_.size, CV_8UC3);
-    cv::cvtColor(om, clr, cv::COLOR_GRAY2RGB, 3);
-
-    cv::circle(clr, start, 5, cv::Scalar(255,0,0), 2);
-    cv::circle(clr, goal, 5, cv::Scalar(0,255,0), 2);
-
-    for (auto r : path) {
-        clr.at<cv::Vec3b>(r) = cv::Vec3b(0,0,255);
-    }
-
-    imwrite("clr.png", clr);
-//#endif
-    // DEBUG END
-
-//#ifndef NDEBUG
     // Optimize path
+    DEBUG_MSG("before removing redundant nodes: " << path.size());
     pathplanner.removeRedundantNodes(path);
+    DEBUG_MSG("before optimizing path: " << path.size());
     pathplanner.optimizePath(path, om);
+    DEBUG_MSG("after optimizing path: " << path.size());
 
-    // DEBUG START
-    for (auto r : path) {
-        clr.at<cv::Vec3b>(r) = cv::Vec3b(0,255,0);
-    }
-    imwrite("opt.png", clr);
-    // DEBUG END
-//#endif
+    INFO_MSG("calculated and optimized path");
 
     // TODO: convert to coordinates to outer space?
-    DEBUG_MSG("calculated path")
     return path;
+}
+
+uint64_t sendNewTargetPositionIn = 0; // timestamp in ms
+void drivePath(std::list<cv::Point2i> &path) {
+    // calculate distance to checkpoint
+    cv::Point2i immediatePosePX = path.front();
+    ts_position_t immediatePoseMM = {
+        PIXEL_TO_MM(immediatePosePX.x),
+        PIXEL_TO_MM(immediatePosePX.y),
+        0
+    };
+    DEBUG_MSG("Next waypoint: " << immediatePosePX << " (left: " << path.size() << ")");
+    DEBUG_MSG("in MM: " << immediatePoseMM.x << "," << immediatePoseMM.y);
+
+    float distanceMM = sqrt( (immediatePoseMM.x - pose.x) * (immediatePoseMM.x - pose.x)
+                           + (immediatePoseMM.y - pose.y) * (immediatePoseMM.y - pose.y) );
+
+    const float minDistanceToTarget = 0.1; // meter
+    DEBUG_MSG("distance to target: " << distanceMM << " mm");
+    if (distanceMM < METERS_TO_MM * minDistanceToTarget) {
+        // arrived at checkpoint -> remove it
+        DEBUG_MSG("Reached waypoint, deleting it");
+        path.pop_front();
+        sendNewTargetPositionIn = 0;
+    } else {
+        // update target position
+        double globalTargetAngle = atan2( immediatePoseMM.y - pose.y,
+                                          immediatePoseMM.x - pose.x); // in rad [-PI; +PI]
+        double globalRobotAngle = pose.theta * DEGREE_TO_RAD; // in rad [?? ; ??]
+        double relativeAngle = globalTargetAngle - globalRobotAngle; // in rad
+        // normalize angle to (-PI; +PI]
+        if (relativeAngle < -M_PI || relativeAngle >= M_PI) {
+            relativeAngle = fmod(relativeAngle + M_PI, 2*M_PI);
+            if (relativeAngle < 0)
+                relativeAngle += 2 * M_PI;
+            relativeAngle = relativeAngle - M_PI;
+        }
+
+        // declare parameters for setTargetPosition
+        types::position targetPosition;
+        uint16_t timeMS;
+
+        // firstly rotate to waypoint
+        DEBUG_MSG("Angle to target: " << relativeAngle);
+        if (abs(relativeAngle) > M_PI / 90) { // precision of rotation (PI/90 = 2°)
+            DEBUG_MSG("angle to waypoint too big -> rotating");
+            // package for setTargetPosition
+            targetPosition.x = 0;
+            targetPosition.f_z = relativeAngle * RAD_TO_URAD;
+
+            // calculate time from given speed
+            double rotationSpeed = 0.2; // rad/s
+            timeMS = SECONDS_TO_MS * (relativeAngle / rotationSpeed);
+            if (timeMS > 5000)
+                timeMS = 5000;
+        } else {
+            DEBUG_MSG("angle to waypoint small enough, driving towards it now");
+            // package for setTargetPosition
+            targetPosition.x = distanceMM * MM_TO_UM;
+            targetPosition.f_z = relativeAngle * RAD_TO_URAD;
+
+            // calculate time (derived from velocity)
+            double velocity_M_S = 0.1;
+            timeMS = SECONDS_TO_MS * ( (MM_TO_METERS * distanceMM) / velocity_M_S );
+        }
+
+        if (sendNewTargetPositionIn <= rsc::misc::currentTimeMillis()) {
+            DEBUG_MSG("Sending target position: " << targetPosition.x << " " << targetPosition.f_z << " (time: " << timeMS << ")")
+            can.setTargetPosition(targetPosition, timeMS);
+
+            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + timeMS;
+        } else {
+            DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
+        }
+    }
 }
 
 int convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
@@ -223,16 +329,16 @@ getOdomPose(ts_position_t& ts_pose)
   conversion::quaternion2euler(&lidar_quat, &rpy);
   const double yaw = rpy(2);
 
-  DEBUG_MSG( "CoreSLAM(RPY): " <<  rpy(0) << ", "<< rpy(1) << ", "<< rpy(2))
-  DEBUG_MSG( "CoreSLAM(WXYZ): " <<  rotation.qw() << ", "<< rotation.qx() << ", "<< rotation.qy() << ", " << rotation.qz())
+  //DEBUG_MSG( "CoreSLAM(RPY): " <<  rpy(0) << ", "<< rpy(1) << ", "<< rpy(2))
+  //DEBUG_MSG( "CoreSLAM(WXYZ): " <<  rotation.qw() << ", "<< rotation.qx() << ", "<< rotation.qy() << ", " << rotation.qz())
 
-  ts_pose.x = translation.x()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((TS_MAP_SIZE/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.x = translation.x()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.y = translation.y()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM); // convert to mm
   ts_pose.theta = (yaw * 180/M_PI);
 
-  DEBUG_MSG( "-------------------------------------------------------------------------------------------" )
-  DEBUG_MSG( "Odometry: x(m): " <<  translation.x() << " y(m): " << translation.y() << " theta(rad): " << yaw)
-  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
+//  DEBUG_MSG( "-------------------------------------------------------------------------------------------" )
+//  DEBUG_MSG( "Odometry: x(m): " <<  translation.x() << " y(m): " << translation.y() << " theta(rad): " << yaw)
+//  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
 
   return true;
 }
@@ -240,7 +346,6 @@ getOdomPose(ts_position_t& ts_pose)
 bool
 initMapper(const rst::vision::LocatedLaserScan& scan)
 {
-
   // configure previous_odom
   if(!getOdomPose(prev_odom_))
      return false;
@@ -290,7 +395,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   state_.position.theta += odom_pose.theta - prev_odom_.theta;
   prev_odom_ = odom_pose;
 
-  ts_position_t prev = state_.position;
+//  ts_position_t prev = state_.position;
 
   // Do marcov localization on the map (this is done already in ts_iterative_map_building, but we can already do here for debugging)
 //  ts_scan_t ranges;
@@ -326,8 +431,8 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
     // Monte carlo localization is done inside
     ts_iterative_map_building(&data, &state_, doMapUpdate);
 
-    DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
-    DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
+//    DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
+//    DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
   }
   // Set the new pose
   pose = state_.position;
@@ -451,18 +556,8 @@ int main(int argc, const char **argv){
   
   std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
   std::string odomInScope = "/AMiRo_Hokuyo/gps";
-  std::string localizationOutScope = "/localization";
-  std::string serverScope = "/AMiRo_Hokuyo/server/slam";
-  std::string mapAsImageOutScope = "/AMiRo_Hokuyo/image";
-  std::string sExplorationScope = "/exploration";
-  std::string sExplorationCmdScope = "/command";
-  std::string sExplorationAnswerScope = "/answer";
-  std::string sPathInputScope = "/path/request";
-  std::string sPathOutputScope = "/path/answer";
-  std::string pathServerReq = "path";
-  std::string mapServerReq = "map";
-  std::string mapServerObstacleReq = "mapObstacle";
-  std::string obstacleServerReq = "getObjectsList";
+  std::string mapAsImageOutScope = "/CoreSLAMLocalization/image";
+  std::string saveMapInScope = "/saveMap";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
 
@@ -470,29 +565,17 @@ int main(int argc, const char **argv){
   options.add_options()("help,h", "Display a help message.")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
     ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
-    ("localizationOutScope", po::value < std::string > (&localizationOutScope), "Scope sending the odometry data")
-    ("serverScope", po::value < std::string > (&serverScope), "Scope for handling server requests")
-    ("mapServerReq", po::value < std::string > (&mapServerReq), "Map server request string (Std.: map)")
-    ("mapServerObstacleReq", po::value < std::string > (&mapServerObstacleReq), "Map server obstacle request string (Std.: mapObstacle)")
-    ("pathServerReq", po::value < std::string > (&pathServerReq), "Path server request string (Std.: path)")
-    ("obstacleServerReq", po::value < std::string > (&obstacleServerReq), "Obstacle server request string (Std.: getObjectsList)")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
     ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
     ("mapAsImageOutScope", po::value < std::string > (&mapAsImageOutScope), "Scope for sending the map as compressed image to a remote spread daemon")
     ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
-    ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [m]")
+    ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [rad]")
     ("throttle_scans", po::value < int > (&throttle_scans_), "Only take every n'th scan")
     ("samples", po::value < int > (&samples), "Sampling steps of the marcov localization sampler")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
     ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
-    ("transX", po::value < double > (&transX),"Translation of the lidar in x [m]")
-    ("transY", po::value < double > (&transY),"Translation of the lidar in y [m]")
-    ("transZ", po::value < double > (&transZ),"Translation of the lidar in z [m]")
-    ("rotX", po::value < double > (&rotX),"Rotation of the lidar around x (roll) [rad]")
-    ("rotY", po::value < double > (&rotY),"Rotation of the lidar around y (pitch) [rad]")
-    ("rotZ", po::value < double > (&rotZ),"Rotation of the lidar around z (yaw) [rad]")
     ("loadMapFromImage", po::value < std::string > (&mapImagePath),"Load map from image file")
     ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from *16bit* PGM file")
     ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)");
@@ -571,8 +654,21 @@ int main(int argc, const char **argv){
   // Prepare RSB async listener for odometry messages
   rsb::ListenerPtr listener = factory.createListener(odomInScope);
   listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
+
+  // ==== GLOBAL/EXTERNAL LISTENER AND INFORMER ====
   // Prepare RSB informer for sending the map as an compressed image
-  rsb::Informer<std::string>::Ptr informer = factory.createInformer<std::string> ("/image", tmpPartConf);
+  informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
+
+  // Prepare RSB listener for saving maps
+  rsb::ListenerPtr saveMapListener = factory.createListener(saveMapInScope, tmpPartConf);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> saveMapQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+  saveMapListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(saveMapQueue)));
+
+  // Prepare RSB listener for homing
+  rsb::ListenerPtr homingListener = factory.createListener("/homing", tmpPartConf);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> homingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+  homingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(homingQueue)));
+
 
   // Show the map as a cv Image
   cv::Size size(ts_map_.size / 2,ts_map_.size / 2);
@@ -582,7 +678,8 @@ int main(int argc, const char **argv){
   rst::vision::LocatedLaserScan scan;
 
   // path to goal
-  ts_position_t targetPose = { 8237.05, 13279.9, 0.236681 };
+  ts_position_t targetPose = { 7237.05, 8279.9, 0.236681 };
+  bool savedHomePose = false;
   std::list<cv::Point2i> path;
 
   while( true ){
@@ -603,12 +700,37 @@ int main(int argc, const char **argv){
       {
         DEBUG_MSG("scan processed.");
 
-        if (path.empty()) {
-            DEBUG_MSG("Searching path to goal...")
-            path = getPath(targetPose);
+        // Save home position after first scan was processed
+        if (!savedHomePose) {
+            targetPose = pose;
+            savedHomePose = true;
         }
       }
 
+    }
+
+    // check if homing was requested
+    if (!homingQueue->empty()) {
+        INFO_MSG("Received homing request via RSB")
+        homingQueue->pop();
+        DEBUG_MSG("Searching path to goal...")
+        path = getPath(targetPose);
+        if (path.empty()) {
+            ERROR_MSG("Path is empty!");
+        } else {
+            DEBUG_MSG("Path not empty :)");
+        }
+    }
+
+    // go to target (if available)
+    if (!path.empty()) {
+        drivePath(path);
+    }
+
+    if (!saveMapQueue->empty()) {
+        INFO_MSG("Received request to save map as PGM")
+        std::string path = *(saveMapQueue->pop());
+        saveMapAsPGM(&ts_map_, path);
     }
 
     if (sendMapAsCompressedImage) {
@@ -618,6 +740,11 @@ int main(int argc, const char **argv){
       cv::resize(image,dst,size);//resize image
       dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
+
+      // Draw target position
+      cv::Point targetPosition(targetPose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
+                               targetPose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);
+      cv::circle( dstColor, targetPosition, 0, cv::Scalar(pow(2,8)-1), 10, 8 );
 
       // Draw tinySLAM position
       cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
@@ -629,41 +756,40 @@ int main(int argc, const char **argv){
                                   odom_pose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);  // Draw odometry
       cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
 
-      // Draw tinySLAM position
-      cv::Point targetPosition(targetPose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
-                               targetPose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);
-      cv::circle( dstColor, targetPosition, 0, cv::Scalar(pow(2,8)-1), 10, 8 );
-
       // Draw waypoints
       if (!path.empty()) {
-          for (auto p = path.begin(); p != std::prev(path.end()); p++) {
-              cv::Point q(p->x * size.width / ts_map_.size, p->y * size.height / ts_map_.size);
-              auto r = std::next(p);
-              cv::Point s(r->x * size.width / ts_map_.size, r->y * size.height / ts_map_.size);
-              cv::line(dstColor, q, s, cv::Scalar(255,0,0));
+          cv::Point2i p0 = robotPosition;
+          cv::Point2i p1;
+          for (auto p = path.begin(); p != path.end(); p++) {
+              p1 = cv::Point(p->x * size.width / ts_map_.size, p->y * size.height / ts_map_.size);
+              cv::line(dstColor, p0, p1, cv::Scalar(255,0,0));
+              p0 = p1;
           }
       }
 
-      cv::flip(dstColor, dstColor, 0);  // horizontal flip
-      DEBUG_MSG( "---------------------------------")
-      DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
-      DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
-      DEBUG_MSG( "Target pose: " << targetPose.x << ", " << targetPose.y << ", " << targetPose.theta)
+      // Send the map as image
+      std::vector<uchar> buf;
+      std::vector<int> compression_params;
+      compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+      compression_params.push_back(85/*g_uiQuality [ 0 .. 100]*/);
+      imencode(".jpg", dstColor, buf, compression_params);
+
+      // Send the data.
+      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+      informer->publish(frameJpg);
+
+      // Optionally directly show image with openCV (when on host machine)
       #ifndef __arm__
       cv::imshow("input", dstColor);
       cv::waitKey(1);
       #endif
-      // Send the map as image
-//      std::vector<uchar> buf;
-//      std::vector<int> compression_params;
-//      compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-//      compression_params.push_back(85/*g_uiQuality [ 0 .. 100]*/);
-//      imencode(".jpg", dstColor, buf, compression_params);
-
-      // Send the data.
-//      rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
-//      informer->publish(frameJpg);
     }
+
+    DEBUG_MSG( "--------------------------------------------")
+    DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
+    DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
+    DEBUG_MSG( "Target pose: " << targetPose.x << ", " << targetPose.y << ", " << targetPose.theta)
+    DEBUG_MSG( "------------ END OF MAIN LOOP --------------");
   }
 
   return 0;

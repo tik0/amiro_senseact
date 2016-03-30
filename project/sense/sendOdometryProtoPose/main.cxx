@@ -58,11 +58,13 @@ int main(int argc, char **argv) {
   
   std::string rsbOutScope = "/prox";
   uint32_t rsbPeriod = 0;
+  bool resetOdom = false;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope for sending odometry values")
-    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)");
+    ("period,t", po::value < uint32_t > (&rsbPeriod), "Update interval (0 for maximum rate)")
+    ("resetodom,r", po::value< bool > (&resetOdom), "Reset odometry to 0 at startup");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -94,7 +96,14 @@ int main(int argc, char **argv) {
   rsb::Informer< rst::geometry::Pose >::Ptr informer = factory.createInformer< rst::geometry::Pose > (rsbOutScope);
 
   // Init the CAN interface
-  ControllerAreaNetwork CAN;    
+  ControllerAreaNetwork CAN;
+
+  // Reset the odometry
+  if (resetOdom) {
+    INFO_MSG("Resetting odometry");
+    types::position o = {0,0,0,0,0,0};
+    CAN.setOdometry(o);
+  }
 
   // Datastructure for the CAN messages
   rsb::Informer<rst::geometry::Pose>::DataPtr odomData(new rst::geometry::Pose);
@@ -106,9 +115,7 @@ int main(int argc, char **argv) {
   for(;;) {
 
     // Read the odometry data
-    WARNING_MSG("Starting reading odometry");
     robotPosition = CAN.getOdometry();
-    WARNING_MSG("Odometry read!");
     // Convert it to rsb data
     odomData->mutable_translation()->set_x(static_cast<double>(robotPosition.x) * 1e-6);
     odomData->mutable_translation()->set_y(static_cast<double>(robotPosition.y) * 1e-6);
