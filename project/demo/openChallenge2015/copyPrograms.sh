@@ -12,7 +12,7 @@ scp backgroundStop.sh root@${IP}:~/${NAME}
 scp run.sh root@${IP}:~/${NAME}
 scp stop.sh root@${IP}:~/${NAME}
 # Copy config
-scp amirospread root@${IP}:~/${NAME}
+scp ${MUROX_INCLUDE_DIRS}/conf/RoboCup2016/spread/amirospread root@${IP}:~/${NAME}
 scp rsb.conf root@${IP}:~/${NAME}
 
 scp -r sim root@${IP}:~/${NAME}/
