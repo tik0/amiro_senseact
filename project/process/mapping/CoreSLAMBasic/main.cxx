@@ -22,10 +22,6 @@ extern "C"{
 }
 #endif
 
-#include <Constants.h>
-using namespace amiro::constants;
-#include <utils.h>
-
 // Parameters needed for Marcov sampling
 static double sigma_xy_ = 0.01;  // m
 static double sigma_theta_ = 0.05;  // rad
@@ -123,7 +119,10 @@ rsb::Informer<rst::geometry::PoseEuler>::DataPtr odomData(new rst::geometry::Pos
 // object that calculates paths
 PathPlanner *pathPlanner;
 
+#include <Constants.h>
+#include <utils.h>
 
+using namespace amiro::constants;
 using namespace boost;
 using namespace std;
 using namespace rsb;
@@ -387,7 +386,7 @@ class objectsCallback: public rsb::patterns::LocalServer::Callback<bool, twbTrac
         }
       }
 #ifndef __arm__
-      imshowf("objects", debug);
+      cv_utils::imshowf("objects", debug);
       cv::waitKey(1);
 #endif
       std::vector<int> compression_params;
@@ -1028,8 +1027,7 @@ int main(int argc, const char **argv){
       boost::shared_ptr<cv::Mat> mapImage(mapServerReq::getMap(false, true, &positions, &positionsText));
       DEBUG_MSG( "Pose " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
       #ifndef __arm__
-      // cv::flip(*mapImage, *mapImage, 0);  // horizontal flip
-      cv::imshow("input", *mapImage);
+      cv_utils::imshowf("input", *mapImage);
       cv::waitKey(1);
       #endif
       // Send the map as image
