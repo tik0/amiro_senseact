@@ -114,7 +114,6 @@ target_link_libraries (
     OniFile
     ORBBEC
     PSLink
-    OpenNI2.jni
     OpenNI2
 )
 endif ()
