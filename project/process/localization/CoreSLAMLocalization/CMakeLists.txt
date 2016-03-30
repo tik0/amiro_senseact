@@ -53,7 +53,7 @@ include_directories(include
 SET (SOURCE main.cxx)
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} CoreSLAM.c CoreSLAM_loop_closing.c CoreSLAM_state.c CoreSLAM_random.c CoreSLAM_ext.c CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc pathplanner.cpp pathplanner.h $ENV{MUROX_INCLUDE_DIRS}/ControllerAreaNetwork.h)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc pathplanner.cpp pathplanner.h $ENV{MUROX_INCLUDE_DIRS}/ControllerAreaNetwork.h $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_loop_closing.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_state.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_random.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_ext.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.h)
 
 MESSAGE(INFO "${Boost_LIBRARIES}")
 MESSAGE(INFO "${OpenCV_LIBRARIES}")
@@ -69,6 +69,8 @@ TARGET_LINK_LIBRARIES (
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11)
+SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
+SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )
+
 # Special flags for RST
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
