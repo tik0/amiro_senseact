@@ -107,7 +107,7 @@ public:
         printf("Wait failed! (timeout is %d ms)\n%s\n", SAMPLE_READ_WAIT_TIMEOUT, OpenNI::getExtendedError());
         isValid = false;
       }
-      VideoFrameRef frame;
+
       rc = depth.readFrame(&frame);
       if (rc != STATUS_OK)
       {
@@ -149,8 +149,6 @@ public:
         for(std::size_t idx = 1; idx <= this->frameWidth; ++idx) {
           this->laserScanSimulation->mutable_scan_values()->Add(0.0f);
         }
-
-        pDepth = (DepthPixel*)frame.getData();
       }
 
   }
@@ -165,12 +163,14 @@ public:
     virtual void execute() {
 
       if (this->isValid) {
+        this->depth.readFrame(&frame);
+        pDepth = (DepthPixel*)frame.getData();
         // Get the laser scan
         simpleDistanceFinder();
 
         // Send the data.
         informerLaserSim->publish(this->laserScanSimulation);
-        this->laserScanSimulation->clear_scan_values();
+        //this->laserScanSimulation->clear_scan_values();
       } else {
         ERROR_MSG("No valid configuration")
       }
@@ -196,7 +196,7 @@ public:
         this->laserScanSimulation->mutable_scan_values()->Set(i, float(minDist) / 1000.0f);
 
 //        // Debug output
-//        INFO_MSG( "Laser: " <<  i << "  ,  "<< this->laserScanSimulation->mutable_scan_values()->Get(i) );
+        //INFO_MSG( "Laser: " <<  i << "  ,  "<< this->laserScanSimulation->mutable_scan_values()->Get(i) );
 //        if(i%10==0) {
 //          //convert angle in terms of laser data (emerging from one point)
 //          int pixelFromCenter= i - (width/2.0f) ;
@@ -212,6 +212,7 @@ private:
     rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation;
     
     DepthPixel* pDepth = NULL;
+    VideoFrameRef frame;
     Status rc;
     VideoStream depth;
     Device device;
