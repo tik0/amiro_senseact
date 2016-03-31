@@ -1,3 +1,4 @@
-====== senseOpenNI2 ======
+====== senseSimple3DTo2D ======
 
-This is an OpenNI2 driver which greps the a depth camera device over the OpenNI2 interface and publishes the frames via rsb.
+This is a simple laser scanner immitation for a RGBD camera.
+The resolution and other configurations need to be set via ''/usr/lib/OpenNI2/Drivers/orbbec.ini''.
