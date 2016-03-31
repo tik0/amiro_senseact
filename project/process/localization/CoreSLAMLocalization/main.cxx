@@ -1,9 +1,9 @@
 // ===== defines =====
 #define INFO_MSG_
 #define DEBUG_MSG_
-// #define SUCCESS_MSG_
+#define SUCCESS_MSG_
 #define WARNING_MSG_
-// #define ERROR_MSG_
+#define ERROR_MSG_
 #include "MSG.h"
 
 // HACK for CMake/qtcreator
@@ -61,17 +61,19 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
-#define TS_DYNAMIC_MAP_SIZE
 #include <libs/CoreSLAM/CoreSLAM.h>
 #ifdef __cplusplus
 }
 #endif
 
+// Include own converter for setting new position
+#include <converter/vecFloatConverter/main.hpp>
+
 // ===== Namespaces =====
 using namespace std;
 using namespace rsb;
 using namespace rsb::converter;
-
+using namespace muroxConverter;
 
 // ===== Global variables =====
 // Parameters needed for Marcov sampling
@@ -114,6 +116,8 @@ static bool doMapUpdate = false;
 // Convinience
 static bool sendMapAsCompressedImage = false;
 
+cv::Size debugImageSize; // size of debug image
+
 // Paths to read map from
 static std::string mapImagePath = "";
 static std::string mapPGMPath = "";
@@ -128,8 +132,9 @@ std::mutex mtxOdom;       // mutex for odometry messages
 static rst::geometry::Translation odomTrans;
 static rst::geometry::Rotation odomRot;
 
-ts_position_t pose;
-ts_position_t odom_pose;
+ts_position_t pose = {0,0,0};
+ts_position_t odom_pose = {0,0,0};
+ts_position_t offset = {0,0,0};
 
 // Global rsb imformer for debug images
 rsb::Informer<std::string>::Ptr informer;
@@ -327,19 +332,19 @@ getOdomPose(ts_position_t& ts_pose)
   // Convert from quaternion to euler
   Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
   Eigen::Matrix<double,3,1> rpy;
-  conversion::quaternion2euler(&lidar_quat, &rpy);
+  ::conversion::quaternion2euler(&lidar_quat, &rpy);
   const double yaw = rpy(2);
 
   //DEBUG_MSG( "CoreSLAM(RPY): " <<  rpy(0) << ", "<< rpy(1) << ", "<< rpy(2))
   //DEBUG_MSG( "CoreSLAM(WXYZ): " <<  rotation.qw() << ", "<< rotation.qx() << ", "<< rotation.qy() << ", " << rotation.qz())
 
-  ts_pose.x = translation.x()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM); // convert to mm
-  ts_pose.theta = (yaw * 180/M_PI);
+  ts_pose.x = translation.x()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM) + offset.x; // convert to mm
+  ts_pose.y = translation.y()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM) + offset.y; // convert to mm
+  ts_pose.theta = (yaw * 180/M_PI) + offset.theta;
 
 //  DEBUG_MSG( "-------------------------------------------------------------------------------------------" )
 //  DEBUG_MSG( "Odometry: x(m): " <<  translation.x() << " y(m): " << translation.y() << " theta(rad): " << yaw)
-//  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
+  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
 
   return true;
 }
@@ -520,6 +525,7 @@ bool loadMapFromPGM(ts_map_t *map, std::string path) {
 bool loadMapFromImage(ts_map_t *map, std::string path) {
     // read image from file
     cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
+    cv::flip(image, image, 0); // flip horizontal
 
     // check if loading image failed
     if (!image.data) {
@@ -559,6 +565,7 @@ int main(int argc, const char **argv){
   std::string odomInScope = "/AMiRo_Hokuyo/gps";
   std::string mapAsImageOutScope = "/CoreSLAMLocalization/image";
   std::string saveMapInScope = "/saveMap";
+  std::string setPositionScope = "/setPosition";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
 
@@ -579,7 +586,11 @@ int main(int argc, const char **argv){
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
     ("loadMapFromImage", po::value < std::string > (&mapImagePath),"Load map from image file")
     ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from *16bit* PGM file")
-    ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)");
+    ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)")
+    ("offsetX", po::value < float > (&offset.x),"offset x [mm]")
+    ("offsetY", po::value < float > (&offset.y),"offset y [mm]")
+    ("offsetTheta", po::value < float > (&offset.theta),"offset theta [mm]")
+    ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope to listen for re-initialization requests");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -604,12 +615,20 @@ int main(int argc, const char **argv){
   // initalize map
   if (!mapImagePath.empty()) {
       INFO_MSG("Reading map from file.");
-      loadMapFromImage(&ts_map_, mapImagePath);
+      bool ret = loadMapFromImage(&ts_map_, mapImagePath);
+      if (!ret) {
+          DEBUG_MSG("Map could not be loaded.");
+          return 1;
+      }
   } else if (!mapPGMPath.empty()) {
       INFO_MSG("Reading map from PGM.");
-      loadMapFromPGM(&ts_map_, mapPGMPath);
+      bool ret = loadMapFromPGM(&ts_map_, mapPGMPath);
+      if (!ret) {
+          DEBUG_MSG("Map could not be loaded.");
+          return 1;
+      }
   } else {
-      ts_map_init(&ts_map_);
+      ts_map_init(&ts_map_, 2048);
   }
 
   rsb::Factory& factory = rsb::getFactory();
@@ -660,6 +679,15 @@ int main(int argc, const char **argv){
   // Prepare RSB informer for sending the map as an compressed image
   informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
 
+  // Listener for setting re-init
+  // Register new converter for std::vector<float>
+  boost::shared_ptr<vecFloatConverter> converterVecFloat(new vecFloatConverter());
+  converterRepository<std::string>()->registerConverter(converterVecFloat);
+
+  rsb::ListenerPtr setPositionListener = factory.createListener(setPositionScope, tmpPartConf);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>> >setPositionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>>(1));
+  setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<float>>(setPositionQueue)));
+
   // Prepare RSB listener for saving maps
   rsb::ListenerPtr saveMapListener = factory.createListener(saveMapInScope, tmpPartConf);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> saveMapQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
@@ -671,9 +699,9 @@ int main(int argc, const char **argv){
   homingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(homingQueue)));
 
   // Show the map as a cv Image
-  cv::Size size(ts_map_.size / 2,ts_map_.size / 2);
-  cv::Mat dst(size, CV_16S); // destination image for scaling
-  cv::Mat dstColor(size, CV_8UC3); // Color image
+  debugImageSize = cv::Size(std::max(ts_map_.size / 2, 1024), std::max(ts_map_.size / 2, 1024));
+  cv::Mat dst(debugImageSize, CV_16S); // destination image for scaling
+  cv::Mat dstColor(debugImageSize, CV_8UC3); // Color image
 
   rst::vision::LocatedLaserScan scan;
 
@@ -733,27 +761,39 @@ int main(int argc, const char **argv){
         saveMapAsPGM(&ts_map_, path);
     }
 
+    if (!setPositionQueue->empty()) {
+        INFO_MSG("Received setPosition request");
+        boost::shared_ptr< std::vector<float> > newPosition = boost::static_pointer_cast< std::vector<float> >(setPositionQueue->pop());
+        DEBUG_MSG("New position is: " << *newPosition);
+        // Convert from debug map pixel to tiny slam position
+        state_.position.x = newPosition->at(0) * (ts_map_.size / (float)debugImageSize.width) * delta_ * METERS_TO_MM;
+        state_.position.y = newPosition->at(1) * (ts_map_.size / (float)debugImageSize.height) * delta_ * METERS_TO_MM;
+        state_.position.theta = newPosition->at(2) * 180.0f / M_PI;
+        DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
+    }
+
     if (sendMapAsCompressedImage) {
 
       // Convert to RGB image
       cv::Mat image = cv::Mat(ts_map_.size, ts_map_.size, CV_16U, static_cast<void*>(&ts_map_.map[0]));
-      cv::resize(image,dst,size);//resize image
+      cv::resize(image,dst,dst.size());//resize image
       dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
 
       // Draw target position
-      cv::Point targetPosition(targetPose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
-                               targetPose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);
+      cv::Point targetPosition(targetPose.x * MM_TO_METERS / delta_ * debugImageSize.width / ts_map_.size,
+                               targetPose.y * MM_TO_METERS / delta_ * debugImageSize.height / ts_map_.size);
       cv::circle( dstColor, targetPosition, 0, cv::Scalar(pow(2,8)-1), 10, 8 );
 
       // Draw tinySLAM position
-      cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
-                              pose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);  // Draw MCMC position
+      cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * debugImageSize.width / ts_map_.size,
+                              pose.y * MM_TO_METERS / delta_ * debugImageSize.height / ts_map_.size);  // Draw MCMC position
       cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
+      DEBUG_MSG("roboPosition (SLAM) " << robotPosition);
 
       // Draw odom position
-      cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * size.width / ts_map_.size,
-                                  odom_pose.y * MM_TO_METERS / delta_ * size.height / ts_map_.size);  // Draw odometry
+      cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * debugImageSize.width / ts_map_.size,
+                                  odom_pose.y * MM_TO_METERS / delta_ * debugImageSize.height / ts_map_.size);  // Draw odometry
       cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
 
       // Draw waypoints
@@ -761,7 +801,7 @@ int main(int argc, const char **argv){
           cv::Point2i p0 = robotPosition;
           cv::Point2i p1;
           for (auto p = path.begin(); p != path.end(); p++) {
-              p1 = cv::Point(p->x * size.width / ts_map_.size, p->y * size.height / ts_map_.size);
+              p1 = cv::Point(p->x * debugImageSize.width / ts_map_.size, p->y * debugImageSize.height / ts_map_.size);
               cv::line(dstColor, p0, p1, cv::Scalar(255,0,0));
               p0 = p1;
           }

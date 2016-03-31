@@ -52,8 +52,10 @@ include_directories(include
 # Define the source
 SET (SOURCE main.cxx)
 
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecFloatConverterSource.cmake")
+
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc pathplanner.cpp pathplanner.h $ENV{MUROX_INCLUDE_DIRS}/ControllerAreaNetwork.h $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_loop_closing.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_state.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_random.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_ext.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.h)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_loop_closing.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_state.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_random.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_ext.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.h $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc pathplanner.cpp pathplanner.h $ENV{MUROX_INCLUDE_DIRS}/ControllerAreaNetwork.h)
 
 MESSAGE(INFO "${Boost_LIBRARIES}")
 MESSAGE(INFO "${OpenCV_LIBRARIES}")
@@ -71,6 +73,8 @@ TARGET_LINK_LIBRARIES (
 # Additional compiler flags
 SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
 SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )
+
+add_definitions(-DTS_DYNAMIC_MAP_SIZE)
 
 # Special flags for RST
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
