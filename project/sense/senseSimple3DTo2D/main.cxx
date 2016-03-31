@@ -170,7 +170,7 @@ public:
 
         // Send the data.
         informerLaserSim->publish(this->laserScanSimulation);
-        this->laserScanSimulation->clear_scan_values();
+        //this->laserScanSimulation->clear_scan_values();
       } else {
         ERROR_MSG("No valid configuration")
       }
@@ -196,7 +196,7 @@ public:
         this->laserScanSimulation->mutable_scan_values()->Set(i, float(minDist) / 1000.0f);
 
 //        // Debug output
-       INFO_MSG( "Laser: " <<  i << "  ,  "<< this->laserScanSimulation->mutable_scan_values()->Get(i) );
+        //INFO_MSG( "Laser: " <<  i << "  ,  "<< this->laserScanSimulation->mutable_scan_values()->Get(i) );
 //        if(i%10==0) {
 //          //convert angle in terms of laser data (emerging from one point)
 //          int pixelFromCenter= i - (width/2.0f) ;
