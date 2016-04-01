@@ -71,8 +71,8 @@ TARGET_LINK_LIBRARIES (
 )
 
 # Additional compiler flags
-SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
-SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )
+SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
+SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wpedantic -Wextra -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )
 
 add_definitions(-DTS_DYNAMIC_MAP_SIZE)
 

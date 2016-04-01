@@ -77,8 +77,12 @@ using namespace muroxConverter;
 
 // ===== Global variables =====
 // Parameters needed for Marcov sampling
-static double sigma_xy_ = 0.01;  // m
-static double sigma_theta_ = 0.05;  // rad
+static double sigma_xy_ = 10;  // [mm]
+static double sigma_theta_ = 0.05;  // [rad]
+static double sigma_xy_new_position = 1000;  // used when a new position is set via RSB [mm]
+static double sigma_theta_new_position = 0.3;  // used when a new position is set via RSB [rad]
+static double sigma_decrease_rate = 0.75; // rate by which sigma is decreased (until it reached sigma_*_)
+
 static int samples = 100; // Number of resampling steps
 // parameters for coreslam
 static double hole_width_ = 0.1;  // m
@@ -108,7 +112,6 @@ static int throttle_scans_ = 1;
 // Every deviation above that angle results in a pruning of the ray c
 static float rayPruningAngleDegree = 60; /* [0 .. 90] */
 float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
-static double mapOffset = 0;
 
 // Switch for localization
 static bool doMapUpdate = false;
@@ -577,7 +580,7 @@ int main(int argc, const char **argv){
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
     ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
     ("mapAsImageOutScope", po::value < std::string > (&mapAsImageOutScope), "Scope for sending the map as compressed image to a remote spread daemon")
-    ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [m]")
+    ("sigma_xy", po::value < double > (&sigma_xy_), "XY uncertainty for marcov localization [mm]")
     ("sigma_theta", po::value < double > (&sigma_theta_), "Theta uncertainty for marcov localization [rad]")
     ("throttle_scans", po::value < int > (&throttle_scans_), "Only take every n'th scan")
     ("samples", po::value < int > (&samples), "Sampling steps of the marcov localization sampler")
@@ -590,7 +593,9 @@ int main(int argc, const char **argv){
     ("offsetX", po::value < float > (&offset.x),"offset x [mm]")
     ("offsetY", po::value < float > (&offset.y),"offset y [mm]")
     ("offsetTheta", po::value < float > (&offset.theta),"offset theta [mm]")
-    ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope to listen for re-initialization requests");
+    ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope for receiving a new position")
+    ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set [mm]")
+    ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set [rad]");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -610,7 +615,6 @@ int main(int argc, const char **argv){
 
   // tinySLAM init
   ts_map_set_scale(MM_TO_METERS/delta_);  // Set TS_MAP_SCALE at runtime
-  mapOffset = ((ts_map_.size/2)*delta_*METERS_TO_MM);
 
   // initalize map
   if (!mapImagePath.empty()) {
@@ -770,7 +774,23 @@ int main(int argc, const char **argv){
         state_.position.y = newPosition->at(1) * (ts_map_.size / (float)debugImageSize.height) * delta_ * METERS_TO_MM;
         state_.position.theta = newPosition->at(2) * 180.0f / M_PI;
         DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
+
+        // Set higher sigma to make it possible to converge into right position
+        state_.sigma_theta = sigma_theta_new_position;
+        state_.sigma_xy = sigma_xy_new_position;
+    } else {
+        // Decrease sigma over time
+        if (state_.sigma_theta != sigma_theta_) {
+            state_.sigma_theta = max(sigma_theta_, sigma_decrease_rate * state_.sigma_theta);
+        }
+
+        if (state_.sigma_xy != sigma_xy_) {
+            state_.sigma_xy = max(sigma_xy_, sigma_decrease_rate * state_.sigma_xy);
+        }
     }
+
+    DEBUG_MSG("current sigma_xy: " << state_.sigma_xy);
+    DEBUG_MSG("current sigma_theta: " << state_.sigma_theta);
 
     if (sendMapAsCompressedImage) {
 
