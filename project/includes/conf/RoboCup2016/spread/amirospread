@@ -40,6 +40,10 @@ Spread_Segment  192.168.255.255:4823 {
     amiro37        192.168.2.37
 }
 
+Spread_Segment  192.168.255.255:4823 {
+    amiro39        192.168.2.39
+}
+
 Spread_Segment  192.168.255.255:4823 {    
     muthrext       192.168.2.100     
 }

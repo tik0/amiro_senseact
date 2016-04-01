@@ -131,6 +131,7 @@ cv::Size debugImageSize; // size of debug image
 static std::string mapImagePath = "";
 static std::string mapPGMPath = "";
 static std::string mapValidPositionsPNGPath = "";
+static bool flipHorizontal = false;
 
 // init path planner
 PathPlanner pathplanner = PathPlanner();
@@ -290,7 +291,7 @@ void drivePath(std::list<cv::Point2i> &path) {
 
             // calculate time from given speed
             double rotationSpeed = 0.2; // rad/s
-            timeMS = SECONDS_TO_MS * (relativeAngle / rotationSpeed);
+            timeMS = SECONDS_TO_MS * (abs(relativeAngle) / rotationSpeed);
             if (timeMS > 5000)
                 timeMS = 5000;
         } else {
@@ -440,8 +441,14 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   if(!getOdomPose(odom_pose))
      return false;
 
-
   float odomIncrement = sqrt( pow(odom_pose.x - prev_odom_.x, 2) + pow(odom_pose.y - prev_odom_.y, 2) );
+
+  float phi = atan2(odom_pose.y - prev_odom_.y, odom_pose.x - prev_odom_.x); // orientation of movement
+  bool drivingForwards = sqrt( pow(cos(phi) - cos(pose.theta * M_PI/180), 2) + pow(sin(phi) - sin(pose.theta * M_PI/180), 2) ) < 1.0f;
+  if (!drivingForwards) {
+      odomIncrement = -odomIncrement;
+  }
+
   state_.position.x += odomIncrement * cos(pose.theta * M_PI/180);
   state_.position.y += odomIncrement * sin(pose.theta * M_PI/180);
   state_.position.theta += odom_pose.theta - prev_odom_.theta;
@@ -588,6 +595,10 @@ bool loadMapFromImage(ts_map_t *map, std::string path) {
     if (image.cols != image.rows) {
         ERROR_MSG("Height of image must be equal to width!");
         return false;
+    }
+
+    if (flipHorizontal) {
+        cv::flip(image, image, 0); // 0 is OpenCV's magic flip code for flipping around x axis
     }
 
     // initalize struct
@@ -770,7 +781,8 @@ int main(int argc, const char **argv){
     ("loadMapWithValidPositionsFromPNG", po::value < std::string > (&mapValidPositionsPNGPath),"Load map with valid positions from grayscale PNG file")
     ("tsMapSize", po::value < std::size_t > (&tsMapSize),"Size of the map in pixel")
     ("tsMapSizeMaxVisualization", po::value < std::size_t > (&tsMapSizeMaxVisualization),"Maximum size of the map in pixel for visualization")
-    ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)");
+    ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)")
+    ("flipHorizontal", po::value < bool > (&flipHorizontal), "Flip all images read by loadMapFromImage horizontally");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

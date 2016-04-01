@@ -9,7 +9,7 @@ NAME=`basename "$PWD"`
 ssh root@$IP "mkdir -p ~/${NAME}"
 
 # collect files
-FILES="run.sh stop.sh amirospread rsb.conf"
+FILES="run.sh stop.sh ../../includes/conf/RoboCup2016/spread/amirospread rsb.conf"
 for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
   FILES="$FILES ${line}/${line}"
 done

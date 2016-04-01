@@ -9,7 +9,7 @@ sleep 5
 spread &
 sleep 5
 
-./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 1 --delta 0.01 --sigma_xy 0.1 --sigma_theta 0.05 --remotePort 4823 --doMapUpdate true --loadMapWithValidPositionsFromPNG ./data/arenaEindhovenValid.png --loadMapFromImage ./data/arenaEindhoven.png --hominginscope /homing &
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 1 --delta 0.01 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.05 --sigma_theta_new_position 0.1 --remotePort 4823 --doMapUpdate false --loadMapWithValidPositionsFromPNG ./data/arenaEindhovenValid.png --loadMapFromImage ./data/arenaEindhoven.png --flipHorizontal true --hominginscope /homing &
 ./senseHokuyo -o /lidar &
 ./sendOdometryProtoPose --resetodom true -o /odom &
 ./actTargetPosition --inscope /targetPositions & 
