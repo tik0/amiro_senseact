@@ -44,6 +44,8 @@
 
 // RST Proto types
 #include <types/LocatedLaserScan.pb.h>
+#include <types/TargetPoseEuler.pb.h>
+#include <rst/geometry/Translation.pb.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -116,6 +118,10 @@ float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 // Switch for localization
 static bool doMapUpdate = false;
 
+// path to goal
+ts_position_t homePose = { 0, 0, 0 };
+bool savedHomePose = false;
+
 // Convinience
 static bool sendMapAsCompressedImage = false;
 
@@ -124,6 +130,7 @@ cv::Size debugImageSize; // size of debug image
 // Paths to read map from
 static std::string mapImagePath = "";
 static std::string mapPGMPath = "";
+static std::string mapValidPositionsPNGPath = "";
 
 // init path planner
 PathPlanner pathplanner = PathPlanner();
@@ -132,6 +139,9 @@ ControllerAreaNetwork can;
 
 std::mutex map_to_odom_mutex_;
 std::mutex mtxOdom;       // mutex for odometry messages
+std::mutex mtxPathToDraw; // mutex for the path to draw
+std::list<cv::Point2i> pathToDraw; // Path for drawing
+
 static rst::geometry::Translation odomTrans;
 static rst::geometry::Rotation odomRot;
 
@@ -139,6 +149,8 @@ ts_position_t pose = {0,0,0};
 ts_position_t odom_pose = {0,0,0};
 ts_position_t offset = {0,0,0};
 
+// Local insformer
+rsb::Informer< rst::geometry::TargetPoseEuler >::Ptr targetInformer;
 // Global rsb imformer for debug images
 rsb::Informer<std::string>::Ptr informer;
 
@@ -195,6 +207,11 @@ std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
         // Send the data.
         rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
         informer->publish(frameJpg);
+
+        #ifndef __arm__
+        cv::imshow("Map for path calculation", tmpMat);
+        cv::waitKey(1);
+        #endif
     }
     // DEBUG END
 
@@ -279,8 +296,22 @@ void drivePath(std::list<cv::Point2i> &path) {
         }
 
         if (sendNewTargetPositionIn <= rsc::misc::currentTimeMillis()) {
-            DEBUG_MSG("Sending target position: " << targetPosition.x << " " << targetPosition.f_z << " (time: " << timeMS << ")")
-            can.setTargetPosition(targetPosition, timeMS);
+            SUCCESS_MSG("Sending target position: " << targetPosition.x << " " << targetPosition.f_z << " (time: " << timeMS << ")");
+            // Define the steering message for sending over RSB
+            boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
+            // Get the mutable objects
+            rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
+            rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
+            steeringRotation->set_roll(0);
+            steeringRotation->set_pitch(0);
+            steeringRotation->set_yaw(static_cast<double>(targetPosition.f_z) * 1e-6);
+            steeringTranslation->set_x(static_cast<double>(targetPosition.x) * 1e-6);
+            steeringTranslation->set_y(0);
+            steeringTranslation->set_z(0);
+            steering->set_target_time((unsigned short)timeMS);
+
+            // can.setTargetPosition(targetPosition, timeMS);
+            targetInformer->publish(steering);
 
             sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + timeMS;
         } else {
@@ -341,9 +372,9 @@ getOdomPose(ts_position_t& ts_pose)
   //DEBUG_MSG( "CoreSLAM(RPY): " <<  rpy(0) << ", "<< rpy(1) << ", "<< rpy(2))
   //DEBUG_MSG( "CoreSLAM(WXYZ): " <<  rotation.qw() << ", "<< rotation.qx() << ", "<< rotation.qy() << ", " << rotation.qz())
 
-  ts_pose.x = translation.x()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM) + offset.x; // convert to mm
-  ts_pose.y = translation.y()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM) + offset.y; // convert to mm
-  ts_pose.theta = (yaw * 180/M_PI) + offset.theta;
+  ts_pose.x = translation.x()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.y = translation.y()*METERS_TO_MM + ((ts_map_.size/2)*delta_*METERS_TO_MM); // convert to mm
+  ts_pose.theta = (yaw * 180/M_PI);
 
 //  DEBUG_MSG( "-------------------------------------------------------------------------------------------" )
 //  DEBUG_MSG( "Odometry: x(m): " <<  translation.x() << " y(m): " << translation.y() << " theta(rad): " << yaw)
@@ -488,7 +519,13 @@ void saveMapAsPGM(ts_map_t *map, std::string path) {
  */
 bool loadMapFromPGM(ts_map_t *map, std::string path) {
     // read image from file
-    cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED); // load unchanged to keep 16bit
+    cv::Mat image;
+    if (!path.empty()) {
+      image = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED); // load unchanged to keep 16bit
+    } else {
+      ERROR_MSG("Empty path to map");
+      return false;
+    }
 
     // check if loading image failed
     if (!image.data) {
@@ -528,7 +565,6 @@ bool loadMapFromPGM(ts_map_t *map, std::string path) {
 bool loadMapFromImage(ts_map_t *map, std::string path) {
     // read image from file
     cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
-    cv::flip(image, image, 0); // flip horizontal
 
     // check if loading image failed
     if (!image.data) {
@@ -559,6 +595,123 @@ bool loadMapFromImage(ts_map_t *map, std::string path) {
     return true;
 }
 
+/**
+ * @brief getClosestValidPosition Calculates the closest valid pose
+ * @param currentPose Current pose
+ * @param targetPose Target pose set by calculating the shortest path given a map with valid positions
+ * @return true on success, otherwise false
+ */
+bool getClosestValidPosition(const ts_position_t &currentPose, ts_position_t &targetPose) {
+  ts_map_t map;
+  INFO_MSG("path " <<  mapValidPositionsPNGPath);
+  if (!loadMapFromImage(&map, mapValidPositionsPNGPath)) {
+    ERROR_MSG("No valid map");
+    return false;
+  }
+
+
+  cv::Mat image = cv::Mat(map.size, map.size, CV_16U, static_cast<void*>(&map.map[0]));
+  std::vector<cv::Point2i> validCells;
+
+//  dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
+//  cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
+
+
+  INFO_MSG("image.cols " <<  image.cols);
+  INFO_MSG("image.rows " <<  image.rows);
+  // Get the valid cells
+  for(int col = 0; col < image.cols; ++col) {
+    for(int row = 0; row < image.rows; ++row) {
+      // Store all the gray values (52480_dec==CD00_hex)
+//        INFO_MSG("map("<< row << ", " << col << ") = " << image.at<unsigned short>(row,col));
+      if(uint(image.at<unsigned short>(row,col)) == 52480) {
+        validCells.push_back(cv::Point2i(col, row));
+      }
+    }
+  }
+
+  // Calculate the current position in the pixel coordinates
+  cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ , pose.y * MM_TO_METERS / delta_ );
+  // cv::Point robotPosition(505 , 388 ); // Set the position for testing near the bed
+
+  // Calculate the pixel with the shortest distance
+  int minNorm = 999999;
+  size_t minIdx;
+  for(size_t idx=0; idx < validCells.size(); ++idx) {
+    int norm = cv::norm(robotPosition-validCells.at(idx));
+    if ( minNorm > norm) {
+      minNorm = norm;
+      minIdx = idx;
+    }
+  }
+  INFO_MSG("minimal norm " << minNorm);
+  INFO_MSG("minimal index " << minIdx);
+
+  targetPose.x = float(validCells.at(minIdx).x) * float(delta_) / MM_TO_METERS;
+  targetPose.y = float(validCells.at(minIdx).y) * float(delta_) / MM_TO_METERS;
+  targetPose.theta = 0.0f;  // NOTE The path planner does not respect the orientation
+
+#ifndef __arm__
+  /////////////////////////////////////////////////
+  // Convert to RGB image
+  cv::Mat imageColor, imageTmp;
+  image.convertTo(imageTmp, CV_8U, 0.00390625);  // Convert to 8bit depth image
+  cv::cvtColor(imageTmp, imageColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
+
+  // Draw current position
+  cv::circle( imageColor, robotPosition, 0, cv::Scalar( 0, pow(2,8)-1, 0), 10, 8 );
+
+  // Draw closest point position
+//  for(size_t idx=0; idx < validCells.size(); ++idx) {
+//    cv::circle( imageColor, validCells.at(idx), 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
+//  }
+  cv::circle( imageColor, validCells.at(minIdx), 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
+
+
+  cv::imshow("Current and valid position", imageColor);
+  cv::waitKey(1);
+  /////////////////////////////////////////////////
+#endif
+  free(map.map);
+  return true;
+}
+
+void doHoming(boost::shared_ptr<std::string> e) {
+    std::list<cv::Point2i> path;
+    INFO_MSG("Received homing request via RSB")
+    DEBUG_MSG("Searching path to goal...")
+    if(!e->compare(std::string("homing"))) {
+      INFO_MSG("Do homing")
+      path = getPath(homePose);
+    } else if (!e->compare(std::string("save"))) {
+      INFO_MSG("Drive to next save position")
+      ts_position_t targetPose = {0, 0, 0};
+      if(!getClosestValidPosition(pose, targetPose)) {
+        ERROR_MSG("Fail to get next save position");
+      } else {
+        INFO_MSG("Start path calculation");
+        path = getPath(targetPose);
+        INFO_MSG("Finish path calculation");
+      }
+    } else {
+      ERROR_MSG("Wrong homing command: " << *e);
+    }
+    if (path.empty()) {
+        ERROR_MSG("Path is empty!");
+    } else {
+        INFO_MSG("Path not empty :)");
+    }
+
+    // Drive the path
+    while(!path.empty()) {
+      drivePath(path);
+      mtxPathToDraw.lock();
+      pathToDraw = path;
+      mtxPathToDraw.unlock();
+      usleep(500000);  // Sleep half second
+    }
+}
+
 int main(int argc, const char **argv){
 
   // Handle program options
@@ -566,16 +719,22 @@ int main(int argc, const char **argv){
   
   std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
   std::string odomInScope = "/AMiRo_Hokuyo/gps";
+  std::string targetPoseOutScope = "/targetPositions";
   std::string mapAsImageOutScope = "/CoreSLAMLocalization/image";
   std::string saveMapInScope = "/saveMap";
   std::string setPositionScope = "/setPosition";
+  std::string homingInScope = "/homing";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
+  std::size_t tsMapSize = 2048;
+  std::size_t tsMapSizeMaxVisualization = 1024;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
     ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
+    ("targetPoseScope", po::value < std::string > (&targetPoseOutScope), "Scope for sending target positions")
+    ("hominginscope", po::value < std::string > (&homingInScope), "Scope for receiving the homing trigger")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
     ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
@@ -589,13 +748,16 @@ int main(int argc, const char **argv){
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
     ("loadMapFromImage", po::value < std::string > (&mapImagePath),"Load map from image file")
     ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from *16bit* PGM file")
-    ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)")
     ("offsetX", po::value < float > (&offset.x),"offset x [mm]")
     ("offsetY", po::value < float > (&offset.y),"offset y [mm]")
     ("offsetTheta", po::value < float > (&offset.theta),"offset theta [mm]")
     ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope for receiving a new position")
     ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set [mm]")
-    ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set [rad]");
+    ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set [rad]")
+    ("loadMapWithValidPositionsFromPNG", po::value < std::string > (&mapValidPositionsPNGPath),"Load map with valid positions from grayscale PNG file")
+    ("tsMapSize", po::value < std::size_t > (&tsMapSize),"Size of the map in pixel")
+    ("tsMapSizeMaxVisualization", po::value < std::size_t > (&tsMapSizeMaxVisualization),"Maximum size of the map in pixel for visualization")
+    ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -632,7 +794,7 @@ int main(int argc, const char **argv){
           return 1;
       }
   } else {
-      ts_map_init(&ts_map_, 2048);
+      ts_map_init(&ts_map_, tsMapSize);
   }
 
   rsb::Factory& factory = rsb::getFactory();
@@ -669,7 +831,8 @@ int main(int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
   rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
-
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::TargetPoseEuler> > converter(new rsb::converter::ProtocolBufferConverter<rst::geometry::TargetPoseEuler>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB listener for incomming lidar scans
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -679,6 +842,8 @@ int main(int argc, const char **argv){
   rsb::ListenerPtr listener = factory.createListener(odomInScope);
   listener->addHandler(HandlerPtr(new DataFunctionHandler<rst::geometry::Pose> (&storeOdomData)));
 
+  // Local informer
+  targetInformer = factory.createInformer<rst::geometry::TargetPoseEuler> (targetPoseOutScope);
   // ==== GLOBAL/EXTERNAL LISTENER AND INFORMER ====
   // Prepare RSB informer for sending the map as an compressed image
   informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
@@ -698,21 +863,16 @@ int main(int argc, const char **argv){
   saveMapListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(saveMapQueue)));
 
   // Prepare RSB listener for homing
-  rsb::ListenerPtr homingListener = factory.createListener("/homing", tmpPartConf);
-  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> homingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
-  homingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(homingQueue)));
+  rsb::ListenerPtr homingListener = factory.createListener(homingInScope);
+  homingListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&doHoming)));
 
   // Show the map as a cv Image
-  debugImageSize = cv::Size(std::max(ts_map_.size / 2, 1024), std::max(ts_map_.size / 2, 1024));
+  const std::size_t maxVis = std::max(std::size_t(ts_map_.size / 2), tsMapSizeMaxVisualization);
+  debugImageSize = cv::Size(maxVis, maxVis);
   cv::Mat dst(debugImageSize, CV_16S); // destination image for scaling
   cv::Mat dstColor(debugImageSize, CV_8UC3); // Color image
 
   rst::vision::LocatedLaserScan scan;
-
-  // path to goal
-  ts_position_t targetPose = { 0, 0, 0 };
-  bool savedHomePose = false;
-  std::list<cv::Point2i> path;
 
   while( true ){
     // Fetch a new scan and store it to scan
@@ -734,29 +894,11 @@ int main(int argc, const char **argv){
 
         // Save home position after first scan was processed
         if (!savedHomePose) {
-            targetPose = pose;
+            homePose = pose;
             savedHomePose = true;
         }
       }
 
-    }
-
-    // check if homing was requested
-    if (!homingQueue->empty()) {
-        INFO_MSG("Received homing request via RSB")
-        homingQueue->pop();
-        DEBUG_MSG("Searching path to goal...")
-        path = getPath(targetPose);
-        if (path.empty()) {
-            ERROR_MSG("Path is empty!");
-        } else {
-            DEBUG_MSG("Path not empty :)");
-        }
-    }
-
-    // go to target (if available)
-    if (!path.empty()) {
-        drivePath(path);
     }
 
     if (!saveMapQueue->empty()) {
@@ -800,9 +942,9 @@ int main(int argc, const char **argv){
       dst.convertTo(dst, CV_8U, 0.00390625);  // Convert to 8bit depth image
       cv::cvtColor(dst, dstColor, cv::COLOR_GRAY2RGB, 3);  // Convert to color image
 
-      // Draw target position
-      cv::Point targetPosition(targetPose.x * MM_TO_METERS / delta_ * debugImageSize.width / ts_map_.size,
-                               targetPose.y * MM_TO_METERS / delta_ * debugImageSize.height / ts_map_.size);
+      // Draw home position
+      cv::Point targetPosition(homePose.x * MM_TO_METERS / delta_ * debugImageSize.width / ts_map_.size,
+                               homePose.y * MM_TO_METERS / delta_ * debugImageSize.height / ts_map_.size);
       cv::circle( dstColor, targetPosition, 0, cv::Scalar(pow(2,8)-1), 10, 8 );
 
       // Draw tinySLAM position
@@ -817,15 +959,17 @@ int main(int argc, const char **argv){
       cv::circle( dstColor, robotOdomPosition, 0, cv::Scalar( 0, pow(2,8)-1), 0, 10, 8 );
 
       // Draw waypoints
-      if (!path.empty()) {
+      mtxPathToDraw.lock();
+      if (!pathToDraw.empty()) {
           cv::Point2i p0 = robotPosition;
           cv::Point2i p1;
-          for (auto p = path.begin(); p != path.end(); p++) {
+          for (auto p = pathToDraw.begin(); p != pathToDraw.end(); p++) {
               p1 = cv::Point(p->x * debugImageSize.width / ts_map_.size, p->y * debugImageSize.height / ts_map_.size);
               cv::line(dstColor, p0, p1, cv::Scalar(255,0,0));
               p0 = p1;
           }
       }
+      mtxPathToDraw.unlock();
 
       // Send the map as image
       std::vector<uchar> buf;
@@ -848,7 +992,7 @@ int main(int argc, const char **argv){
     DEBUG_MSG( "--------------------------------------------")
     DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
     DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
-    DEBUG_MSG( "Target pose: " << targetPose.x << ", " << targetPose.y << ", " << targetPose.theta)
+    DEBUG_MSG( "Target pose: " << homePose.x << ", " << homePose.y << ", " << homePose.theta)
     DEBUG_MSG( "------------ END OF MAIN LOOP --------------");
   }
 

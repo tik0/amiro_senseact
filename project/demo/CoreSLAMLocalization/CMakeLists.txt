@@ -7,4 +7,5 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/localization/CoreSLAMLocalization 
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/sendOdometryProtoPose sendOdometryProtoPose)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actAmiroMotor actAmiroMotor)
+add_subdirectory ($ENV{MUROX_PROJECT}/act/actTargetPosition actTargetPosition)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/robotTools/stopAMiRo stopAMiRo)
