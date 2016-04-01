@@ -16,3 +16,6 @@ done
 
 # copy files
 scp $FILES root@$IP:~/$NAME/
+
+# copy maps
+scp -r data root@$IP:~/$NAME/

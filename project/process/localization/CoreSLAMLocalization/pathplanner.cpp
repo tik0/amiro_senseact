@@ -2,6 +2,7 @@
 #include <algorithm> // for std::min_element
 #include <iterator> // for std::prev in optimizing path
 #include <iostream>
+#include <map>
 
 #define VEC_CONTAINS(v,x) (std::find(v.begin(), v.end(), x) != v.end())
 
