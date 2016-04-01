@@ -144,6 +144,15 @@ rsb::Informer<std::string>::Ptr informer;
 
 // ===== Functions =====
 
+std::mutex sendMapAsCompressedImageMutex;
+void setSendMapAsCompressedImage(boost::shared_ptr<std::string> v) {
+    sendMapAsCompressedImageMutex.lock();
+    bool b = (*v == "enable") || (*v == "true") || (*v == "1");
+    INFO_MSG("Setting sendMapAsCompressedImage to " << b);
+    sendMapAsCompressedImage = b;
+    sendMapAsCompressedImageMutex.unlock();
+}
+
 cv::Mat getOccupancyMap() {
   DEBUG_MSG("Generating occupancy map...");
   // Convert the map to a cv::Mat image
@@ -399,8 +408,11 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   ts_position_t odom_pose;
   if(!getOdomPose(odom_pose))
      return false;
-  state_.position.x += odom_pose.x - prev_odom_.x;
-  state_.position.y += odom_pose.y - prev_odom_.y;
+
+
+  float odomIncrement = sqrt( pow(odom_pose.x - prev_odom_.x, 2) + pow(odom_pose.y - prev_odom_.y, 2) );
+  state_.position.x += odomIncrement * cos(pose.theta * M_PI/180);
+  state_.position.y += odomIncrement * sin(pose.theta * M_PI/180);
   state_.position.theta += odom_pose.theta - prev_odom_.theta;
   prev_odom_ = odom_pose;
 
@@ -569,6 +581,7 @@ int main(int argc, const char **argv){
   std::string mapAsImageOutScope = "/CoreSLAMLocalization/image";
   std::string saveMapInScope = "/saveMap";
   std::string setPositionScope = "/setPosition";
+  std::string sendMapSwitchScope = "/sendMap";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
 
@@ -702,6 +715,12 @@ int main(int argc, const char **argv){
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> homingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
   homingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(homingQueue)));
 
+  // RSB listener for disabling/enabling sending the map
+  rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope, tmpPartConf);
+  sendMapSwitchListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&setSendMapAsCompressedImage)));
+
+  // ==== ====
+
   // Show the map as a cv Image
   debugImageSize = cv::Size(std::max(ts_map_.size / 2, 1024), std::max(ts_map_.size / 2, 1024));
   cv::Mat dst(debugImageSize, CV_16S); // destination image for scaling
@@ -774,7 +793,6 @@ int main(int argc, const char **argv){
         state_.position.y = newPosition->at(1) * (ts_map_.size / (float)debugImageSize.height) * delta_ * METERS_TO_MM;
         state_.position.theta = newPosition->at(2) * 180.0f / M_PI;
         DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
-
         // Set higher sigma to make it possible to converge into right position
         state_.sigma_theta = sigma_theta_new_position;
         state_.sigma_xy = sigma_xy_new_position;
@@ -809,7 +827,9 @@ int main(int argc, const char **argv){
       cv::Point robotPosition(pose.x * MM_TO_METERS / delta_ * debugImageSize.width / ts_map_.size,
                               pose.y * MM_TO_METERS / delta_ * debugImageSize.height / ts_map_.size);  // Draw MCMC position
       cv::circle( dstColor, robotPosition, 0, cv::Scalar( 0, 0, pow(2,8)-1), 10, 8 );
-      DEBUG_MSG("roboPosition (SLAM) " << robotPosition);
+
+      cv::line( dstColor, robotPosition, cv::Point(robotPosition.x + (cos(pose.theta * M_PI/180) * 20),
+                                                   robotPosition.y + (sin(pose.theta * M_PI/180) * 20) ), cv::Scalar( 0, 0, pow(2,8)-1));
 
       // Draw odom position
       cv::Point robotOdomPosition(odom_pose.x * MM_TO_METERS / delta_ * debugImageSize.width / ts_map_.size,
