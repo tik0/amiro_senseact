@@ -35,24 +35,54 @@ using namespace muroxConverter;
 static std::string g_sInScope = "/image";
 static std::string g_sOutScope = "/setPosition";
 
+// Flip parameters
+bool flipHorizontal, flipVertical;
+
 // Position
 static int positionX = 0;
 static int positionY = 0;
 static double positionTheta = 0;
 
+bool showLine = false;
+static int mousePositionX = 0;
+static int mousePositionY = 0;
+
+// Orignal received image
+cv::Mat origImage;
+
 static boost::shared_ptr< std::vector<float> > vecPosition(new std::vector<float> (3,0));
 rsb::Informer< std::vector<float> >::Ptr informer;
 static void onMouse(int event, int x, int y, int, void*) {
+
     if (event == cv::EVENT_LBUTTONDOWN) {
         positionX = x;
         positionY = y;
+        showLine = true;
     } else if (event == cv::EVENT_LBUTTONUP) {
+
+        // Undo flip
+        if (flipHorizontal) {
+            y = (origImage.size().height - 1) - y;
+            positionY = (origImage.size().height - 1) - positionY;
+        }
+
+        if (flipVertical) {
+            x = (origImage.size().width - 1) - x;
+            positionX = (origImage.size().width - 1) - positionX;
+        }
+
         positionTheta = atan2((double)y - positionY, (double)x - positionX);
         INFO_MSG("Setting positon to " << positionX << " " << positionY << " " << positionTheta);
-        vecPosition->at(0) = x;
-        vecPosition->at(1) = y;
+        vecPosition->at(0) = positionX;
+        vecPosition->at(1) = positionY;
         vecPosition->at(2) = positionTheta;
         informer->publish(vecPosition);
+        showLine = false;
+    }
+
+    if (event == cv::EVENT_MOUSEMOVE) {
+        mousePositionX = x;
+        mousePositionY = y;
     }
 }
 
@@ -87,17 +117,22 @@ int main(int argc, char **argv) {
 
     INFO_MSG( "Scope: " << g_sInScope);
 
+    // Evaluate flipping arguments
     int flipCode;
     bool flipping = false;
+    flipHorizontal = false;
+    flipVertical = false;
     if (vm.count("flipHorizontal")) {
         INFO_MSG("Flipping image horizontally");
         flipping = true;
+        flipHorizontal = true;
         flipCode = 0; // flip around x
     }
 
     if (vm.count("flipVertical")) {
         INFO_MSG("Flipping image vertically");
-        if (flipping) {
+        flipVertical = true;
+        if (flipHorizontal) {
             flipCode = -1; // flip around both axes
         } else {
             flipping = true;
@@ -125,24 +160,36 @@ int main(int argc, char **argv) {
   cv::namedWindow(winName);
   cv::setMouseCallback(winName, onMouse);
 
-  // Pop the images and show them
-  while (true) {
+  // Exit the program if escape was pressed
+  while (cv::waitKey(1) != KB_ESCAPE) {
     // Get the image as string
-    std::string imageJpg = *imageQueue->pop().get();
-    // Copy to a vector
-    std::vector<unsigned char> data(imageJpg.begin(), imageJpg.end());
-    // Decode the image
-    cv::Mat image = cv::imdecode(data, CV_LOAD_IMAGE_COLOR);
 
-    // Flip the image according ot program options
-    if (flipping) {
-        cv::flip(image, image, flipCode);
+    if (!imageQueue->empty()) {
+        INFO_MSG("Received new image");
+        std::string imageJpg = *(imageQueue->pop());
+        // Copy to a vector
+        std::vector<unsigned char> data(imageJpg.begin(), imageJpg.end());
+        // Decode the image
+        origImage = cv::imdecode(data, CV_LOAD_IMAGE_COLOR);
     }
 
-    // Exit the program if escape was pressed
-    if ( cv::waitKey(1) == KB_ESCAPE )
-      break;
-    cv::imshow(winName, image);
+    // Check if we already have a valid image
+    if (origImage.size().area() > 0) {
+        // Get the last original image (without drawn lines)
+        cv::Mat image = origImage.clone();
+
+        // Flip the image according to program options
+        if (flipping) {
+            cv::flip(image, image, flipCode);
+        }
+
+        // Draw line
+        if (showLine) {
+            cv::line(image, cv::Point(positionX, positionY), cv::Point(mousePositionX, mousePositionY), cv::Scalar(0,0,255));
+        }
+
+        cv::imshow(winName, image);
+    }
   }
 
   return 0;
