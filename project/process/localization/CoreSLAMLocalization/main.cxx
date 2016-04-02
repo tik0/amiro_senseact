@@ -327,7 +327,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             // can.setTargetPosition(targetPosition, timeMS);
             targetInformer->publish(steering);
 
-            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::max(timeMS, 100);
+            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::max(timeMS, (uint16_t)100);
         } else {
             DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
         }
