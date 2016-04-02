@@ -290,7 +290,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             targetPosition.f_z = relativeAngle * RAD_TO_URAD;
 
             // calculate time from given speed
-            double rotationSpeed = 0.2; // rad/s
+            const double rotationSpeed = M_PI; // rad/s
             timeMS = SECONDS_TO_MS * (abs(relativeAngle) / rotationSpeed);
             if (timeMS > 5000)
                 timeMS = 5000;
@@ -301,7 +301,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             targetPosition.f_z = relativeAngle * RAD_TO_URAD;
 
             // calculate time (derived from velocity)
-            double velocity_M_S = 0.1;
+            const double velocity_M_S = 0.1;
             timeMS = SECONDS_TO_MS * ( (MM_TO_METERS * distanceMM) / velocity_M_S );
         }
 
