@@ -1,6 +1,6 @@
 // ===== defines =====
 #define INFO_MSG_
-// #define DEBUG_MSG_
+//#define DEBUG_MSG_
 #define SUCCESS_MSG_
 #define WARNING_MSG_
 #define ERROR_MSG_
@@ -119,7 +119,7 @@ float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 static bool doMapUpdate = false;
 
 // path to goal
-ts_position_t homePose = { 0, 0, 0 };
+ts_position_t homePose = {22093.8, 22531.2, 38.1572}; //{ 0, 0, 0 };
 bool savedHomePose = false;
 
 // Convinience
@@ -411,6 +411,8 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
 
   // new coreslam instance
   ts_state_init(&state_, &ts_map_, &lparams_, &position_, sigma_xy_, sigma_theta_*180/M_PI , (int)(hole_width_*1000), 0, samples);
+
+  state_.position = homePose;
 
   INFO_MSG("Initialized with sigma_xy=" << sigma_xy_<< ", sigma_theta=" << sigma_theta_ << ", hole_width=" << hole_width_ << ", delta=" << delta_);
   INFO_MSG("Initialization complete");
@@ -924,10 +926,10 @@ int main(int argc, const char **argv){
         DEBUG_MSG("scan processed.");
 
         // Save home position after first scan was processed
-        if (!savedHomePose) {
-            homePose = pose;
-            savedHomePose = true;
-        }
+//        if (!savedHomePose) {
+//            homePose = pose;
+//            savedHomePose = true;
+//        }
       }
 
     }

@@ -27,9 +27,6 @@ sleep 5
 # sensing lidar from 'project/sense/senseHokuyo/'
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar &
 
-# Recieve local target positions
-./actTargetPosition --inscope /targetPositions &
-
 # following from 'project/process/followToBI/'
 ./follow_LaserScanner --lidarinscope /lidar &
 
@@ -42,7 +39,9 @@ sleep 5
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 0 --delta 0.05 --sigma_xy 10 --sigma_theta 0.05 --sigma_theta_new_position 0.1  --remotePort 4823 --doMapUpdate false --loadMapWithValidPositionsFromPNG ./data/arenaEindhovenValid.png --loadMapFromImage ./data/arenaEindhoven.png --hominginscope /homing --flipHorizontal true &
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 0 --delta 0.05 --sigma_xy 0.1 --sigma_xy_new_position 0.1 --sigma_theta 0.05 --sigma_theta_new_position 0.05  --remotePort 4823 --doMapUpdate false --loadMapWithValidPositionsFromPNG ./data/arenaEindhovenValid.png --loadMapFromImage ./data/arenaEindhoven.png --hominginscope /homing --flipHorizontal true &
+
+./actTargetPosition --inscope /targetPositions
 
 # webserver running on port 80
 # ./rsb_ws_bridge_amiro &
