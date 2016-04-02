@@ -287,7 +287,7 @@ void drivePath(std::list<cv::Point2i> &path) {
 
         // firstly rotate to waypoint
         DEBUG_MSG("Angle to target: " << relativeAngle);
-        if (abs(relativeAngle) > M_PI / 90) { // precision of rotation (PI/90 = 2°)
+        if (abs(relativeAngle) > M_PI / 45) { // precision of rotation (PI/45 = 4°)
             DEBUG_MSG("angle to waypoint too big -> rotating");
             // package for setTargetPosition
             targetPosition.x = 0;
@@ -327,7 +327,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             // can.setTargetPosition(targetPosition, timeMS);
             targetInformer->publish(steering);
 
-            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + timeMS;
+            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::max(timeMS, 100);
         } else {
             DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
         }
