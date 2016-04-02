@@ -341,6 +341,8 @@ int processSM(void) {
       bGotFromTobi_savePosition = false;
       bGotFromTobi_homing = false;
     }
+    // HACK Ignoring TURN commands, so that after a stopFollow, the turning is not initialized, but the homing to a save position
+    bGotFromTobi_turn = false;
 
 //    // Get messages from following
 //    if (!queueFollowingAnswer->empty()) {
@@ -424,10 +426,14 @@ int processSM(void) {
     case following:
       if (bGotFromTobi_stopfollowing) {
         informerFollowing->publish(signal_stop);
-        stop_following();
         // HACK START: We just wait a few seconds, so that AMiRo can drive to a save homing position
         //             and after that, the "rec" message is send to Tobi, so that he go on
-        informerHoming->publish(signal_savePosition);
+        usleep(1 /*seconds*/ * 1000000);
+        static bool onceGotHoming = false;
+        if (!onceGotHoming) {
+          informerHoming->publish(signal_savePosition);
+          onceGotHoming = true;
+        }
         usleep(10 /*seconds*/ * 1000000);
         std::string output = "stopfollowrec"; *stringPublisher = output; informerRemoteState->publish(stringPublisher);
         //HACK END
