@@ -27,6 +27,9 @@ sleep 5
 # sensing lidar from 'project/sense/senseHokuyo/'
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar &
 
+# Recieve local target positions
+./actTargetPosition --inscope /targetPositions &
+
 # following from 'project/process/followToBI/'
 ./follow_LaserScanner --lidarinscope /lidar &
 

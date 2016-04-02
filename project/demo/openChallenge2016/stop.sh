@@ -6,6 +6,7 @@ killall -9 final2016
 # kill all acting programs
 killall -9 follow_LaserScanner
 killall -9 waypoint
+killall -9 actTargetPosition
 
 # kill all sensing programs
 killall -9 senseHokuyo
