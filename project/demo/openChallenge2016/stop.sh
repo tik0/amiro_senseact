@@ -11,7 +11,7 @@ killall -9 waypoint
 killall -9 senseHokuyo
 killall -9 senseCamJpg
 killall -9 sendOdometryProtoPose
-killall -9 CoreSLAMLocalization
+killall -9 CoreSLAM
 
 # kill the webserver
 killall -9 rsb_ws_bridge_amiro

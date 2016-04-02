@@ -39,7 +39,7 @@ sleep 5
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-./CoreSLAMLocalization --odominscope /odom --lidarinscope /lidar --senImage 0 --delta 0.05 --sigma_xy 10 --sigma_theta 2 --remotePort 4823 --doMapUpdate false --loadMapWithValidPositionsFromPNG ./demo/CoreSLAMLocalizationToSavePosition/data/arenaEindhovenValid.png --loadMapFromImage ./demo/CoreSLAMLocalizationToSavePosition/data/arenaEindhoven.png --hominginscope /homing
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 0 --delta 0.05 --sigma_xy 10 --sigma_theta 0.05 --sigma_theta_new_position 0.1  --remotePort 4823 --doMapUpdate false --loadMapWithValidPositionsFromPNG ./demo/CoreSLAMLocalizationToSavePosition/data/arenaEindhovenValid.png --loadMapFromImage ./demo/CoreSLAMLocalizationToSavePosition/data/arenaEindhoven.png --hominginscope /homing --flipHorizontal true &
 
 # webserver running on port 80
 # ./rsb_ws_bridge_amiro &
