@@ -1,6 +1,6 @@
 // ===== defines =====
 #define INFO_MSG_
-//#define DEBUG_MSG_
+#define DEBUG_MSG_
 #define SUCCESS_MSG_
 #define WARNING_MSG_
 #define ERROR_MSG_
@@ -85,6 +85,10 @@ static double sigma_xy_new_position = 1000;  // used when a new position is set 
 static double sigma_theta_new_position = 0.3;  // used when a new position is set via RSB [rad]
 static double sigma_decrease_rate = 0.75; // rate by which sigma is decreased (until it reached sigma_*_)
 
+static double initialX = 0;
+static double initialY = 0;
+static double initialTheta = 0;
+
 static int samples = 100; // Number of resampling steps
 // parameters for coreslam
 static double hole_width_ = 0.1;  // m
@@ -119,7 +123,7 @@ float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 static bool doMapUpdate = false;
 
 // path to goal
-ts_position_t homePose = {22093.8, 22531.2, 38.1572}; //{ 0, 0, 0 };
+ts_position_t homePose = { 0, 0, 0 };
 bool savedHomePose = false;
 
 // Convinience
@@ -399,7 +403,10 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
   // configure previous_odom
   if(!getOdomPose(prev_odom_))
      return false;
-  position_ = prev_odom_;
+  //position_ = prev_odom_;
+  position_.x = initialX;
+  position_.y = initialY;
+  position_.theta = initialTheta;
 
   // configure laser parameters
   lparams_.offset = 0.0;  // No offset of the lidar base
@@ -411,8 +418,6 @@ initMapper(const rst::vision::LocatedLaserScan& scan)
 
   // new coreslam instance
   ts_state_init(&state_, &ts_map_, &lparams_, &position_, sigma_xy_, sigma_theta_*180/M_PI , (int)(hole_width_*1000), 0, samples);
-
-  state_.position = homePose;
 
   INFO_MSG("Initialized with sigma_xy=" << sigma_xy_<< ", sigma_theta=" << sigma_theta_ << ", hole_width=" << hole_width_ << ", delta=" << delta_);
   INFO_MSG("Initialization complete");
@@ -784,7 +789,11 @@ int main(int argc, const char **argv){
     ("tsMapSize", po::value < std::size_t > (&tsMapSize),"Size of the map in pixel")
     ("tsMapSizeMaxVisualization", po::value < std::size_t > (&tsMapSizeMaxVisualization),"Maximum size of the map in pixel for visualization")
     ("doMapUpdate", po::value < bool > (&doMapUpdate),"Update the map (false = only localization, default = true)")
-    ("flipHorizontal", po::value < bool > (&flipHorizontal), "Flip all images read by loadMapFromImage horizontally");
+    ("flipHorizontal", po::value < bool > (&flipHorizontal), "Flip all images read by loadMapFromImage horizontally")
+    ("initialX", po::value < double > (&initialX), "Initial odometry")
+    ("initialY", po::value < double > (&initialY), "Initial odometry")
+    ("initialTheta", po::value < double > (&initialTheta), "Initial odometry");
+
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -926,10 +935,10 @@ int main(int argc, const char **argv){
         DEBUG_MSG("scan processed.");
 
         // Save home position after first scan was processed
-//        if (!savedHomePose) {
-//            homePose = pose;
-//            savedHomePose = true;
-//        }
+        if (!savedHomePose) {
+            homePose = pose;
+            savedHomePose = true;
+        }
       }
 
     }
