@@ -428,6 +428,7 @@ int processSM(void) {
         informerFollowing->publish(signal_stop);
         // HACK START: We just wait a few seconds, so that AMiRo can drive to a save homing position
         //             and after that, the "rec" message is send to Tobi, so that he go on
+        set_state_homing();
         usleep(1 /*seconds*/ * 1000000);
         static bool onceGotHoming = false;
         if (!onceGotHoming) {
@@ -530,7 +531,7 @@ void set_state_turn() {
 
 void set_state_homing() {
   amiroState = homing;
-  setAMiRoColor(255,0,0);
+  setAMiRoColor(255,255,255);
 }
 
 void set_state_init() {
