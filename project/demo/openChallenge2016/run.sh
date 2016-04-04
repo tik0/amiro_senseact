@@ -22,7 +22,7 @@ sleep 5
 
 # sensing camera from 'project/sense/senseCamJpg/'
 # v4l2-ctl -d/dev/v4l-subdev8 --set-ctrl=vertical_flip=1
-# ./senseCamJpg -d /dev/video6 -o /cam &
+# ./senseCamJpg -d 6 -o /cam &
 
 # sensing lidar from 'project/sense/senseHokuyo/'
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar &
@@ -40,12 +40,13 @@ sleep 5
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
 ./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 1 --delta 0.05 --sigma_xy 0.1 --sigma_xy_new_position 0.1 --sigma_theta 0.01 --sigma_theta_new_position 0.01  --remotePort 4823 --doMapUpdate false --loadMapWithValidPositionsFromPNG ./data/arenaEindhovenValid-final-stacking.png --loadMapFromImage ./data/arenaEindhoven-final-stacking.png --hominginscope /homing --flipHorizontal true \
-  --initialX 22093.8 --initialY 22531.2 --initialTheta 38.1572 &
+  --initialX 21656.2 --initialY 22050.0 --initialTheta 36.4692 \
+  --mapAsImageOutScope /CoreSLAMLocalization/image/${ID} &
 
-./actTargetPosition --inscope /targetPositions
+./actTargetPosition --inscope /targetPositions &
 
 # webserver running on port 80
-# ./rsb_ws_bridge_amiro &
+#./rsb_ws_bridge_amiro &
 
 wait
 cpufreq-set -g ondemand
