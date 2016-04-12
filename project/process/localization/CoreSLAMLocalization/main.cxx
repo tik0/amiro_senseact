@@ -137,6 +137,9 @@ static std::string mapPGMPath = "";
 static std::string mapValidPositionsPNGPath = "";
 static bool flipHorizontal = false;
 
+// Erosion for obstacle map including antenna and Hokuyo cable and some safety distance
+static float erosionRadius = 0.15;
+
 // init path planner
 PathPlanner pathplanner = PathPlanner();
 
@@ -170,7 +173,7 @@ void setSendMapAsCompressedImage(boost::shared_ptr<std::string> v) {
     sendMapAsCompressedImageMutex.unlock();
 }
 
-cv::Mat getOccupancyMap() {
+cv::Mat getOccupancyMap(cv::Point2i start, cv::Point2i goal) {
   DEBUG_MSG("Generating occupancy map...");
   // Convert the map to a cv::Mat image
   cv::Mat map(cv::Size(ts_map_.size,ts_map_.size), CV_8UC1);
@@ -188,11 +191,16 @@ cv::Mat getOccupancyMap() {
                                                  cv::Size(2,2),
                                                  cv::Point(1,1)));*/
   // Erode w.r.t. robot size
-  float robotRadiusInMeter = 0.15; // note: including antenna and Hokuyo cable and some safety distance
   cv::Mat structuringElement = cv::getStructuringElement(cv::MORPH_ELLIPSE,
-                            cv::Size(2*robotRadiusInMeter/delta_ + 1, 2*robotRadiusInMeter/delta_ + 1),
-                            cv::Point(robotRadiusInMeter/delta_, robotRadiusInMeter/delta_));
+                            cv::Size(2*erosionRadius/delta_ + 1, 2*erosionRadius/delta_ + 1),
+                            cv::Point(erosionRadius/delta_, erosionRadius/delta_));
   cv::erode(map, map, structuringElement);
+
+  // Make sure start and goal are reachable
+  cv::circle(map, start, erosionRadius/delta_ + 1, cv::Scalar(255,255,255), -1/*thickness/filled*/);
+  cv::circle(map, goal, erosionRadius/delta_ + 1, cv::Scalar(255,255,255));
+
+  cv::imwrite("occupancymap.png", map);
 
   return map;
 }
@@ -202,7 +210,7 @@ std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
     cv::Point2i start(pose.x * MM_TO_METERS / delta_, pose.y * MM_TO_METERS / delta_);
     cv::Point2i goal(targetPose.x * MM_TO_METERS / delta_, targetPose.y * MM_TO_METERS / delta_);
     // Generate occupacy map
-    cv::Mat1b om = getOccupancyMap();
+    cv::Mat1b om = getOccupancyMap(start, goal);
     DEBUG_MSG("Got occupancy map");
 
     // DEBUG START
@@ -451,7 +459,7 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   float odomIncrement = sqrt( pow(odom_pose.x - prev_odom_.x, 2) + pow(odom_pose.y - prev_odom_.y, 2) );
 
   float phi = atan2(odom_pose.y - prev_odom_.y, odom_pose.x - prev_odom_.x); // orientation of movement
-  bool drivingForwards = sqrt( pow(cos(phi) - cos(pose.theta * M_PI/180), 2) + pow(sin(phi) - sin(pose.theta * M_PI/180), 2) ) < 1.0f;
+  bool drivingForwards = sqrt( pow(cos(phi) - cos(odom_pose.theta * M_PI/180), 2) + pow(sin(phi) - sin(odom_pose.theta * M_PI/180), 2) ) < 1.0f;
   if (!drivingForwards) {
       odomIncrement = -odomIncrement;
   }
@@ -779,12 +787,12 @@ int main(int argc, const char **argv){
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
     ("loadMapFromImage", po::value < std::string > (&mapImagePath),"Load map from image file")
     ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from *16bit* PGM file")
-    ("offsetX", po::value < float > (&offset.x),"offset x [mm]")
-    ("offsetY", po::value < float > (&offset.y),"offset y [mm]")
-    ("offsetTheta", po::value < float > (&offset.theta),"offset theta [mm]")
+    ("offsetX", po::value < float > (&offset.x),"offset x (mm)")
+    ("offsetY", po::value < float > (&offset.y),"offset y (mm)")
+    ("offsetTheta", po::value < float > (&offset.theta),"offset theta (mm)")
     ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope for receiving a new position")
-    ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set [mm]")
-    ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set [rad]")
+    ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set (mm)")
+    ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set (rad)")
     ("loadMapWithValidPositionsFromPNG", po::value < std::string > (&mapValidPositionsPNGPath),"Load map with valid positions from grayscale PNG file")
     ("tsMapSize", po::value < std::size_t > (&tsMapSize),"Size of the map in pixel")
     ("tsMapSizeMaxVisualization", po::value < std::size_t > (&tsMapSizeMaxVisualization),"Maximum size of the map in pixel for visualization")
@@ -792,7 +800,8 @@ int main(int argc, const char **argv){
     ("flipHorizontal", po::value < bool > (&flipHorizontal), "Flip all images read by loadMapFromImage horizontally")
     ("initialX", po::value < double > (&initialX), "Initial odometry")
     ("initialY", po::value < double > (&initialY), "Initial odometry")
-    ("initialTheta", po::value < double > (&initialTheta), "Initial odometry");
+    ("initialTheta", po::value < double > (&initialTheta), "Initial odometry")
+    ("erosionRadius", po::value< float > (&erosionRadius), "Erosion radius for obstacle map (m)");
 
 
   // allow to give the value as a positional argument
@@ -909,7 +918,7 @@ int main(int argc, const char **argv){
   // ==== ====
 
   // Show the map as a cv Image
-  const std::size_t maxVis = std::max(std::size_t(ts_map_.size / 2), tsMapSizeMaxVisualization);
+  const std::size_t maxVis = std::min(std::size_t(ts_map_.size), tsMapSizeMaxVisualization);
   debugImageSize = cv::Size(maxVis, maxVis);
   cv::Mat dst(debugImageSize, CV_16S); // destination image for scaling
   cv::Mat dstColor(debugImageSize, CV_8UC3); // Color image

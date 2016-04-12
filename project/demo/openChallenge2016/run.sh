@@ -39,9 +39,13 @@ sleep 5
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-./CoreSLAM --odominscope /odom --lidarinscope /lidar --senImage 1 --delta 0.05 --sigma_xy 0.1 --sigma_xy_new_position 0.1 --sigma_theta 0.01 --sigma_theta_new_position 0.01  --remotePort 4823 --doMapUpdate false --loadMapWithValidPositionsFromPNG ./data/arenaEindhovenValid-final-stacking.png --loadMapFromImage ./data/arenaEindhoven-final-stacking.png --hominginscope /homing --flipHorizontal true \
-  --initialX 21656.2 --initialY 22050.0 --initialTheta 36.4692 \
-  --mapAsImageOutScope /CoreSLAMLocalization/image/${ID} &
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image/${ID} \
+  --remotePort 4823 \
+  --senImage 1 \
+   --delta 0.05 --sigma_xy 0.1 --sigma_xy_new_position 0.1 --sigma_theta 0.01 --sigma_theta_new_position 0.01   --doMapUpdate false \
+  --loadMapWithValidPositionsFromPNG ./data/centralLabValid.png --loadMapFromImage ./data/centralLab.png --flipHorizontal true \
+  --initialX 3101.23 --initialY 3099.99 --initialTheta 43.2683 \
+  --erosionRadius 0.15 &
 
 ./actTargetPosition --inscope /targetPositions &
 
