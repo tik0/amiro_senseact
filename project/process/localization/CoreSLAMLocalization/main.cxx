@@ -842,6 +842,13 @@ int main(int argc, const char **argv){
       ts_map_init(&ts_map_, tsMapSize);
   }
 
+  // if no explicit start positoin was given, set it to center of map
+  if (!vm.count("initialX") && !vm.count("initialY") && !vm.count("initialTheta")) {
+      initialX = ts_map_.size / 2 * delta_ * METERS_TO_MM;
+      initialY = ts_map_.size / 2 * delta_ * METERS_TO_MM;
+      initialTheta = 0;
+  }
+
   rsb::Factory& factory = rsb::getFactory();
   
   //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
