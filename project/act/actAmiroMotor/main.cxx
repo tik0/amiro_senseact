@@ -7,11 +7,6 @@
 //               Angular velocity are received in °/s via RSB
 //============================================================================
 
-// #define INFO_MSG_
-#define DEBUG_MSG_
-// #define SUCCESS_MSG_
-// #define WARNING_MSG_
-// #define ERROR_MSG_
 #include <MSG.h>
 
 #include <iostream>
@@ -19,15 +14,11 @@
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <rsb/filter/OriginFilter.h>
-#include <rsb/Informer.h>
 #include <rsb/Factory.h>
-#include <rsb/Version.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
-
-// Include own converter
+#include <rsc/misc/SignalWaiter.h>
 #include <converter/vecIntConverter/main.hpp>
 
 #include <ControllerAreaNetwork.h>
@@ -48,6 +39,11 @@ void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
 }
 
 static std::string rsbInScope = "/motor";
+static int staticVelocity_um_s = 0;
+static int staticAngularVelocity_urad_s = 0;
+static bool useStaticVelocities = false;
+static bool sendStaticVelocitiesOnce = false;
+static int sendStaticVelocitiesPeriod_us = 100 /*ms*/ * 1e3;
 
 int main (int argc, const char **argv){
  
@@ -56,7 +52,13 @@ int main (int argc, const char **argv){
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-    ("inscope,i", po::value < std::string > (&rsbInScope), "Scope for receiving the motor steering commands");
+    ("inscope,i", po::value < std::string > (&rsbInScope), "Scope for receiving the motor steering commands")
+    ("staticVelocity", po::value < int > (&staticVelocity_um_s), "Static forward velocity in µm/s")
+    ("staticAngularVelocity", po::value < int > (&staticAngularVelocity_urad_s), "Static angular velocity in µrad/s")
+    ("useStaticVelocities", po::bool_switch(&useStaticVelocities)->default_value(false), "Make use of the given velocities, instead of using spread")
+    ("sendStaticVelocitiesOnce", po::bool_switch(&sendStaticVelocitiesOnce)->default_value(false), "Send the static velocity command once")
+    ("sendStaticVelocitiesPeriod", po::value < int > (&sendStaticVelocitiesPeriod_us), "Period between static velocity sending in µs");
+
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -76,13 +78,24 @@ int main (int argc, const char **argv){
 
   // Create the CAN interface
   ControllerAreaNetwork CAN;
-  
+
+  // STATIC BEHAVIOR
+  rsc::misc::initSignalWaiter();
+  if ( useStaticVelocities ) {
+    while (rsc::misc::lastArrivedSignal() != rsc::misc::INTERRUPT_REQUESTED && rsc::misc::lastArrivedSignal() != rsc::misc::TERMINATE_REQUESTED) {
+      CAN.setTargetSpeed(staticVelocity_um_s, staticAngularVelocity_urad_s);
+      if (sendStaticVelocitiesOnce) {
+        break;
+      }
+      usleep(sendStaticVelocitiesPeriod_us);
+    }
+    return 0;
+  }
+
+
+  // RSB BEHAVIOUR
   // Get the RSB factory
-#if RSB_VERSION_NUMERIC<1200
-  rsb::Factory& factory = rsb::Factory::getInstance();
-#else
   rsb::Factory& factory = rsb::getFactory();
-#endif
 
   // Register new converter for std::vector<int>
   boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
@@ -91,7 +104,7 @@ int main (int argc, const char **argv){
   // Prepare RSB reader
   ReaderPtr reader = factory.createReader(rsbInScope);
 
-  for(;;) {
+  while (rsc::misc::lastArrivedSignal() != rsc::misc::INTERRUPT_REQUESTED && rsc::misc::lastArrivedSignal() != rsc::misc::TERMINATE_REQUESTED) {
           // Wait for the message
           sendMotorCmd(reader->read(), CAN);
   }
