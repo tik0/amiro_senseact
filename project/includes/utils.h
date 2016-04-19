@@ -3,22 +3,15 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-// Opencv
-#include <opencv2/opencv.hpp>
-#include <cvplot/cvplot.h>
-
-// RSB
-#include <rsb/Event.h>
-#include <rsb/Factory.h>
-#include <rsb/Handler.h>
-
 #include <math.h>
-#include <Eigen/Geometry>
 
 #include <Constants.h>
 using namespace amiro::constants;
 
 #ifdef __OPENCV_HIGHGUI_HPP__
+// Opencv
+#include <opencv2/opencv.hpp>
+#include <cvplot/cvplot.h>
 namespace cv_utils
 {
 // Show an image in a window with the given name.
@@ -45,6 +38,7 @@ namespace conversion
   }
 #endif
 
+#ifdef EIGEN_GEOMETRY_MODULE_H
   const unsigned int NUMAXIS = 3;
   /**
     * @brief Conversion Quaternion to Euler angles
@@ -75,7 +69,7 @@ namespace conversion
 
       return;
     }
-    
+
     /**
     * @brief Conversion Euler angles to Quaternion
     * 
@@ -119,12 +113,12 @@ rpy2Quaternion( const double roll,
     const Eigen::Quaterniond q = yawAngle * pitchAngle * rollAngle;
     return q;
 }
-    
+#endif
 }
 
 namespace utils
 {
-
+#ifdef __OPENCV_HIGHGUI_HPP__
 // 2D Gauss function
 inline double draw2DGauss(cv::Mat x /*2x1 matrix*/, cv::Mat mu /*2x1 matrix*/, cv::Mat sigma /*2x2 matrix*/) {
 
@@ -274,7 +268,7 @@ void getLidarEstimations(utils::esitmatorId id, const float *scan_values ,std::v
   }
 
 }
-
+#endif
 }
 #endif
 
