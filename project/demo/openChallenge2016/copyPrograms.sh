@@ -17,7 +17,7 @@ scp rsb.conf root@${IP}:~/${NAME}
 scp -r sim root@${IP}:~/${NAME}/
 
 # Copy the website
-scp -r ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www root@${IP}:~/${NAME}
+#scp -r ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www root@${IP}:~/${NAME}
 
 # Copy the website
 scp -r ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data root@${IP}:~/${NAME}
