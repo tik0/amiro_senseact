@@ -13,6 +13,9 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 # Get the compiler specific includes and store them in GXX_INCLUDES
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
+# Read the pkg-config modules
+FIND_PACKAGE(PkgConfig)
+
 if ("$ENV{ARCH}" MATCHES arm)
   pkg_check_modules(RSB rsb0.11)
   pkg_check_modules(RSC rsc0.11)
@@ -45,13 +48,14 @@ include_directories(include
 SET (SOURCE main.cxx)
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 
 TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
+    ${Boost_LIBRARIES}
     ${PROTOBUF_LIBRARIES}
 )
 

@@ -43,13 +43,16 @@ int main(int argc, const char **argv){
   int cntMax = 5;  // Number of consecutive scans
   float minDistance = 0.4;  // Maximum distance for emergency halt
   uint delay_ms = 10, delay_us;
+  bool doEmergencyBehaviour = false;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("lidarinscope", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data")
+    ("switchinscope", po::value < std::string > (&switchInScope), "Scope for switching the emergency behaviour: Accepts <On,ON,on,1> or <Off,OFF,off,0> as string")
     ("cntMax", po::value < int > (&cntMax), "Number of consecutive scans which need to be less than the given distance")
-    ("distance", po::value < float > (&minDistance), "Maximum distance for emergency halt")
-    ("delay", po::value < uint > (&delay_ms), "Loop periodicity in milliseconds");
+    ("distance", po::value < float > (&minDistance), "Maximum distance for emergency halt in meter")
+    ("delay", po::value < uint > (&delay_ms), "Loop periodicity in milliseconds")
+    ("doEmergencyBehaviour", po::bool_switch(&doEmergencyBehaviour)->default_value(false), "Enable emergency behaviour from start on");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -81,21 +84,21 @@ int main(int argc, const char **argv){
 
   rsb::ListenerPtr switchListener = factory.createListener(switchInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>switchQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
-  lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(switchQueue)));
+  switchListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(switchQueue)));
 
   rsc::misc::initSignalWaiter();
 
   // Create the CAN interface
   ControllerAreaNetwork CAN;
 
-  rst::vision::LocatedLaserScan scan;
+  boost::shared_ptr<rst::vision::LocatedLaserScan> scan;
   bool doHalt = false;
   delay_us = delay_ms * 1e3;
   enum state {
     nothing,
     emergencyHalt
   };
-  state currentState = state::nothing;
+  state currentState = doEmergencyBehaviour ? state::emergencyHalt : state::nothing;
 
   while( rsc::misc::lastArrivedSignal() != rsc::misc::INTERRUPT_REQUESTED && rsc::misc::lastArrivedSignal() != rsc::misc::TERMINATE_REQUESTED ){
     // Check if we have to switch the behaviour of the halt
@@ -112,11 +115,15 @@ int main(int argc, const char **argv){
 
     // Fetch a new scan and store it to scan
     if ( !lidarQueue->empty() ) {
-      scan = *lidarQueue->pop();
+      scan = lidarQueue->pop();
       // Check if n consecutive scans are less than d meter
       int cnt = 0;
-      for (int idx = 0; idx < scan.scan_values().size(); ++idx) {
-        if( scan.scan_values(idx) < minDistance ) {
+      DEBUG_MSG( "Size: " << scan->scan_values().size() );
+      const int minIdx = scan->scan_values().size() / 2 - scan->scan_values().size() / 4;
+      const int maxIdx = scan->scan_values().size() / 2 + scan->scan_values().size() / 4;
+      for (int idx = minIdx; idx < maxIdx; ++idx) {
+        DEBUG_MSG( "Distance: " << int(scan->scan_values(idx) * 1000) << " mm" );
+        if( scan->scan_values(idx) < minDistance && scan->scan_values(idx) > 0.0f ) {
           if ( ++cnt >= cntMax ) {
             doHalt = true;
             break;
@@ -133,6 +140,7 @@ int main(int argc, const char **argv){
       CAN.setTargetSpeed(int(0), int(0));
       INFO_MSG( "HALT" );
     }
+
     usleep(delay_us);
   }
 
