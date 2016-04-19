@@ -13,6 +13,7 @@ killall -9 senseHokuyo
 killall -9 senseCamJpg
 killall -9 sendOdometryProtoPose
 killall -9 CoreSLAM
+killall -9 actEmergencyStop
 
 # kill the webserver
 killall -9 rsb_ws_bridge_amiro

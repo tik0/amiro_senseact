@@ -8,3 +8,6 @@ stopMotor
 follow_LaserScanner
 final2016
 sendOdometryProtoPose
+actEmergencyStop
+actTargetPosition
+CoreSLAM

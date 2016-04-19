@@ -435,7 +435,7 @@ int processSM(void) {
           informerHoming->publish(signal_savePosition);
           onceGotHoming = true;
         }
-        usleep(10 /*seconds*/ * 1000000);
+        usleep(1 /*seconds*/ * 1000000);
         std::string output = "stopfollowrec"; *stringPublisher = output; informerRemoteState->publish(stringPublisher);
         //HACK END
         set_state_stopped();

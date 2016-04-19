@@ -47,6 +47,8 @@ sleep 5
   --initialX 3101.23 --initialY 3099.99 --initialTheta 43.2683 \
   --erosionRadius 0.15 &
 
+./actEmergencyStop --lidarinscope /lidar --cntMax 10 --distance 0.3 --delay 10 --doEmergencyBehaviour &
+
 ./actTargetPosition --inscope /targetPositions &
 
 # webserver running on port 80
