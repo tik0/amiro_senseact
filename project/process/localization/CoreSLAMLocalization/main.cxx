@@ -15,7 +15,6 @@
 
 // ===== Includes =====
 #include <math.h>
-#include <utils.h>
 
 #include <iostream>
 #include <boost/thread.hpp>
@@ -58,6 +57,8 @@
 #include <ControllerAreaNetwork.h>
 
 #include <mutex> // std::mutex
+
+#include <utils.h>
 
 // tinySLAM
 #ifdef __cplusplus
@@ -137,6 +138,9 @@ static std::string mapPGMPath = "";
 static std::string mapValidPositionsPNGPath = "";
 static bool flipHorizontal = false;
 
+static bool precomputeOccupancyMap = false;
+cv::Mat1b occupancyMap;
+
 // Erosion for obstacle map including antenna and Hokuyo cable and some safety distance
 static float erosionRadius = 0.15;
 
@@ -173,7 +177,7 @@ void setSendMapAsCompressedImage(boost::shared_ptr<std::string> v) {
     sendMapAsCompressedImageMutex.unlock();
 }
 
-cv::Mat getOccupancyMap(cv::Point2i start, cv::Point2i goal) {
+cv::Mat getOccupancyMap() {
   DEBUG_MSG("Generating occupancy map...");
   // Convert the map to a cv::Mat image
   cv::Mat map(cv::Size(ts_map_.size,ts_map_.size), CV_8UC1);
@@ -196,10 +200,6 @@ cv::Mat getOccupancyMap(cv::Point2i start, cv::Point2i goal) {
                             cv::Point(erosionRadius/delta_, erosionRadius/delta_));
   cv::erode(map, map, structuringElement);
 
-  // Make sure start and goal are reachable
-  cv::circle(map, start, erosionRadius/delta_ + 1, cv::Scalar(255,255,255), -1/*thickness/filled*/);
-  cv::circle(map, goal, erosionRadius/delta_ + 1, cv::Scalar(255,255,255));
-
   cv::imwrite("occupancymap.png", map);
 
   return map;
@@ -209,15 +209,22 @@ std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
     // Convert from tinySLAM coordinates (mm) to pixel coordinates
     cv::Point2i start(pose.x * MM_TO_METERS / delta_, pose.y * MM_TO_METERS / delta_);
     cv::Point2i goal(targetPose.x * MM_TO_METERS / delta_, targetPose.y * MM_TO_METERS / delta_);
-    // Generate occupacy map
-    cv::Mat1b om = getOccupancyMap(start, goal);
+
+    // Generate occupacy map if not done yet
+    if (!occupancyMap.data) {
+        occupancyMap = getOccupancyMap();
+    }
+    // Make sure start and goal are reachable
+    cv::circle(occupancyMap, start, erosionRadius/delta_ + 1, cv::Scalar(255,255,255), -1/*thickness/filled*/);
+    cv::circle(occupancyMap, goal, erosionRadius/delta_ + 1, cv::Scalar(255,255,255), -1/*thickness/filled*/);
+
     DEBUG_MSG("Got occupancy map");
 
     // DEBUG START
     if (sendMapAsCompressedImage) {
         DEBUG_MSG("Sending occupancy map via rsb");
-        cv::Mat tmpMat(om.size(), CV_8UC3);
-        cv::cvtColor(om, tmpMat, CV_GRAY2RGB, 3);
+        cv::Mat tmpMat(occupancyMap.size(), CV_8UC3);
+        cv::cvtColor(occupancyMap, tmpMat, CV_GRAY2RGB, 3);
         cv::resize(tmpMat, tmpMat, cv::Size(tmpMat.size().height / 2, tmpMat.size().width / 2));
 
         std::vector<uchar> buf;
@@ -238,13 +245,13 @@ std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
     // DEBUG END
 
     // Get path
-    std::list<cv::Point2i> path = pathplanner.getPath(start, goal, om);
+    std::list<cv::Point2i> path = pathplanner.getPath(start, goal, occupancyMap);
 
     // Optimize path
     DEBUG_MSG("before removing redundant nodes: " << path.size());
     pathplanner.removeRedundantNodes(path);
     DEBUG_MSG("before optimizing path: " << path.size());
-    pathplanner.optimizePath(path, om);
+    pathplanner.optimizePath(path, occupancyMap);
     DEBUG_MSG("after optimizing path: " << path.size());
 
     INFO_MSG("calculated and optimized path");
@@ -295,7 +302,7 @@ void drivePath(std::list<cv::Point2i> &path) {
 
         // firstly rotate to waypoint
         DEBUG_MSG("Angle to target: " << relativeAngle);
-        if (abs(relativeAngle) > M_PI / 45) { // precision of rotation (PI/45 = 4°)
+        if (abs(relativeAngle) > 0.15f /*M_PI / 45*/) { // precision of rotation (0.15 rad ~ 8.59°)//(PI/45 = 4°)
             DEBUG_MSG("angle to waypoint too big -> rotating");
             // package for setTargetPosition
             targetPosition.x = 0;
@@ -313,7 +320,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             targetPosition.f_z = relativeAngle * RAD_TO_URAD;
 
             // calculate time (derived from velocity)
-            const double velocity_M_S = 0.1;
+            const double velocity_M_S = 0.4;
             timeMS = SECONDS_TO_MS * ( (MM_TO_METERS * distanceMM) / velocity_M_S );
         }
 
@@ -335,7 +342,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             // can.setTargetPosition(targetPosition, timeMS);
             targetInformer->publish(steering);
 
-            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::max(timeMS, (uint16_t)100);
+            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::min(timeMS, (uint16_t)5000);
         } else {
             DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
         }
@@ -746,7 +753,7 @@ void doHoming(boost::shared_ptr<std::string> e) {
       mtxPathToDraw.lock();
       pathToDraw = path;
       mtxPathToDraw.unlock();
-      usleep(500000);  // Sleep half second
+      usleep(100000);
     }
 }
 
@@ -766,7 +773,8 @@ int main(int argc, const char **argv){
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
   std::size_t tsMapSize = 2048;
-  std::size_t tsMapSizeMaxVisualization = 1024;
+  std::size_t tsMapSizeMaxVisualization = 700;
+  std::string loadOccupancyMapFromFile = "";
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
@@ -801,7 +809,9 @@ int main(int argc, const char **argv){
     ("initialX", po::value < double > (&initialX), "Initial odometry")
     ("initialY", po::value < double > (&initialY), "Initial odometry")
     ("initialTheta", po::value < double > (&initialTheta), "Initial odometry")
-    ("erosionRadius", po::value< float > (&erosionRadius), "Erosion radius for obstacle map (m)");
+    ("erosionRadius", po::value< float > (&erosionRadius), "Erosion radius for obstacle map (m)")
+    ("precomputeOccupancyMap", po::value< bool > (&precomputeOccupancyMap), "Precompute occupancy map at start.")
+    ("loadOccupancyMapFromFile", po::value< std::string > (&loadOccupancyMapFromFile), "Occupancy map file be read from file.");
 
 
   // allow to give the value as a positional argument
@@ -847,6 +857,27 @@ int main(int argc, const char **argv){
       initialX = ts_map_.size / 2 * delta_ * METERS_TO_MM;
       initialY = ts_map_.size / 2 * delta_ * METERS_TO_MM;
       initialTheta = 0;
+  }
+
+  // Handle options for occupancy map
+  if (!loadOccupancyMapFromFile.empty()) {
+      INFO_MSG("Loading occupancy map from file");
+      occupancyMap = cv::imread(loadOccupancyMapFromFile, CV_LOAD_IMAGE_GRAYSCALE);
+      if (!occupancyMap.data) {
+          ERROR_MSG("Loading occupancy map failed!");
+          return 1;
+      } else if (occupancyMap.cols != ts_map_.size || occupancyMap.rows != ts_map_.size) {
+          ERROR_MSG("Size of the occupancy map does not match map size!");
+          return 1;
+      }
+
+      if (flipHorizontal) {
+          cv::flip(occupancyMap, occupancyMap, 0); // 0 is OpenCV's magic flip code for flipping around x axis
+      }
+  } else if (precomputeOccupancyMap) {
+      INFO_MSG("Precomputing occupancy map now...");
+      occupancyMap = getOccupancyMap();
+      INFO_MSG("Done precomputing occupancy map.");
   }
 
   rsb::Factory& factory = rsb::getFactory();
@@ -1048,10 +1079,10 @@ int main(int argc, const char **argv){
       #endif
     }
 
-    DEBUG_MSG( "--------------------------------------------")
-    DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
-    DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
-    DEBUG_MSG( "Target pose: " << homePose.x << ", " << homePose.y << ", " << homePose.theta)
+//    DEBUG_MSG( "--------------------------------------------")
+//    DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
+//    DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
+//    DEBUG_MSG( "Target pose: " << homePose.x << ", " << homePose.y << ", " << homePose.theta)
     DEBUG_MSG( "------------ END OF MAIN LOOP --------------");
   }
 

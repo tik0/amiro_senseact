@@ -104,9 +104,9 @@ int main(int argc, const char **argv){
     // Check if we have to switch the behaviour of the halt
     if ( !switchQueue->empty() ) {
       const std::string switchReq = *switchQueue->pop();
-      if ( !switchReq.compare("0") || !switchReq.compare("off") || !switchReq.compare("Off") || !switchReq.compare("OFF") ) {
+      if ( !switchReq.compare("0") || !switchReq.compare("off") || !switchReq.compare("Off") || !switchReq.compare("OFF") || !switchReq.compare("init") ) { // HACK: "init" means "init following" (openChallenge2016)
         currentState = state::nothing;
-      } else if ( !switchReq.compare("1") || !switchReq.compare("on") || !switchReq.compare("On") || !switchReq.compare("ON") ) {
+      } else if ( !switchReq.compare("1") || !switchReq.compare("on") || !switchReq.compare("On") || !switchReq.compare("ON") || !switchReq.compare("stop") ) { // HACK: "stop" means "stop following" (openChallenge2016)
         currentState = state::emergencyHalt;
       } else {
         ERROR_MSG( "Switch command does not match. Don't change current state. Received message: " << switchReq );
@@ -138,7 +138,7 @@ int main(int argc, const char **argv){
     // Halt if necessary
     if ( doHalt && ( currentState == state::emergencyHalt )) {
       CAN.setTargetSpeed(int(0), int(0));
-      INFO_MSG( "HALT" );
+      DEBUG_MSG( "HALT" );
     }
 
     usleep(delay_us);

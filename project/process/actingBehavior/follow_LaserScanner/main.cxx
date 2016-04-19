@@ -201,7 +201,15 @@ int main(int argc, const char **argv){
   options.add_options()("help,h", "Display a help message.")
     ("startNow,s", "Starts the following immediately without waiting of scopes.")
     ("debug","Activates debugging information.")
-    ("lidarinscope,l", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data.");
+    ("lidarinscope,l", po::value < std::string > (&lidarInScope), "Scope for receiving lidar data.")
+    ("followMinDist", po::value < float > (&followMinDist), "")
+    ("followMinBackDist", po::value < float > (&followMinBackDist), "")
+    ("followDistSlowingDown", po::value < float > (&followDistSlowingDown), "")
+    ("forwardSpeed", po::value < int > (&forwardSpeed), "")
+    ("forwardMinSpeed", po::value < int > (&forwardMinSpeed), "")
+    ("turningSpeed", po::value < int > (&turningSpeed), "")
+    ("turnCorrectSpeed", po::value < int > (&turnCorrectSpeed), "")
+    ("rotationTolarence", po::value < float > (&rotationTolarence), "");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

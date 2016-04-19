@@ -39,15 +39,16 @@ sleep 5
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image/${ID} \
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image/${ID} --setPositionScope /setPosition/${ID} \
   --remotePort 4823 \
-  --senImage 1 \
-   --delta 0.05 --sigma_xy 0.1 --sigma_xy_new_position 0.1 --sigma_theta 0.01 --sigma_theta_new_position 0.01   --doMapUpdate false \
-  --loadMapWithValidPositionsFromPNG ./data/centralLabValid.png --loadMapFromImage ./data/centralLab.png --flipHorizontal true \
-  --initialX 3101.23 --initialY 3099.99 --initialTheta 43.2683 \
-  --erosionRadius 0.15 &
+  --senImage 0 \
+  --delta 0.02 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
+  --loadMapWithValidPositionsFromPNG ./data/centralLab-clean-cropped-valid-4-scale-0.5.png --loadMapFromImage ./data/centralLab-clean-cropped-4-scale-0.5.png \
+  --erosionRadius 0.3 \
+  --initialX 3657.34 --initialY 6311.21 --initialTheta 7.24073 \
+  --precomputeOccupancyMap true &
 
-./actEmergencyStop --lidarinscope /lidar --cntMax 10 --distance 0.3 --delay 10 --doEmergencyBehaviour &
+./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.1 --delay 10 --switchinscope /following &
 
 ./actTargetPosition --inscope /targetPositions &
 
