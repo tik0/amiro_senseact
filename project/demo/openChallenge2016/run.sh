@@ -45,10 +45,10 @@ sleep 5
   --delta 0.02 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
   --loadMapWithValidPositionsFromPNG ./data/centralLab-clean-cropped-valid-4-scale-0.5.png --loadMapFromImage ./data/centralLab-clean-cropped-4-scale-0.5.png \
   --erosionRadius 0.3 \
-  --initialX 3657.34 --initialY 6311.21 --initialTheta 7.24073 \
+  --initialX 4244.11 --initialY 6446.25 --initialTheta 6.71772 \
   --precomputeOccupancyMap true &
 
-./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.1 --delay 10 --switchinscope /following &
+./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.15 --delay 10 --switchinscope /following &
 
 ./actTargetPosition --inscope /targetPositions &
 

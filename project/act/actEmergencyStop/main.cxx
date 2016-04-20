@@ -121,19 +121,22 @@ int main(int argc, const char **argv){
       DEBUG_MSG( "Size: " << scan->scan_values().size() );
       const int minIdx = scan->scan_values().size() / 2 - scan->scan_values().size() / 4;
       const int maxIdx = scan->scan_values().size() / 2 + scan->scan_values().size() / 4;
+      doHalt = false;
       for (int idx = minIdx; idx < maxIdx; ++idx) {
         DEBUG_MSG( "Distance: " << int(scan->scan_values(idx) * 1000) << " mm" );
-        if( scan->scan_values(idx) < minDistance && scan->scan_values(idx) > 0.0f ) {
+        if( scan->scan_values(idx) < minDistance && scan->scan_values(idx) > 0.05f ) {
           if ( ++cnt >= cntMax ) {
             doHalt = true;
             break;
           } else {
             doHalt = false;
           }
-        } else
+        } else {
           cnt = 0;
+          doHalt = false;
         }
       }
+    }
 
     // Halt if necessary
     if ( doHalt && ( currentState == state::emergencyHalt )) {

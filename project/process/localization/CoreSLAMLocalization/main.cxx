@@ -80,10 +80,10 @@ using namespace muroxConverter;
 
 // ===== Global variables =====
 // Parameters needed for Marcov sampling
-static double sigma_xy_ = 10;  // [mm]
-static double sigma_theta_ = 0.05;  // [rad]
-static double sigma_xy_new_position = 1000;  // used when a new position is set via RSB [mm]
-static double sigma_theta_new_position = 0.3;  // used when a new position is set via RSB [rad]
+static double sigma_xy_ = 10;  // mm
+static double sigma_theta_ = 0.05;  // rad
+static double sigma_xy_new_position = 1000;  // used when a new position is set via RSB (mm)
+static double sigma_theta_new_position = 0.3;  // used when a new position is set via RSB (rad)
 static double sigma_decrease_rate = 0.75; // rate by which sigma is decreased (until it reached sigma_*_)
 
 static double initialX = 0;
