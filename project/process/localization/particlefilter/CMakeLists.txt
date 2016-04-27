@@ -49,6 +49,10 @@ set(SOURCE
     main.cxx
     particlefilter.cpp
     eigenmvn/eigenmvn.h
+    sensormodel.h
+    raycastingmodel.cpp
+    likelihoodfieldmodel.cpp
+    map.h
     $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc
@@ -73,6 +77,6 @@ add_definitions(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 # Common flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-deprecated-declarations -Wno-write-strings")
 # Debug flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2 -pg -g")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2 -g -pg")
 # Release flags
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -funsafe-loop-optimizations -Wunsafe-loop-optimizations")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -Wunsafe-loop-optimizations")

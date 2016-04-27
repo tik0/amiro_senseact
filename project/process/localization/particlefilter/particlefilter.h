@@ -9,8 +9,36 @@ using namespace std;
 #include <rst/geometry/Pose.pb.h>
 #include <opencv2/core/core.hpp>
 #include "eigenmvn/eigenmvn.h"
+#include "map.h"
 
-#include <iostream>
+/**
+ * @brief The pose_t struct holds a pose in the map in meters and radians.
+ */
+struct pose_t {
+    /**
+     * @brief x position along the x-axis in meter.
+     */
+    float x;
+    /**
+     * @brief y position along the y-axis in meter.
+     */
+    float y;
+    /**
+     * @brief theta rotation in radians.
+     */
+    float theta;
+};
+
+/**
+ * @brief The sample_t struct represents a particle with its pose and importance weight.
+ */
+struct sample_t {
+    pose_t pose;
+    float importance;
+};
+
+class SensorModel;
+#include "sensormodel.h"
 
 class ParticleFilter
 {
@@ -24,7 +52,7 @@ public:
      * @param odom The initial odometry data used to form odometry deltas.
      * @param map A openCV mat to represent to map.
      */
-    ParticleFilter(size_t sampleCount, float meterPerCell, rst::vision::LocatedLaserScan scanConfig, rst::geometry::Pose odom, cv::Mat1b map);
+    ParticleFilter(size_t sampleCount, rst::vision::LocatedLaserScan scanConfig, rst::geometry::Pose odom, Map *map, SensorModel *sensorModel);
     ~ParticleFilter();
 
     void setScanConfig(const rst::vision::LocatedLaserScan &scan) {
@@ -34,32 +62,6 @@ public:
     rst::vision::LocatedLaserScan &getScanConfig() {
         return scanConfig;
     }
-
-    /**
-     * @brief The pose_t struct holds a pose in the map in meters and radians.
-     */
-    struct pose_t {
-        /**
-         * @brief x position along the x-axis in meter.
-         */
-        float x;
-        /**
-         * @brief y position along the y-axis in meter.
-         */
-        float y;
-        /**
-         * @brief theta rotation in radians.
-         */
-        float theta;
-    };
-
-    /**
-     * @brief The sample_t struct represents a particle with its pose and importance weight.
-     */
-    struct sample_t {
-        pose_t pose;
-        float importance;
-    };
 
     /**
      * @brief update updates the believe of the particle filter.
@@ -75,15 +77,13 @@ public:
 private:
     size_t sampleCount;
     size_t width, height;
-    float meterPerCell;
 
     sample_t *samples;
 
     pose_t prevOdom = {0,0,0};
     pose_t odometryDelta;
 
-    cv::Mat1b map;
-    const uchar mapOccupied = (numeric_limits<uchar>::max() - numeric_limits<uchar>::min()) / 2;
+    Map *map;
 
     Eigen::Vector3d mean = Eigen::Vector3d(0,0,0);
     Eigen::Matrix3d covar = Eigen::DiagonalMatrix<double,3,3>(0.01, 0.01, 0.01);
@@ -108,8 +108,8 @@ private:
     void updatePose(sample_t &sample);
     void sampling(sample_t &sample);
 
-    float simulateRay(const pose_t &pose, float globalAngle);
-    vector<float> simulateScan(const pose_t &pose);
+
+    SensorModel *sensorModel;
     void importanceSampling(sample_t &sample, const rst::vision::LocatedLaserScan &scan);
 
     pose_t convertPose(const rst::geometry::Pose &odom);
@@ -137,21 +137,6 @@ private:
     inline float clamp(float x, float min, float max)
     {
         return std::max(min, std::min(x, max));
-    }
-
-    inline bool isInMap(size_t x, size_t y)
-    {
-        return (x >= 0 && x < width && y >= 0 && y < height);
-    }
-
-    inline bool mapIsOccupied(int x, int y)
-    {
-        return (map.at<uchar>(y,x) < mapOccupied);
-    }
-
-    inline size_t poseToIndex(const float &x)
-    {
-        return round(x / meterPerCell);
     }
 
 };

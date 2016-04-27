@@ -31,6 +31,8 @@
 #include <opencv2/imgproc/imgproc.hpp>      // cvtColor
 
 #include "particlefilter.h"
+#include "raycastingmodel.h"
+#include "likelihoodfieldmodel.h"
 
 int main(int argc, const char **argv) {
     /*
@@ -93,18 +95,22 @@ int main(int argc, const char **argv) {
      * Setup the particle filter
      */
     // Load map
-    cv::Mat1b map = cv::imread(pathToMap, CV_LOAD_IMAGE_GRAYSCALE);
+    Map map(cv::imread(pathToMap, CV_LOAD_IMAGE_GRAYSCALE));
     if (!map.data) {
         ERROR_MSG("Could not load map file: " << pathToMap);
         return 1;
     }
+    map.meterPerCell = meterPerPixel;
 
     // Blocks until first scan is received. It will be used as configuration for the particle filter
     boost::shared_ptr<rst::vision::LocatedLaserScan> scanPtr = lidarQueue->pop();
     // Get inital odometry
     boost::shared_ptr<rst::geometry::Pose> odomPtr = odomQueue->pop();
+
     // Finally set up the particle filter
-    ParticleFilter particlefilter(sampleCount, meterPerPixel, *scanPtr, *odomPtr, map);
+    //RayCastingModel sensorModel(&map);
+    LikelihoodFieldModel sensorModel(&map);
+    ParticleFilter particlefilter(sampleCount, *scanPtr, *odomPtr, &map, &sensorModel);
 
     /*
      * Main loop
@@ -135,13 +141,13 @@ int main(int argc, const char **argv) {
         float scale = (float)height / map.size().height;
         cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
 
-        ParticleFilter::sample_t *samples = particlefilter.getSamples();
+        sample_t *samples = particlefilter.getSamples();
         float maxImportance = 0;
         for (size_t i = 0; i < sampleCount; ++i)
             maxImportance = max(maxImportance, samples[i].importance);
 
         for (size_t i = 0; i < sampleCount; ++i) {
-            ParticleFilter::sample_t sample = samples[i];
+            sample_t sample = samples[i];
 
             cv::Point p(sample.pose.x / meterPerPixel * scale, sample.pose.y / meterPerPixel * scale);
 
@@ -155,7 +161,7 @@ int main(int argc, const char **argv) {
 
         cv::flip(vis, vis, 0); // flip horizontally
         cv::imshow("visualization", vis);
-        if (cv::waitKey(10) == (char)27) { // 27 = escape key
+        if (cv::waitKey(100) == (char)27) { // 27 = escape key
             break;
         }
 #endif
