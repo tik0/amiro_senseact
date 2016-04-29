@@ -18,7 +18,7 @@ gazebo ./data/enclosed_world-no-cylinder.world &
 ./particlefilter/particlefilter \
   --lidarInScope "$lidarscope" --odomInScope "$odomscope" \
   --pathToMap ./data/enclosed_world-cropped.png --meterPerPixel 0.01 \
-  --sampleCount 250 &
+  --sampleCount 250 --kldsampling &
 
 # start keyboard control
 ./sendTwistControls/sendTwistControls -o "$kinscope"
@@ -28,3 +28,4 @@ echo "==== stopping ===="
 echo ""
 
 ./stop.sh
+

@@ -7,19 +7,23 @@ include("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 include("$ENV{MUROX_CMAKE_MODULES}/chkBuildTypes.cmake")
 
 # Read the pkg-config modules
-#FIND_PACKAGE(PkgConfig)
-#pkg_check_modules(PROTOBUF protobuf)
-#pkg_check_modules(RSB rsb0.11)
-#pkg_check_modules(RSC rsc0.11)
-#pkg_check_modules(RST rstsandbox0.11)
-#pkg_check_modules(EIGEN eigen3)
+find_package(PkgConfig)
 
-find_package(RSB REQUIRED)
-find_package(RSC REQUIRED)
-find_package(RST COMPONENTS sandbox)
-find_package(Protobuf REQUIRED)
-find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+if("$ENV{ARCH}" MATCHES arm)
+    pkg_check_modules(PROTOBUF protobuf)
+    pkg_check_modules(RSB rsb0.11)
+    pkg_check_modules(RSC rsc0.11)
+    pkg_check_modules(RST rstsandbox0.11)
+    pkg_check_modules(EIGEN eigen3)
+    pkg_check_modules(OpenCV opencv)
+else("$ENV{ARCH}" MATCHES arm)
+    find_package(RSB REQUIRED)
+    find_package(RSC REQUIRED)
+    find_package(RST COMPONENTS sandbox)
+    find_package(Protobuf REQUIRED)
+    find_package(Eigen3 REQUIRED)
+    find_package(OpenCV REQUIRED)
+endif("$ENV{ARCH}" MATCHES arm)
 
 # Get modules
 set(BOOST_COMPONENTS regex date_time program_options system thread)
@@ -53,6 +57,7 @@ set(SOURCE
     raycastingmodel.cpp
     likelihoodfieldmodel.cpp
     map.h
+    sampleset.h
     $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc
@@ -77,6 +82,6 @@ add_definitions(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 # Common flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-deprecated-declarations -Wno-write-strings")
 # Debug flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2 -g -pg")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2 -g -pg -fprofile-arcs -ftest-coverage")
 # Release flags
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -Wunsafe-loop-optimizations")

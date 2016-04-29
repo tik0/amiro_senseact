@@ -10,34 +10,7 @@ using namespace std;
 #include <opencv2/core/core.hpp>
 #include "eigenmvn/eigenmvn.h"
 #include "map.h"
-
-/**
- * @brief The pose_t struct holds a pose in the map in meters and radians.
- */
-struct pose_t {
-    /**
-     * @brief x position along the x-axis in meter.
-     */
-    float x;
-    /**
-     * @brief y position along the y-axis in meter.
-     */
-    float y;
-    /**
-     * @brief theta rotation in radians.
-     */
-    float theta;
-};
-
-/**
- * @brief The sample_t struct represents a particle with its pose and importance weight.
- */
-struct sample_t {
-    pose_t pose;
-    float importance;
-};
-
-class SensorModel;
+#include "sampleset.h"
 #include "sensormodel.h"
 
 class ParticleFilter
@@ -52,16 +25,8 @@ public:
      * @param odom The initial odometry data used to form odometry deltas.
      * @param map A openCV mat to represent to map.
      */
-    ParticleFilter(size_t sampleCount, rst::vision::LocatedLaserScan scanConfig, rst::geometry::Pose odom, Map *map, SensorModel *sensorModel);
+    ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, Map *map, SensorModel *sensorModel, bool doKLDSampling = false);
     ~ParticleFilter();
-
-    void setScanConfig(const rst::vision::LocatedLaserScan &scan) {
-        scanConfig = scan;
-    }
-
-    rst::vision::LocatedLaserScan &getScanConfig() {
-        return scanConfig;
-    }
 
     /**
      * @brief update updates the believe of the particle filter.
@@ -70,15 +35,16 @@ public:
      */
     void update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom);
 
-    sample_t *getSamples() {
-        return samples;
+    sample_set_t *getSamplesSet() {
+        return sampleSet;
     }
 
 private:
-    size_t sampleCount;
+    size_t maxSampleCount;
     size_t width, height;
 
-    sample_t *samples;
+    sample_set_t *sampleSet;
+    sample_set_t *newSampleSet;
 
     pose_t prevOdom = {0,0,0};
     pose_t odometryDelta;
@@ -89,11 +55,25 @@ private:
     Eigen::Matrix3d covar = Eigen::DiagonalMatrix<double,3,3>(0.01, 0.01, 0.01);
     Eigen::EigenMultivariateNormal<double> sampler = Eigen::EigenMultivariateNormal<double>(mean, covar);
 
-    rst::vision::LocatedLaserScan scanConfig;
-
     void initSamples();
     void normalizeImportanceFactors(float logSum);
+
     sample_t rouletteWheelSelection();
+
+    /*
+     *        p_t
+     *
+     *         O->
+     *        /__/  phi2
+     *       /
+     *      /
+     *     /\
+     *  <-O |
+     *  \___/ phi1
+     *
+     *    p_(t-1)
+     *
+     */
 
     // angle of vector from old odometry to new odometry
     float drivingDirection;
@@ -103,6 +83,7 @@ private:
     float phi2;
     // distance between old and new odometry
     float odometryIncrement;
+
     // pre-computes above variables
     void preparePoseUpdate(pose_t &newOdom);
     void updatePose(sample_t &sample);
@@ -139,6 +120,24 @@ private:
         return std::max(min, std::min(x, max));
     }
 
+    /*
+     * KLD-Sampling related
+     */
+
+    bool doKLDSampling = true;
+
+    float binSizeX = 0.50f;
+    float binSizeY = 0.50f;
+    float binSizeRot = (10 * M_PI / 180);
+
+    int nbBinsX = 0;
+    int nbBinsY = 0;
+    int nbBinsRot = 0;
+
+    bool ***bins;
+    int binsWithSupport = 0;
+
+    void updateBins(sample_t &sample);
 };
 
 #endif // PARTICLEFILTER_H

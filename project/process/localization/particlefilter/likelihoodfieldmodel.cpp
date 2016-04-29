@@ -21,7 +21,9 @@ LikelihoodFieldModel::LikelihoodFieldModel(Map *map)
     computeLikelihoodFieldTree();
     INFO_MSG("done. Took " << (time(NULL) - start) << " seconds");
 
+#ifndef __arm__
     showDistanceMap();
+#endif
 }
 
 void
@@ -55,12 +57,22 @@ LikelihoodFieldModel::computeWeight(sample_t &sample, const rst::vision::Located
 {
     float importance = 0;
 
-    float sigma = 0.2f;
+    /*
+     * https://www.hokuyo-aut.jp/02sensor/07scanner/urg_04lx.html
+     * "Accuracy 60 to 1,000mm : ±10mm, 1,000 to 4,095mm : 1% of measurement"
+     *
+     * 4m * 0.01 = 0.04m
+     */
+    float sigma = 0.04f;
 
-    size_t i = 0;
-    for (float angle = scan.scan_angle_start();
-        angle < scan.scan_angle_end();
-        angle += scan.scan_angle_increment()) {
+    float angle = scan.scan_angle_start();
+    float increment = scan.scan_angle_increment();
+    if (scan.scan_angle_start() > scan.scan_angle_end()) {
+        increment = -increment;
+    }
+
+    for (int i = 0; i < scan.scan_values_size(); ++i) {
+        angle += increment;
 
         float globalAngle = sample.pose.theta + angle;
 
@@ -71,8 +83,6 @@ LikelihoodFieldModel::computeWeight(sample_t &sample, const rst::vision::Located
             float d = distanceToObstacle.at<float>(idxy, idxx);
             importance += exp( - pow(d / sigma, 2) );
         }
-
-        i++;
     }
 
     sample.importance = importance;
@@ -213,17 +223,19 @@ LikelihoodFieldModel::computeLikelihoodFieldTree()
 
     typedef bg::model::point<int, 2, bg::cs::cartesian> point;
 
-    bgi::rtree<point, bgi::quadratic<16>> rtree;
+    std::vector<point> occupiedCells;
 
     // find all occupied cells and insert them in the index
     for (int row = 0; row < map->rows; ++row) {
         for (int col = 0; col < map->cols; ++col) {
             if (map->isOccupied(col, row)) {
                 point p = point(col, row);
-                rtree.insert(p);
+                occupiedCells.push_back(p);
             }
         }
     }
+
+    bgi::rtree<point, bgi::quadratic<16>> rtree(occupiedCells);
 
     DEBUG_MSG("Inserted all occupied cells in the index (" << rtree.size() << ")");
 

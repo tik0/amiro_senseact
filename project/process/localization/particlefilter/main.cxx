@@ -23,7 +23,7 @@
 //#include <rst/geometry/Translation.pb.h>      // s.a.
 
 // RSC
-//#include <rsc/misc/SignalWaiter.h>
+#include <rsc/misc/SignalWaiter.h>
 
 // OpenCV for map loading
 #include <opencv2/core/core.hpp>
@@ -53,7 +53,8 @@ int main(int argc, const char **argv) {
             ("odomInScope", po::value < std::string > (&odomInScope)->default_value(odomInScope), "Scope for receiving odometry data")
             ("sampleCount", po::value < std::size_t > (&sampleCount)->default_value(sampleCount), "Number of particles")
             ("meterPerPixel", po::value < float > (&meterPerPixel)->default_value(meterPerPixel), "resolution of the map in meter per pixel")
-            ("pathToMap", po::value < std::string > (&pathToMap)->default_value(pathToMap), "Filesystem path to image that contains the map");
+            ("pathToMap", po::value < std::string > (&pathToMap)->default_value(pathToMap), "Filesystem path to image that contains the map")
+            ("kldsampling", "Switches on KLD sampling.");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -70,6 +71,13 @@ int main(int argc, const char **argv) {
 
     // afterwards, let program options handle argument errors
     po::notify(vm);
+
+    // do KLD sampling?
+    bool doKLDSampling = false;
+    if (vm.count("kldsampling")) {
+        INFO_MSG("KLD sampling enabled");
+        doKLDSampling = true;
+    }
 
     /*
      * RSB Informers and listeners
@@ -103,20 +111,22 @@ int main(int argc, const char **argv) {
     map.meterPerCell = meterPerPixel;
 
     // Blocks until first scan is received. It will be used as configuration for the particle filter
+    INFO_MSG("Waiting for first laser scan...");
     boost::shared_ptr<rst::vision::LocatedLaserScan> scanPtr = lidarQueue->pop();
     // Get inital odometry
+    INFO_MSG("Waiting for first odometry data...");
     boost::shared_ptr<rst::geometry::Pose> odomPtr = odomQueue->pop();
 
     // Finally set up the particle filter
     //RayCastingModel sensorModel(&map);
     LikelihoodFieldModel sensorModel(&map);
-    ParticleFilter particlefilter(sampleCount, *scanPtr, *odomPtr, &map, &sensorModel);
+    ParticleFilter particlefilter(sampleCount, *odomPtr, &map, &sensorModel, doKLDSampling);
 
     /*
      * Main loop
      */
-    //rsc::misc::initSignalWaiter();
-    while (true) {
+    rsc::misc::initSignalWaiter();
+    while (rsc::misc::lastArrivedSignal() == rsc::misc::NO_SIGNAL) {
         // Update scan
         if (!lidarQueue->empty()) {
             scanPtr = lidarQueue->pop();
@@ -141,13 +151,14 @@ int main(int argc, const char **argv) {
         float scale = (float)height / map.size().height;
         cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
 
-        sample_t *samples = particlefilter.getSamples();
+        sample_set_t *sampleSet = particlefilter.getSamplesSet();
         float maxImportance = 0;
-        for (size_t i = 0; i < sampleCount; ++i)
-            maxImportance = max(maxImportance, samples[i].importance);
+        for (size_t i = 0; i < sampleSet->size; ++i) {
+            maxImportance = max(maxImportance, sampleSet->samples[i].importance);
+        }
 
-        for (size_t i = 0; i < sampleCount; ++i) {
-            sample_t sample = samples[i];
+        for (size_t i = 0; i < sampleSet->size; ++i) {
+            sample_t sample = sampleSet->samples[i];
 
             cv::Point p(sample.pose.x / meterPerPixel * scale, sample.pose.y / meterPerPixel * scale);
 

@@ -1,7 +1,7 @@
 #ifndef SENSORMODEL_H
 #define SENSORMODEL_H
 
-#include "particlefilter.h"
+#include "sampleset.h"
 #include <types/LocatedLaserScan.pb.h>
 
 class SensorModel
