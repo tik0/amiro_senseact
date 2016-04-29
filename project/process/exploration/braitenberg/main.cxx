@@ -79,9 +79,13 @@ int driveSpeed = 8; // cm/s
 bool stopObstacles = false;
 bool overturn = false;
 
+bool fixObstacleValueSet = false;
+int fixObstacleValue = 0;
+
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 std::string proxSensorInscopeGround = "/rir_prox/ground";
+std::string proxSensorInscopeOriginal = "/rir_prox/original";
 std::string obstacleRecognitionOutscope = "/frontObject/command";
 
 // protocol defines
@@ -149,7 +153,9 @@ int main(int argc, char **argv) {
       ("speed,s", po::value<int>(&driveSpeed), "Drive speed in cm/s (default: 8 cm/s).")
       ("inscopeObstacles", po::value<string>(&proxSensorInscopeObstacle), "Scope for receiving obstacle values for the obstacle model.")
       ("inscopeEdges", po::value<string>(&proxSensorInscopeGround), "Scope for receiving edge values for the edge model.")
+      ("inscopeIRValues", po::value<string>(&proxSensorInscopeOriginal), "Scope for receiving the original proximity ring values.")
       ("outscopeCommands", po::value<string>(&obstacleRecognitionOutscope), "Scope for sending commands on recognition, if an obstacle has been detected and the robot stops in front of it.")
+      ("fixObstacleValue,f", po::value<int>(&fixObstacleValue), "If this is set, only if the proximity values are higher than this value, the robot will stop (obstacle and edge model are NOT used)!")
       ("stopObstacles", "Flag, if the robot should stop in front of an obstacle.")
       ("obstacleStopMargin,o", po::value<float>(&OBSTACLE_STOP_MARGIN), "Margin for stop distance in front of obstacles in meters (default: 0.15 m; minimum: 0.09 m).")
       ("dontDrive,d", "The motor commands won't be sent.")
@@ -176,17 +182,21 @@ int main(int argc, char **argv) {
   showColors = vm.count("showColors");
   stopDrive = vm.count("dontDrive");
   overturn = vm.count("overturn");
+  fixObstacleValueSet = vm.count("fixObstacleValue");
 
   if (OBSTACLE_STOP_MARGIN < OBSTACLE_MARGIN) {
     OBSTACLE_STOP_MARGIN = OBSTACLE_MARGIN;
   }
 
   INFO_MSG("Scopes:");
+  INFO_MSG(" - original:  " << proxSensorInscopeOriginal);
   INFO_MSG(" - obstacles: " << proxSensorInscopeObstacle);
   INFO_MSG(" - edges:     " << proxSensorInscopeGround);
   INFO_MSG(" - commands:  " << obstacleRecognitionOutscope);
   INFO_MSG("");
-  if (stopObstacles) {
+  if (fixObstacleValueSet) {
+    INFO_MSG("--> Simple Behavior (threshold = " << fixObstacleValue << ").");
+  } else if (stopObstacles) {
     INFO_MSG("--> Stopping in front of obstacles.");
   } else {
     INFO_MSG("--> Standard Behavior.");
@@ -218,6 +228,10 @@ int main(int argc, char **argv) {
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueueGround(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
   proxListenerGround->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(proxQueueGround)));
 
+  rsb::ListenerPtr proxListenerOri = factory.createListener(proxSensorInscopeOriginal);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueueOri(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
+  proxListenerOri->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(proxQueueOri)));
+
   // Init the CAN interface
   ControllerAreaNetwork CAN;
 
@@ -235,7 +249,7 @@ int main(int argc, char **argv) {
 
   int counter = 0;
   while(ok) {
-    if (!proxQueueObstacle->empty() && !proxQueueGround->empty()) {
+    if (!fixObstacleValueSet && !proxQueueObstacle->empty() && !proxQueueGround->empty()) {
       counter = 0;
 
       // Read the proximity data
@@ -327,6 +341,52 @@ int main(int argc, char **argv) {
       }
       boost::shared_ptr<std::string> StringPtr(new std::string(command));
       obstacleRecognition->publish(StringPtr);
+
+    } else if (fixObstacleValueSet && !proxQueueOri->empty()) {
+      counter = 0;
+
+      // Read the proximity data
+      boost::shared_ptr<std::vector<int>> sensorValues = boost::static_pointer_cast<std::vector<int>>(proxQueueOri->pop());
+
+      // get obstacle distance
+      int valueLeft = max(sensorValues->at(2), sensorValues->at(3));
+      int valueRight = max(sensorValues->at(4), sensorValues->at(5));
+
+      // set colors
+      if (showColors) {
+        for (sensorIdx = 0; sensorIdx < ringproximity::SENSOR_COUNT; sensorIdx++) {
+          int led = sensorIdx+4;
+          if (led >= 8) led -= 8;
+          if (sensorValues->at(sensorIdx) >= fixObstacleValue) {
+            if (setColors[sensorIdx] != red) {
+              CAN.setLightColor(led, amiro::Color(amiro::Color::RED));
+              setColors[sensorIdx] = red;
+            }
+          } else if (setColors[sensorIdx] != green) {
+            CAN.setLightColor(led, amiro::Color(amiro::Color::GREEN));
+            setColors[sensorIdx] = green;
+          }
+        }
+      }
+
+      // calculate movement
+      if (valueLeft >= fixObstacleValue || valueRight >= fixObstacleValue) {
+        if (turn == 0 && valueLeft < valueRight) {
+          turn = 1;
+          sendMotorCmd(0, mymcm(60), CAN);
+        } else if (turn == 0) {
+          turn = 2;
+          sendMotorCmd(0, mymcm(-60), CAN);
+        }
+      } else {
+        if (turn != 0) {
+          turn = 0;
+        }
+        if (overturn) {
+          usleep(500000);
+        }
+        sendMotorCmd(mymcm(driveSpeed), 0, CAN);
+      }
 
     } else if (counter < 4) {
       counter++;

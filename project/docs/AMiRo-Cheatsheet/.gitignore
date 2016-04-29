@@ -1,0 +1,9 @@
+*.aux
+*.log
+*.bbl
+*.blg
+*.DS_Store
+*.synctex.gz
+*.toc
+
+AMiRo-Cheatsheet.pdf

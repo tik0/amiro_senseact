@@ -6,12 +6,11 @@ sleep 1
 cpufreq-set -g performance
 
 ./senseRingProximity > /dev/null &
+
 sleep 1
-# braitenberg behavior with just turning until front is clear
-./braitenberg -c &
-# braitenberg behavior with "overturning"
-#./braitenberg -c --overturn &
-./frontObjectDetection -s &
+
+./braitenberg -c --overturn &
+
 
 wait
 cpufreq-set -g ondemand

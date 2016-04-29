@@ -1,0 +1,19 @@
+====== Object Fetch Task ======
+
+...
+
+===== Building =====
+
+This is a cmake project, so just type:
+  - ''cmake .''
+  - ''make''
+
+===== RSB Scopes =====
+
+^ Name ^ Default Scope ^ Description ^
+| | | |
+
+===== Parameters =====
+
+^ Parameter ^ Type ^ Default Value ^ Description ^
+| | | | |
