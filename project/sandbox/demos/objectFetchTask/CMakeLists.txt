@@ -7,5 +7,6 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/sandbox/objectFetchTask objectFetchTask)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseFloorProximity senseFloorProximity)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/robotTools/stopAMiRo stopAMiRo)
 
