@@ -118,6 +118,7 @@ std::string commandInscope = "/delivery/commands";
 // flags
 bool waitForCommand = false;
 bool useFakeObject = false;
+bool rgbdCameraIsUsed = false;
 int angleDirectionPositive = 1;
 
 // fake object
@@ -162,13 +163,19 @@ void convertScan(rst::vision::LocatedLaserScan &scan, ts_sensor_data_t &data) {
 bool calculateObjectOrientation(ts_sensor_data_t &scan, twbTracking::proto::Pose2D *pose2D) {
 	int shortId = -1;
 	int shortDist = -1;
-	int startLaser = centerLaser-neighbourLasers;
-	int endLaser = centerLaser+neighbourLasers;
-	if (startLaser < 0) {
+	int startLaser, endLaser;
+	if (rgbdCameraIsUsed) {
 		startLaser = 0;
-	}
-	if (endLaser >= laserCount) {
 		endLaser = laserCount-1;
+	} else {
+		int startLaser = centerLaser-neighbourLasers;
+		int endLaser = centerLaser+neighbourLasers;
+		if (startLaser < 0) {
+			startLaser = 0;
+		}
+		if (endLaser >= laserCount) {
+			endLaser = laserCount-1;
+		}
 	}
 
 	for (int laser=startLaser; laser <= endLaser; laser++) {
@@ -205,6 +212,7 @@ int main(int argc, char **argv) {
 			     ("objectRadius,r", po::value<float>(&fakeObjectRadius), "Radius of the object in meters (default: 0.06 m).")
 			     ("amiroRadiusAddition,a", po::value<float>(&amiroRadiusAddition), "Radius addition due to bigger cameras, etc. in meters (default: 0.0 m).")
                              ("anglePositiveToRight", "Flag, if the angle is not counted positive left side, but right side.")
+                             ("rgbdLaser,d", "Flag, if not a laser scanner, but a RGBD camera is used for laser scans.")
                              ("waitForCommand", "Flag, if the robot should wait until the start command is given.")
                              ("useFakeObject", "Flag, if the fake object shall be used.");
 
@@ -226,6 +234,7 @@ int main(int argc, char **argv) {
 
 	waitForCommand = vm.count("waitForCommand");
 	useFakeObject = vm.count("useFakeObject");
+	rgbdCameraIsUsed = vm.count("rgbdLaser");
 	if (vm.count("anglePositiveToRight")) {
 		angleDirectionPositive = -1;
 	}
