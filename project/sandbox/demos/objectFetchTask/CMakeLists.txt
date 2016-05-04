@@ -8,5 +8,6 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 add_subdirectory ($ENV{MUROX_PROJECT}/sandbox/objectFetchTask objectFetchTask)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseFloorProximity senseFloorProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseHokuyo senseHokuyo)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseSimple3DTo2D senseSimple3DTo2D)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/robotTools/stopAMiRo stopAMiRo)
 

@@ -1,4 +1,5 @@
 objectFetchTask
 senseFloorProximity
 senseHokuyo
+senseSimple3DTo2D
 stopAMiRo

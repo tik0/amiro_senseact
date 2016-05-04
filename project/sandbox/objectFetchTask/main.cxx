@@ -83,6 +83,7 @@ std::string COMMAND_QUIT = "QUIT";
 
 // radius of the AMiRo in m
 float amiroRadius = 0.05;
+float amiroRadiusAddition = 0.0;
 float secureDist = 0.05;
 
 // driving constants
@@ -117,6 +118,7 @@ std::string commandInscope = "/delivery/commands";
 // flags
 bool waitForCommand = false;
 bool useFakeObject = false;
+int angleDirectionPositive = 1;
 
 // fake object
 float fakeObjectRadius = 0.06; // m
@@ -182,8 +184,8 @@ bool calculateObjectOrientation(ts_sensor_data_t &scan, twbTracking::proto::Pose
 	} else {
 		float angle = startAngle+shortId*laserAngleDist;
 		pose2D->set_x(shortDist*MM_TO_METERS);
-		pose2D->set_y(angle);
-		INFO_MSG("Object: " << (shortDist*MM_TO_METERS) << " m, " << (-angle*180.0/M_PI) << "°");
+		pose2D->set_y(angle*angleDirectionPositive);
+		INFO_MSG("Object: " << (shortDist*MM_TO_METERS) << " m, " << (angle*180.0/M_PI*angleDirectionPositive) << "°");
 		return true;
 	}
 }
@@ -201,6 +203,8 @@ int main(int argc, char **argv) {
 			     ("commandScope,c", po::value<std::string>(&commandInscope), "Scope for receiving commands.")
 			     ("watchAngle,w", po::value<float>(&watchAngleFromNormal), "Angular range in degrees for the laser scanner, how far to the sides it shall watch for objects (default: 30°).")
 			     ("objectRadius,r", po::value<float>(&fakeObjectRadius), "Radius of the object in meters (default: 0.06 m).")
+			     ("amiroRadiusAddition,a", po::value<float>(&amiroRadiusAddition), "Radius addition due to bigger cameras, etc. in meters (default: 0.0 m).")
+                             ("anglePositiveToRight", "Flag, if the angle is not counted positive left side, but right side.")
                              ("waitForCommand", "Flag, if the robot should wait until the start command is given.")
                              ("useFakeObject", "Flag, if the fake object shall be used.");
 
@@ -222,6 +226,9 @@ int main(int argc, char **argv) {
 
 	waitForCommand = vm.count("waitForCommand");
 	useFakeObject = vm.count("useFakeObject");
+	if (vm.count("anglePositiveToRight")) {
+		angleDirectionPositive = -1;
+	}
 
         INFO_MSG("Listening to the scopes:");
         INFO_MSG(" - Floor Proximity Sensors: " << proxSensorInscope);
@@ -362,7 +369,7 @@ int main(int argc, char **argv) {
 				bool found = calculateObjectOrientation(scan, &objectPose);
 				if (found) {
 					objectPosX = objectPose.x() + objectRadius;
-					robotDirection = objectPose.y();
+					robotDirection = (-1.0) * objectPose.y();
 				} else {
 					objectPosX = 0.0;
 				}
