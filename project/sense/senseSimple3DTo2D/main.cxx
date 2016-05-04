@@ -58,13 +58,16 @@ public:
 
     ReadData(rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation,
              rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informerLaserSim,
-              const unsigned int& ms = 1000) :
+             bool justCenter,
+             const unsigned int& ms = 1000) :
              rsc::threading::PeriodicTask(ms) {
 
       ///////////////////////////////////////////
       // Configuration
       ///////////////////////////////////////////
       this->laserScanSimulation = laserScanSimulation ; this->informerLaserSim = informerLaserSim;
+
+      this->justCenter = justCenter;
       
       //initialize depthstream
       rc = OpenNI::initialize();
@@ -183,12 +186,20 @@ public:
       {
         //large initial value
         float minDist= 99999.0f;
-        for(std::size_t j=0; j < this->frameHeight; j++) {
-          float d = (float) this->pDepth[i + j*this->frameWidth];
-          //TODO replace this if
-          if(d != 0.0f) {
-            if(d < minDist) {
-              minDist = d;
+
+        if (justCenter) {
+          minDist = (float) this->pDepth[this->frameHeight/2 * this->frameWidth + i];
+          if (minDist == 0.0f) {
+            minDist = 8.0;
+          }
+        } else {
+          for(std::size_t j=0; j < this->frameHeight; j++) {
+            float d = (float) this->pDepth[i + j*this->frameWidth];
+            //TODO replace this if
+            if(d != 0.0f) {
+              if(d < minDist) {
+                minDist = d;
+              }
             }
           }
         }
@@ -228,6 +239,7 @@ private:
     std::size_t frameWidth = 320;  // px
     std::size_t frameHeight = 240;  // px
     bool isValid = true;
+    bool justCenter = false;
 };
 
 
@@ -240,7 +252,8 @@ int main(int argc, char **argv) {
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
             ("outscope,o", po::value < std::string > (&outScope),"Scope for sending lidar data")
-            ("lidarPublishDelay,d", po::value < std::size_t > (&intervalMs),"Period for publishing laser data in ms");
+            ("lidarPublishDelay,d", po::value < std::size_t > (&intervalMs),"Period for publishing laser data in ms")
+            ("justCenter,c", "Flag, if not the minimum, but just the vertical centered value shall be used as laser scan.");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -265,7 +278,7 @@ int main(int argc, char **argv) {
     rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation(new rst::vision::LocatedLaserScan);
 
     rsc::threading::ThreadedTaskExecutor exec;
-    exec.schedule( rsc::threading::TaskPtr( new ReadData( laserScanSimulation, informerLaserSim, intervalMs ) ) );
+    exec.schedule( rsc::threading::TaskPtr( new ReadData( laserScanSimulation, informerLaserSim, vm.count("justCenter"), intervalMs ) ) );
 
     rsc::misc::initSignalWaiter();
     return rsc::misc::suggestedExitCode(rsc::misc::waitForSignal());
