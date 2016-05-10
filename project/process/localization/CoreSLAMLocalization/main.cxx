@@ -121,6 +121,7 @@ static float rayPruningAngleDegree = 60; /* [0 .. 90] */
 float rayPruningAngle(){return asin((90 - rayPruningAngleDegree) / 180 * M_PI);}
 
 // Switch for localization
+std::mutex mtxDoMapUpdate;
 static bool doMapUpdate = false;
 
 // path to goal
@@ -161,10 +162,15 @@ ts_position_t pose = {0,0,0};
 ts_position_t odom_pose = {0,0,0};
 ts_position_t offset = {0,0,0};
 
-// Local insformer
+// Local informer
 rsb::Informer< rst::geometry::TargetPoseEuler >::Ptr targetInformer;
-// Global rsb imformer for debug images
+rsb::Informer< std::string >::Ptr emergencyStopSwitchInformer;
+// Global rsb informer for debug images
 rsb::Informer<std::string>::Ptr informer;
+
+// Local listener for emergency halts
+rsb::ListenerPtr emergencyHaltListener;
+boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> emergencyHaltQueue;
 
 // ===== Functions =====
 
@@ -503,14 +509,18 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
   // not much of a map, let's bootstrap for now
     ts_scan_t ranges;
     ts_build_scan(&data, &ranges, &state_, 3 /*widening of the ray*/);
+    mtxDoMapUpdate.lock();
     if (doMapUpdate) {
         ts_map_update(&ranges, &ts_map_, &state_.position, 50, (int)(hole_width_*1000));
     }
+    mtxDoMapUpdate.unlock();
     DEBUG_MSG("Update step, " << laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
   }else{
 
     // Monte carlo localization is done inside
+    mtxDoMapUpdate.lock();
     ts_iterative_map_building(&data, &state_, doMapUpdate);
+    mtxDoMapUpdate.unlock();
 
 //    DEBUG_MSG("Iterative step, "<< laser_count_ << ", now at (" << state_.position.x << ", " << state_.position.y << ", " << state_.position.theta)
 //    DEBUG_MSG("Correction: "<< state_.position.x - prev.x << ", " << state_.position.y - prev.y << ", " << state_.position.theta - prev.theta)
@@ -723,14 +733,16 @@ bool getClosestValidPosition(const ts_position_t &currentPose, ts_position_t &ta
 
 void doHoming(boost::shared_ptr<std::string> e) {
     std::list<cv::Point2i> path;
+    ts_position_t targetPose = {0, 0, 0};
+
     INFO_MSG("Received homing request via RSB")
     DEBUG_MSG("Searching path to goal...")
     if(!e->compare(std::string("homing"))) {
       INFO_MSG("Do homing")
+      targetPose = homePose;
       path = getPath(homePose);
     } else if (!e->compare(std::string("save"))) {
       INFO_MSG("Drive to next save position")
-      ts_position_t targetPose = {0, 0, 0};
       if(!getClosestValidPosition(pose, targetPose)) {
         ERROR_MSG("Fail to get next save position");
       } else {
@@ -748,11 +760,72 @@ void doHoming(boost::shared_ptr<std::string> e) {
     }
 
     // Drive the path
+    uint obstacleCounter = 0; // how often we saw an obstacle
     while(!path.empty()) {
-      drivePath(path);
-      mtxPathToDraw.lock();
-      pathToDraw = path;
-      mtxPathToDraw.unlock();
+      // There's an obstacle in the way...
+      if (!emergencyHaltQueue->empty()) {
+          emergencyHaltQueue->pop();
+          obstacleCounter++;
+
+          if (obstacleCounter > 50) { // wait for obstacle to move (5 seconds)
+              DEBUG_MSG("doHoming: obstacle does not move, planning new path");
+              obstacleCounter = 0;
+              // must be a new static obstacle, so add it to the map
+              mtxDoMapUpdate.lock();
+              bool oldDoMapUpdate = doMapUpdate;
+              doMapUpdate = true;
+              mtxDoMapUpdate.unlock();
+
+              // wait for main thread to update map
+              int old_laser_count_ = laser_count_;
+              while (laser_count_ <= old_laser_count_) {
+                  DEBUG_MSG("doHoming: waiting for main thread to update map");
+                  usleep(100000);
+              }
+
+              mtxDoMapUpdate.lock();
+              doMapUpdate = oldDoMapUpdate;
+              mtxDoMapUpdate.unlock();
+
+              // re-compute the occupancy map
+              occupancyMap = getOccupancyMap();
+              // get the new path
+              path = getPath(targetPose);
+
+              // before driving new path, back up
+              emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("off"))); // disable emergency stop, so moving is possible
+
+              // Define the steering message for sending over RSB
+              boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
+              // Get the mutable objects
+              rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
+              rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
+              steeringRotation->set_roll(0);
+              steeringRotation->set_pitch(0);
+              steeringRotation->set_yaw(0);
+              steeringTranslation->set_x(-0.2f); // back up 10 cm
+              steeringTranslation->set_y(0);
+              steeringTranslation->set_z(0);
+              steering->set_target_time((unsigned short)1); // in 1s
+
+              targetInformer->publish(steering);
+
+              usleep(1000000); // wait 1s for movement
+              // enable emergency stop again
+              emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("on")));
+
+          } else {
+              DEBUG_MSG("doHoming: waiting for obstacle to move");
+          }
+      } else {
+          obstacleCounter = 0;
+
+          drivePath(path);
+          mtxPathToDraw.lock();
+          pathToDraw = path;
+          mtxPathToDraw.unlock();
+      }
+
       usleep(100000);
     }
 }
@@ -770,6 +843,7 @@ int main(int argc, const char **argv){
   std::string setPositionScope = "/setPosition";
   std::string sendMapSwitchScope = "/sendMap";
   std::string homingInScope = "/homing";
+  std::string emergencyHaltInScope = "/AMiRo_Hokuyo/emergencyHalt";
   std::string remoteHost = "localhost";
   std::string remotePort = "4803";
   std::size_t tsMapSize = 2048;
@@ -782,6 +856,7 @@ int main(int argc, const char **argv){
     ("odominscope", po::value < std::string > (&odomInScope), "Scope for receiving odometry data")
     ("targetPoseScope", po::value < std::string > (&targetPoseOutScope), "Scope for sending target positions")
     ("hominginscope", po::value < std::string > (&homingInScope), "Scope for receiving the homing trigger")
+    ("emergencyhaltinscope", po::value< std::string > (&emergencyHaltInScope), "Scope for receiving emergency halt notifications")
     ("remoteHost", po::value < std::string > (&remoteHost), "Remote spread daemon host name")
     ("remotePort", po::value < std::string > (&remotePort), "Remote spread daemon port")
     ("senImage", po::value < bool > (&sendMapAsCompressedImage), "Send map as compressed image")
@@ -927,6 +1002,7 @@ int main(int argc, const char **argv){
 
   // Local informer
   targetInformer = factory.createInformer<rst::geometry::TargetPoseEuler> (targetPoseOutScope);
+  emergencyStopSwitchInformer = factory.createInformer<std::string>("/following");
   // ==== GLOBAL/EXTERNAL LISTENER AND INFORMER ====
   // Prepare RSB informer for sending the map as an compressed image
   informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
@@ -948,6 +1024,11 @@ int main(int argc, const char **argv){
   // Prepare RSB listener for homing
   rsb::ListenerPtr homingListener = factory.createListener(homingInScope);
   homingListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&doHoming)));
+
+  // Prepare listener for emergency halts
+  emergencyHaltListener = factory.createListener(emergencyHaltInScope);
+  emergencyHaltQueue = boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+  emergencyHaltListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(emergencyHaltQueue)));
 
   // RSB listener for disabling/enabling sending the map
   rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope, tmpPartConf);

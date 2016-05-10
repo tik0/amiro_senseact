@@ -43,6 +43,7 @@ int main(int argc, const char **argv){
   int cntMax = 5;  // Number of consecutive scans
   float minDistance = 0.4;  // Maximum distance for emergency halt
   uint delay_ms = 10, delay_us;
+  std::string emergencyHaltOutScope = "/AMiRo_Hokuyo/emergencyHalt";
   bool doEmergencyBehaviour = false;
 
   po::options_description options("Allowed options");
@@ -52,6 +53,7 @@ int main(int argc, const char **argv){
     ("cntMax", po::value < int > (&cntMax), "Number of consecutive scans which need to be less than the given distance")
     ("distance", po::value < float > (&minDistance), "Maximum distance for emergency halt in meter")
     ("delay", po::value < uint > (&delay_ms), "Loop periodicity in milliseconds")
+    ("emergencyHaltOutScope", po::value < std::string > (&emergencyHaltOutScope)->default_value(emergencyHaltOutScope), "Scope for publishing wether an emergency halt is performed")
     ("doEmergencyBehaviour", po::bool_switch(&doEmergencyBehaviour)->default_value(false), "Enable emergency behaviour from start on");
 
   // allow to give the value as a positional argument
@@ -85,6 +87,10 @@ int main(int argc, const char **argv){
   rsb::ListenerPtr switchListener = factory.createListener(switchInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>switchQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
   switchListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(switchQueue)));
+
+  // Informer that informs other programs when an emergency halt is performed
+  rsb::Informer<std::string>::Ptr emergencyHaltInformer = factory.createInformer<std::string>(emergencyHaltOutScope);
+  boost::shared_ptr<std::string> haltInformerMsg(new std::string("halt"));
 
   rsc::misc::initSignalWaiter();
 
@@ -141,6 +147,7 @@ int main(int argc, const char **argv){
     // Halt if necessary
     if ( doHalt && ( currentState == state::emergencyHalt )) {
       CAN.setTargetSpeed(int(0), int(0));
+      emergencyHaltInformer->publish(haltInformerMsg);
       DEBUG_MSG( "HALT" );
     }
 
