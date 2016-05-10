@@ -1,0 +1,11 @@
+<!--<?xml version="1.0"> -->
+<choreo>
+  <choreoStep>
+    <brake>0</brake>
+    <posx>0</posx>
+    <posy>500000</posy>
+<!-- blue,green,red -->
+    <la>0,255,255</la>
+  </choreoStep>
+</choreo>  
+
