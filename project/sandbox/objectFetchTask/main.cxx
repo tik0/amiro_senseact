@@ -30,6 +30,15 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/date_time.hpp>
 
+// tinySLAM
+#ifdef __cplusplus
+extern "C"{
+#endif
+#include "CoreSLAM.h"
+#ifdef __cplusplus
+}
+#endif
+
 #include <rsb/filter/OriginFilter.h>
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
@@ -40,9 +49,6 @@
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/QueuePushHandler.h>
 
-
-using namespace rsb;
-
 #include <converter/vecIntConverter/main.hpp>
 using namespace muroxConverter;
 
@@ -50,6 +56,11 @@ using namespace std;
 
 #include <stdint.h>  // int32
 
+// RST
+#include <rsb/converter/ProtocolBufferConverter.h>
+
+// RST Proto types
+#include <types/LocatedLaserScan.pb.h>
 #include <types/twbTracking.pb.h>
 
 #include <ControllerAreaNetwork.h>
@@ -57,8 +68,13 @@ using namespace std;
 #include <sensorModels/VCNL4020Models.h>
 
 using namespace rsb;
+using namespace rsb::converter;
 using namespace rsb::patterns;
 using namespace amiro;
+
+// constants
+#define METERS_TO_MM    1000
+#define MM_TO_METERS    0.001
 
 // commands
 std::string COMMAND_START = "START";
@@ -67,6 +83,7 @@ std::string COMMAND_QUIT = "QUIT";
 
 // radius of the AMiRo in m
 float amiroRadius = 0.05;
+float amiroRadiusAddition = 0.0;
 float secureDist = 0.05;
 
 // driving constants
@@ -82,24 +99,103 @@ float minAngle = 20.0*M_PI/180.0; // rad
 // floor proximity constants
 int floorMinValue = 15000;
 
+// scan values
+bool firstScan = true;
+float watchAngleFromNormal = 30.0;
+int laserCount;
+float laserAngleDist;
+int minValueScan;
+float startAngle;
+float endAngle;
+int centerLaser;
+int neighbourLasers;
+
 // scopenames for rsb
 std::string proxSensorInscope = "/rir_prox/obstacle";
+std::string lidarInscope = "/AMiRo_Hokuyo/lidar";
 std::string commandInscope = "/delivery/commands";
 
 // flags
 bool waitForCommand = false;
 bool useFakeObject = false;
+bool rgbdCameraIsUsed = false;
+int angleDirectionPositive = 1;
 
 // fake object
-float fakeObjectRadius = 0.05;
-float fakeObjectPosX = 1.0;
-float fakeObjectPosY = 0.0;
-float fakeRobotPosition = 0.0;
+float fakeObjectRadius = 0.06; // m
+float fakeObjectPosX = 1.0; // m
+float fakeObjectPosY = 0.0; // m
+float fakeRobotPosition = 0.0; // m
 
 
 // method prototypes
 void motorActionMilli(int speed, int turn, ControllerAreaNetwork &CAN);
 void motorDrivePosition(float distanceM, float distanceRad, ControllerAreaNetwork &CAN);
+
+
+void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
+  rsbScan = *data;
+}
+
+void convertScan(rst::vision::LocatedLaserScan &scan, ts_sensor_data_t &data) {
+  if (scan.scan_angle_end() < scan.scan_angle_start()){
+    // flip readings
+    endAngle = scan.scan_angle_start();
+    startAngle = scan.scan_angle_end();
+    for(int i=0; i < scan.scan_values_size(); i++)
+      data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
+  } else {
+    startAngle = scan.scan_angle_start();
+    endAngle = scan.scan_angle_end();
+    for(int i=0; i < scan.scan_values_size(); i++)
+      data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
+  }
+  if (firstScan) {
+    laserCount = scan.scan_values_size();
+    minValueScan = (int) (scan.scan_values_min()*METERS_TO_MM);
+    laserAngleDist = (endAngle-startAngle)/(laserCount-1);
+    centerLaser = laserCount/2;
+    neighbourLasers = (watchAngleFromNormal * M_PI/180.0)/laserAngleDist;
+//    printf("\nLaser data:\n - #Laser: %i\n - Start angle: %frad\n - End angle: %frad\n - laser distance: %frad\n - Min Value: %imm\n\n", laserCount, startAngle, endAngle, laserAngleDist, minValueScan);
+  }
+}
+
+bool calculateObjectOrientation(ts_sensor_data_t &scan, twbTracking::proto::Pose2D *pose2D) {
+	int shortId = -1;
+	int shortDist = -1;
+	int startLaser, endLaser;
+	if (rgbdCameraIsUsed) {
+		startLaser = 0;
+		endLaser = laserCount-1;
+	} else {
+		int startLaser = centerLaser-neighbourLasers;
+		int endLaser = centerLaser+neighbourLasers;
+		if (startLaser < 0) {
+			startLaser = 0;
+		}
+		if (endLaser >= laserCount) {
+			endLaser = laserCount-1;
+		}
+	}
+
+	for (int laser=startLaser; laser <= endLaser; laser++) {
+		if ((shortId < 0 || scan.d[laser] < shortDist) && scan.d[laser] > minValueScan) {
+			shortId = laser;
+			shortDist = scan.d[laser];
+		}
+	}
+
+	if (shortId < 0) {
+		WARNING_MSG("No object in range!");
+		return false;
+	} else {
+		float angle = startAngle+shortId*laserAngleDist;
+		pose2D->set_x(shortDist*MM_TO_METERS);
+		pose2D->set_y(angle*angleDirectionPositive);
+		INFO_MSG("Object: " << (shortDist*MM_TO_METERS) << " m, " << (angle*180.0/M_PI*angleDirectionPositive) << "°");
+		return true;
+	}
+}
 
 
 int main(int argc, char **argv) {
@@ -110,9 +206,13 @@ int main(int argc, char **argv) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			     ("proximityScope,p", po::value<std::string>(&proxSensorInscope), "Scope for receiving floor proximity sensor values.")
+			     ("lidarScope,l", po::value<std::string>(&lidarInscope), "Scope for receiving laser scans of the Hokuyo laser scanner.")
 			     ("commandScope,c", po::value<std::string>(&commandInscope), "Scope for receiving commands.")
-//                             ("turningAdd,t", po::value<int>(&turningAddition), "Additional time in ms for turning.")
-//                             ("drivingAdd,d", po::value<int>(&drivingAddition), "Additional time in ms for driving forward.")
+			     ("watchAngle,w", po::value<float>(&watchAngleFromNormal), "Angular range in degrees for the laser scanner, how far to the sides it shall watch for objects (default: 30°).")
+			     ("objectRadius,r", po::value<float>(&fakeObjectRadius), "Radius of the object in meters (default: 0.06 m).")
+			     ("amiroRadiusAddition,a", po::value<float>(&amiroRadiusAddition), "Radius addition due to bigger cameras, etc. in meters (default: 0.0 m).")
+                             ("anglePositiveToRight", "Flag, if the angle is not counted positive left side, but right side.")
+                             ("rgbdLaser,d", "Flag, if not a laser scanner, but a RGBD camera is used for laser scans.")
                              ("waitForCommand", "Flag, if the robot should wait until the start command is given.")
                              ("useFakeObject", "Flag, if the fake object shall be used.");
 
@@ -134,6 +234,10 @@ int main(int argc, char **argv) {
 
 	waitForCommand = vm.count("waitForCommand");
 	useFakeObject = vm.count("useFakeObject");
+	rgbdCameraIsUsed = vm.count("rgbdLaser");
+	if (vm.count("anglePositiveToRight")) {
+		angleDirectionPositive = -1;
+	}
 
         INFO_MSG("Listening to the scopes:");
         INFO_MSG(" - Floor Proximity Sensors: " << proxSensorInscope);
@@ -151,12 +255,22 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
+	// Register new converter for rst::vision::LocatedLaserScan
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+	rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
+
+
 	// ------------ Listener ----------------------
 
 	// prepare RSB listener for the IR data
 	rsb::ListenerPtr proxListener = factory.createListener(proxSensorInscope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
 	proxListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(proxQueue)));
+
+	// Prepare RSB listener for incomming lidar scans
+	rsb::ListenerPtr lidarListener = factory.createListener(lidarInscope);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>(1));
+	lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LocatedLaserScan>(lidarQueue)));
 
 	// Create and start the command listener
 	rsb::ListenerPtr listener = factory.createListener(commandInscope);
@@ -172,6 +286,8 @@ int main(int argc, char **argv) {
 	bool justDelivered = false;
 	int sensorErrorCounter = 0;
 	boost::shared_ptr<std::vector<int>> sensorValues;
+	rst::vision::LocatedLaserScan laser;
+	ts_sensor_data_t scan;
 
 	// initialize color
 	for(int led=0; led<8; led++) {
@@ -219,10 +335,10 @@ int main(int argc, char **argv) {
 			}
 
 		} else {
-			if (sensorErrorCounter < 2) {
+			if (sensorErrorCounter < 4) {
 				sensorErrorCounter++;
 			} else {
-				ERROR_MSG("Didn't received actual floor sensor values for more than 300 ms!");
+				ERROR_MSG("Didn't received actual floor sensor values for more than 500 ms!");
 				sensorErrorCounter = 0;
 			}
 		}
@@ -253,85 +369,103 @@ int main(int argc, char **argv) {
 			float objectRadius = fakeObjectRadius;
 			float objectPosX = fakeObjectPosX;
 			float objectPosY = fakeObjectPosY;
-
 			float robotDirection = fakeRobotPosition;
 
-			// calculate path positions
-			float direction = 1.0;
-			if (robotDirection < 0.0 || robotDirection > M_PI) {
-				direction = -1.0;
+			if (!useFakeObject) {
+				twbTracking::proto::Pose2D objectPose;
+				convertDataToScan(lidarQueue->pop(), laser);
+				convertScan(laser, scan);
+				bool found = calculateObjectOrientation(scan, &objectPose);
+				if (found) {
+					objectPosX = objectPose.x() + objectRadius;
+					robotDirection = (-1.0) * objectPose.y();
+				} else {
+					objectPosX = 0.0;
+				}
 			}
-			float saveDistance = amiroRadius + objectRadius + secureDist;
 
-			twbTracking::proto::Pose2DList path;
-			// add actual position
-			twbTracking::proto::Pose2D *pose2D = path.add_pose();
-			pose2D->set_x(0);
-			pose2D->set_y(0);
-			// add first edge position
-			pose2D = path.add_pose();
-			pose2D->set_x(objectPosX - saveDistance);
-			pose2D->set_y(objectPosY + direction*saveDistance);
-			// add second edge position
-			pose2D = path.add_pose();
-			pose2D->set_x(objectPosX + saveDistance);
-			pose2D->set_y(objectPosY + direction*saveDistance);
-			// add delivery start position
-			pose2D = path.add_pose();
-			pose2D->set_x(objectPosX + saveDistance);
-			pose2D->set_y(0);
-			// add final position
-			pose2D = path.add_pose();
-			pose2D->set_x(saveDistance);
-			pose2D->set_y(0);
+			if (objectPosX != 0.0) {
 
-			// driving path
-			twbTracking::proto::Pose2D actPos = path.pose(0);
-			for (int i=1; i<5; i++) {
-				if (i==4) {
-					for(int led=0; led<8; led++) {
-						myCAN.setLightColor(led, amiro::Color(amiro::Color::YELLOW));
-					}
-				}
-				twbTracking::proto::Pose2D focusPos = path.pose(i);
-				INFO_MSG("Driving to position " << focusPos.x() << "/" << focusPos.y());
-				// calculate distance and angle to position
-				float xDiff = focusPos.x() - actPos.x();
-				float yDiff = focusPos.y() - actPos.y();
-				float drivingDist = sqrt(xDiff*xDiff + yDiff*yDiff);
-				float drivingAngle = atan2(yDiff, xDiff) - robotDirection;
-				// normalize angle and define turning direction
-				if (drivingAngle > M_PI) drivingAngle -= 2*M_PI;
-				if (drivingAngle < -M_PI) drivingAngle = 2*M_PI + drivingAngle;
+				DEBUG_MSG("Own position: 0.0/0.0 m, " << (robotDirection*180.0/M_PI) << "°");
+				DEBUG_MSG("Object position: " << objectPosX << "/0.0 m");
+
+				// calculate path positions
 				float direction = 1.0;
-				if (drivingAngle < 0.0) direction = -1.0;
-
-/*				// calculate driving time
-				int turningTime = abs((int)(1000000.0 * 100.0*drivingAngle/turningSpeed)); // us
-				if (i==1) {
-					turningTime += turningAddition*1000;
+				if (robotDirection < 0.0 || robotDirection > M_PI) {
+					direction = -1.0;
 				}
-				int forwardTime = abs((int)(1000000.0 * 100.0*drivingDist/forwardSpeed)); // us
-				DEBUG_MSG("Driving action: " << drivingDist << " m, " << (drivingAngle*180.0/M_PI) << " degree (robot direction: " << (robotDirection*180.0/M_PI) << ", path direction: " << (atan2(yDiff, xDiff)*180.0/M_PI) << ")");
-				DEBUG_MSG("Driving " << drivingDist << " m with " << forwardSpeed << " cm/s for " << forwardTime << " us");
-				DEBUG_MSG("Driving " << drivingAngle << " rad with " << turningSpeed << " crad/s for " << turningTime << " us");
+				float saveDistance = amiroRadius + objectRadius + secureDist;
 
-				// driving by time
-				motorActionMilli(0, direction*turningSpeed, myCAN);
-				usleep(turningTime);
-				motorActionMilli(0, 0, myCAN);
-				usleep(300000);
-				motorActionMilli(forwardSpeed, 0, myCAN);
-				usleep(forwardTime);
-				motorActionMilli(0, 0, myCAN);
-				usleep(300000);*/
-//				sleep(1);
+				twbTracking::proto::Pose2DList path;
+				// add actual position
+				twbTracking::proto::Pose2D *pose2D = path.add_pose();
+				pose2D->set_x(0);
+				pose2D->set_y(0);
+				// add first edge position
+				pose2D = path.add_pose();
+				pose2D->set_x(objectPosX - saveDistance);
+				pose2D->set_y(objectPosY + direction*saveDistance);
+				// add second edge position
+				pose2D = path.add_pose();
+				pose2D->set_x(objectPosX + saveDistance);
+				pose2D->set_y(objectPosY + direction*saveDistance);
+				// add delivery start position
+				pose2D = path.add_pose();
+				pose2D->set_x(objectPosX + saveDistance);
+				pose2D->set_y(0);
+				// add final position
+				pose2D = path.add_pose();
+				pose2D->set_x(saveDistance);
+				pose2D->set_y(0);
 
-				// drive by odometry
-				motorDrivePosition(drivingDist, drivingAngle, myCAN);
+				// driving path
+				twbTracking::proto::Pose2D actPos = path.pose(0);
+				for (int i=1; i<5; i++) {
+					if (i==4) {
+						for(int led=0; led<8; led++) {
+							myCAN.setLightColor(led, amiro::Color(amiro::Color::YELLOW));
+						}
+					}
+					twbTracking::proto::Pose2D focusPos = path.pose(i);
+					INFO_MSG("Driving to position " << focusPos.x() << "/" << focusPos.y());
+					// calculate distance and angle to position
+					float xDiff = focusPos.x() - actPos.x();
+					float yDiff = focusPos.y() - actPos.y();
+					float drivingDist = sqrt(xDiff*xDiff + yDiff*yDiff);
+					float drivingAngle = atan2(yDiff, xDiff) - robotDirection;
+					// normalize angle and define turning direction
+					if (drivingAngle > M_PI) drivingAngle -= 2*M_PI;
+					if (drivingAngle < -M_PI) drivingAngle = 2*M_PI + drivingAngle;
+					float direction = 1.0;
+					if (drivingAngle < 0.0) direction = -1.0;
 
-				actPos = path.pose(i);
-				robotDirection = atan2(yDiff, xDiff);
+	/*				// calculate driving time
+					int turningTime = abs((int)(1000000.0 * 100.0*drivingAngle/turningSpeed)); // us
+					if (i==1) {
+						turningTime += turningAddition*1000;
+					}
+					int forwardTime = abs((int)(1000000.0 * 100.0*drivingDist/forwardSpeed)); // us
+					DEBUG_MSG("Driving action: " << drivingDist << " m, " << (drivingAngle*180.0/M_PI) << " degree (robot direction: " << (robotDirection*180.0/M_PI) << ", path direction: " << (atan2(yDiff, xDiff)*180.0/M_PI) << ")");
+					DEBUG_MSG("Driving " << drivingDist << " m with " << forwardSpeed << " cm/s for " << forwardTime << " us");
+					DEBUG_MSG("Driving " << drivingAngle << " rad with " << turningSpeed << " crad/s for " << turningTime << " us");
+
+					// driving by time
+					motorActionMilli(0, direction*turningSpeed, myCAN);
+					usleep(turningTime);
+					motorActionMilli(0, 0, myCAN);
+					usleep(300000);
+					motorActionMilli(forwardSpeed, 0, myCAN);
+					usleep(forwardTime);
+					motorActionMilli(0, 0, myCAN);
+					usleep(300000);*/
+	//				sleep(1);
+
+					// drive by odometry
+					motorDrivePosition(drivingDist, drivingAngle, myCAN);
+
+					actPos = path.pose(i);
+					robotDirection = atan2(yDiff, xDiff);
+				}
 			}
 
 			justDelivered = true;

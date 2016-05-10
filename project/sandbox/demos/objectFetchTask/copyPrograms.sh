@@ -9,7 +9,7 @@ for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
 done
 
 # Copy run and stop scripts
-scp run.sh root@${IP}:~/${NAME}
+scp run*.sh root@${IP}:~/${NAME}
 scp stop.sh root@${IP}:~/${NAME}
 
 # Copy commands
