@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
-// Author      : fpatzelt <fpatzelt@techfak.uni-bielefeld.de>
-// Description : Statemachine to perform a choreography.
+// Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
+// Description : Statemachine to perform a choreography including brakes.
 //============================================================================
 
 // std includes
@@ -214,21 +214,27 @@ Choreo loadChoreo(std::string choreoName) {
 int main(int argc, char **argv) {
 
 	// delay to start the choreo after the rsb-event was created in ms
-	int delay = 2000;
+	int choreoDelay = 2000;
+	int stepDelay = 1000;
+	int idDelay = 1000;
 
 	// default choreo name
 	std::string choreoName = "testChoreo.xml";
+
+	int amiroID = 0;
 
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("verbose,v", "Print values that are published via CAN.")
-			("amiroName,a", po::value<std::string>(&amiroName), "Name of the AMiRo, which has to be unique!")
+			("amiroID,a", po::value<int>(&amiroID), "ID of the AMiRo, which has to be unique!")
 			("choreoIn", po::value<std::string>(&choreoInscope), "Choreography inscope.")
 			("choreoname,c", po::value<std::string>(&choreoName), "Choreography name.")
 			("choreoRelative,r", "Flag if the positions in the choreo are relative.")
 			("printChoreo,p", "Prints the loaded steps of the choreo.")
-			("delay", po::value<int>(&delay), "Delay between creating the rsb event and starting the choreography in ms.");
+			("choreoDelay", po::value<int>(&choreoDelay), "Delay between receiving the start command via RSB and starting the choreography in ms (default 2000 ms).")
+			("stepDelay", po::value<int>(&stepDelay), "Delay of the brake between two steps of the choreography in ms (default 1000 ms).")
+			("idDelay", po::value<int>(&idDelay), "Delay between the AMiRo starts in ms (default: 1000 ms).");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -243,6 +249,18 @@ int main(int argc, char **argv) {
 
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
+
+	if (!vm.count("amiroID")) {
+		std::cout << "The AMiRo ID has to be given! Please check the options.\n\n" << options << "\n";
+		exit(1);
+	}
+
+	// Set AMiRo name
+	amiroName = "amiro" + boost::lexical_cast<std::string>(amiroID);
+
+	// Define delays
+	int delay = choreoDelay + idDelay*amiroID;
+	int delayS = stepDelay + idDelay*amiroID;
 
 	printChoreo = vm.count("printChoreo");
 	relativePosition = vm.count("choreoRelative");
@@ -312,9 +330,10 @@ int main(int argc, char **argv) {
 	// Initialize the robot communication
 	std::vector<std::string> amiros;
 	bool initialized = false;
+	bool exitProg = false;
 	bool ledsLeft = true;
 	for (int l=0; l<8; l++) {
-		if (l<4 && !left || l>3 && left) {
+		if (l<4 && !ledsLeft || l>3 && ledsLeft) {
 			myCAN.setLightColor(l, amiro::Color(255, 255, 0));
 		} else {
 			myCAN.setLightColor(l, amiro::Color(0, 0, 0));
@@ -388,7 +407,7 @@ int main(int argc, char **argv) {
 
 		// wait for start command
 		bool startHarvest = false;
-		cout << "\nWaiting for start command:" << endl;
+		cout << "\nWaiting for commands ..." << endl;
 		while (!startHarvest) {
 			// check choreo queue
 			if (!choreoQueue->empty()) {
@@ -402,23 +421,31 @@ int main(int argc, char **argv) {
 				EventPtr event = commandQueue->pop(0);
 				std::string command = *static_pointer_cast<std::string>(event->getData());
 				startHarvest = command == CMD_START;
+				exitProg = command == CMD_STOP;
 				if (startHarvest) {
 					delete startSystemTime;
 					startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delay));
+				} else if (exitProg) {
+					cout << "\nExit Harvester ..." << endl;
+					break;
 				}
 			}
 
 			// wait for 100 ms
 			usleep(100000);
 		}
+		if (exitProg) {
+			break;
+		}
 
 		// load choreo
 		Choreo choreo = loadChoreo(choreoName);
+		cout << "\n => Start choreo '" << choreoName.c_str() << "': ";
 		if (choreo.empty()) {
 			cout << "ERROR in Choreo!" << endl;
 			continue;
 		} else {
-			cout << "Choreo: " << choreo.size() << " steps" << endl;
+			cout << choreo.size() << " steps" << endl;
 		}
 
 		// reset odometry
@@ -428,9 +455,14 @@ int main(int argc, char **argv) {
 		myCAN.setOdometry(odoPos);
 
 		// wait for choreo to begin
-		cout << "Waiting ..." << endl;
+		if (vm.count("verbose")) cout << "Waiting ..." << endl;
 		boost::this_thread::sleep_until(*startSystemTime);
-		cout << "Start choreo ..." << endl;
+		if (vm.count("verbose")) cout << "Start choreo ..." << endl;
+
+		// Clear amiro queue
+		while (!amiroQueue->empty()) {
+			amiroQueue->pop(0);
+		}
 
 		// perform the choreo
 		for (ChoreoStep cs : choreo) {
@@ -498,7 +530,7 @@ int main(int argc, char **argv) {
 				}
 
 				// Check for all ready amiros
-				cout << "List of AMiRos which are already finished:" << endl;
+				if (vm.count("verbose")) cout << "\nList of AMiRos which are already finished:" << endl;
 				while (!amiroQueue->empty()) {
 					EventPtr event = amiroQueue->pop(0);
 					std::string inputName = *static_pointer_cast<std::string>(event->getData());
@@ -513,7 +545,7 @@ int main(int argc, char **argv) {
 					}
 					if (isIn && !amiroCheck[id]) {
 						amiroCheck[id] = true;
-						cout << " -> Ready AMiRo: '" << inputName.c_str() << "'" << endl;
+						if (vm.count("verbose")) cout << " -> Ready AMiRo: '" << inputName.c_str() << "'" << endl;
 					}
 				}
 				usleep (100000);
@@ -521,9 +553,20 @@ int main(int argc, char **argv) {
 				// check for rest (and own)
 				bool ownNameReceived = false;
 				bool allOthersReceived = false;
-				cout << "Waiting for rest:" << endl;
+				if (vm.count("verbose")) cout << "Waiting for rest:" << endl;
 				int publishCounter = 5;
+				ledsLeft = true;
 				while (!ownNameReceived || !allOthersReceived) {
+					// Set LEDs
+					for (int l=0; l<8; l++) {
+						if (l<4 && !ledsLeft || l>3 && ledsLeft) {
+							myCAN.setLightColor(l, amiro::Color(255, 255, 0));
+						} else {
+							myCAN.setLightColor(l, amiro::Color(0, 0, 0));
+						}
+					}
+					ledsLeft = !ledsLeft;
+
 					// Send own name
 					boost::shared_ptr<std::string> StringPtr(new std::string(amiroName));
 					amiroInformer->publish(StringPtr);
@@ -532,7 +575,7 @@ int main(int argc, char **argv) {
 					while (!amiroQueue->empty()) {
 						EventPtr event = amiroQueue->pop(0);
 						std::string inputName = *static_pointer_cast<std::string>(event->getData());
-						if (amiroName != inputName && ownNameReceived) {
+						if (amiroName != inputName) {
 							bool isIn = false;
 							int id = -1;
 							for (int i=0; i<amiros.size(); i++) {
@@ -544,15 +587,15 @@ int main(int argc, char **argv) {
 							}
 							if (isIn && !amiroCheck[id]) {
 								amiroCheck[id] = true;
-								cout << " -> Received AMiRo: '" << inputName.c_str() << "'" << endl;
+								if (vm.count("verbose")) cout << " -> Received AMiRo: '" << inputName.c_str() << "'" << endl;
 								delete startSystemTime;
-								startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delay));
+								startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delayS));
 							}
 						} else if (amiroName == inputName && !ownNameReceived) {
 							ownNameReceived = true;
-							cout << " -> Received AMiRo: '" << inputName.c_str() << "' => own name!" << endl;
+							if (vm.count("verbose")) cout << " -> Received AMiRo: '" << inputName.c_str() << "' => own name!" << endl;
 							delete startSystemTime;
-							startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delay));
+							startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delayS));
 						}
 					}
 
@@ -567,11 +610,27 @@ int main(int argc, char **argv) {
 					// wait for 300 ms
 					usleep(300000);
 				}
+				// Clear amiro queue
+				while (!amiroQueue->empty()) {
+					amiroQueue->pop(0);
+				}
+
+				// Set LEDs
+				for (int l=0; l<8; l++) {
+					myCAN.setLightColor(l, amiro::Color(255, 255, 0));
+				}
 
 				// to continue just wait until deadline
-				cout << "All are finished. Waiting ..." << endl;
+				if (vm.count("verbose")) cout << "All are finished. Waiting ..." << endl;
 				boost::this_thread::sleep_until(*startSystemTime);
-				cout << "Continue choreo ..." << endl;
+				if (vm.count("verbose")) cout << "Continue choreo ..." << endl;
+
+				// Clear amiro queue again (there have been messages again)
+				while (!amiroQueue->empty()) {
+					amiroQueue->pop(0);
+				}
+			} else {
+				if (vm.count("verbose")) cout << "\nNo brake, continue ..." << endl;
 			}
 
 			// set position

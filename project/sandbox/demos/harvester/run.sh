@@ -20,7 +20,7 @@ spread -c amirospread &
 
 sleep 5
 
-./harvester -a ${ID} -c harvest.xml -rp &
+./harvester -a ${ID} -c harvest.xml --choreoDelay 5000 --idDelay 2000 -rpv &
 
 #wait
 #cpufreq-set -g ondemand

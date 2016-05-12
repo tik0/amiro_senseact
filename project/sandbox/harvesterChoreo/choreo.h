@@ -1,8 +1,8 @@
 /*
  * choreo.h
  *
- *  Created on: Mar 10, 2015
- *      Author: florian
+ *  Created on: May, 2016
+ *      Author: mbarther
  */
 
 #ifndef CHOREO_H_

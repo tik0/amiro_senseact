@@ -5,7 +5,7 @@
     <posx>0</posx>
     <posy>500000</posy>
 <!-- blue,green,red -->
-    <la>0,255,255</la>
+    <la>255,0,0</la>
   </choreoStep>
 </choreo>  
 

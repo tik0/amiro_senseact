@@ -42,11 +42,15 @@ Spread_Segment  192.168.255.255:4823 {
 }
 
 Spread_Segment  192.168.255.255:4823 {
-	amiro36		192.168.2.36
+	amiro36		192.168.2.35
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-	amiro37		192.168.2.37     
+	amiro37		192.168.2.39     
+}
+
+Spread_Segment  192.168.255.255:4823 {    
+	skynet		192.168.2.203     
 }
 
 Spread_Segment  192.168.255.255:4823 {    
