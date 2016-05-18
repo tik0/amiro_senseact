@@ -1,71 +1,115 @@
 ====== Harvester Choreo ======
 
-This program performs a choreography on the AMiRo as an Harvester movement. For this purpose a xml-File that defines the Choreography is parsed. Based on the choreography movements and settings for the lightring are published via CAN. 
+This program performs a choreography on the AMiRo as an Harvester movement. For this purpose a xml file, that defines the choreography, is parsed. Additionally several robots can communicate and cooperate with each other and adapt their movements.
+
+===== Harvest Procedure =====
+
+At first the robots have to know of each other, so they are publishing their names and saving the names of the others. If they have recognized each other, the user can send the command 'init'.
+
+Now they are waiting for the start command. In this moment, the choreography can be changed. By sending the command 'start', all robots will start the chosen choreography. After that, the robots are waiting for the start command again.
+
+By giving the command 'stop', the robots will exit the application. If they are harvesting, the command will be executed afterwards.
+
+By using the delay parameters of the application, the robots can be given start delays as real harvesters depending on their given ID:
+
+^ Name ^ Parameter ^ Default Value ^ Description ^
+| Choreo Delay | choreoDelay | 2000 ms | Delay between receiving the start command and starting the choreography. |
+| Step Delay   | stepDelay   | 1000 ms | Delay between receiving the last finish recognition of a robot and starting the ID delay. |
+| ID Delay     | idDelay     | 1000 ms | Delay between step delay and continuing with the next step (multiplied with robot ID). |
 
 ===== RSB Scopes =====
 
-^ Scope (default name)      ^ Description ^
-|/choreo | Inscope for choreo names|
-
-===== Important Command-Line Options =====
-^ Option      ^ Description ^
-| -h, --help | Display a help message |
-| -v, --verbose | Print values that are published via CAN |
-| --delay | Delay between creating the rsb event and starting the choreography in ms (default: 2000ms)|
-| --pos | Position in the formation (from the front: 0=left, 1=middle left, 2=middle, 3=middle right, 4=right) |
-| -s, --homing | The homing will be activated. After finishing the choreography the robot will return to its start position. |
+^ Scope Name ^ Default Scope ^ Scope Type ^ Description ^
+| Choreo            | /harvesters/choreo    | String | Input Scope for choreo file names. |
+| Commands          | /harvesters/command   | String | Input Scope for receiving commands. |
+| AMiRo cooperation | /harvesters/harvester | String | Scope for cooperating with other AMiRos. |
 
 ===== Structure of the xml files =====
 
-The filename of a choreography has to be //[songname][position].xml//, where position is a number that indicates the starting position (from the front: 0=left, 1=middle left, 2=middle, 3=middle right, 4=right).
+The filename of a choreography has to be a xml file.
 
+==== XML Parts ====
 
-<choreo> include the hole Choreo. includes choreoSteps or/and choreoincludes.
-<choreoStep> one Step of the Choreo, have a v, w, time,brightness and Lights(l0-l7)
-<v> speed of the Robot in mm/s
-<w> rotation speed of the Robot
-<time> for the Step in ms
-<brightness> brightness of the Lights Range from [0-255]
-<lX> Colour for each Light with X from 0 to 7
-<lX> blue green red <lX> where each colour have a Range from [0-255]
+^ XML Part ^ Description ^
+| choreo | Includes the hole Choreo (includes choreoSteps or/and choreoincludes). |
+| choreoStep | This is one Step of the Choreo containing x-y-position, light configuration and braking flak. |
+| posx | X coordinate of the position (relative or absolute), which should be driven to (in meters). |
+| posy | Y coordinate of the position (relative or absolute), which should be driven to (in meters). |
+| brake | Flag, if the robot shall stop and wait for the others after this step (integer of [0,1]). |
+| l<id> | Color of the LED with given id (id as integer of [0,7], color as integer of [0,255] for blue, green, red). It can be overwritten by 'la' |
+| la | Color for all LEDs (color as integer of [0,255] for blue, green, red). It overwrittes 'l<id>' |
 
-Example:
+The position can be relative or absolute (equal for all choreos!), which can be set in the application parameters.
+
+==== Example (with relative positions) ====
 
 <code>
 <!--<?xml version="1.0"> -->
-<choreo> 
+<choreo>
   <choreoStep>
-    <v>0</v>
-    <w>100000</w>
-    <time>200</time>
-    <brightness>100</brightness>
+    <brake>0</brake>
+    <posx>500000</posx>
+    <posy>0</posy>
 <!-- blue,green,red -->
-    <l0>1,2,3</l0>
-    <l1>1,2,3</l1>
-    <l2>4,5,6</l2>
-    <l3>7,8,9</l3>
-    <l4>10,11,12</l4>
-    <l5>13,14,15</l5>
-    <l6>16,17,18</l6>
-    <l7>19,20,21</l7>
+    <l0>255,0,0</l0>
+    <l1>255,0,0</l1>
+    <l2>255,0,0</l2>
+    <l3>255,0,0</l3>
+    <l4>255,0,0</l4>
+    <l5>255,0,0</l5>
+    <l6>255,0,0</l6>
+    <l7>255,0,0</l7>
   </choreoStep>
   <choreoStep>
-    <v>100</v>
-    <w>10000</w>
-    <time>300</time>
-    <brightness>100</brightness>
+    <brake>1</brake>
+    <posx>500000</posx>
+    <posy>250000</posy>
 <!-- blue,green,red -->
-    <l0>11,21,31</l0>
-    <l1>11,21,31</l1>
-    <l2>41,51,61</l2>
-    <l3>71,81,91</l3>
-    <l4>101,111,121</l4>
-    <l5>131,141,151</l5>
-    <l6>161,171,181</l6>
-    <l7>191,201,211</l7>
+    <la>0,255,0</la>
+  </choreoStep>
+  <choreoStep>
+    <brake>0</brake>
+    <posx>0</posx>
+    <posy>250000</posy>
+<!-- blue,green,red -->
+    <la>0,0,255</la>
+  </choreoStep>
+  <choreoStep>
+    <brake>1</brake>
+    <posx>0</posx>
+    <posy>500000</posy>
+<!-- blue,green,red -->
+    <la>0,255,0</la>
+  </choreoStep>
+  <choreoStep>
+    <brake>0</brake>
+    <posx>500000</posx>
+    <posy>500000</posy>
+<!-- blue,green,red -->
+    <la>255,0,0</la>
+  </choreoStep>
+  <choreoStep>
+    <brake>1</brake>
+    <posx>500000</posx>
+    <posy>250000</posy>
+<!-- blue,green,red -->
+    <la>0,255,0</la>
   </choreoStep>
   <choreoinclude>
-    <choreopart>Choreopart.xml</choreopart>
+    <choreopart>harvestinclude.xml</choreopart>
   </choreoinclude>
 </choreo>
 </code>
+
+===== Parameters =====
+
+^ Parameter ^ Type ^ Default Value ^ Description ^
+| verbose, v        | -       | -                  | Print values that are published via CAN. |
+| amiroID, a        | Integer | NOT GIVEN          | ID of the AMiRo, which has to be unique! Flag must be set! |
+| choreoIn          | String  | /harvesters/choreo | Choreography inscope. |
+| choreoname, c     | String  | testChoreo.xml     | Initial Choreography name. |
+| choreoRelative, r | -       | -                  | Flag if the positions in the choreo are relative. |
+| printChoreo, p    | -       | -                  | Prints the loaded steps of the choreo. |
+| choreoDelay       | Integer | 2000               | Delay between receiving the start command via RSB and starting the choreography in ms. |
+| stepDelay         | Integer | 1000               | Delay of the brake between two steps of the choreography in ms. |
+| idDelay           | Integer | 1000               | Delay between the AMiRo starts in ms. |

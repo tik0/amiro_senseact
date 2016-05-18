@@ -1,12 +1,18 @@
 ====== Building the Harvester Choreo ======
 
--
+This demo contains the program for performing a choreography on the AMiRo as an Harvester movement. For this purpose a xml file, that defines the choreography, is parsed. Additionally several robots can communicate and cooperate with each other and adapt their movements.
+
+For detailed application and procedure information, please check the [[sandbox:harvesterChoreo:start|harvesterChoreo documentation]].
 
 ===== Run the Demo =====
 
   - ''. ./build.sh .''
   - ''./copyPrograms.sh <ip address>''
-  - ''./run.sh'' on the AMiRo
+  - ''./run.sh <ID>'' on the AMiRo
+  - If every AMiRo is running:
+    - Change to command directory on one AMiRo: ''cd commands/''
+    - If they recognized each other: ''init.sh''
+    - If they shall start choreo: ''start.sh''
   - ''./stop.sh'' on the AMiRo for stopping
 
 One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
@@ -14,5 +20,5 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[sandbox:harvesterChoreo:start|harvesterChoreo]] | - |
+| [[sandbox:harvesterChoreo:start|harvesterChoreo]] | Program for harvester movement. |
 | [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |

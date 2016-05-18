@@ -227,9 +227,9 @@ int main(int argc, char **argv) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("verbose,v", "Print values that are published via CAN.")
-			("amiroID,a", po::value<int>(&amiroID), "ID of the AMiRo, which has to be unique!")
+			("amiroID,a", po::value<int>(&amiroID), "ID of the AMiRo, which has to be unique! Flag must be set!")
 			("choreoIn", po::value<std::string>(&choreoInscope), "Choreography inscope.")
-			("choreoname,c", po::value<std::string>(&choreoName), "Choreography name.")
+			("choreoname,c", po::value<std::string>(&choreoName), "Initial Choreography name.")
 			("choreoRelative,r", "Flag if the positions in the choreo are relative.")
 			("printChoreo,p", "Prints the loaded steps of the choreo.")
 			("choreoDelay", po::value<int>(&choreoDelay), "Delay between receiving the start command via RSB and starting the choreography in ms (default 2000 ms).")
