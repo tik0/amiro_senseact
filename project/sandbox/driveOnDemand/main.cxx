@@ -205,6 +205,7 @@ int main(int argc, char **argv) {
 		myCAN.setLightColor(led, curColor);
 	}
 
+	INFO_MSG("Starting driving loop");
 	while (!exitProg) {
 		// wait for new guide command
 		while (guideQueue->empty() && !exitProg) {
