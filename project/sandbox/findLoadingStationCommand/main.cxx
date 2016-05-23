@@ -17,6 +17,8 @@
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/QueuePushHandler.h>
+// Include own converter
+#include <converter/vecIntConverter/main.hpp>
 
 
 // protocol defines
@@ -25,7 +27,7 @@ std::string COMMAND_FIND = "FIND";
 
 using namespace boost;
 using namespace std;
-//using namespace cv;
+using namespace muroxConverter;
 using namespace rsb;
 using namespace rsb::converter;
 using namespace rsb::util;
@@ -40,11 +42,9 @@ using namespace rsb::util;
 // For program options
 #include <boost/program_options.hpp>
 
-static std::string g_sImageScope = "/objectDetection/image";
-static std::string g_sInScope = "/objectDetection/detected";
-static std::string g_sOutScope = "/objectDetection/command";
-
-static std::string NOTHING_DETECTED = "null";
+static std::string g_sImageScope = "/stationDetection/image";
+static std::string g_sInScope = "/stationDetection/detected";
+static std::string g_sOutScope = "/stationDetection/command";
 
 int main(int argc, char **argv) {  
 
@@ -76,7 +76,11 @@ int main(int argc, char **argv) {
   INFO_MSG( "Image scope: " << g_sImageScope);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  Factory &factory = getFactory(); //rsb::Factory::getInstance();
+  Factory &factory = getFactory();
+
+  // Register new converter for std::vector<int>
+  boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
+  converterRepository<std::string>()->registerConverter(converter);
 
   // Create the command informer
   Informer<std::string>::Ptr informer = getFactory().createInformer<std::string> (Scope(g_sOutScope));
@@ -90,10 +94,8 @@ int main(int argc, char **argv) {
 
   // Create and start the listener for detections
   rsb::ListenerPtr detectListener = factory.createListener(g_sInScope);
-  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > detectQueue(
-                      new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-
-  detectListener->addHandler(HandlerPtr(new QueuePushHandler<std::string>(detectQueue)));
+  boost::shared_ptr < rsc::threading::SynchronizedQueue < boost::shared_ptr< std::vector<int> > > >detectQueue(new rsc::threading::SynchronizedQueue< boost::shared_ptr< std::vector<int> > >(1));
+  detectListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler< std::vector<int> >(detectQueue)));
 
   // Pop the images and show them
   while (true) {
@@ -108,17 +110,14 @@ int main(int argc, char **argv) {
 
     // Get detection
     if (!detectQueue->empty()) {
-      std::string detection = *detectQueue->pop().get();
-      // check for detection
-      if (detection == NOTHING_DETECTED) {
-        printf("No object detected.\n");
+      boost::shared_ptr< std::vector<int> > stationPos = boost::static_pointer_cast< std::vector<int> >(detectQueue->pop());
+      // check for station detection
+      if (stationPos->at(0) == 0) {
+        INFO_MSG("Station not detected");
       } else {
-        int obj = atoi(detection.c_str());
-        if (obj > 0) {
-          printf("Object %i detected.\n", obj);
-        } else {
-          printf("WARNING: Unknown input!\n");
-        }
+        float dist = ((float)stationPos->at(0))/1000000.0;
+        float angle = ((float)stationPos->at(1))/1000000.0 * 180.0/M_PI;
+	INFO_MSG("Station is at " << dist << "m and " << angle << "°");
       }
     }
 

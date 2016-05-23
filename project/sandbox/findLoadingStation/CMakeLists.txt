@@ -28,6 +28,10 @@ include_directories(
     ${Boost_INCLUDE_DIR}
 )
 
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
+
 # Define the source
 SET (SOURCE main.cxx)
 
@@ -47,6 +51,8 @@ target_link_libraries (
     ${Boost_LIBRARIES}
     ${OPENCV_LIBRARIES}
     jpeg
+    # -- Own libraries
+    vecIntConverter
 )
 
 # Additional compiler flags

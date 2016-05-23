@@ -19,6 +19,8 @@
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/QueuePushHandler.h>
+// Include own converter
+#include <converter/vecIntConverter/main.hpp>
 
 // For checking character pressed in the console
 #include <kbhit.hpp>
@@ -32,9 +34,8 @@ std::string COMMAND_THRESHOLD = "threshold_";
 
 using namespace boost;
 using namespace std;
-//using namespace cv;
 using namespace rsb;
-// using namespace muroxConverter;
+using namespace muroxConverter;
 using namespace rsb::converter;
 using namespace cv;
 
@@ -51,6 +52,13 @@ typedef struct StationData_t {
 
 std::vector<StationData_t> stations;
 
+// blob characteristic constants
+#define STATION_CONTACT_SIZE_MIN 40.0
+#define STATION_CONTACT_SIZE_MAX 85.0
+#define STATION_MARKER_DIFF_MAX 0.15
+#define STATION_SIZE_DIFF_MAX 5.0
+#define STATION_SIZE_DIFF_MIN 1.0
+
 
 #define INFO_MSG_
 #define DEBUG_MSG_
@@ -64,13 +72,13 @@ std::vector<StationData_t> stations;
 
 #include <jpeglib.h>
 
-static std::string g_sImageScope = "/objectDetection/image";
-static std::string g_sOutScope = "/objectDetection/detected";
-static std::string g_sInScope = "/objectDetection/command";
+static std::string g_sImageScope = "/stationDetection/image";
+static std::string g_sOutScope = "/stationDetection/detected";
+static std::string g_sInScope = "/stationDetection/command";
 static int g_iDevice = 0;
 static unsigned int g_uiQuality = 85;
 
-static float camAngleHeightDegree = 126.86; // degree
+static float camAngleHeightDegree = 43.60; // degree
 static float camAngleWidthDegree = 53.12; // degree 
 float camAngleHeight, camAngleWidth;
 
@@ -105,6 +113,10 @@ Mat doBlobDetection(Mat frame, SimpleBlobDetector detectorRect, SimpleBlobDetect
 	Size fSize = frame.size();
 
 	stations.clear();
+
+	Mat sendImage = Mat(fSize.height, fSize.width*2, CV_8UC3);
+	Mat part1(sendImage, Rect(0, 0, fSize.width, fSize.height));
+	Mat part2(sendImage, Rect(fSize.width, 0, fSize.width, fSize.height));
 
 	frame.copyTo(resultFrame);
 	Mat bigFocusFrame;
@@ -147,7 +159,7 @@ Mat doBlobDetection(Mat frame, SimpleBlobDetector detectorRect, SimpleBlobDetect
 				float compDistDiff = keypoints[curPoint].pt.y - keypoints[comp].pt.y;
 				if (compDistDiff < 0.0) compDistDiff *= -1.0;
 
-				if (sizeDiff/maxSize < 0.15 && compDistDiff < actDistDiff) {
+				if (sizeDiff/maxSize < STATION_MARKER_DIFF_MAX && compDistDiff < actDistDiff) {
 					bestPartner[curPoint] = comp;
 				}
 			}
@@ -189,68 +201,90 @@ Mat doBlobDetection(Mat frame, SimpleBlobDetector detectorRect, SimpleBlobDetect
 			if (yMaxRect >= fSize.height) yMaxRect = fSize.height-1;
 
 			if (xMaxRect-xMinRect > 0 && yMaxRect-yMinRect > 0) {
-				Rect zoomRect(xMinRect, yMinRect, xMaxRect-xMinRect, yMaxRect-yMinRect);
-				focusFrame = bigFocusFrame(zoomRect);
-				resize(focusFrame, focusFrame, Size(fSize.width, fSize.height));
+				if (debugging) DEBUG_MSG("    -> Rect is big enough.");
+				float rectSizeDiff = (float)(xMaxRect-xMinRect)/(float)(yMaxRect-yMinRect);
+				if (debugging) DEBUG_MSG("    -> Rect has size difference of " << rectSizeDiff << ".");
+				if (rectSizeDiff >= STATION_SIZE_DIFF_MIN && rectSizeDiff <= STATION_SIZE_DIFF_MAX) {
+					if (debugging) DEBUG_MSG("    -> Rect size difference correct.");
+					Rect zoomRect(xMinRect, yMinRect, xMaxRect-xMinRect, yMaxRect-yMinRect);
+					focusFrame = bigFocusFrame(zoomRect);
+					resize(focusFrame, focusFrame, Size(fSize.width, fSize.height));
 
-				// Get image channels
-				Mat chans[3];
-				split(focusFrame, chans);
+					// Get image channels
+					Mat chans[3];
+					split(focusFrame, chans);
 
-				// Get red dominated parts
-				Mat greenblue = cv::max(chans[0], chans[1]);
-				Mat redChan = chans[2] - greenblue;
-				Mat maxValue(frame.rows, frame.cols, CV_8UC1, Scalar(255));
-				redChan = maxValue - redChan;
-				threshold(redChan, redChan, 250, 255, 0);
-				Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(25,25), Point(1,1));
-				dilate(redChan, redChan, dilateElement);
-			//	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(5,5), Point(1,1));
-			//	erode(redChan, redChan, erodeElement);
-			//	Mat dilateElement2 = getStructuringElement(MORPH_ELLIPSE, Size(3,3), Point(1,1));
-			//	dilate(redChan, redChan, dilateElement2);
-			//	normalize(redChan, redChan, 0, 255, NORM_MINMAX, CV_8UC1);
-				cvtColor(redChan, redImage3C, CV_GRAY2BGR);
+					Mat focusFrameGray;
+					cvtColor(focusFrame, focusFrameGray, CV_BGR2GRAY);
 
-				std::vector<KeyPoint> keypointsRed;
-				detectorCirc.detect(redImage3C, keypointsRed);
-//				drawKeypoints(redImage3C, keypointsRed, redImage3C, Scalar(0,255,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+					// Get red dominated parts
+					Mat greenblue = cv::max(chans[0], chans[1]);
+					Mat redChan = chans[2] - greenblue;
+					Mat maxValue(frame.rows, frame.cols, CV_8UC1, Scalar(255));
+					redChan = maxValue - redChan;
+					threshold(redChan, redChan, 254, 255, 0);
+	//				Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(11,11), Point(1,1));
+	//				dilate(redChan, redChan, dilateElement);
+				//	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(5,5), Point(1,1));
+				//	erode(redChan, redChan, erodeElement);
+				//	Mat dilateElement2 = getStructuringElement(MORPH_ELLIPSE, Size(3,3), Point(1,1));
+				//	dilate(redChan, redChan, dilateElement2);
+				//	normalize(redChan, redChan, 0, 255, NORM_MINMAX, CV_8UC1);
+					cvtColor(focusFrameGray, redImage3C, CV_GRAY2BGR);
 
-				if (keypointsRed.size() >= 2) {
-					int xMin = min(keypoints[partner1[i]].pt.x-keypoints[partner1[i]].size, keypoints[partner2[i]].pt.x-keypoints[partner2[i]].size);
-					int xMax = max(keypoints[partner1[i]].pt.x+keypoints[partner1[i]].size, keypoints[partner2[i]].pt.x+keypoints[partner2[i]].size);
-					int yMin = min(keypoints[partner1[i]].pt.y-keypoints[partner1[i]].size, keypoints[partner2[i]].pt.y-keypoints[partner2[i]].size);
-					int yMax = max(keypoints[partner1[i]].pt.y+keypoints[partner1[i]].size, keypoints[partner2[i]].pt.y+keypoints[partner2[i]].size);
+					std::vector<KeyPoint> keypointsRed;
+					detectorCirc.detect(redImage3C, keypointsRed);
+					drawKeypoints(redImage3C, keypointsRed, redImage3C, Scalar(0,255,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
-					if (xMin < 0) xMin = 0;
-					if (yMin < 0) yMin = 0;
-					if (xMax >= fSize.width) xMax = fSize.width-1;
-					if (yMax >= fSize.height) yMax = fSize.height-1;
-					Point ptA(xMin, yMin);
-					Point ptB(xMin, yMax);
-					Point ptC(xMax, yMax);
-					Point ptD(xMax, yMin);
-					line(resultFrame, ptA, ptB, Scalar(0,255,255), 1);
-					line(resultFrame, ptB, ptC, Scalar(0,255,255), 1);
-					line(resultFrame, ptC, ptD, Scalar(0,255,255), 1);
-					line(resultFrame, ptD, ptA, Scalar(0,255,255), 1);
+					int bigPoints = 0;
+					for (int c=0; c<keypointsRed.size(); c++) {
+						if (debugging) DEBUG_MSG("      -> keypoint " << c << ": " << keypointsRed[c].size);
+						if (keypointsRed[c].size > STATION_CONTACT_SIZE_MIN && keypointsRed[c].size < STATION_CONTACT_SIZE_MAX) {
+							bigPoints++;
+						}
+					}
 
-					StationData_t newStation;
-					newStation.imageWidth = fSize.width;
-					newStation.imageHeight = fSize.height;
-					newStation.camAngleWidth = camAngleWidth;
-					newStation.camAngleHeight = camAngleHeight;
-					newStation.stationWidth = xMax-xMin;
-					newStation.stationHeight = yMax-yMin;
-					newStation.stationCenterWidth = xMin + newStation.stationWidth/2;
-					newStation.stationCenterHeight = newStation.imageHeight - (yMin + newStation.stationHeight/2);
-					stations.push_back(newStation);
+					if (debugging) DEBUG_MSG("    -> " << bigPoints << " big points found.");
+
+					if (bigPoints >= 2) {
+						int xMin = min(keypoints[partner1[i]].pt.x-keypoints[partner1[i]].size, keypoints[partner2[i]].pt.x-keypoints[partner2[i]].size);
+						int xMax = max(keypoints[partner1[i]].pt.x+keypoints[partner1[i]].size, keypoints[partner2[i]].pt.x+keypoints[partner2[i]].size);
+						int yMin = min(keypoints[partner1[i]].pt.y-keypoints[partner1[i]].size, keypoints[partner2[i]].pt.y-keypoints[partner2[i]].size);
+						int yMax = max(keypoints[partner1[i]].pt.y+keypoints[partner1[i]].size, keypoints[partner2[i]].pt.y+keypoints[partner2[i]].size);
+
+						if (xMin < 0) xMin = 0;
+						if (yMin < 0) yMin = 0;
+						if (xMax >= fSize.width) xMax = fSize.width-1;
+						if (yMax >= fSize.height) yMax = fSize.height-1;
+						Point ptA(xMin, yMin);
+						Point ptB(xMin, yMax);
+						Point ptC(xMax, yMax);
+						Point ptD(xMax, yMin);
+						line(resultFrame, ptA, ptB, Scalar(0,255,255), 1);
+						line(resultFrame, ptB, ptC, Scalar(0,255,255), 1);
+						line(resultFrame, ptC, ptD, Scalar(0,255,255), 1);
+						line(resultFrame, ptD, ptA, Scalar(0,255,255), 1);
+
+						StationData_t newStation;
+						newStation.imageWidth = fSize.width;
+						newStation.imageHeight = fSize.height;
+						newStation.camAngleWidth = camAngleWidth;
+						newStation.camAngleHeight = camAngleHeight;
+						newStation.stationWidth = xMax-xMin;
+						newStation.stationHeight = yMax-yMin;
+						newStation.stationCenterWidth = xMin + newStation.stationWidth/2;
+						newStation.stationCenterHeight = newStation.imageHeight - (yMin + newStation.stationHeight/2);
+						stations.push_back(newStation);
+
+						redImage3C.copyTo(part2);
+					}
 				}
 			}
 		}
 	}
 
-	return resultFrame;
+	resultFrame.copyTo(part1);
+	return sendImage;
 }
 
 
@@ -266,7 +300,7 @@ int main(int argc, char **argv) {
 			("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving commands")
 			("device,d", po::value < int > (&g_iDevice),"Number of device")
 			("quality,q", po::value < unsigned int > (&g_uiQuality),"Quality of JPEG compression [0 .. 100]")
-			("cameraAngleHeight", po::value < float > (&camAngleHeightDegree),"Horizontal angle of the camera in degrees (default: 126.86°).")
+			("cameraAngleHeight", po::value < float > (&camAngleHeightDegree),"Horizontal angle of the camera in degrees (default: 43.60°).")
 			("camerAngleWidth", po::value < float > (&camAngleWidthDegree),"Vertical angle of the camera in degrees (default: 53.12°).")
 			("stationHeight", po::value < float > (&stationHeight),"Height of the station (measured at black stripes) in meters (default: 0.0405).")
 			("sending,s", "Sends the taken snapshot over RSB.")
@@ -307,9 +341,13 @@ int main(int argc, char **argv) {
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	rsb::Factory &factory = rsb::Factory::getInstance();
 
+	// Register new converter for std::vector<int>
+	boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
+	converterRepository<std::string>()->registerConverter(converter);
+
 	// Create the informer
 	Informer<std::string>::Ptr imageInformer = getFactory().createInformer<std::string> (Scope(g_sImageScope));
-	Informer<std::string>::Ptr detectedInformer = getFactory().createInformer<std::string> (Scope(g_sOutScope));
+	rsb::Informer< std::vector<int> >::Ptr stationPosInformer = factory.createInformer< std::vector<int> > (g_sOutScope);
 
 	// Create and start the command listener
 	rsb::ListenerPtr listener = factory.createListener(g_sInScope);
@@ -365,6 +403,11 @@ int main(int argc, char **argv) {
 		paramsCirc.minInertiaRatio = 0.01;
 		SimpleBlobDetector detectorCirc(paramsCirc);
 
+
+		// other variables
+		std::vector<int> stationPos(2,0);
+		boost::shared_ptr< std::vector<int> > vecStationPos;
+
 		INFO_MSG("");
 		INFO_MSG("Starting camera loop.");
 		INFO_MSG("");
@@ -379,13 +422,14 @@ int main(int argc, char **argv) {
 //			Mat top(resultFrame, Rect(fSize.width, 0, fSize.width, fSize.height-bottom.size().height));
 			Mat blobbed = doBlobDetection(bottom, detectorRect, detectorCirc);
 			if (sendingPic) {
-				blobbed.copyTo(bottom);
-				if (debugging) {
-					frame.copyTo(part1);
-					resultFrame.copyTo(part2);
-				} else {
-					resultFrame.copyTo(sendImage);
-				}
+				blobbed.copyTo(sendImage);
+//				blobbed.copyTo(bottom);
+//				if (debugging) {
+//					frame.copyTo(part1);
+//					resultFrame.copyTo(part2);
+//				} else {
+//					resultFrame.copyTo(sendImage);
+//				}
 			}
 
 			INFO_MSG("Station count: " << stations.size());
@@ -394,9 +438,23 @@ int main(int argc, char **argv) {
 				float angleImage = station.camAngleWidth;
 				int widthImage = station.imageWidth;
 				float angle = (station.stationCenterWidth - widthImage/2.0) * angleImage/widthImage * (-180.0/M_PI);
-				// TODO get distance to station (over station height)
-				INFO_MSG(" -> " << station.stationCenterWidth << "/" << station.stationCenterHeight << " => " << angle << "°");
+				float heightAngleHalfed = station.camAngleHeight * station.stationHeight/station.imageHeight * 0.5;
+				float stationDist = stationHeight/2.0 * sin(M_PI*0.5 - heightAngleHalfed) / sin(heightAngleHalfed) * 1.33;
+				INFO_MSG(" -> " << station.stationCenterWidth << "/" << station.stationCenterHeight << " => " << angle << "°, " << stationDist << " m");
 			}
+
+			if (stations.size() > 0) {
+				float angle = (stations[0].stationCenterWidth - stations[0].imageWidth/2.0) * stations[0].camAngleWidth/stations[0].imageWidth * (-1);
+				float heightAngleHalfed = stations[0].camAngleHeight * stations[0].stationHeight/stations[0].imageHeight * 0.5;
+				float dist = stationHeight/2.0 * sin(M_PI*0.5 - heightAngleHalfed) / sin(heightAngleHalfed) * 1.33;
+				stationPos[0] = (int)(dist*1000000.0);
+				stationPos[1] = (int)(angle*1000000.0);
+			} else {
+				stationPos[0] = 0;
+				stationPos[1] = 0;
+			}
+			vecStationPos = boost::shared_ptr<std::vector<int> >(new std::vector<int>(stationPos.begin(),stationPos.end()));
+			stationPosInformer->publish(vecStationPos);
 
 			// Get command
 			if (!commandQueue->empty()) {
