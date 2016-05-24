@@ -38,6 +38,7 @@ RayCastingModel::computeWeight(sample_t &sample, const rst::vision::LocatedLaser
     }
 
     sample.importance = importance;
+    normFactor += importance;
 }
 
 vector<float>
@@ -149,4 +150,21 @@ RayCastingModel::simulateRay(const pose_t &pose, float globalAngle, const rst::v
     }
 
     return scanConfig.scan_values_max();
+}
+
+void
+RayCastingModel::normalizeWeights(sample_set_t *sampleSet)
+{
+    float sum = 0;
+    for (size_t i = 0; i < sampleSet->size; ++i) {
+        sampleSet->samples[i].importance /= normFactor;
+
+        assert(sampleSet->samples[i].importance >= 0.0f);
+        assert(sampleSet->samples[i].importance <= 1.0f);
+
+        sum += sampleSet->samples[i].importance;
+    }
+
+    // reset normalization factor
+    normFactor = 0;
 }
