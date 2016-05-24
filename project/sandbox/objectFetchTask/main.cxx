@@ -78,7 +78,6 @@ using namespace amiro;
 
 // commands
 std::string COMMAND_START = "START";
-std::string COMMAND_STOP = "STOP";
 std::string COMMAND_QUIT = "QUIT";
 
 // radius of the AMiRo in m
@@ -241,7 +240,8 @@ int main(int argc, char **argv) {
 
         INFO_MSG("Listening to the scopes:");
         INFO_MSG(" - Floor Proximity Sensors: " << proxSensorInscope);
-        INFO_MSG(" - Command Input:     " << commandInscope);
+	INFO_MSG(" - Laser Data:              " << lidarInscope);
+        INFO_MSG(" - Command Input:           " << commandInscope);
         INFO_MSG("");
 
 	INFO_MSG("Initialize RSB");
@@ -294,8 +294,9 @@ int main(int argc, char **argv) {
 		myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
 	}
 
-
-	while (true) {
+	INFO_MSG("Ready for Fetching Procedure");
+	bool exitProg = false;
+	while (!exitProg) {
 		if (!proxQueue->empty()) {
 			sensorErrorCounter = 0;
 
@@ -439,27 +440,6 @@ int main(int argc, char **argv) {
 					float direction = 1.0;
 					if (drivingAngle < 0.0) direction = -1.0;
 
-	/*				// calculate driving time
-					int turningTime = abs((int)(1000000.0 * 100.0*drivingAngle/turningSpeed)); // us
-					if (i==1) {
-						turningTime += turningAddition*1000;
-					}
-					int forwardTime = abs((int)(1000000.0 * 100.0*drivingDist/forwardSpeed)); // us
-					DEBUG_MSG("Driving action: " << drivingDist << " m, " << (drivingAngle*180.0/M_PI) << " degree (robot direction: " << (robotDirection*180.0/M_PI) << ", path direction: " << (atan2(yDiff, xDiff)*180.0/M_PI) << ")");
-					DEBUG_MSG("Driving " << drivingDist << " m with " << forwardSpeed << " cm/s for " << forwardTime << " us");
-					DEBUG_MSG("Driving " << drivingAngle << " rad with " << turningSpeed << " crad/s for " << turningTime << " us");
-
-					// driving by time
-					motorActionMilli(0, direction*turningSpeed, myCAN);
-					usleep(turningTime);
-					motorActionMilli(0, 0, myCAN);
-					usleep(300000);
-					motorActionMilli(forwardSpeed, 0, myCAN);
-					usleep(forwardTime);
-					motorActionMilli(0, 0, myCAN);
-					usleep(300000);*/
-	//				sleep(1);
-
 					// drive by odometry
 					motorDrivePosition(drivingDist, drivingAngle, myCAN);
 
@@ -478,9 +458,8 @@ int main(int argc, char **argv) {
 			std::string command = *commandQueue->pop().get();
 			if (command == COMMAND_START) {
 				startDelivery = true;
-			} else if (command == COMMAND_STOP) {
 			} else if (command == COMMAND_QUIT) {
-				break; // while loop
+				exitProg = true;
 			} else {
 				WARNING_MSG("Received unknown command.");
 			}
