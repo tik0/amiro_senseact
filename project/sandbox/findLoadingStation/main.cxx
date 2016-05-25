@@ -114,9 +114,9 @@ Mat doBlobDetection(Mat frame, SimpleBlobDetector detectorRect, SimpleBlobDetect
 
 	stations.clear();
 
-	Mat sendImage = Mat(fSize.height, fSize.width*2, CV_8UC3);
-	Mat part1(sendImage, Rect(0, 0, fSize.width, fSize.height));
-	Mat part2(sendImage, Rect(fSize.width, 0, fSize.width, fSize.height));
+//	Mat sendImage = Mat(fSize.height, fSize.width*2, CV_8UC3);
+//	Mat part1(sendImage, Rect(0, 0, fSize.width, fSize.height));
+//	Mat part2(sendImage, Rect(fSize.width, 0, fSize.width, fSize.height));
 
 	frame.copyTo(resultFrame);
 	Mat bigFocusFrame;
@@ -211,18 +211,18 @@ Mat doBlobDetection(Mat frame, SimpleBlobDetector detectorRect, SimpleBlobDetect
 					resize(focusFrame, focusFrame, Size(fSize.width, fSize.height));
 
 					// Get image channels
-					Mat chans[3];
-					split(focusFrame, chans);
+	//				Mat chans[3];
+	//				split(focusFrame, chans);
 
 					Mat focusFrameGray;
 					cvtColor(focusFrame, focusFrameGray, CV_BGR2GRAY);
 
 					// Get red dominated parts
-					Mat greenblue = cv::max(chans[0], chans[1]);
-					Mat redChan = chans[2] - greenblue;
-					Mat maxValue(frame.rows, frame.cols, CV_8UC1, Scalar(255));
-					redChan = maxValue - redChan;
-					threshold(redChan, redChan, 254, 255, 0);
+	//				Mat greenblue = cv::max(chans[0], chans[1]);
+	//				Mat redChan = chans[2] - greenblue;
+	//				Mat maxValue(frame.rows, frame.cols, CV_8UC1, Scalar(255));
+	//				redChan = maxValue - redChan;
+	//				threshold(redChan, redChan, 254, 255, 0);
 	//				Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(11,11), Point(1,1));
 	//				dilate(redChan, redChan, dilateElement);
 				//	Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(5,5), Point(1,1));
@@ -276,15 +276,15 @@ Mat doBlobDetection(Mat frame, SimpleBlobDetector detectorRect, SimpleBlobDetect
 						newStation.stationCenterHeight = newStation.imageHeight - (yMin + newStation.stationHeight/2);
 						stations.push_back(newStation);
 
-						redImage3C.copyTo(part2);
+						//redImage3C.copyTo(part2);
 					}
 				}
 			}
 		}
 	}
 
-	resultFrame.copyTo(part1);
-	return sendImage;
+//	resultFrame.copyTo(part1);
+	return resultFrame;
 }
 
 
@@ -422,14 +422,14 @@ int main(int argc, char **argv) {
 //			Mat top(resultFrame, Rect(fSize.width, 0, fSize.width, fSize.height-bottom.size().height));
 			Mat blobbed = doBlobDetection(bottom, detectorRect, detectorCirc);
 			if (sendingPic) {
-				blobbed.copyTo(sendImage);
-//				blobbed.copyTo(bottom);
-//				if (debugging) {
-//					frame.copyTo(part1);
-//					resultFrame.copyTo(part2);
-//				} else {
-//					resultFrame.copyTo(sendImage);
-//				}
+//				blobbed.copyTo(sendImage);
+				blobbed.copyTo(bottom);
+				if (debugging) {
+					frame.copyTo(part1);
+					resultFrame.copyTo(part2);
+				} else {
+					resultFrame.copyTo(sendImage);
+				}
 			}
 
 			INFO_MSG("Station count: " << stations.size());
