@@ -1,0 +1,21 @@
+====== Fetch Task Statemachine containing Station Detection ======
+
+-
+
+===== Basic behavior =====
+
+This tool has the following behavior:
+
+  * ...:
+    * While object hasn't been detected
+      - Calculate new position for best detection possibility
+      - Drive to detection position
+      - Turn towards object
+      - Try to detect the object
+      - If not detected
+        * Drive sidewards for new orientation
+
+===== Application Parameters =====
+
+^ Parameter ^ Type ^ Default Value ^ Description ^
+
