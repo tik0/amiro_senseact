@@ -34,6 +34,8 @@
 #include "raycastingmodel.h"
 #include "likelihoodfieldmodel.h"
 
+#include "importancetype/inversedistance.h"
+
 int main(int argc, const char **argv) {
     /*
      * Handle program options
@@ -137,8 +139,8 @@ int main(int argc, const char **argv) {
 
     // Finally set up the particle filter
     //RayCastingModel sensorModel(&map);
-    LikelihoodFieldModel sensorModel(&map, *scanPtr, beamskip, LikelihoodFieldModel::INVERSE_DISTANCE);
-    ParticleFilter particlefilter(sampleCount, *odomPtr, &map, &sensorModel, newSampleProb, doKLDSampling);
+    LikelihoodFieldModel<InverseDistance> sensorModel(&map);
+    ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip);
 
     /*
      * Main loop

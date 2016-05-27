@@ -15,7 +15,7 @@ using namespace std;
 
 #include <rsc/misc/langutils.h>
 
-ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling)
+ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling, int beamskip)
 {
     this->maxSampleCount = maxSampleCount;
     this->height = map->size().height;
@@ -24,6 +24,7 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     this->sensorModel = sensorModel;
     this->newSampleProb = newSampleProb;
     this->doKLDSampling = doKLDSampling;
+    this->beamskip = beamskip;
 
     sampleSet = new sample_set_t;
     sampleSet->size = 0;
@@ -32,6 +33,26 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     newSampleSet = new sample_set_t;
     newSampleSet->size = 0;
     newSampleSet->samples = new sample_t[maxSampleCount];
+
+    laserscan.size = 0;
+    laserscan.values = new float[scanConfig.scan_values_size()];
+    laserscan.sin = new float[scanConfig.scan_values_size()];
+    laserscan.cos = new float[scanConfig.scan_values_size()];
+
+    // pre-compute cos/sin for laser beams
+    float angle = scanConfig.scan_angle_start();
+    float increment = scanConfig.scan_angle_increment();
+    if (scanConfig.scan_angle_start() > scanConfig.scan_angle_end()) {
+        increment = -increment;
+    }
+
+    scan_cos = new float[scanConfig.scan_values_size()];
+    scan_sin = new float[scanConfig.scan_values_size()];
+    for (int i = 0; i < scanConfig.scan_values_size(); ++i) {
+        angle += increment;
+        scan_cos[i] = cos(angle);
+        scan_sin[i] = sin(angle);
+    }
 
     this->map = map;
 
@@ -184,12 +205,29 @@ ParticleFilter::convertPose(const rst::geometry::Pose &odom)
 }
 
 void
+ParticleFilter::convertScan(const rst::vision::LocatedLaserScan &scan)
+{
+    laserscan.size = 0;
+    for (int i = 0; i < scan.scan_values_size(); i += beamskip) {
+        float value = scan.scan_values(i);
+        if (value <= scan.scan_values_max() && value >= scan.scan_values_min()) {
+            laserscan.values[laserscan.size] = value;
+            laserscan.sin[laserscan.size] = scan_sin[i];
+            laserscan.cos[laserscan.size] = scan_cos[i];
+            laserscan.size++;
+        }
+    }
+}
+
+void
 ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom)
 {
     // convert odometry and pre-compute deltas for pose update
     pose_t newOdom = convertPose(odom);
     preparePoseUpdate(newOdom);
     prevOdom = newOdom;
+
+    convertScan(scan);
 
     if (doKLDSampling) {
         // reset bins
@@ -244,7 +282,7 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
 
         // Importance sampling
         start = rsc::misc::currentTimeMicros();
-        sensorModel->computeWeight(sample, scan);
+        sensorModel->computeWeight(sample, laserscan);
         importanceSamplingTime += (rsc::misc::currentTimeMicros() - start);
 
         // Add sample to new sample set

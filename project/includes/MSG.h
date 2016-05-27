@@ -36,6 +36,7 @@
 #define MSG_H
 
 #include <iostream>
+#include <unistd.h>
 
 // Declare the external __progname variable, so that we know the name of the programm
 // Ref.: http://www.qnx.com/developers/docs/6.5.0/index.jsp?topic=%2Fcom.qnx.doc.neutrino_lib_ref%2Fp%2F__progname.html

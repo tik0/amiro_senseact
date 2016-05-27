@@ -52,16 +52,21 @@ include_directories(include
 set(SOURCE
     main.cxx
     particlefilter.cpp
-    eigenmvn/eigenmvn.h
     sensormodel.h
-    raycastingmodel.cpp
-    likelihoodfieldmodel.cpp
+#    raycastingmodel.cpp
+    likelihoodfieldmodel.h
     map.h
     sampleset.h
+    laserscan.h
     $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc
+    importancetype/importancetype.h
+    importancetype/addgaussians.h
+    importancetype/inversedistance.h
+    importancetype/multiplygaussians.h
+    importancetype/multiplygaussianslog.h
 )
 
 # Add the executable

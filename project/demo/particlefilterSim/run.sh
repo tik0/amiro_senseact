@@ -21,7 +21,7 @@ gazebo ./data/enclosed_world-no-cylinder.world &
   --pathToMap ./data/enclosed_world-cropped.png --meterPerPixel 0.01 \
   --sampleCount 100 \
   --beamskip 2 \
-  --debugImageOutScope /image
+  --debugImageOutScope /image &
 
 # start keyboard control
 ./sendTwistControls/sendTwistControls -o "$kinscope"

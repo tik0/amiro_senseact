@@ -12,6 +12,7 @@ using namespace std;
 #include "map.h"
 #include "sampleset.h"
 #include "sensormodel.h"
+#include "laserscan.h"
 
 class ParticleFilter
 {
@@ -25,7 +26,7 @@ public:
      * @param odom The initial odometry data used to form odometry deltas.
      * @param map A openCV mat to represent to map.
      */
-    ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling = false);
+    ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling = false, int beamskip = 1);
     ~ParticleFilter();
 
     /**
@@ -48,6 +49,11 @@ private:
 
     pose_t prevOdom = {0,0,0};
     pose_t odometryDelta;
+
+    laserscan_t laserscan;
+    float *scan_cos;
+    float *scan_sin;
+    int beamskip = 1;
 
     Map *map;
 
@@ -100,6 +106,7 @@ private:
     SensorModel *sensorModel;
 
     pose_t convertPose(const rst::geometry::Pose &odom);
+    void convertScan(const rst::vision::LocatedLaserScan &scan);
 
     // normalizes an angle to [-PI;+PI)
     inline float normalizeAngle(float theta)
