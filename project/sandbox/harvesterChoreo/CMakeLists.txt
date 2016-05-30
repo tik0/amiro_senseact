@@ -59,7 +59,7 @@ file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.h)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
 
 # Set the compiler
 # SET (CMAKE_C_COMPILER $ENV{CPP})
