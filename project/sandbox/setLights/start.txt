@@ -1,0 +1,18 @@
+====== Set Lights ======
+
+-
+
+===== Building =====
+
+This is a cmake project, so just type:
+  - ''cmake .''
+  - ''make''
+
+==== RSB Scopes ====
+
+^ Name ^ Default Scope ^ Scope Type ^ Description ^
+
+===== Parameters =====
+
+^ Parameter ^ Type ^ Default Value ^ Description ^
+
