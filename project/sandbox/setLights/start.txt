@@ -1,0 +1,38 @@
+====== Set Lights ======
+
+This tool can set the lights in different colors and in different lighting types. Please use the lighting types of the [[includes:actModels:startLightModel|Light Model]].
+
+===== Building =====
+
+This is a cmake project, so just type:
+  - ''cmake .''
+  - ''make''
+
+===== Communication =====
+
+This tool just listens to a vector of integers. It contains the lighting type, the specified color (only one or for every single LED) and finally the period time:
+
+^ Position ^ Type ^
+| 01       | Lighting Type |
+| 02       | Red channel of the (1.) color |
+| 03       | Green channel of the (1.) color |
+| 04       | Blue channel of the (1.) color |
+| ...      | maybe all other 7 colors |
+| 05 or 26 | Period Time |
+
+As you can see in the table above, the vector can have a size of 5 elements, if there is only one color for all LEDs given, or it can have 26 elements, if there are colors for each LED given. The color channels are always given in the red-green-blue-order.
+
+If the period time is too small, it will be reased up to the minimal time of the lighting type. Additionally there are only period times in 200 ms steps allowed. If there is an unallowed period time given, it will be reased up to the next 200 ms step.
+
+===== RSB Scopes =====
+
+^ Name ^ Default Scope ^ Scope Type ^ Description ^
+| Command | /amiro/lights | vector<integer> | Scope for receiving light commands. |
+
+===== Parameters =====
+
+^ Parameter ^ Type ^ Default Value ^ Description ^
+| commandScope, c | String | /amiro/lights | Inscope for commands. |
+| host | String | 127.0.0.1 | Host for Programatik Spread. |
+| port | String | 4803 | Port for Programatik Spread. |
+

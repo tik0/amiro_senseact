@@ -4,6 +4,13 @@
 // Description : Statemachine to perform a choreography including brakes.
 //============================================================================
 
+#define INFO_MSG_
+#define DEBUG_MSG_
+// #define SUCCESS_MSG_
+#define WARNING_MSG_
+#define ERROR_MSG_
+#include <MSG.h>
+
 // std includes
 #include <iostream>
 using namespace std;
@@ -37,6 +44,7 @@ using namespace boost::chrono;
 using namespace rsb;
 
 // types
+#include <types/twbTracking.pb.h>
 #include <ControllerAreaNetwork.h>
 
 #include "choreo.h"
@@ -69,29 +77,127 @@ std::string CMD_STOP = "stop";
 ControllerAreaNetwork myCAN;
 
 // constants
-int driveSpeed = (int)(0.08 * TO_MICRO);
-int timebuffer = (int)(0.125 * TO_MICRO);
+float driveSpeed = 0.08; // m/s
+int timebuffer = (int)(0.125 * TO_MICRO); // us
 std::string amiroName = "amiro0";
+int markerID = 0;
+float meterPerPixel = 1.0/400.0; // m/pixel
+float trackingVariance = 0.005; // m
 
 // Flags
 bool printChoreo = false;
 bool relativePosition = false;
+bool useOdo = false;
+bool useTwb = false;
 
 
 // scopenames for rsb
 std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
+std::string trackingInscope = "/twb/tracking";
 
 types::position odoPos;
+
+
+
+types::position readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
+	twbTracking::proto::Pose2D pose2D;
+	for (int i = 0; i < data->pose_size(); i++) {
+		if (trackingMarkerID == data->pose(i).id()) {
+			pose2D = data->pose(i);
+			break;
+		}
+	}
+	types::position pos;
+	pos.x = pose2D.x()*meterPerPixel*TO_MICRO;
+	pos.y = pose2D.y()*meterPerPixel*TO_MICRO;
+	pos.f_z = pose2D.orientation()*TO_MICRO;
+	return pos;
+}
+
+
+
+bool isBeingTracked(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingID) {
+	bool isIn = false;
+	for (int i = 0; i < data->pose_size(); i++) {
+		if (trackingID == data->pose(i).id()) {
+			if (data->pose(i).x() != 0 && data->pose(i).y() != 0) {
+				isIn = true;
+			}
+			break;
+		}
+	}
+	return isIn;
+}
+
+types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>> trackingQueue) {
+	boost::shared_ptr<twbTracking::proto::Pose2DList> data;
+	do {
+		if (!trackingQueue->empty()) {
+			data = boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop());
+			if (isBeingTracked(data, markerID)) {
+				break;
+			}
+		} else {
+			// sleep for 10 ms
+			usleep(10000);
+		}
+	} while (true);
+	return readTracking(data, markerID);
+}
+
+
+void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v, float &w, float &time, float &dist, float &angle) {
+	float actAngle = (float)(curPos.f_z)*MICRO_TO;
+	while (actAngle >= 2.0*M_PI) actAngle -= 2.0*M_PI;
+	while (actAngle < 0) actAngle += 2.0*M_PI;
+
+	float distDir = sqrt(relDistx*relDistx + relDisty*relDisty);
+	float angleDir = atan2(relDisty, relDistx) - actAngle;
+	while (angleDir >= 2.0*M_PI) angleDir -= 2.0*M_PI;
+	while (angleDir < 0) angleDir += 2.0*M_PI;
+	if (angleDir > M_PI) angleDir -= 2*M_PI;
+
+	float angleBasis = abs(M_PI/2.0 - abs(angleDir));
+	float angleTop = M_PI - 2.0*angleBasis;
+
+	float moveRadius = distDir * sin(angleBasis) / sin(angleTop);
+	float moveAngle = 2.0*angleDir;
+	float moveDist = 2.0*moveRadius*M_PI * abs(moveAngle)/(2.0*M_PI);
+	if (moveDist == 0.0) {
+		moveDist = distDir;
+	}
+
+	// calculate speeds; // m/s
+	time = moveDist/driveSpeed; // s
+	v = driveSpeed; // m/s
+	w = moveAngle/time; // rad/s
+	dist = moveDist; // m
+	angle = moveAngle; // rad
+}
+
+
 
 // load a (sub)choreography from a file
 Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::string> parents) {
 	bool loadingCorrect = true;
 	bool parentFound = false;
 	parents.push_back(choreoName);
+
+	// create spaces for "tabs"
+	string spacesP = "";
+	for (int i=0; i<subChoreoNum; i++) {
+		spacesP += "  ";
+	}
+	string spacesC = spacesP + "  ";
+
 	if (printChoreo) {
-		cout << "Load choreo '" << choreoName << "'" << endl;
+		string frontPart = "";
+		if (subChoreoNum > 0) {
+			frontPart += spacesP + "-> choreo include: ";
+		}
+		DEBUG_MSG(frontPart << "Load choreo '" << choreoName << "'");
 	}
 	Choreo choreo;
 	using boost::property_tree::ptree;
@@ -135,10 +241,7 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 				choreoStep.lights = lights;
 				choreo.push_back(choreoStep);
 				if (printChoreo) {
-					for (int i=0; i<=subChoreoNum; i++) {
-						cout << "  ";
-					}
-					cout << "-> choreo step: " << position[0] << "/" << position[1] << " [m]" << endl;
+					DEBUG_MSG(spacesC << "-> choreo step: " << position[0] << "/" << position[1] << " [m]");
 				}
 			} else if (tree.first == XMLInclude) {
 				std::string newfile = tree.second.get<std::string>(XMLIncludeName);
@@ -147,14 +250,8 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 				for (std::string parentName : parents) {
 					if (newfile == parentName) {
 						if (printChoreo) {
-							for (int i=0; i<=subChoreoNum; i++) {
-								cout << "  ";
-							}
-							cout << "-> choreo include: ERROR!\n";
-							for (int i=0; i<=subChoreoNum; i++) {
-								cout << "  ";
-							}
-							cout << "   The choreo '" << newfile.c_str() << "' is a parent choreo! Loops are not allowed!" << endl;
+							ERROR_MSG(spacesC << "-> choreo include:");
+							ERROR_MSG(spacesC << "   The choreo '" << newfile << "' is a parent choreo! Loops are not allowed!");
 						}
 						parentFound = true;
 						break;
@@ -166,12 +263,6 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 					break;
 				}
 				// otherwise go on
-				if (printChoreo) {
-					for (int i=0; i<=subChoreoNum; i++) {
-						cout << "  ";
-					}
-					cout << "-> choreo include: ";
-				}
 				Choreo choreoInclude = loadSubChoreo(newfile, subChoreoNum+1, parents);
 				if (choreoInclude.empty()) {
 					loadingCorrect = false;
@@ -180,26 +271,17 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 				}
 				choreo.insert(choreo.end(), choreoInclude.begin(), choreoInclude.end());
 			} else if (printChoreo) {
-				for (int i=0; i<=subChoreoNum; i++) {
-					cout << "  ";
-				}
-				cout << " -> Unknown childs!" << endl;
+				WARNING_MSG(spacesC << " -> Unknown childs!");
 			}
 		}
 	} catch (...) {
 		if (printChoreo) {
-			for (int i=0; i<subChoreoNum; i++) {
-				cout << "  ";
-			}
-			cout << "=> ERROR !!!" << endl;
+			ERROR_MSG(spacesP << "Problem in reading xml file => Clearing Choreo!");
 		}
 		choreo.clear();
 	}
 	if (choreo.empty() && loadingCorrect && !parentFound && printChoreo) {
-		for (int i=0; i<subChoreoNum; i++) {
-			cout << "  ";
-		}
-		cout << "=> ERROR: Choreo is empty!" << endl;
+		ERROR_MSG(spacesP << "Choreo is empty!");
 	}	
 	return choreo;
 }
@@ -210,6 +292,10 @@ Choreo loadChoreo(std::string choreoName) {
 	return loadSubChoreo(choreoName, 0, parents);
 }
 
+
+void setSpeeds(float v, float w, ControllerAreaNetwork &CAN) {
+	CAN.setTargetSpeed((int)(v*TO_MICRO), (int)(w*TO_MICRO));
+}
 
 int main(int argc, char **argv) {
 
@@ -234,7 +320,11 @@ int main(int argc, char **argv) {
 			("printChoreo,p", "Prints the loaded steps of the choreo.")
 			("choreoDelay", po::value<int>(&choreoDelay), "Delay between receiving the start command via RSB and starting the choreography in ms (default 2000 ms).")
 			("stepDelay", po::value<int>(&stepDelay), "Delay of the brake between two steps of the choreography in ms (default 1000 ms).")
-			("idDelay", po::value<int>(&idDelay), "Delay between the AMiRo starts in ms (default: 1000 ms).");
+			("idDelay", po::value<int>(&idDelay), "Delay between the AMiRo starts in ms (default: 1000 ms).")
+			("useOdo,o", "Flag if for navigation just the odometry shall be used.")
+			("useTwb,t", "Flag if for navigation the telework bench shall be used (tracking navigation).")
+			("markerId,m", po::value<int>(&markerID), "ID of the marker for robot detection (has to be set if tracking navigation is activated).")
+			("mmp", po::value<float>(&meterPerPixel), "Meter per pixel of the robot detection (has to be set if tracking navigation is activated).");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -250,10 +340,33 @@ int main(int argc, char **argv) {
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
 
+	// check for given AMiRo ID
 	if (!vm.count("amiroID")) {
 		std::cout << "The AMiRo ID has to be given! Please check the options.\n\n" << options << "\n";
 		exit(1);
 	}
+
+	// check for given navigation type
+	if (!vm.count("useOdo") && !vm.count("useTwb")) {
+		std::cout << "Please set the navigation type:\n -> Odometry only ('useOdo')\n -> TWB detection ('useTwb')\n\nPlease check the options.\n\n" << options << "\n";
+		exit(1);
+	}
+	if (vm.count("useTwb")) {
+		if (!vm.count("markerId") && !vm.count("mmp")) {
+			std::cout << "The navigation by TWB is actived. Please set the marker ID and the meter per pixel factor!\nPlease check the options.\n\n" << options << "\n";
+			exit(1);
+		} else if (!vm.count("markerId")) {
+			std::cout << "The navigation by TWB is actived. Please set the marker ID!\nPlease check the options.\n\n" << options << "\n";
+			exit(1);
+		} else if (!vm.count("mmp")) {
+			std::cout << "The navigation by TWB is actived. Please set the meter per pixel factor!\nPlease check the options.\n\n" << options << "\n";
+			exit(1);
+		}
+		useTwb = true;
+	} else {
+		useOdo = true;
+	}
+
 
 	// Set AMiRo name
 	amiroName = "amiro" + boost::lexical_cast<std::string>(amiroID);
@@ -266,7 +379,7 @@ int main(int argc, char **argv) {
 	relativePosition = vm.count("choreoRelative");
 
 
-	cout << "Start harvester algorithm with name '" << amiroName << "'." << endl;
+	INFO_MSG("Start harvester algorithm with name '" << amiroName << "'.");
 
 	// +++++ RSB Initalization +++++
 
@@ -316,6 +429,11 @@ int main(int argc, char **argv) {
 			new rsc::threading::SynchronizedQueue<EventPtr>(1));
 	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(commandQueue)));
 
+	// prepare rsb listener for tracking data
+	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, tmpPartConf);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
+	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
+
 	// prepare RSB listener for amiros
 	rsb::ListenerPtr amiroListener = factory.createListener(amiroScope, tmpPartConf);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<EventPtr>> amiroQueue(
@@ -328,6 +446,7 @@ int main(int argc, char **argv) {
 
 
 	// Initialize the robot communication
+	boost::shared_ptr<twbTracking::proto::Pose2DList> data;
 	std::vector<std::string> amiros;
 	bool initialized = false;
 	bool exitProg = false;
@@ -340,7 +459,9 @@ int main(int argc, char **argv) {
 		}
 	}
 	int waitCounter = 0;
-	cout << "\n\nInitializing:" << endl;
+	INFO_MSG("");
+	INFO_MSG("");
+	INFO_MSG("Initializing:");
 	while (!initialized) {
 		// check amiro queue
 		if (!amiroQueue->empty()) {
@@ -356,7 +477,7 @@ int main(int argc, char **argv) {
 				}
 				if (!isIn) {
 					amiros.push_back(inputName);
-					cout << " -> Recognized AMiRo: '" << inputName.c_str() << "'" << endl;
+					INFO_MSG(" -> Recognized AMiRo: '" << inputName << "'");
 				}
 			}
 		}
@@ -407,13 +528,14 @@ int main(int argc, char **argv) {
 
 		// wait for start command
 		bool startHarvest = false;
-		cout << "\nWaiting for commands ..." << endl;
+		INFO_MSG("");
+		INFO_MSG("Waiting for commands ...");
 		while (!startHarvest) {
 			// check choreo queue
 			if (!choreoQueue->empty()) {
 				EventPtr event = choreoQueue->pop(0);
 				choreoName = *static_pointer_cast<std::string>(event->getData());
-				cout << " -> Choreo name has been changed to '" << choreoName.c_str() << "'" << endl;
+				INFO_MSG(" -> Choreo name has been changed to '" << choreoName << "'");
 			}
 
 			// check command queue
@@ -426,7 +548,8 @@ int main(int argc, char **argv) {
 					delete startSystemTime;
 					startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delay));
 				} else if (exitProg) {
-					cout << "\nExit Harvester ..." << endl;
+					INFO_MSG("");
+					INFO_MSG("Exit Harvester ...");
 					break;
 				}
 			}
@@ -440,12 +563,13 @@ int main(int argc, char **argv) {
 
 		// load choreo
 		Choreo choreo = loadChoreo(choreoName);
-		cout << "\n => Start choreo '" << choreoName.c_str() << "': ";
+		INFO_MSG("");
+		string frontPart = " => Start choreo '" + choreoName + "': ";
 		if (choreo.empty()) {
-			cout << "ERROR in Choreo!" << endl;
+			ERROR_MSG(frontPart << "ERROR in Choreo!");
 			continue;
 		} else {
-			cout << choreo.size() << " steps" << endl;
+			INFO_MSG(frontPart << choreo.size() << " steps");
 		}
 
 		// reset odometry
@@ -455,9 +579,9 @@ int main(int argc, char **argv) {
 		myCAN.setOdometry(odoPos);
 
 		// wait for choreo to begin
-		if (vm.count("verbose")) cout << "Waiting ..." << endl;
+		if (vm.count("verbose")) DEBUG_MSG("Waiting ...");
 		boost::this_thread::sleep_until(*startSystemTime);
-		if (vm.count("verbose")) cout << "Start choreo ..." << endl;
+		if (vm.count("verbose")) DEBUG_MSG("Start choreo ...");
 
 		// Clear amiro queue
 		while (!amiroQueue->empty()) {
@@ -469,60 +593,86 @@ int main(int argc, char **argv) {
 
 			float moveDirX = cs.position[0];
 			float moveDirY = cs.position[1];
+			// get current position
+			if (useTwb) {
+				odoPos = getNextTrackingPos(trackingQueue);
+				DEBUG_MSG("Position of marker " << markerID << ": " << odoPos.x << "/" << odoPos.y << ", " << odoPos.f_z);
+			}
 			if (!relativePosition) {
 				moveDirX -= (float)(odoPos.x)*MICRO_TO;
 				moveDirY -= (float)(odoPos.y)*MICRO_TO;
 			}
-			float actAngle = (float)(odoPos.f_z)*MICRO_TO;
-			while (actAngle >= 2.0*M_PI) actAngle -= 2.0*M_PI;
-			while (actAngle < 0) actAngle += 2.0*M_PI;
-
-			float distDir = sqrt(moveDirX*moveDirX + moveDirY*moveDirY);
-			float angleDir = atan2(moveDirY, moveDirX) - actAngle;
-			while (angleDir >= 2.0*M_PI) angleDir -= 2.0*M_PI;
-			while (angleDir < 0) angleDir += 2.0*M_PI;
-			if (angleDir > M_PI) angleDir -= 2*M_PI;
-
-			float angleBasis = abs(M_PI/2.0 - abs(angleDir));
-			float angleTop = M_PI - 2.0*angleBasis;
-
-			float moveRadius = distDir * sin(angleBasis) / sin(angleTop);
-			float moveAngle = 2.0*angleDir;
-			float moveDist = 2.0*moveRadius*M_PI * abs(moveAngle)/(2.0*M_PI);
-			if (moveDist == 0.0) {
-				moveDist = distDir;
-			}
-
-			// calculate speeds
-			float basicSpeed = (float)driveSpeed * MICRO_TO; // m/s
-			float timeAction = moveDist/basicSpeed; // s
-			int v = driveSpeed; // um/s
-			int w = (int)(moveAngle/timeAction * TO_MICRO); // urad/s
 
 			// set lights
 			for (int l = 0; l < 8; ++l) {
 				myCAN.setLightColor(l, amiro::Color(cs.lights[l][0], cs.lights[l][1], cs.lights[l][2]));
 			}
 
-			// print action messages
-			if (vm.count("verbose")) {
-				cout << "------------------------------------------------------------" << endl;
-				// print the CAN values to output
-				cout << "own position: " << (odoPos.x*MICRO_TO) << "/" << (odoPos.y*MICRO_TO) << ", " << actAngle << "\ngoal position: " << cs.position[0] << "/" << cs.position[1] << "\nbasic speed: " << basicSpeed << " m/s\nv: " << v << " um/s\nw: " << w << " urad/s\ntime: " << timeAction << " s\nlights: ";
-				for (int l = 0; l < 8; ++l) {
-					cout << "\n  - [" << cs.lights[l][0] << "," << cs.lights[l][1] << "," << cs.lights[l][2] << "]";
+			// set motors
+			if (useOdo) {
+				// calculate speeds
+				float v, w, time, dist, angle;
+				calcSpeeds(odoPos, moveDirX, moveDirY, v, w, time, dist, angle);
+
+				// print action messages
+				if (vm.count("verbose")) {
+					DEBUG_MSG("------------------------------------------------------------");
+					// print the CAN values to output
+					DEBUG_MSG("own position: " << (odoPos.x*MICRO_TO) << "/" << (odoPos.y*MICRO_TO) << ", " << (odoPos.f_z*MICRO_TO));
+					DEBUG_MSG("goal position: " << cs.position[0] << "/" << cs.position[1]);
+					DEBUG_MSG("v: " << v << " m/s");
+					DEBUG_MSG("w: " << w << " rad/s");
+					DEBUG_MSG("time: " << time << " s");
 				}
-				cout << endl;
+
+				// set speed
+				if ((int)(time*TO_MICRO) - timebuffer/2 > 0) {
+					setSpeeds(v, w, myCAN);
+					usleep((int)(time*TO_MICRO) - timebuffer/2);
+				}
+
+				// set position
+				if (relativePosition) {
+					odoPos.x += (int)(cs.position[0] * TO_MICRO);
+					odoPos.y += (int)(cs.position[1] * TO_MICRO);
+				} else {
+					odoPos.x = (int)(cs.position[0] * TO_MICRO);
+					odoPos.y = (int)(cs.position[1] * TO_MICRO);
+				}
+				odoPos.f_z = odoPos.f_z + angle*TO_MICRO;
+				myCAN.setOdometry(odoPos);
+
+			} else if (useTwb) {
+				types::position goalPos;
+				goalPos.x = odoPos.x + moveDirX*TO_MICRO;
+				goalPos.y = odoPos.y + moveDirY*TO_MICRO;
+				while (moveDirX > trackingVariance || moveDirY > trackingVariance) {
+					// calculate speeds
+					float v, w, time, dist, angle;
+					calcSpeeds(odoPos, moveDirX, moveDirY, v, w, time, dist, angle);
+					setSpeeds(v, w, myCAN);
+
+					// print action messages
+					if (vm.count("verbose")) {
+						DEBUG_MSG("------------------------------------------------------------");
+						// print the CAN values to output
+						DEBUG_MSG("own position: " << (odoPos.x*MICRO_TO) << "/" << (odoPos.y*MICRO_TO) << ", " << (odoPos.f_z*MICRO_TO));
+						DEBUG_MSG("goal position: " << (goalPos.x*MICRO_TO) << "/" << (goalPos.y*MICRO_TO));
+						DEBUG_MSG("v: " << v << " m/s");
+						DEBUG_MSG("w: " << w << " rad/s");
+						DEBUG_MSG("time: " << time << " s");
+					}
+
+					odoPos = getNextTrackingPos(trackingQueue);
+					moveDirX = (goalPos.x - odoPos.x)*MICRO_TO;
+					moveDirY = (goalPos.y - odoPos.y)*MICRO_TO;
+				}
 			}
 
-			// set speed
-			if ((int)(timeAction*TO_MICRO) - timebuffer/2 > 0) {
-				myCAN.setTargetSpeed(v, w);
-				usleep((int)(timeAction*TO_MICRO) - timebuffer/2);
-			}
+
 			if (cs.braking) {
 				// stop motors
-				myCAN.setTargetSpeed(0, 0);
+				setSpeeds(0, 0, myCAN);
 
 				// reset amiro flags
 				for (int i=0; i<amiros.size(); i++) {
@@ -530,7 +680,7 @@ int main(int argc, char **argv) {
 				}
 
 				// Check for all ready amiros
-				if (vm.count("verbose")) cout << "\nList of AMiRos which are already finished:" << endl;
+				if (vm.count("verbose")) DEBUG_MSG("List of AMiRos which are already finished:");
 				while (!amiroQueue->empty()) {
 					EventPtr event = amiroQueue->pop(0);
 					std::string inputName = *static_pointer_cast<std::string>(event->getData());
@@ -545,7 +695,7 @@ int main(int argc, char **argv) {
 					}
 					if (isIn && !amiroCheck[id]) {
 						amiroCheck[id] = true;
-						if (vm.count("verbose")) cout << " -> Ready AMiRo: '" << inputName.c_str() << "'" << endl;
+						if (vm.count("verbose")) DEBUG_MSG(" -> Ready AMiRo: '" << inputName.c_str() << "'");
 					}
 				}
 				usleep (100000);
@@ -553,7 +703,7 @@ int main(int argc, char **argv) {
 				// check for rest (and own)
 				bool ownNameReceived = false;
 				bool allOthersReceived = false;
-				if (vm.count("verbose")) cout << "Waiting for rest:" << endl;
+				if (vm.count("verbose")) DEBUG_MSG("Waiting for rest:");
 				int publishCounter = 5;
 				ledsLeft = true;
 				while (!ownNameReceived || !allOthersReceived) {
@@ -587,13 +737,13 @@ int main(int argc, char **argv) {
 							}
 							if (isIn && !amiroCheck[id]) {
 								amiroCheck[id] = true;
-								if (vm.count("verbose")) cout << " -> Received AMiRo: '" << inputName.c_str() << "'" << endl;
+								if (vm.count("verbose")) DEBUG_MSG(" -> Received AMiRo: '" << inputName << "'");
 								delete startSystemTime;
 								startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delayS));
 							}
 						} else if (amiroName == inputName && !ownNameReceived) {
 							ownNameReceived = true;
-							if (vm.count("verbose")) cout << " -> Received AMiRo: '" << inputName.c_str() << "' => own name!" << endl;
+							if (vm.count("verbose")) DEBUG_MSG(" -> Received AMiRo: '" << inputName << "' => own name!");
 							delete startSystemTime;
 							startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delayS));
 						}
@@ -621,36 +771,30 @@ int main(int argc, char **argv) {
 				}
 
 				// to continue just wait until deadline
-				if (vm.count("verbose")) cout << "All are finished. Waiting ..." << endl;
+				if (vm.count("verbose")) DEBUG_MSG("All are finished. Waiting ...");
 				boost::this_thread::sleep_until(*startSystemTime);
-				if (vm.count("verbose")) cout << "Continue choreo ..." << endl;
+				if (vm.count("verbose")) DEBUG_MSG("Continue choreo ...");
 
 				// Clear amiro queue again (there have been messages again)
 				while (!amiroQueue->empty()) {
 					amiroQueue->pop(0);
 				}
 			} else {
-				if (vm.count("verbose")) cout << "\nNo brake, continue ..." << endl;
+				if (vm.count("verbose")) DEBUG_MSG("No brake, continue ...");
 			}
-
-			// set position
-			if (relativePosition) {
-				odoPos.x += (int)(cs.position[0] * TO_MICRO);
-				odoPos.y += (int)(cs.position[1] * TO_MICRO);
-			} else {
-				odoPos.x = (int)(cs.position[0] * TO_MICRO);
-				odoPos.y = (int)(cs.position[1] * TO_MICRO);
-			}
-			odoPos.f_z = (int)((actAngle + moveAngle) * TO_MICRO);
-			myCAN.setOdometry(odoPos);
 		}
 
 		// stop Robot
-		myCAN.setTargetSpeed(0, 0);
+		setSpeeds(0, 0, myCAN);
 
 		// rest print
 		if (vm.count("verbose")) {
-			cout << "------------------------------------------------------------" << endl;
+			DEBUG_MSG("------------------------------------------------------------");
+		}
+
+		// set lights
+		for (int l = 0; l < 8; ++l) {
+			myCAN.setLightColor(l, amiro::Color(255, 255, 255));
 		}
 	}
 
