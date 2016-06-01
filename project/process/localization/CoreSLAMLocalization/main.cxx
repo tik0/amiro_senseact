@@ -957,33 +957,6 @@ int main(int argc, const char **argv){
 
   rsb::Factory& factory = rsb::getFactory();
   
-  //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
-  ///////////////////////////////////////////////////////////////////////////////
-  // Get the global participant config as a template
-  rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
-        {
-          // disable socket transport
-          rsc::runtime::Properties tmpPropSocket  = tmpPartConf.mutableTransport("socket").getOptions();
-          tmpPropSocket["enabled"] = boost::any(std::string("0"));
-
-          // Get the options for spread transport, because we want to change them
-          rsc::runtime::Properties tmpPropSpread  = tmpPartConf.mutableTransport("spread").getOptions();
-
-          // enable socket transport
-          tmpPropSpread["enabled"] = boost::any(std::string("1"));
-
-          // Change the config
-          tmpPropSpread["host"] = boost::any(std::string(remoteHost));
-
-          // Change the Port
-          tmpPropSpread["port"] = boost::any(std::string(remotePort));
-
-          // Write the tranport properties back to the participant config
-          tmpPartConf.mutableTransport("socket").setOptions(tmpPropSocket);
-          tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
-        }
-  ///////////////////////////////////////////////////////////////////////////////
-  
   // Register 
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
@@ -1003,23 +976,22 @@ int main(int argc, const char **argv){
   // Local informer
   targetInformer = factory.createInformer<rst::geometry::TargetPoseEuler> (targetPoseOutScope);
   emergencyStopSwitchInformer = factory.createInformer<std::string>("/following");
-  // ==== GLOBAL/EXTERNAL LISTENER AND INFORMER ====
+
   // Prepare RSB informer for sending the map as an compressed image
-  informer = factory.createInformer<std::string> (mapAsImageOutScope, tmpPartConf);
+  informer = factory.createInformer<std::string> (mapAsImageOutScope);
 
   // Listener for setting re-init
   // Register new converter for std::vector<float>
   boost::shared_ptr<vecFloatConverter> converterVecFloat(new vecFloatConverter());
   converterRepository<std::string>()->registerConverter(converterVecFloat);
 
-  rsb::ListenerPtr setPositionListener = factory.createListener(setPositionScope, tmpPartConf);
+  rsb::ListenerPtr setPositionListener = factory.createListener(setPositionScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>> >setPositionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>>(1));
   setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<float>>(setPositionQueue)));
 
-  // Prepare RSB listener for saving maps
-  rsb::ListenerPtr saveMapListener = factory.createListener(saveMapInScope, tmpPartConf);
-  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> saveMapQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
-  saveMapListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(saveMapQueue)));
+  // RSB listener for disabling/enabling sending the map
+  rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope);
+  sendMapSwitchListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&setSendMapAsCompressedImage)));
 
   // Prepare RSB listener for homing
   rsb::ListenerPtr homingListener = factory.createListener(homingInScope);
@@ -1030,9 +1002,10 @@ int main(int argc, const char **argv){
   emergencyHaltQueue = boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
   emergencyHaltListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(emergencyHaltQueue)));
 
-  // RSB listener for disabling/enabling sending the map
-  rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope, tmpPartConf);
-  sendMapSwitchListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&setSendMapAsCompressedImage)));
+  // Prepare RSB listener for saving maps
+  rsb::ListenerPtr saveMapListener = factory.createListener(saveMapInScope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> saveMapQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
+  saveMapListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(saveMapQueue)));
 
   // ==== ====
 
@@ -1068,7 +1041,6 @@ int main(int argc, const char **argv){
             savedHomePose = true;
         }
       }
-
     }
 
     if (!saveMapQueue->empty()) {
