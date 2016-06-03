@@ -2,7 +2,7 @@
 
 The Light Model contains all constants, which are used for lighting the LEDs. This includes the initial color set and the commands for the [[sandbox:setLights:start|setLights tool]].
 
-Notice: In the ''CMakeLists.txt'' the reference to the Color Source (''Color.cpp'') has to be given to use this interface!
+Notice: In the ''CMakeLists.txt'' of your project the reference to the Color Source (''Color.cpp'') has to be given to use this interface!
 
 ===== Initial Colors =====
 
@@ -10,12 +10,21 @@ When the AMiRo starts, it has an initial color set. By using the vector ''initCo
 
 ===== Commands and Periods =====
 
-By using the tool [[sandbox:setLights:start|setLights]] the LEDs' colors and lighting type can be set. Their are 6 different lighting types. Each type has its minimal period time due to CAN communication.
+By using the tool [[sandbox:setLights:start|setLights]] the LEDs' colors and lighting type can be set. Their are 7 different lighting types. Each type has its minimal period time due to CAN communication.
 
 ^ Type ^ Period Time ^ Period Time Name ^ Description ^
 | INIT        | -      | -                | Sets the initial colors (see vector ''initColors''). |
 | SHINE       | -      | -                | Sets the given color(s) and lets it just shine. |
 | BLINK       | 200 ms | MIN_TIME_BLINK   | Sets the given color(s) and blinks with all LEDs turned on or off. |
 | WARNING     | 400 ms | MIN_TIME_WARNING | Sets the given color(s) and blinks with always the left or right half turned on or off. |
+| CROSSED     | 400 ms | MIN_TIME_CROSSED | Sets the given color(s) and blinks with only 4 crossed LEDs at once turned on. |
 | CIRCLELEFT  | 800 ms | MIN_TIME_CIRCLED | Sets the given color(s) and lets circle two LEDs turned on to the left (counter clockwise). |
 | CIRCLERIGHT | 800 ms | MIN_TIME_CIRCLED | Sets the given color(s) and lets circle two LEDs turned on to the right (clockwise). |
+
+===== Functions =====
+
+There are two functions, which build the integer vector for the [[sandbox:setLights:start|setLights tool]] out of the lighting type, the period time and out of one or 8 colors:
+
+^ Function ^ Description ^
+| setLight2Vec  | Creates integer vector for [[sandbox:setLights:start|setLights tool]] with only one color. |
+| setLights2Vec | Creates integer vector for [[sandbox:setLights:start|setLights tool]] with 8 colors. |

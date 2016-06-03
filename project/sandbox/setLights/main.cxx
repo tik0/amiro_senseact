@@ -65,7 +65,7 @@ std::string commandInscope = "/amiro/lights";
 std::string spreadhost = "127.0.0.1";
 std::string spreadport = "4803";
 
-// color data and light type
+// color set
 std::vector<amiro::Color> colorsSet = { amiro::Color(255, 255, 255),
 					amiro::Color(255, 255, 255),
 					amiro::Color(255, 255, 255),
@@ -74,10 +74,12 @@ std::vector<amiro::Color> colorsSet = { amiro::Color(255, 255, 255),
 					amiro::Color(255, 255, 255),
 					amiro::Color(255, 255, 255),
 					amiro::Color(255, 255, 255)};
+// lighting type
 bool init = true;
 bool shine = false;
 bool blinking = false;
 bool blinkWarning = false;
+bool crossed = false;
 bool circleLeft = false;
 bool circleRight = false;
 
@@ -148,13 +150,14 @@ int main(int argc, char **argv) {
 	ControllerAreaNetwork myCAN;
 	boost::shared_ptr<std::vector<int>> commandVector;
 	int timeCounter = 0;
+	bool colorChanged = false;
 	setColor(true, timeCounter, myCAN);
 
 	INFO_MSG("Starting lighting loop");
 	exitProg = false;
 	while (!exitProg) {
 		// check for new color input
-		bool colorChanged = false;
+		colorChanged = false;
 		if (!commandQueue->empty()) {
 			commandVector = boost::static_pointer_cast<std::vector<int> >(commandQueue->pop());
 			colorChanged = getCommand(commandVector);
@@ -172,9 +175,9 @@ int main(int argc, char **argv) {
 		usleep(100000);
 	}
 
-	commandTypeSet = CMD_INIT;
-	init = true;
-	setColor(true, 0, myCAN);
+	for (int led=0; led<8; led++) {
+		myCAN.setLightColor(led, LightModel::initColors[led]);
+	}
 
 	// normal exit procedure
 	INFO_MSG("Exit");
@@ -183,6 +186,7 @@ int main(int argc, char **argv) {
 
 
 bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
+	// check if vector has correct length
 	if (commandVector->size() == 5 || commandVector->size() == 26) {
 		bool multiColored = commandVector->size() == 26;
 		// check if everything negative
@@ -217,6 +221,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 			periodTime = commandVector->at(25);
 		}
 
+		// check if the color(s), lighting type or period time have been changed
 		bool colorChanged = commandType != commandTypeSet || periodTime != periodTimeSet;
 		if (!colorChanged) {
 			if (multiColored) {
@@ -236,12 +241,13 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 			}
 		}
 					
-
+		// only set everything new, if there is a change
 		if (colorChanged) {
 			init = false;
 			shine = false;
 			blinking = false;
 			blinkWarning = false;
+			crossed = false;
 			circleLeft = false;
 			circleRight = false;
 
@@ -250,21 +256,25 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 				case LightModel::LightType::CMD_SHINE: shine = true; break;
 				case LightModel::LightType::CMD_BLINK: blinking = true; break;
 				case LightModel::LightType::CMD_WARNING: blinkWarning = true; break;
+				case LightModel::LightType::CMD_CROSSED: crossed = true; break;
 				case LightModel::LightType::CMD_CIRCLELEFT: circleLeft = true; break;
 				case LightModel::LightType::CMD_CIRCLERIGHT: circleRight = true; break;
 				default: WARNING_MSG("Light type '" << commandType << "' is unknown!"); error = true; break; 
 			}
 			if (error) {
+				// command was unknown, switch back everything
 				switch (commandTypeSet) {
 					case LightModel::LightType::CMD_INIT: init = true; break;
 					case LightModel::LightType::CMD_SHINE: shine = true; break;
 					case LightModel::LightType::CMD_BLINK: blinking = true; break;
 					case LightModel::LightType::CMD_WARNING: blinkWarning = true; break;
+					case LightModel::LightType::CMD_CROSSED: crossed = true; break;
 					case LightModel::LightType::CMD_CIRCLELEFT: circleLeft = true; break;
 					case LightModel::LightType::CMD_CIRCLERIGHT: circleRight = true; break;
 				}
 				return false;
 			} else {
+				// save lighting type, colors and period time
 				commandTypeSet = commandType;
 				for (int led=0; led<8; led++) {
 					if (multiColored) {
@@ -274,15 +284,18 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 					}
 				}
 				periodTimeSet = periodTime;
+				// correct period time to 200ms steps and to lighting type specific minimal time
 				if (periodTimeSet % 200 != 0) periodTimeSet += (200 - periodTimeSet % 200);
 				switch (commandTypeSet) {
 					case LightModel::LightType::CMD_BLINK: if (periodTimeSet < LightModel::MIN_TIME_BLINK) periodTimeSet = LightModel::MIN_TIME_BLINK; break;
 					case LightModel::LightType::CMD_WARNING: if (periodTimeSet < LightModel::MIN_TIME_WARNING) periodTimeSet = LightModel::MIN_TIME_WARNING; break;
+					case LightModel::LightType::CMD_CROSSED: if (periodTimeSet < LightModel::MIN_TIME_CROSSED) periodTimeSet = LightModel::MIN_TIME_CROSSED; break;
 					case LightModel::LightType::CMD_CIRCLELEFT:
 					case LightModel::LightType::CMD_CIRCLERIGHT: if (periodTimeSet < LightModel::MIN_TIME_CIRCLED) periodTimeSet = LightModel::MIN_TIME_CIRCLED; break;
 					default: break;
 				}
 
+				// print change notice
 				switch (commandTypeSet) {
 					case LightModel::LightType::CMD_INIT: INFO_MSG("Color changed: Type " << commandTypeSet << ", Color initial"); break;
 					case LightModel::LightType::CMD_SHINE: INFO_MSG("Color changed: Type " << commandTypeSet << "Colors set"); break;
@@ -299,14 +312,16 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 
 
 void setColor(bool colorChanged, int counter100ms, ControllerAreaNetwork &myCAN) {
+	// prepare comparison values
 	int steps100ms = periodTimeSet/100;
 	int steps100msHalf = steps100ms/2;
 	bool firstHalf = counter100ms < steps100msHalf;
 	int roundStepCounter = -1;
 	if (periodTimeSet > 0) roundStepCounter = counter100ms*100/(periodTimeSet/8);
 
+	// only set lights for specific reasons
 	if (   colorChanged
-	    || ((blinking || blinkWarning) && counter100ms % steps100msHalf == 0	)
+	    || ((blinking || blinkWarning || crossed) && counter100ms % steps100msHalf == 0)
 	    || (circleLeft || circleRight)
 	) {
 		for (int led=0; led<8; led++) {
@@ -314,16 +329,21 @@ void setColor(bool colorChanged, int counter100ms, ControllerAreaNetwork &myCAN)
 			if (ledNext >= 8) ledNext -= 8;
 
 			if (init) {
+				// set initial color
 				myCAN.setLightColor(led, LightModel::initColors[led]);
 			} else if ((shine)
 			    	|| (blinking && firstHalf)
 			    	|| (blinkWarning && firstHalf && led >= 4)
 			    	|| (blinkWarning && !firstHalf && led < 4)
+				|| (crossed && firstHalf && led % 2 == 0)
+				|| (crossed && !firstHalf && led % 2 != 0)
 			    	|| (circleLeft && (7-led == roundStepCounter || 7-ledNext == roundStepCounter))
 			    	|| (circleRight && (led == roundStepCounter || ledNext == roundStepCounter))
 			) {
+				// this LED has to be turned on (color is set)
 				myCAN.setLightColor(led, colorsSet[led]);
 			} else {
+				// this LED has to be turned off (color is black)
 				myCAN.setLightColor(led, amiro::Color(0, 0, 0));
 			}
 		}
