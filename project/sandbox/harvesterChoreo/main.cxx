@@ -41,11 +41,14 @@ using namespace boost::chrono;
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/QueuePushHandler.h>
+#include <converter/vecIntConverter/main.hpp>
 using namespace rsb;
+using namespace muroxConverter;
 
 // types
 #include <types/twbTracking.pb.h>
 #include <ControllerAreaNetwork.h>
+#include <actModels/lightModel.h>
 
 #include "choreo.h"
 #include <Types.h>
@@ -69,9 +72,9 @@ std::string XMLLightSeperator = ",";
 std::string XMLIncludeName = "choreopart";
 
 // command constants
-std::string CMD_INIT = "init";
-std::string CMD_START = "start";
-std::string CMD_STOP = "stop";
+std::string COMMAND_INIT = "init";
+std::string COMMAND_START = "start";
+std::string COMMAND_STOP = "stop";
 
 // initialize CAN
 ControllerAreaNetwork myCAN;
@@ -92,6 +95,7 @@ bool useTwb = false;
 
 
 // scopenames for rsb
+std::string lightOutscope = "/amiro/lights";
 std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
@@ -297,6 +301,23 @@ void setSpeeds(float v, float w, ControllerAreaNetwork &CAN) {
 	CAN.setTargetSpeed((int)(v*TO_MICRO), (int)(w*TO_MICRO));
 }
 
+void setLights(rsb::Informer< std::vector<int> >::Ptr informer, int lightType, amiro::Color color, int periodTime) {
+	std::vector<int> lightVector = LightModel::setLight2Vec(lightType, color, periodTime);
+	boost::shared_ptr<std::vector<int>> commandVector = boost::shared_ptr<std::vector<int> >(new std::vector<int>(lightVector.begin(),lightVector.end()));
+	informer->publish(commandVector);
+}
+
+void setLightsVec(rsb::Informer< std::vector<int> >::Ptr informer, int lightType, light_t colors, int periodTime) {
+	std::vector<amiro::Color> colorVec;
+	for (int l=0; l<8; l++) {
+		amiro::Color color(colors[l][0], colors[l][1], colors[l][2]);
+		colorVec.push_back(color);
+	}
+	std::vector<int> lightVector = LightModel::setLights2Vec(lightType, colorVec, periodTime);
+	boost::shared_ptr<std::vector<int>> commandVector = boost::shared_ptr<std::vector<int> >(new std::vector<int>(lightVector.begin(),lightVector.end()));
+	informer->publish(commandVector);
+}
+
 int main(int argc, char **argv) {
 
 	// delay to start the choreo after the rsb-event was created in ms
@@ -314,6 +335,7 @@ int main(int argc, char **argv) {
 	options.add_options()("help,h", "Display a help message.")
 			("verbose,v", "Print values that are published via CAN.")
 			("amiroID,a", po::value<int>(&amiroID), "ID of the AMiRo, which has to be unique! Flag must be set!")
+			("lightsOut", po::value<std::string>(&lightOutscope), "Light outscope.")
 			("choreoIn", po::value<std::string>(&choreoInscope), "Choreography inscope.")
 			("choreoname,c", po::value<std::string>(&choreoName), "Initial Choreography name.")
 			("choreoRelative,r", "Flag if the positions in the choreo are relative.")
@@ -390,6 +412,14 @@ int main(int argc, char **argv) {
 	rsb::Factory& factory = rsb::getFactory();
 #endif
 
+	// ------------ Converters ----------------------
+
+	// Register new converter for std::vector<int>
+	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+
+	// ------------ ExtSpread Config ----------------
+
 	// Generate the programatik Spreadconfig for extern communication
 //	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
 
@@ -417,6 +447,8 @@ int main(int argc, char **argv) {
 		tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
 	}
 
+	// ------------ Listener ---------------------
+
 	// prepare RSB listener for choreos
 	rsb::ListenerPtr choreoListener = factory.createListener(choreoInscope, tmpPartConf);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<EventPtr>> choreoQueue(
@@ -440,8 +472,13 @@ int main(int argc, char **argv) {
 			new rsc::threading::SynchronizedQueue<EventPtr>(50));
 	amiroListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(amiroQueue)));
 
+	// ------------ Informer -----------------
+
 	// prepare RSB informer for amiros
 	rsb::Informer<std::string>::Ptr amiroInformer = factory.createInformer<std::string> (amiroScope, tmpPartConf);
+
+	// prepare RSB informer for setting lights
+	rsb::Informer< std::vector<int> >::Ptr lightInformer = factory.createInformer< std::vector<int> > (lightOutscope);
 
 
 
@@ -451,17 +488,12 @@ int main(int argc, char **argv) {
 	bool initialized = false;
 	bool exitProg = false;
 	bool ledsLeft = true;
-	for (int l=0; l<8; l++) {
-		if (l<4 && !ledsLeft || l>3 && ledsLeft) {
-			myCAN.setLightColor(l, amiro::Color(255, 255, 0));
-		} else {
-			myCAN.setLightColor(l, amiro::Color(0, 0, 0));
-		}
-	}
 	int waitCounter = 0;
 	INFO_MSG("");
 	INFO_MSG("");
 	INFO_MSG("Initializing:");
+	// set lights
+	setLights(lightInformer, LightModel::LightType::CMD_WARNING, amiro::Color(255,255,0), 600);
 	while (!initialized) {
 		// check amiro queue
 		if (!amiroQueue->empty()) {
@@ -486,7 +518,7 @@ int main(int argc, char **argv) {
 		if (!commandQueue->empty()) {
 			EventPtr event = commandQueue->pop(0);
 			std::string command = *static_pointer_cast<std::string>(event->getData());
-			initialized = command == CMD_INIT;
+			initialized = command == COMMAND_INIT;
 		}
 
 		// inform other amiros
@@ -494,14 +526,6 @@ int main(int argc, char **argv) {
 			waitCounter = 0;
 			boost::shared_ptr<std::string> StringPtr(new std::string(amiroName));
 			amiroInformer->publish(StringPtr);
-			ledsLeft = !ledsLeft;			
-			for (int l=0; l<8; l++) {
-				if (l<4 && !ledsLeft || l>3 && ledsLeft) {
-					myCAN.setLightColor(l, amiro::Color(255, 255, 0));
-				} else {
-					myCAN.setLightColor(l, amiro::Color(0, 0, 0));
-				}
-			}
 		} else {
 			waitCounter++;
 		}
@@ -520,11 +544,10 @@ int main(int argc, char **argv) {
 	system_clock::time_point *startSystemTime = new system_clock::time_point(system_clock::now());
 	srand(time(NULL));
 
-	while (true) {
+	bool quitProg = false;
+	while (!quitProg) {
 		// set lights
-		for (int l = 0; l < 8; ++l) {
-			myCAN.setLightColor(l, amiro::Color(255, 255, 255));
-		}
+		setLights(lightInformer, LightModel::LightType::CMD_SHINE, amiro::Color(255,255,255), 0);
 
 		// wait for start command
 		bool startHarvest = false;
@@ -542,8 +565,8 @@ int main(int argc, char **argv) {
 			if (!commandQueue->empty()) {
 				EventPtr event = commandQueue->pop(0);
 				std::string command = *static_pointer_cast<std::string>(event->getData());
-				startHarvest = command == CMD_START;
-				exitProg = command == CMD_STOP;
+				startHarvest = command == COMMAND_START;
+				exitProg = command == COMMAND_STOP;
 				if (startHarvest) {
 					delete startSystemTime;
 					startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delay));
@@ -558,6 +581,7 @@ int main(int argc, char **argv) {
 			usleep(100000);
 		}
 		if (exitProg) {
+			quitProg = true;
 			break;
 		}
 
@@ -579,6 +603,7 @@ int main(int argc, char **argv) {
 		myCAN.setOdometry(odoPos);
 
 		// wait for choreo to begin
+		setLights(lightInformer, LightModel::LightType::CMD_WARNING, amiro::Color(255,255,0), 600);
 		if (vm.count("verbose")) DEBUG_MSG("Waiting ...");
 		boost::this_thread::sleep_until(*startSystemTime);
 		if (vm.count("verbose")) DEBUG_MSG("Start choreo ...");
@@ -604,9 +629,7 @@ int main(int argc, char **argv) {
 			}
 
 			// set lights
-			for (int l = 0; l < 8; ++l) {
-				myCAN.setLightColor(l, amiro::Color(cs.lights[l][0], cs.lights[l][1], cs.lights[l][2]));
-			}
+			setLightsVec(lightInformer, LightModel::LightType::CMD_SHINE, cs.lights, 0);
 
 			// set motors
 			if (useOdo) {
@@ -705,18 +728,9 @@ int main(int argc, char **argv) {
 				bool allOthersReceived = false;
 				if (vm.count("verbose")) DEBUG_MSG("Waiting for rest:");
 				int publishCounter = 5;
-				ledsLeft = true;
+				// set lights
+				setLights(lightInformer, LightModel::LightType::CMD_WARNING, amiro::Color(255,255,0), 600);
 				while (!ownNameReceived || !allOthersReceived) {
-					// Set LEDs
-					for (int l=0; l<8; l++) {
-						if (l<4 && !ledsLeft || l>3 && ledsLeft) {
-							myCAN.setLightColor(l, amiro::Color(255, 255, 0));
-						} else {
-							myCAN.setLightColor(l, amiro::Color(0, 0, 0));
-						}
-					}
-					ledsLeft = !ledsLeft;
-
 					// Send own name
 					boost::shared_ptr<std::string> StringPtr(new std::string(amiroName));
 					amiroInformer->publish(StringPtr);
@@ -766,9 +780,7 @@ int main(int argc, char **argv) {
 				}
 
 				// Set LEDs
-				for (int l=0; l<8; l++) {
-					myCAN.setLightColor(l, amiro::Color(255, 255, 0));
-				}
+				setLights(lightInformer, LightModel::LightType::CMD_SHINE, amiro::Color(255,255,0), 0);
 
 				// to continue just wait until deadline
 				if (vm.count("verbose")) DEBUG_MSG("All are finished. Waiting ...");
@@ -793,10 +805,11 @@ int main(int argc, char **argv) {
 		}
 
 		// set lights
-		for (int l = 0; l < 8; ++l) {
-			myCAN.setLightColor(l, amiro::Color(255, 255, 255));
-		}
+		setLights(lightInformer, LightModel::LightType::CMD_SHINE, amiro::Color(255,255,255), 0);
 	}
+
+	// set lights
+	setLights(lightInformer, LightModel::LightType::CMD_INIT, amiro::Color(0,0,0), 0);
 
 	return EXIT_SUCCESS;
 }

@@ -6,5 +6,6 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 # Add folders to build and run CMakeLists.txt in it
 add_subdirectory ($ENV{MUROX_PROJECT}/sandbox/harvesterChoreo harvester)
+add_subdirectory ($ENV{MUROX_PROJECT}/act/setLights setLights)
 add_subdirectory ($ENV{MUROX_PROJECT}/tools/robotTools/stopAMiRo stopAMiRo)
 

@@ -55,6 +55,11 @@ include_directories(
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
+# Add folders to build and run CMakeLists.txt in it
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
+
 file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.h)
 
@@ -87,6 +92,8 @@ target_link_libraries (
     boost_system
     boost_thread
     boost_chrono
+    # -- Own libraries
+    vecIntConverter
 )
 
 else("$ENV{ARCH}" MATCHES arm)
@@ -99,6 +106,8 @@ target_link_libraries (
     ${PROTO_LIBRARIES}
     # Boost
     ${Boost_LIBRARIES}
+    # -- Own libraries
+    vecIntConverter
 )
 endif("$ENV{ARCH}" MATCHES arm)
 

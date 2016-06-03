@@ -20,6 +20,7 @@ spread -c amirospread &
 
 sleep 5
 
+./setLights > /dev/null &
 ./harvester -a ${ID} -c harvest.xml --choreoDelay 5000 --idDelay 2000 -rpvo &
 
 #wait
