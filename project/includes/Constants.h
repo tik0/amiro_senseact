@@ -46,9 +46,9 @@ namespace CAN {
   const uint32_t INDEX_ID_SHIFT            = 0x03u;
   const uint32_t INDEX_ID_MASK             = 0x07u;
 
-  const uint32_t LIGHT_RING_ID             = 1;
+  const uint32_t DI_WHEEL_DRIVE_ID         = 1;
   const uint32_t POWER_MANAGEMENT_ID       = 2;
-  const uint32_t DI_WHEEL_DRIVE_ID         = 3;
+  const uint32_t LIGHT_RING_ID             = 3;
   const uint32_t COGNITION                 = 4;
 
   const uint32_t PROXIMITY_FLOOR_ID        = 0x51;
