@@ -38,19 +38,19 @@ The \light\ (figure \ref{fig:allModules}(a)) is for status visualization and opt
 \end{center}
 \end{figure}
 
-\begin{figure}[htb]
-\begin{center}
-\includegraphics[scale=1.2]{Bilder/schematic_side.png}
-\caption{Schematic of the front view of the \amiro\ and its modules.}
-\label{fig:schematicModules}
-\end{center}
-\end{figure}
+%\begin{figure}[htb]
+%\begin{center}
+%\includegraphics[scale=1.2]{Bilder/schematic_side.png}
+%\caption{Schematic of the front view of the \amiro\ and its modules.}
+%\label{fig:schematicModules}
+%\end{center}
+%\end{figure}
 
 Between the \power\ and the \light\ there can be stacked module extensions as shown in figure \ref{fig:stackedModules}. The most interesting module for this cheatsheet is the \cognition\ (figure \ref{fig:allModules}(c)). It contains a Gumstix Overo TidalSTORM COM, which combines an ARM Cortex-A8 based DaVinci DM3730 SoC from Texas Instruments running at \unit[1]{GHz} with \unit[1]{GB} RAM and a micro SD card as hard drive. An usual Linux operating system is installed. By using the CAN bus the sensor data from the other modules can be loaded and commands can be sent. Additionally it has an own wireless communication card and an additional micro USB slot, so the \cognition\ can be connected to any wired or wireless IP connection.
 
 Additionally the \imageproc\ (figure \ref{fig:allModules}(f)) could be added, which isn't finally developed yet. It shall contain a FPGA for parallel image processing.
 
-On the title page different \amiros\ are shown. The left \amiro\ in the foreground, which is touched by a hand, is the basic \amiro\ only consisting the modules \diwheel, \power\ and \light\ with its lights turned on. The right \amiro\ in the foreground (its front is to the left side) doesn't have its chasis and its \proxring. The wheels at its sides and the battery packs in its front and back can be seen. Additionally it consists of the extension modules \cognition\ and \imageproc\ between the \power\ and the \light, so it is higher than the left \amiro. At its front, the small camera, which is connected to the \cognition, can be seen. In the background there are several \amiros\ with different sensor extensions like a laser scanner or a RGBD camera (camera with pixel values consisting of {\bf r}ed, {\bf g}reen and {\bf b}lue canals and {\bf d}epth) on top of the robots.
+On the title page different \amiros\ are shown. The left \amiro\ in the foreground, which is touched by a hand, is the basic \amiro\ only consisting the modules \diwheel, \power\ and \light\ with its lights turned on. The right \amiro\ in the foreground (its front is to the left side) doesn't have its chasis and its \proxring. The wheels at its sides and the battery packs in its front and back can be seen. Additionally it consists of the extension modules \cognition\ and \imageproc\ between the \power\ and the \light, so it is higher than the left \amiro. At its front, the small camera, which is connected to the \cognition, can be seen. In the background there are several \amiros\ with different sensor extensions like a laser scanner or a RGBD camera (camera with pixel values consisting of {\bf r}ed, {\bf g}reen and {\bf b}lue channels and {\bf d}epth) on top of the robots.
 
 %On the title page two different \amiros\ are shown. On the right side there is the basic \amiro\ only consisting the modules \diwheel, \power\ and \light\ with its lights turned on. On the left side there is an extended \amiro. It also contains the \cognition, wherefore it is higher, and a laser scanner has been placed on top of it. Finally the internal camera has been installed, so the \amiro\ has got an additional circular cutting in the front.
 
@@ -113,10 +113,10 @@ Now global variables for murox path specifications have been added to the bashrc
 
 For starting and connecting with the \amiro\ there is a basic procedure:
 \begin{enumerate}
-\item Plug in the \progcable\ into the computer.
+\item Plug the \progcable\ into the computer.
 \item Start \gtk: {\tt\$ \gtkC}
 \item Reset RTS flag by pressing F8 (the RTS flag in the right bottom corner has to be gray).
-\item Plug in the \progcable\ into the serial slot of the \diwheel.
+\item Plug the \progcable\ into the serial slot of the \diwheel.
 \end{enumerate}
 If the \amiro\ is shutdowned, the RTS flag has to be set and reset by double pressing F8 again.
 
@@ -126,7 +126,7 @@ After the described procedure the \amiro\ turns on and in the console output of 
 
 \begin{enumerate}
 \item Unplug the \progcable\ from the \diwheel\ only.
-\item Plug in the \progcable\ into the serial slot of the \cognition.
+\item Plug the \progcable\ into the serial slot of the \cognition.
 \end{enumerate}
 
 If this is done directly after turning the \amiro\ on, there will be the setup output of the Linux operating system. Soon the login request will be shown. If there is no console output showing by \gtk, please press return. The login request should be shown now.
@@ -142,7 +142,7 @@ For really stopping the \amiro, it is important to execute the stop tool \stopna
 
 For shutting down the \amiro, please do the following steps:
 \begin{enumerate}
-\item Plug in the \progcable\ into the \diwheel\ (the RTS flag has to be reset!)
+\item Plug the \progcable\ into the \diwheel\ (the RTS flag has to be reset!)
 \item Type the shutdown command for deep sleep: {\tt\$ shutdown d}
 \end{enumerate}
 The \progcable\ can be unplugged now. The \amiro\ starts the save shutdown procedure. Please, do not use the RTS flag for shutting down. If the flag is set, the \amiro\ is turned off, but when the \progcable\ will be unplugged, the \amiro\ restarts.
@@ -311,7 +311,7 @@ For getting more information about te command packages of the main program, the 
 The type of the package, which is shown in figure \ref{fig:rsbloggerstandarddetailed}(b), is a standard string and the payload consists of 4 readable chars: STOP. This is the command, which is sent, when the robot is in front of an object. It can be received and used by for example an object detection, which shall only detect objects, if there is something in front of the robot. Behaviors like this can for example save energy.
 
 
-\section{Useful Sense Tools}
+\section{Useful Sense and Act Tools}
 \label{sec:sensetools}
 
 For the most sensors there already exist sense tools, which read the sensors' values and publish them via RSB:
@@ -332,6 +332,9 @@ This type includes the laser scans and all parameters of the laser scanner like 
 
 \item {\bf senseRingProximity:} \\
 Reads the proximity sensors of the \proxring. The values are published in three different variants via RSB as an integer vector: As original values, values for the obstacle model and as values for the edge model. For the models the configuration files {\it irConfig.conf} and {\it irEmpty.conf} are loaded from the directory \amirohomepathI\initialnameI. While the air offsets can only be read at the beginning, the ground offsets can be changed at runtime by giving a path to another ground offset file. For more detailed information about the offsets, please have a look into chapter \ref{sec:proxsensors}.
+
+\item {\bf setLights:} \\
+This tool sets the lights to given colors. Additionally it cannot let the LEDs only shine, but it can let them blink in different ways in a given period time. Please have a look into chapter \ref{sec:lights} for more detailed information.
 \end{itemize}
 
 \section{Useful Runnable Demos}
@@ -518,8 +521,19 @@ The \diwheel\ controls the driving behavior of the \amiro. By giving CAN command
 There are still other CAN commands for driving like {\it setTargetPosition}, but these functions are deprecated! Please, only use the functions listed in the table.
 
 \subsection{Lights}
+\label{sec:lights}
 
 The \light\ consists of eight RGB LEDs which are placed directly above the proximity sensors in the \proxring. The lights can only be set, but not read. The ID assignments for the LEDs are defined in figure \ref{fig:lightids}.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.35]{Bilder/LightIDs.eps}
+\caption{Top view of the \light\ with the ID assignments of the LEDs.}
+\label{fig:lightids}
+\end{center}
+\end{figure}
+
+There are two different possibilities to set the colors of the LEDs. The first one is setting the colors directly via CAN by the following functions:
 
 \medskip
 
@@ -534,11 +548,35 @@ The \light\ consists of eight RGB LEDs which are placed directly above the proxi
 \quad {\tt int brightness} & \\
 \end{tabular}
 
-\begin{figure}[htb]
-\begin{center}
-\includegraphics[scale=0.35]{Bilder/LightIDs.eps}
-\caption{Top view of the \light\ with the ID assignments of the LEDs.}
-\label{fig:lightids}
-\end{center}
-\end{figure}
+\bigskip
+
+The second way is to use the \setlightsnameI\ tool in \setlightspathI. It listens to an integer vector via RSB. Additionally to setting the colors, this tool can also blink the LEDs in different lighting types for given period times, so this tool is recommended, when the LEDs shall show special behaviors:
+
+\medskip
+
+\begin{tabular}{l|l}
+{\bf Lighting Type} & {\bf Description} \\
+\hline
+{\tt INIT}        & Sets the initial colors. \\
+\hline
+{\tt SHINE}       & Sets the given colors and lets it just shine. \\
+\hline
+{\tt BLINK}       & Sets the given colors and blinks with all LEDs turned on or off. \\
+\hline
+{\tt WARNING}     & Sets the given colors and blinks with always the left or right half \\
+                  & turned on or off. \\
+\hline
+{\tt CROSSED}     & Sets the given colors and blinks with only 4 crossed LEDs at once \\
+                  & turned on. \\
+\hline
+{\tt CIRCLELEFT}  & Sets the given colors and lets circle two LEDs turned on to the \\
+                  & left (counter clockwise). \\
+\hline
+{\tt CIRCLERIGHT} & Sets the given colors and lets circle two LEDs turned on to the \\
+                  & right (clockwise) \\
+\end{tabular}
+
+\bigskip
+
+Please use the {\it LightType} enumeration in the {\it LightModel.h} in {\it project/includes/actModels/}. As an example code the tool {\it sendLights} in {\it project/tools/examples/} shows, how to use the {\it LightModel.h} and how to generate and send the light command to the \setlightsnameI\ tool.
 
