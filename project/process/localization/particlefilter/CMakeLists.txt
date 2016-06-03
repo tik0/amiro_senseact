@@ -52,16 +52,21 @@ include_directories(include
 set(SOURCE
     main.cxx
     particlefilter.cpp
-    eigenmvn/eigenmvn.h
     sensormodel.h
-    raycastingmodel.cpp
-    likelihoodfieldmodel.cpp
+#    raycastingmodel.cpp
+    likelihoodfieldmodel.h
     map.h
     sampleset.h
+    laserscan.h
     $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc
+    importancetype/importancetype.h
+    importancetype/addgaussians.h
+    importancetype/inversedistance.h
+    importancetype/multiplygaussians.h
+    importancetype/multiplygaussianslog.h
 )
 
 # Add the executable
@@ -84,4 +89,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-deprecated-declara
 # Debug flags
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2 -g -pg -fprofile-arcs -ftest-coverage")
 # Release flags
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -Wunsafe-loop-optimizations")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -funsafe-loop-optimizations -Wunsafe-loop-optimizations")

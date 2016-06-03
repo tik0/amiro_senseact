@@ -78,11 +78,11 @@ using namespace amiro;
 
 // commands
 std::string COMMAND_START = "START";
-std::string COMMAND_STOP = "STOP";
 std::string COMMAND_QUIT = "QUIT";
 
 // radius of the AMiRo in m
 float amiroRadius = 0.05;
+float amiroRadiusAddition = 0.0;
 float secureDist = 0.05;
 
 // driving constants
@@ -117,6 +117,8 @@ std::string commandInscope = "/delivery/commands";
 // flags
 bool waitForCommand = false;
 bool useFakeObject = false;
+bool rgbdCameraIsUsed = false;
+int angleDirectionPositive = 1;
 
 // fake object
 float fakeObjectRadius = 0.06; // m
@@ -160,13 +162,19 @@ void convertScan(rst::vision::LocatedLaserScan &scan, ts_sensor_data_t &data) {
 bool calculateObjectOrientation(ts_sensor_data_t &scan, twbTracking::proto::Pose2D *pose2D) {
 	int shortId = -1;
 	int shortDist = -1;
-	int startLaser = centerLaser-neighbourLasers;
-	int endLaser = centerLaser+neighbourLasers;
-	if (startLaser < 0) {
+	int startLaser, endLaser;
+	if (rgbdCameraIsUsed) {
 		startLaser = 0;
-	}
-	if (endLaser >= laserCount) {
 		endLaser = laserCount-1;
+	} else {
+		int startLaser = centerLaser-neighbourLasers;
+		int endLaser = centerLaser+neighbourLasers;
+		if (startLaser < 0) {
+			startLaser = 0;
+		}
+		if (endLaser >= laserCount) {
+			endLaser = laserCount-1;
+		}
 	}
 
 	for (int laser=startLaser; laser <= endLaser; laser++) {
@@ -182,8 +190,8 @@ bool calculateObjectOrientation(ts_sensor_data_t &scan, twbTracking::proto::Pose
 	} else {
 		float angle = startAngle+shortId*laserAngleDist;
 		pose2D->set_x(shortDist*MM_TO_METERS);
-		pose2D->set_y(angle);
-		INFO_MSG("Object: " << (shortDist*MM_TO_METERS) << " m, " << (-angle*180.0/M_PI) << "°");
+		pose2D->set_y(angle*angleDirectionPositive);
+		INFO_MSG("Object: " << (shortDist*MM_TO_METERS) << " m, " << (angle*180.0/M_PI*angleDirectionPositive) << "°");
 		return true;
 	}
 }
@@ -201,6 +209,9 @@ int main(int argc, char **argv) {
 			     ("commandScope,c", po::value<std::string>(&commandInscope), "Scope for receiving commands.")
 			     ("watchAngle,w", po::value<float>(&watchAngleFromNormal), "Angular range in degrees for the laser scanner, how far to the sides it shall watch for objects (default: 30°).")
 			     ("objectRadius,r", po::value<float>(&fakeObjectRadius), "Radius of the object in meters (default: 0.06 m).")
+			     ("amiroRadiusAddition,a", po::value<float>(&amiroRadiusAddition), "Radius addition due to bigger cameras, etc. in meters (default: 0.0 m).")
+                             ("anglePositiveToRight", "Flag, if the angle is not counted positive left side, but right side.")
+                             ("rgbdLaser,d", "Flag, if not a laser scanner, but a RGBD camera is used for laser scans.")
                              ("waitForCommand", "Flag, if the robot should wait until the start command is given.")
                              ("useFakeObject", "Flag, if the fake object shall be used.");
 
@@ -222,10 +233,15 @@ int main(int argc, char **argv) {
 
 	waitForCommand = vm.count("waitForCommand");
 	useFakeObject = vm.count("useFakeObject");
+	rgbdCameraIsUsed = vm.count("rgbdLaser");
+	if (vm.count("anglePositiveToRight")) {
+		angleDirectionPositive = -1;
+	}
 
         INFO_MSG("Listening to the scopes:");
         INFO_MSG(" - Floor Proximity Sensors: " << proxSensorInscope);
-        INFO_MSG(" - Command Input:     " << commandInscope);
+	INFO_MSG(" - Laser Data:              " << lidarInscope);
+        INFO_MSG(" - Command Input:           " << commandInscope);
         INFO_MSG("");
 
 	INFO_MSG("Initialize RSB");
@@ -278,8 +294,9 @@ int main(int argc, char **argv) {
 		myCAN.setLightColor(led, amiro::Color(amiro::Color::BLUE));
 	}
 
-
-	while (true) {
+	INFO_MSG("Ready for Fetching Procedure");
+	bool exitProg = false;
+	while (!exitProg) {
 		if (!proxQueue->empty()) {
 			sensorErrorCounter = 0;
 
@@ -362,7 +379,7 @@ int main(int argc, char **argv) {
 				bool found = calculateObjectOrientation(scan, &objectPose);
 				if (found) {
 					objectPosX = objectPose.x() + objectRadius;
-					robotDirection = objectPose.y();
+					robotDirection = (-1.0) * objectPose.y();
 				} else {
 					objectPosX = 0.0;
 				}
@@ -423,27 +440,6 @@ int main(int argc, char **argv) {
 					float direction = 1.0;
 					if (drivingAngle < 0.0) direction = -1.0;
 
-	/*				// calculate driving time
-					int turningTime = abs((int)(1000000.0 * 100.0*drivingAngle/turningSpeed)); // us
-					if (i==1) {
-						turningTime += turningAddition*1000;
-					}
-					int forwardTime = abs((int)(1000000.0 * 100.0*drivingDist/forwardSpeed)); // us
-					DEBUG_MSG("Driving action: " << drivingDist << " m, " << (drivingAngle*180.0/M_PI) << " degree (robot direction: " << (robotDirection*180.0/M_PI) << ", path direction: " << (atan2(yDiff, xDiff)*180.0/M_PI) << ")");
-					DEBUG_MSG("Driving " << drivingDist << " m with " << forwardSpeed << " cm/s for " << forwardTime << " us");
-					DEBUG_MSG("Driving " << drivingAngle << " rad with " << turningSpeed << " crad/s for " << turningTime << " us");
-
-					// driving by time
-					motorActionMilli(0, direction*turningSpeed, myCAN);
-					usleep(turningTime);
-					motorActionMilli(0, 0, myCAN);
-					usleep(300000);
-					motorActionMilli(forwardSpeed, 0, myCAN);
-					usleep(forwardTime);
-					motorActionMilli(0, 0, myCAN);
-					usleep(300000);*/
-	//				sleep(1);
-
 					// drive by odometry
 					motorDrivePosition(drivingDist, drivingAngle, myCAN);
 
@@ -462,9 +458,8 @@ int main(int argc, char **argv) {
 			std::string command = *commandQueue->pop().get();
 			if (command == COMMAND_START) {
 				startDelivery = true;
-			} else if (command == COMMAND_STOP) {
 			} else if (command == COMMAND_QUIT) {
-				break; // while loop
+				exitProg = true;
 			} else {
 				WARNING_MSG("Received unknown command.");
 			}

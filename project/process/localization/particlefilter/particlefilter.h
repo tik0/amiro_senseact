@@ -8,10 +8,11 @@ using namespace std;
 #include <types/LocatedLaserScan.pb.h>
 #include <rst/geometry/Pose.pb.h>
 #include <opencv2/core/core.hpp>
-#include "eigenmvn/eigenmvn.h"
+#include <random>
 #include "map.h"
 #include "sampleset.h"
 #include "sensormodel.h"
+#include "laserscan.h"
 
 class ParticleFilter
 {
@@ -25,7 +26,7 @@ public:
      * @param odom The initial odometry data used to form odometry deltas.
      * @param map A openCV mat to represent to map.
      */
-    ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, Map *map, SensorModel *sensorModel, bool doKLDSampling = false);
+    ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling = false, int beamskip = 1);
     ~ParticleFilter();
 
     /**
@@ -49,16 +50,26 @@ private:
     pose_t prevOdom = {0,0,0};
     pose_t odometryDelta;
 
+    laserscan_t laserscan;
+    float *scan_cos;
+    float *scan_sin;
+    int beamskip = 1;
+
     Map *map;
 
-    Eigen::Vector3d mean = Eigen::Vector3d(0,0,0);
-    Eigen::Matrix3d covar = Eigen::DiagonalMatrix<double,3,3>(0.01, 0.01, 0.01);
-    Eigen::EigenMultivariateNormal<double> sampler = Eigen::EigenMultivariateNormal<double>(mean, covar);
+//    Eigen::Vector3d mean = Eigen::Vector3d(0,0,0);
+//    Eigen::Matrix3d covar = Eigen::DiagonalMatrix<double,3,3>(0.01, 0.01, 0.01);
+//    Eigen::EigenMultivariateNormal<double> sampler = Eigen::EigenMultivariateNormal<double>(mean, covar);
+
+    //std::default_random_engine rng;
+    std::subtract_with_carry_engine<uint_fast32_t, 24, 10, 24> rng; // std::min_stdrand
+    std::normal_distribution<float> samplingDistribution;
 
     void initSamples();
-    void normalizeImportanceFactors(float logSum);
 
-    sample_t rouletteWheelSelection();
+    float *cumulative;
+
+    sample_t rouletteWheelSelection(float t);
 
     /*
      *        p_t
@@ -87,15 +98,15 @@ private:
     // pre-computes above variables
     void preparePoseUpdate(pose_t &newOdom);
     void updatePose(sample_t &sample);
+
+    float newSampleProb = 0.0f;
     void sampling(sample_t &sample);
 
 
     SensorModel *sensorModel;
-    void importanceSampling(sample_t &sample, const rst::vision::LocatedLaserScan &scan);
 
     pose_t convertPose(const rst::geometry::Pose &odom);
-
-    float logAdd(float a, float b);
+    void convertScan(const rst::vision::LocatedLaserScan &scan);
 
     // normalizes an angle to [-PI;+PI)
     inline float normalizeAngle(float theta)

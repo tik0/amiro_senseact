@@ -12,10 +12,23 @@ echo "Start AMiRo with ID ${ID}"
 
 sleep 2
 
+trap './stop.sh; exit' INT TERM
+
 ./stop.sh
 
 cpufreq-set -g performance
 
+# local spread
+while test -n "$(netstat -ano | grep 4803 | grep LISTEN)"; do
+	echo "port is still in use, waiting...";
+	sleep 1;
+done
+spread &
+# external spread
+while test -n "$(netstat -ano | grep 4823 | grep LISTEN)"; do
+	echo "port is still in use, waiting...";
+	sleep 1;
+done
 spread -c amirospread &
 
 sleep 5
@@ -39,7 +52,7 @@ sleep 5
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image/${ID} --setPositionScope /setPosition/${ID} \
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition \
   --remotePort 4823 \
   --senImage 0 \
   --delta 0.02 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \

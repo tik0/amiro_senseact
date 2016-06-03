@@ -10,7 +10,7 @@ cpufreq-set -g performance
 
 sleep 1
 
-./objectFetchTask -p /prox/floor -l /lidar -r 0.06 -w 30.0
+./objectFetchTask -p /prox/floor -l /lidar --anglePositiveToRight -r 0.06 -w 30.0
 
 wait
 cpufreq-set -g ondemand

@@ -17,6 +17,6 @@ files="stop.sh $files"
 files="rsb.conf $files"
 
 # Copy the map
-files="${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/centralLab-clean-cropped-valid-4-scale-0.5.png $files"
+files="${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/twb-empty-0.01m_per_pixel.png $files"
 
 scp $files root@${IP}:~/${NAME}

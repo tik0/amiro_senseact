@@ -34,16 +34,22 @@
 #include "raycastingmodel.h"
 #include "likelihoodfieldmodel.h"
 
+#include "importancetype/inversedistance.h"
+
 int main(int argc, const char **argv) {
     /*
      * Handle program options
      */
     std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
     std::string odomInScope = "/AMiRo_Hokuyo/gps";
+    std::string debugImageOutScope = "/particlefilter/debugImage";
 
     size_t sampleCount = 10;
-    float meterPerPixel = 0.01;
+    float meterPerPixel = 0.01f;
     std::string pathToMap = "map.png";
+    int beamskip = 1;
+    float newSampleProb = 0.1f;
+    float maxFrequency = 10.0f;
 
     namespace po = boost::program_options;
 
@@ -54,7 +60,11 @@ int main(int argc, const char **argv) {
             ("sampleCount", po::value < std::size_t > (&sampleCount)->default_value(sampleCount), "Number of particles")
             ("meterPerPixel", po::value < float > (&meterPerPixel)->default_value(meterPerPixel), "resolution of the map in meter per pixel")
             ("pathToMap", po::value < std::string > (&pathToMap)->default_value(pathToMap), "Filesystem path to image that contains the map")
-            ("kldsampling", "Switches on KLD sampling.");
+            ("kldsampling", "Switches on KLD sampling.")
+            ("newSampleProb", po::value < float > (&newSampleProb)->default_value(newSampleProb), "Probability for generating a new sample (instead of roulette wheel selection)")
+            ("beamskip", po::value < int > (&beamskip)->default_value(beamskip), "Take every n-th beam into account when calculating importance factor")
+            ("maxFrequency", po::value < float > (&maxFrequency)->default_value(maxFrequency), "Maximum frequency at which new positon is published (1/s)")
+            ("debugImageOutScope", po::value < std::string > (&debugImageOutScope), "Scope for sending the debug image.");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -79,6 +89,13 @@ int main(int argc, const char **argv) {
         doKLDSampling = true;
     }
 
+    // send debug image?
+    bool sendDebugImage = false;
+    if (vm.count("debugImageOutScope")) {
+        INFO_MSG("Sending debug image on scope: " << debugImageOutScope);
+        sendDebugImage = true;
+    }
+
     /*
      * RSB Informers and listeners
      */
@@ -98,6 +115,9 @@ int main(int argc, const char **argv) {
     rsb::ListenerPtr odomListener = factory.createListener(odomInScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>>odomQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
     odomListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(odomQueue)));
+
+    // Informer for map
+    rsb::Informer<std::string>::Ptr debugImageInformer = factory.createInformer<std::string>(debugImageOutScope);
 
     /*
      * Setup the particle filter
@@ -119,14 +139,100 @@ int main(int argc, const char **argv) {
 
     // Finally set up the particle filter
     //RayCastingModel sensorModel(&map);
-    LikelihoodFieldModel sensorModel(&map);
-    ParticleFilter particlefilter(sampleCount, *odomPtr, &map, &sensorModel, doKLDSampling);
+    LikelihoodFieldModel<InverseDistance> sensorModel(&map);
+    ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip);
 
     /*
      * Main loop
      */
+    boost::uint64_t minPeriod = 1000 / maxFrequency; // in ms
     rsc::misc::initSignalWaiter();
-    while (rsc::misc::lastArrivedSignal() == rsc::misc::NO_SIGNAL) {
+    bool running = true;
+    bool visualizeImportance = true;
+    while (rsc::misc::lastArrivedSignal() == rsc::misc::NO_SIGNAL && running) {
+        boost::uint64_t loopStart = rsc::misc::currentTimeMillis();
+
+        if (sendDebugImage) {
+            INFO_MSG("Preparing visualization");
+            // Visualization
+            // convert to RGB
+            cv::Mat3b vis(map.size(), CV_8UC3);
+            cv::cvtColor(map, vis, CV_GRAY2RGB, 3);
+            // resize
+            int height = min(map.size().height, 700);
+            float scale = (float)height / map.size().height;
+            cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
+
+            // find maximum importance
+            sample_set_t *sampleSet = particlefilter.getSamplesSet();
+            float maxImportance = 0;
+            for (size_t i = 0; i < sampleSet->size; ++i) {
+                maxImportance = max(maxImportance, sampleSet->samples[i].importance);
+            }
+
+            float meanX = 0.0f, meanY = 0.0f;
+            float sumThetaX = 0.0f, sumThetaY = 0.0f;
+
+            // draw all samples
+            for (size_t i = 0; i < sampleSet->size; ++i) {
+                sample_t sample = sampleSet->samples[i];
+                // accumulate data for mean
+                meanX += sample.importance * sample.pose.x;
+                meanY += sample.importance * sample.pose.y;
+                sumThetaX += sample.importance * cos(sample.pose.theta);
+                sumThetaY += sample.importance * sin(sample.pose.theta);
+
+                cv::Point p(sample.pose.x / meterPerPixel * scale, sample.pose.y / meterPerPixel * scale);
+
+                int radius = 5;
+                int intensity = 0;
+                if (visualizeImportance) {
+                    intensity = -255 / maxImportance * sample.importance + 255;
+                }
+                cv::circle(vis, p, radius, cv::Scalar(255,intensity,intensity));
+
+                // also indicate theta
+                cv::Point q( p.x + cos(sample.pose.theta) * radius * 1.5f, p.y + sin(sample.pose.theta) * 1.5f * radius );
+                cv::line(vis, p, q, cv::Scalar(255,intensity,intensity));
+            }
+
+            // overlay mean
+            float meanTheta = atan2(sumThetaY, sumThetaX);
+
+            cv::Point p(meanX / meterPerPixel * scale, meanY / meterPerPixel * scale);
+
+            int radius = 5;
+            cv::circle(vis, p, 5, cv::Scalar(0,0,255));
+
+            cv::Point q( p.x + cos(meanTheta) * radius * 1.5f, p.y + sin(meanTheta) * 1.5f * radius );
+            cv::line(vis, p, q, cv::Scalar(0,0,255));
+
+#ifndef __arm__
+            // finally show image
+            cv::flip(vis, vis, 0); // flip horizontally
+            cv::imshow("visualization", vis);
+            int key = cv::waitKey(100);
+            switch (key) {
+                case 27: // 27 == escape key
+                    running = false;
+                    break;
+
+                case ' ': // space bar
+                    visualizeImportance = !visualizeImportance;
+                    break;
+            }
+#else
+            std::vector<uchar> buf;
+            std::vector<int> compression_params;
+            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+            compression_params.push_back(100);
+            cv::imencode(".jpg", vis, buf, compression_params);
+
+            rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+            debugImageInformer->publish(frameJpg);
+#endif
+        }
+
         // Update scan
         if (!lidarQueue->empty()) {
             scanPtr = lidarQueue->pop();
@@ -141,43 +247,16 @@ int main(int argc, const char **argv) {
         boost::uint64_t stop = rsc::misc::currentTimeMillis();
         INFO_MSG("Updating particle filter took " << (stop - start) << " ms");
 
-#ifndef __arm__
-        // Visualization
-        // convert to RGB
-        cv::Mat3b vis(map.size(), CV_8UC3);
-        cv::cvtColor(map, vis, CV_GRAY2RGB, 3);
-        // resize
-        int height = min(map.size().height, 700);
-        float scale = (float)height / map.size().height;
-        cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
+        // TODO: publish position here
 
-        sample_set_t *sampleSet = particlefilter.getSamplesSet();
-        float maxImportance = 0;
-        for (size_t i = 0; i < sampleSet->size; ++i) {
-            maxImportance = max(maxImportance, sampleSet->samples[i].importance);
+        boost::uint64_t loopPeriod = rsc::misc::currentTimeMillis() - loopStart;
+        if (loopPeriod < minPeriod) {
+            usleep((minPeriod - loopPeriod) * 1000);
         }
 
-        for (size_t i = 0; i < sampleSet->size; ++i) {
-            sample_t sample = sampleSet->samples[i];
-
-            cv::Point p(sample.pose.x / meterPerPixel * scale, sample.pose.y / meterPerPixel * scale);
-
-            int radius = 5;
-            int intensity = -255 / maxImportance * sample.importance + 255;
-            cv::circle(vis, p, radius, cv::Scalar(255,intensity,intensity));
-
-            cv::Point q( p.x + cos(sample.pose.theta) * radius * 1.5f, p.y + sin(sample.pose.theta) * 1.5f * radius );
-            cv::line(vis, p, q, cv::Scalar(255,intensity,intensity));
-        }
-
-        cv::flip(vis, vis, 0); // flip horizontally
-        cv::imshow("visualization", vis);
-        if (cv::waitKey(100) == (char)27) { // 27 = escape key
-            break;
-        }
-#endif
         INFO_MSG("==== END OF MAIN LOOP ====");
     }
 
+    INFO_MSG("Terminating normally");
     return 0;
 }

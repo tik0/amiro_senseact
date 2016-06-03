@@ -16,6 +16,7 @@
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
+#include <actModels/lightModel.h>
 
 using namespace std;
 
@@ -32,14 +33,9 @@ int main(int argc, char **argv) {
 
   sleep(1);
 
-  CAN.setLightColor(0, amiro::Color(amiro::Color::RED));
-  CAN.setLightColor(1, amiro::Color(amiro::Color::GREEN));
-  CAN.setLightColor(2, amiro::Color(amiro::Color::BLUE));
-  CAN.setLightColor(3, amiro::Color(amiro::Color::WHITE));
-  CAN.setLightColor(4, amiro::Color(amiro::Color::RED));
-  CAN.setLightColor(5, amiro::Color(amiro::Color::GREEN));
-  CAN.setLightColor(6, amiro::Color(amiro::Color::BLUE));
-  CAN.setLightColor(7, amiro::Color(amiro::Color::WHITE));
+  for(int led=0; led<8; led++) {
+    CAN.setLightColor(led, LightModel::initColors[led]);
+  }
   INFO_MSG("AMiRo lights reset.");
 
   return EXIT_SUCCESS;

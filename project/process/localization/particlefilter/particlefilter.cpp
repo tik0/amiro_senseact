@@ -3,6 +3,7 @@ using namespace std;
 #include "particlefilter.h"
 #include <cstdlib>
 #include <cmath>
+#include <Eigen/Geometry>
 #include <utils.h>
 #include <assert.h>
 
@@ -12,14 +13,18 @@ using namespace std;
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, Map *map, SensorModel *sensorModel, bool doKLDSampling)
+#include <rsc/misc/langutils.h>
+
+ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling, int beamskip)
 {
     this->maxSampleCount = maxSampleCount;
     this->height = map->size().height;
     this->width = map->size().width;
     this->prevOdom = convertPose(odom);
     this->sensorModel = sensorModel;
+    this->newSampleProb = newSampleProb;
     this->doKLDSampling = doKLDSampling;
+    this->beamskip = beamskip;
 
     sampleSet = new sample_set_t;
     sampleSet->size = 0;
@@ -29,7 +34,33 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     newSampleSet->size = 0;
     newSampleSet->samples = new sample_t[maxSampleCount];
 
+    laserscan.size = 0;
+    laserscan.values = new float[scanConfig.scan_values_size()];
+    laserscan.sin = new float[scanConfig.scan_values_size()];
+    laserscan.cos = new float[scanConfig.scan_values_size()];
+
+    // pre-compute cos/sin for laser beams
+    float angle = scanConfig.scan_angle_start();
+    float increment = scanConfig.scan_angle_increment();
+    if (scanConfig.scan_angle_start() > scanConfig.scan_angle_end()) {
+        increment = -increment;
+    }
+
+    scan_cos = new float[scanConfig.scan_values_size()];
+    scan_sin = new float[scanConfig.scan_values_size()];
+    for (int i = 0; i < scanConfig.scan_values_size(); ++i) {
+        angle += increment;
+        scan_cos[i] = cos(angle);
+        scan_sin[i] = sin(angle);
+    }
+
     this->map = map;
+
+    cumulative = new float[maxSampleCount];
+
+    srand(time(NULL));
+    this->rng = std::subtract_with_carry_engine<uint_fast32_t, 24, 10, 24>(time(NULL));
+    samplingDistribution = std::normal_distribution<float>(0.0f, 0.01f);
 
     initSamples();
 
@@ -75,8 +106,6 @@ ParticleFilter::initSamples()
 {
     float initialImportance = 1.0f / maxSampleCount;
 
-    srand(time(NULL));
-
     sampleSet->size = maxSampleCount;
     for (size_t i = 0; i < sampleSet->size; ++i) {
         sampleSet->samples[i].pose.x = fmod(rand(), width * map->meterPerCell);
@@ -86,35 +115,28 @@ ParticleFilter::initSamples()
     }
 }
 
-void
-ParticleFilter::normalizeImportanceFactors(float logSum)
-{
-    for (size_t i = 0; i < sampleSet->size; ++i) {
-//        float imp = samples[i].importance - logSum;
-//        samples[i].importance = exp(imp);
-        sampleSet->samples[i].importance /= logSum;
-
-        assert(sampleSet->samples[i].importance >= 0.0f);
-        assert(sampleSet->samples[i].importance <= 1.0f);
-    }
-}
-
 sample_t
-ParticleFilter::rouletteWheelSelection()
+ParticleFilter::rouletteWheelSelection(float t)
 {
-    float r = rand() / (float)RAND_MAX;
-    float sum = 0;
+    // binary search
+    // https://en.wikipedia.org/wiki/Binary_search_algorithm
+    size_t l = 0;
+    size_t r = sampleSet->size - 1;
 
-    for (size_t i = 0; i < sampleSet->size; ++i) {
-        sample_t s = sampleSet->samples[i];
-        sum += s.importance;
+    while (l <= r) {
+        size_t m = (l + r) / 2;
 
-        if (sum >= r) {
-            return s;
+        if (cumulative[m] < t) { // A_m < T
+            l = m + 1;
+        } else if (cumulative[m - 1] >= t) { // A_m > t
+            r = m - 1;
+        } else { // if (cumulative[m] >= t && cumulative[m - 1] < t) // A_m = t
+            return sampleSet->samples[m];
         }
     }
 
-    return sampleSet->samples[sampleSet->size - 1];
+    ERROR_MSG("binary search failed!");
+    exit(1);
 }
 
 void
@@ -125,10 +147,13 @@ ParticleFilter::sampling(sample_t &sample)
 
     // Sample
     // TODO: rotate covariance with sample theta
-    Eigen::Matrix<double,Eigen::Dynamic,-1> offset = sampler.samples(1);
-    sample.pose.x += offset(0, 0);
-    sample.pose.y += offset(1, 0);
-    sample.pose.theta = normalizeAngle(sample.pose.theta + offset(2, 0));
+//    Eigen::Matrix<double,Eigen::Dynamic,-1> offset = sampler.samples(1);
+//    sample.pose.x += offset(0, 0);
+//    sample.pose.y += offset(1, 0);
+//    sample.pose.theta = normalizeAngle(sample.pose.theta + offset(2, 0));
+    sample.pose.x += samplingDistribution(rng);
+    sample.pose.y += samplingDistribution(rng);
+    sample.pose.theta = normalizeAngle(sample.pose.theta + samplingDistribution(rng));
 
     // Make sure samples are still on the map
     sample.pose.x = clamp(sample.pose.x, 0, width * map->meterPerCell);
@@ -162,12 +187,6 @@ ParticleFilter::updatePose(sample_t &sample)
     sample.pose.theta = normalizeAngle(sample.pose.theta + phi2);
 }
 
-void
-ParticleFilter::importanceSampling(sample_t &sample, const rst::vision::LocatedLaserScan &scan)
-{
-    sensorModel->computeWeight(sample, scan);
-}
-
 pose_t
 ParticleFilter::convertPose(const rst::geometry::Pose &odom)
 {
@@ -186,17 +205,32 @@ ParticleFilter::convertPose(const rst::geometry::Pose &odom)
 }
 
 void
+ParticleFilter::convertScan(const rst::vision::LocatedLaserScan &scan)
+{
+    laserscan.size = 0;
+    for (int i = 0; i < scan.scan_values_size(); i += beamskip) {
+        float value = scan.scan_values(i);
+        if (value <= scan.scan_values_max() && value >= scan.scan_values_min()) {
+            laserscan.values[laserscan.size] = value;
+            laserscan.sin[laserscan.size] = scan_sin[i];
+            laserscan.cos[laserscan.size] = scan_cos[i];
+            laserscan.size++;
+        }
+    }
+}
+
+void
 ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom)
 {
-    //float normFactor = std::numeric_limits<float>::lowest();
-    float normFactor = 0;
-
     // convert odometry and pre-compute deltas for pose update
     pose_t newOdom = convertPose(odom);
     preparePoseUpdate(newOdom);
     prevOdom = newOdom;
 
+    convertScan(scan);
+
     if (doKLDSampling) {
+        // reset bins
         binsWithSupport = 0;
         for (int i = 0; i < nbBinsY; ++i) {
             for (int j = 0; j < nbBinsX; ++j) {
@@ -207,18 +241,49 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
         }
     }
 
+    // pre-compute cumulative distribution (used by roulette wheel selection)
+    float sum = 0;
+    for (size_t i = 0; i < sampleSet->size; ++i) {
+        sum += sampleSet->samples[i].importance;
+        cumulative[i] = sum;
+    }
+    float r = rand() / (float)RAND_MAX;
+    float rand_increment = 1.0f / sampleSet->size;
+
+    // for measuring time usage for each step
+    boost::uint64_t reSamplingTime = 0;
+    boost::uint64_t samplingTime = 0;
+    boost::uint64_t importanceSamplingTime = 0;
+
     for (size_t n = 0; n < maxSampleCount; ++n)
     {
         // Re-sampling
-        sample_t sample = rouletteWheelSelection();
-        // Sampling
-        sampling(sample);
-        // Importance sampling
-        importanceSampling(sample, scan);
+        boost::uint64_t start = rsc::misc::currentTimeMicros();
 
-        // Update normalization factor
-        //normFactor = logAdd(normFactor, sample.importance);
-        normFactor += sample.importance;
+        sample_t sample;
+        if (rand() / (float)RAND_MAX < newSampleProb) {
+            sample.pose.x = fmod(rand(), width * map->meterPerCell);
+            sample.pose.y = fmod(rand(), height * map->meterPerCell);
+            sample.pose.theta = fmod(rand(), 2 * M_PI) - M_PI;
+            sample.importance = 0.0f; // will be set in importance sampling
+        } else {
+            sample = rouletteWheelSelection(r);
+            r += rand_increment;
+            if (r > 1.0f) {
+                r -= 1.0f;
+            }
+        }
+        reSamplingTime += (rsc::misc::currentTimeMicros() - start);
+
+        // Sampling
+        start = rsc::misc::currentTimeMicros();
+        sampling(sample);
+        samplingTime += (rsc::misc::currentTimeMicros() - start);
+
+        // Importance sampling
+        start = rsc::misc::currentTimeMicros();
+        sensorModel->computeWeight(sample, laserscan);
+        importanceSamplingTime += (rsc::misc::currentTimeMicros() - start);
 
         // Add sample to new sample set
         newSampleSet->samples[n] = sample;
@@ -258,13 +323,22 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
     DEBUG_MSG("sample set size: " << newSampleSet->size);
 
     // Adopt the new sample set
-    // and reuse the old sample set (
+    // and reuse the old sample set memory location
     sample_set_t *tmp = sampleSet;
     sampleSet = newSampleSet;
     newSampleSet = tmp;
     newSampleSet->size = 0;
-    // and normalize importance weights
-    normalizeImportanceFactors(normFactor);
+
+    // Normalize importance weights
+    boost::uint64_t start = rsc::misc::currentTimeMicros();
+    sensorModel->normalizeWeights(sampleSet);
+    boost::uint64_t normalizingTime = rsc::misc::currentTimeMicros() - start;
+
+
+    INFO_MSG("reSamplingTime:         " << reSamplingTime);
+    INFO_MSG("samplingTime:           " << samplingTime);
+    INFO_MSG("importanceSamplingTime: " << importanceSamplingTime);
+    INFO_MSG("normalizingTime:        " << normalizingTime);
 }
 
 void
@@ -278,27 +352,4 @@ ParticleFilter::updateBins(sample_t &sample)
         bins[idxy][idxx][idxr] = true;
         binsWithSupport++;
     }
-}
-
-float
-ParticleFilter::logAdd(float a, float b)
-{
-    // swap variables so that b is greater than a
-    if (a > b) {
-        float tmp = a;
-        a = b;
-        b = tmp;
-    }
-
-    if (a == std::numeric_limits<float>::lowest()) {
-        return b;
-    }
-
-    /*
-     * log( exp(a) + exp(b) )
-     *   = log( exp(b) * ( exp(a) / exp(b) + 1 ) )
-     *   = b + log( exp(a) / exp(b) + 1 )
-     *   = b + log( exp(a - b) + 1 )
-     */
-    return b + log( exp(a - b) + 1.0f );
 }
