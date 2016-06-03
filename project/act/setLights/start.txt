@@ -26,6 +26,10 @@ If the period time is too small, it will be reased up to the minimal time of the
 
 The lighting type and the minimal period times can be get as constants from the [[includes:actModels:startLightModel|Light Model]].
 
+===== Example =====
+
+An example of how to use the [[includes:actModels:startLightModel|Light Model]] and how to send the light command can be found in the [[tools:examples:sendLights:start|sendLights tool]]. The RSB communication and the usage of the [[includes:actModels:startLightModel|Light Model]] is implemented. Please also recognize the ''CMakeLists.txt''.
+
 ===== RSB Scopes =====
 
 ^ Name ^ Default Scope ^ Scope Type ^ Description ^
