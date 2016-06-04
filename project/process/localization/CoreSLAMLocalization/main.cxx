@@ -956,6 +956,34 @@ int main(int argc, const char **argv){
   }
 
   rsb::Factory& factory = rsb::getFactory();
+
+  //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
+  ///////////////////////////////////////////////////////////////////////////////
+  // Get the global participant config as a template
+  rsb::ParticipantConfig tmpPartConf = factory.getDefaultParticipantConfig();
+        {
+          // disable socket transport
+          rsc::runtime::Properties tmpPropSocket  = tmpPartConf.mutableTransport("socket").getOptions();
+          tmpPropSocket["enabled"] = boost::any(std::string("0"));
+
+          // Get the options for spread transport, because we want to change them
+          rsc::runtime::Properties tmpPropSpread  = tmpPartConf.mutableTransport("spread").getOptions();
+
+          // enable socket transport
+          tmpPropSpread["enabled"] = boost::any(std::string("1"));
+
+          // Change the config
+          tmpPropSpread["host"] = boost::any(std::string(remoteHost));
+
+          // Change the Port
+          tmpPropSpread["port"] = boost::any(std::string(remotePort));
+
+          // Write the tranport properties back to the participant config
+          tmpPartConf.mutableTransport("socket").setOptions(tmpPropSocket);
+          tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
+       }
+  ///////////////////////////////////////////////////////////////////////////////
+
   
   // Register 
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
@@ -985,9 +1013,9 @@ int main(int argc, const char **argv){
   boost::shared_ptr<vecFloatConverter> converterVecFloat(new vecFloatConverter());
   converterRepository<std::string>()->registerConverter(converterVecFloat);
 
-  rsb::ListenerPtr setPositionListener = factory.createListener(setPositionScope);
-  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>> >setPositionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>>(1));
-  setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<float>>(setPositionQueue)));
+  rsb::ListenerPtr setPositionListener = factory.createListener(setPositionScope, tmpPartConf);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>> >setPositionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
+  setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(setPositionQueue)));
 
   // RSB listener for disabling/enabling sending the map
   rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope);
@@ -1051,12 +1079,19 @@ int main(int argc, const char **argv){
 
     if (!setPositionQueue->empty()) {
         INFO_MSG("Received setPosition request");
-        boost::shared_ptr< std::vector<float> > newPosition = boost::static_pointer_cast< std::vector<float> >(setPositionQueue->pop());
-        DEBUG_MSG("New position is: " << *newPosition);
-        // Convert from debug map pixel to tiny slam position
-        state_.position.x = newPosition->at(0) * (ts_map_.size / (float)debugImageSize.width) * delta_ * METERS_TO_MM;
-        state_.position.y = newPosition->at(1) * (ts_map_.size / (float)debugImageSize.height) * delta_ * METERS_TO_MM;
-        state_.position.theta = newPosition->at(2) * 180.0f / M_PI;
+        boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(setPositionQueue->pop());
+        DEBUG_MSG("New position is: " << newPosition->DebugString());
+        state_.position.x = newPosition->translation().x() * METERS_TO_MM;
+        state_.position.y = newPosition->translation().y() * METERS_TO_MM;
+
+        // Convert from quaternion to euler
+        rst::geometry::Rotation rotation = newPosition->rotation();
+        Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
+        Eigen::Matrix<double,3,1> rpy;
+        ::conversion::quaternion2euler(&lidar_quat, &rpy);
+        const double yaw = rpy(2);
+        state_.position.theta = yaw * 180.0f / M_PI;
+
         DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
         // Set higher sigma to make it possible to converge into right position
         state_.sigma_theta = sigma_theta_new_position;

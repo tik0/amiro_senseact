@@ -1,3 +1,2 @@
 #!/bin/bash
-cmake -DCMAKE_BUILD_TYPE=Release .
-make $@
+cmake -DCMAKE_BUILD_TYPE=Release . && make $@

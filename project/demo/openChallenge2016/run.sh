@@ -19,13 +19,13 @@ trap './stop.sh; exit' INT TERM
 cpufreq-set -g performance
 
 # local spread
-while test -n "$(netstat -ano | grep 4803 | grep LISTEN)"; do
+while test -n "$(netstat -an | grep 4803 | grep LISTEN)"; do
 	echo "port is still in use, waiting...";
 	sleep 1;
 done
 spread &
 # external spread
-while test -n "$(netstat -ano | grep 4823 | grep LISTEN)"; do
+while test -n "$(netstat -an | grep 4823 | grep LISTEN)"; do
 	echo "port is still in use, waiting...";
 	sleep 1;
 done
@@ -52,7 +52,7 @@ sleep 5
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition \
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition/${ID} \
   --remotePort 4823 \
   --senImage 0 \
   --delta 0.02 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
@@ -61,7 +61,7 @@ sleep 5
   --initialX 4244.11 --initialY 6446.25 --initialTheta 6.71772 \
   --precomputeOccupancyMap true &
 
-./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.15 --delay 10 --switchinscope /following &
+./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.15 --delay 10 --switchinscope /following > /dev/null &
 
 ./actTargetPosition --inscope /targetPositions &
 
