@@ -841,6 +841,7 @@ int main(int argc, const char **argv){
   std::string mapAsImageOutScope = "/CoreSLAMLocalization/image";
   std::string saveMapInScope = "/saveMap";
   std::string setPositionScope = "/setPosition";
+  std::string positionOutScope = "/position";
   std::string sendMapSwitchScope = "/sendMap";
   std::string homingInScope = "/homing";
   std::string emergencyHaltInScope = "/AMiRo_Hokuyo/emergencyHalt";
@@ -874,6 +875,7 @@ int main(int argc, const char **argv){
     ("offsetY", po::value < float > (&offset.y),"offset y (mm)")
     ("offsetTheta", po::value < float > (&offset.theta),"offset theta (mm)")
     ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope for receiving a new position")
+    ("positionOutScope", po::value < std::string > (&positionOutScope), "Scope for publishing current position")
     ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set (mm)")
     ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set (rad)")
     ("loadMapWithValidPositionsFromPNG", po::value < std::string > (&mapValidPositionsPNGPath),"Load map with valid positions from grayscale PNG file")
@@ -1017,6 +1019,8 @@ int main(int argc, const char **argv){
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>> >setPositionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
   setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(setPositionQueue)));
 
+  rsb::Informer<rst::geometry::Pose>::Ptr poseInfomer = factory.createInformer<rst::geometry::Pose>(positionOutScope, tmpPartConf);
+
   // RSB listener for disabling/enabling sending the map
   rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope);
   sendMapSwitchListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&setSendMapAsCompressedImage)));
@@ -1109,6 +1113,26 @@ int main(int argc, const char **argv){
 
     DEBUG_MSG("current sigma_xy: " << state_.sigma_xy);
     DEBUG_MSG("current sigma_theta: " << state_.sigma_theta);
+
+    // Publish estimated pose
+    boost::shared_ptr<rst::geometry::Pose> rsbPose(new rst::geometry::Pose);
+    rsbPose->mutable_translation()->set_x(pose.x * MM_TO_METERS);
+    rsbPose->mutable_translation()->set_y(pose.y * MM_TO_METERS);
+    rsbPose->mutable_translation()->set_z(0);
+
+    Eigen::Matrix<double,3,1> rpy;
+    rpy(0) = 0;
+    rpy(1) = 1;
+    rpy(2) = pose.theta * M_PI / 180.0f;
+    Eigen::Quaternion<double> quat;
+    ::conversion::euler2quaternion(&rpy, &quat);
+
+    rsbPose->mutable_rotation()->set_qx(quat.x());
+    rsbPose->mutable_rotation()->set_qy(quat.y());
+    rsbPose->mutable_rotation()->set_qz(quat.z());
+    rsbPose->mutable_rotation()->set_qw(quat.w());
+
+    poseInfomer->publish(rsbPose);
 
     if (sendMapAsCompressedImage) {
 
