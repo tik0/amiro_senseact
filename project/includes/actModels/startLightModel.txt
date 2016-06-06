@@ -1,6 +1,6 @@
 ====== Light Model ======
 
-The Light Model contains all constants, which are used for lighting the LEDs. This includes the initial color set and the commands for the [[sandbox:setLights:start|setLights tool]].
+The Light Model contains all constants, which are used for lighting the LEDs. This includes the initial color set and the commands for the [[act:setLights:start|setLights tool]].
 
 Notice: In the ''CMakeLists.txt'' of your project the reference to the Color Source (''Color.cpp'') has to be given to use this interface!
 
@@ -10,7 +10,7 @@ When the AMiRo starts, it has an initial color set. By using the vector ''initCo
 
 ===== Commands and Periods =====
 
-By using the tool [[sandbox:setLights:start|setLights]] the LEDs' colors and lighting type can be set. Their are 7 different lighting types. Each type has its minimal period time due to CAN communication.
+By using the tool [[act:setLights:start|setLights]] the LEDs' colors and lighting type can be set. Their are 7 different lighting types. Each type has its minimal period time due to CAN communication.
 
 ^ Type ^ Period Time ^ Period Time Name ^ Description ^
 | INIT        | -      | -                | Sets the initial colors (see vector ''initColors''). |
@@ -23,8 +23,8 @@ By using the tool [[sandbox:setLights:start|setLights]] the LEDs' colors and lig
 
 ===== Functions =====
 
-There are two functions, which build the integer vector for the [[sandbox:setLights:start|setLights tool]] out of the lighting type, the period time and out of one or 8 colors:
+There are two functions, which build the integer vector for the [[act:setLights:start|setLights tool]] out of the lighting type, the period time and out of one or 8 colors:
 
 ^ Function ^ Description ^
-| setLight2Vec  | Creates integer vector for [[sandbox:setLights:start|setLights tool]] with only one color. |
-| setLights2Vec | Creates integer vector for [[sandbox:setLights:start|setLights tool]] with 8 colors. |
+| setLight2Vec  | Creates integer vector for [[act:setLights:start|setLights tool]] with only one color. |
+| setLights2Vec | Creates integer vector for [[act:setLights:start|setLights tool]] with 8 colors. |
