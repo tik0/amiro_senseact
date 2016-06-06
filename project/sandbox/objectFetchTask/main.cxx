@@ -34,7 +34,7 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
-#include "CoreSLAM.h"
+#include "libs/CoreSLAM/CoreSLAM.h"
 #ifdef __cplusplus
 }
 #endif
