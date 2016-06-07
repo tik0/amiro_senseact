@@ -21,7 +21,7 @@ private:
      *
      * 4m * 0.01 = 0.04m
      */
-    const float sigma = 0.1f;
+    const float sigma = 2.0f;
 
     inline float logAdd(float a, float b)
     {

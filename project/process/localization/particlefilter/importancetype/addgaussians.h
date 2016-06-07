@@ -13,13 +13,23 @@ private:
      * @brief importance aggregation helper variable for importance of a scan
      */
     float importance = 0.0f;
+
+    /**
+     * @brief sigma for the gaussian:
+     * https://www.hokuyo-aut.jp/02sensor/07scanner/urg_04lx.html
+     * "Accuracy 60 to 1,000mm : ±10mm, 1,000 to 4,095mm : 1% of measurement"
+     *
+     * 4m * 0.01 = 0.04m
+     */
+    const float sigma = 0.04f;
+
 public:
     inline void addBeamDistance(float distance) final
     {
         importance += exp( -pow(distance / sigma, 2));
     }
 
-    inline void aggregateScanImportance() final
+    inline float aggregateScanImportance() final
     {
         float ret = importance;
         // reset importance
