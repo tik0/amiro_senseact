@@ -135,8 +135,15 @@ ParticleFilter::rouletteWheelSelection(float t)
         }
     }
 
-    ERROR_MSG("binary search failed!");
-    exit(1);
+    ERROR_MSG("binary search failed searching for: " << t);
+    DEBUG_MSG("outputting cumulative distribution:");
+#ifdef DEBUG_MSG_
+    for (size_t i = 0; i < sampleSet->size; ++i) {
+        DEBUG_MSG("cumulative[" << i << "]: " << cumulative[i]);
+    }
+#endif
+    return sampleSet->samples[sampleSet->size - 1];
+    //exit(1);
 }
 
 void
@@ -146,11 +153,6 @@ ParticleFilter::sampling(sample_t &sample)
     updatePose(sample);
 
     // Sample
-    // TODO: rotate covariance with sample theta
-//    Eigen::Matrix<double,Eigen::Dynamic,-1> offset = sampler.samples(1);
-//    sample.pose.x += offset(0, 0);
-//    sample.pose.y += offset(1, 0);
-//    sample.pose.theta = normalizeAngle(sample.pose.theta + offset(2, 0));
     sample.pose.x += samplingDistribution(rng);
     sample.pose.y += samplingDistribution(rng);
     sample.pose.theta = normalizeAngle(sample.pose.theta + samplingDistribution(rng));
@@ -160,7 +162,8 @@ ParticleFilter::sampling(sample_t &sample)
     sample.pose.y = clamp(sample.pose.y, 0, height * map->meterPerCell);
 }
 
-void ParticleFilter::preparePoseUpdate(pose_t &newOdom)
+bool
+ParticleFilter::preparePoseUpdate(pose_t &newOdom)
 {
     drivingDirection = atan2(newOdom.y - prevOdom.y, newOdom.x - prevOdom.x);
     phi1 = normalizeAngle(drivingDirection - prevOdom.theta);
@@ -171,6 +174,11 @@ void ParticleFilter::preparePoseUpdate(pose_t &newOdom)
               << " phi1: " << phi1
               << " odometryIncrement: " << odometryIncrement
               << " phi2: " << phi2);
+
+    // return wether increment is > 0
+    DEBUG_MSG("odomIncrement:  " << (abs(odometryIncrement) > 1e-2));
+    DEBUG_MSG("thetaIncrement: " << (abs(normalizeAngle(prevOdom.theta - newOdom.theta)) > 1e-2));
+    return (abs(odometryIncrement) > 1e-2 || abs(normalizeAngle(prevOdom.theta - newOdom.theta)) > 1e-2);
 }
 
 void
@@ -219,12 +227,16 @@ ParticleFilter::convertScan(const rst::vision::LocatedLaserScan &scan)
     }
 }
 
-void
+bool
 ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom)
 {
     // convert odometry and pre-compute deltas for pose update
     pose_t newOdom = convertPose(odom);
-    preparePoseUpdate(newOdom);
+    bool doUpdate = preparePoseUpdate(newOdom);
+    if (!doUpdate) {
+        DEBUG_MSG("Skipping particle filter update because odometry increment is zero");
+        return false;
+    }
     prevOdom = newOdom;
 
     convertScan(scan);
@@ -268,11 +280,12 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
             sample.importance = 0.0f; // will be set in importance sampling
         } else {
             sample = rouletteWheelSelection(r);
-            r += rand_increment;
-            if (r > 1.0f) {
-                r -= 1.0f;
-            }
         }
+        r += rand_increment;
+        if (r > 1.0f) {
+            r -= 1.0f;
+        }
+
         reSamplingTime += (rsc::misc::currentTimeMicros() - start);
 
         // Sampling
@@ -339,6 +352,8 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
     INFO_MSG("samplingTime:           " << samplingTime);
     INFO_MSG("importanceSamplingTime: " << importanceSamplingTime);
     INFO_MSG("normalizingTime:        " << normalizingTime);
+
+    return true;
 }
 
 void

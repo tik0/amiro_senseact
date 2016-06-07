@@ -34,7 +34,7 @@ public:
      * @param scan currently measured laser scan used for importance sampling.
      * @param odom currently measured odometry to compute odometry delta in the sampling step.
      */
-    void update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom);
+    bool update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom);
 
     sample_set_t *getSamplesSet() {
         return sampleSet;
@@ -96,7 +96,7 @@ private:
     float odometryIncrement;
 
     // pre-computes above variables
-    void preparePoseUpdate(pose_t &newOdom);
+    bool preparePoseUpdate(pose_t &newOdom);
     void updatePose(sample_t &sample);
 
     float newSampleProb = 0.0f;
