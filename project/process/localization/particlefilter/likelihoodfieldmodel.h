@@ -100,7 +100,8 @@ public:
 //            importanceTime += (rsc::misc::currentTimeMicros() - start);
         }
 
-//        sample.importance = importanceType.aggregateScanImportance();
+        sample.importance = importanceType.aggregateScanImportance();
+
 //        boost::uint64_t totalTime = rsc::misc::currentTimeMicros() - totalStartTime;
 
 //        INFO_MSG("==============");
