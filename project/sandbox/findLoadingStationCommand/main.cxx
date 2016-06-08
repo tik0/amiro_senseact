@@ -33,7 +33,7 @@ using namespace rsb::converter;
 using namespace rsb::util;
 
 #define INFO_MSG_
-// #define DEBUG_MSG_
+#define DEBUG_MSG_
 // #define SUCCESS_MSG_
 // #define WARNING_MSG_
 #define ERROR_MSG_
@@ -52,7 +52,8 @@ int main(int argc, char **argv) {
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
-            ("inscope,i", po::value < std::string > (&g_sInScope),"Scope for receiving compressed images");
+            ("detectedscope,d", po::value < std::string > (&g_sInScope),"Scope for receiving compressed images")
+            ("imagescope,i", po::value < std::string > (&g_sImageScope),"Scope for receiving compressed images");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -102,6 +103,11 @@ int main(int argc, char **argv) {
 
     // Get the image as string
     std::string imageJpg = *imageQueue->pop().get();
+    if (imageJpg.size() == 0) {
+      ERROR_MSG("Image data size is zero!");
+    } else {
+      DEBUG_MSG("Image data size: " << imageJpg.size());
+    }
     // Copy to a vector
     std::vector<unsigned char> data(imageJpg.begin(), imageJpg.end());
     // Decode the image
