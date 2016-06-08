@@ -45,6 +45,7 @@
 #include <types/LocatedLaserScan.pb.h>
 #include <types/TargetPoseEuler.pb.h>
 #include <rst/geometry/Translation.pb.h>
+#include <rst/navigation/Path.pb.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -167,6 +168,7 @@ rsb::Informer< rst::geometry::TargetPoseEuler >::Ptr targetInformer;
 rsb::Informer< std::string >::Ptr emergencyStopSwitchInformer;
 // Global rsb informer for debug images
 rsb::Informer<std::string>::Ptr informer;
+rsb::Informer<rst::navigation::Path>::Ptr pathInformer;
 
 // Local listener for emergency halts
 rsb::ListenerPtr emergencyHaltListener;
@@ -731,6 +733,40 @@ bool getClosestValidPosition(const ts_position_t &currentPose, ts_position_t &ta
   return true;
 }
 
+void publishPath(const std::list<cv::Point2i> &path) {
+    boost::shared_ptr<rst::navigation::Path> rsbPath(new rst::navigation::Path);
+    // first add the current position to the path
+    rst::geometry::Pose *rsbPose = rsbPath->add_poses();
+    rsbPose->mutable_translation()->set_x(pose.x * MM_TO_METERS);
+    rsbPose->mutable_translation()->set_y(pose.y * MM_TO_METERS);
+    rsbPose->mutable_translation()->set_z(0);
+
+    Eigen::Matrix<double,3,1> rpy;
+    rpy(0) = 0;
+    rpy(1) = 0;
+    rpy(2) = pose.theta * M_PI / 180.0f;
+    Eigen::Quaternion<double> quat;
+    ::conversion::euler2quaternion(&rpy, &quat);
+
+    rsbPose->mutable_rotation()->set_qx(quat.x());
+    rsbPose->mutable_rotation()->set_qy(quat.y());
+    rsbPose->mutable_rotation()->set_qz(quat.z());
+    rsbPose->mutable_rotation()->set_qw(quat.w());
+
+    // add the rest of the path
+    for (auto &point : path) {
+        rsbPose = rsbPath->add_poses();
+        rsbPose->mutable_translation()->set_x(point.x * delta_);
+        rsbPose->mutable_translation()->set_y(point.y * delta_);
+        rsbPose->mutable_translation()->set_z(0);
+        rsbPose->mutable_rotation()->set_qx(0);
+        rsbPose->mutable_rotation()->set_qy(0);
+        rsbPose->mutable_rotation()->set_qz(0);
+        rsbPose->mutable_rotation()->set_qw(0);
+    }
+    pathInformer->publish(rsbPath);
+}
+
 void doHoming(boost::shared_ptr<std::string> e) {
     std::list<cv::Point2i> path;
     ts_position_t targetPose = {0, 0, 0};
@@ -762,6 +798,7 @@ void doHoming(boost::shared_ptr<std::string> e) {
     // Drive the path
     uint obstacleCounter = 0; // how often we saw an obstacle
     while(!path.empty()) {
+
       // There's an obstacle in the way...
       if (!emergencyHaltQueue->empty()) {
           emergencyHaltQueue->pop();
@@ -826,6 +863,7 @@ void doHoming(boost::shared_ptr<std::string> e) {
           mtxPathToDraw.unlock();
       }
 
+      publishPath(path);
       usleep(100000);
     }
 }
@@ -842,6 +880,7 @@ int main(int argc, const char **argv){
   std::string saveMapInScope = "/saveMap";
   std::string setPositionScope = "/setPosition";
   std::string positionOutScope = "/position";
+  std::string pathOutScope = "/path";
   std::string sendMapSwitchScope = "/sendMap";
   std::string homingInScope = "/homing";
   std::string emergencyHaltInScope = "/AMiRo_Hokuyo/emergencyHalt";
@@ -876,6 +915,7 @@ int main(int argc, const char **argv){
     ("offsetTheta", po::value < float > (&offset.theta),"offset theta (mm)")
     ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope for receiving a new position")
     ("positionOutScope", po::value < std::string > (&positionOutScope), "Scope for publishing current position")
+    ("pathOutScope", po::value < std::string > (&pathOutScope), "Scope for publishing navigation path")
     ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set (mm)")
     ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set (rad)")
     ("loadMapWithValidPositionsFromPNG", po::value < std::string > (&mapValidPositionsPNGPath),"Load map with valid positions from grayscale PNG file")
@@ -994,6 +1034,8 @@ int main(int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::TargetPoseEuler> > converter(new rsb::converter::ProtocolBufferConverter<rst::geometry::TargetPoseEuler>());
   rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter< rst::navigation::Path > > pathConverter(new rsb::converter::ProtocolBufferConverter< rst::navigation::Path >());
+  rsb::converter::converterRepository<std::string>()->registerConverter(pathConverter);
 
   // Prepare RSB listener for incomming lidar scans
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -1020,6 +1062,8 @@ int main(int argc, const char **argv){
   setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(setPositionQueue)));
 
   rsb::Informer<rst::geometry::Pose>::Ptr poseInfomer = factory.createInformer<rst::geometry::Pose>(positionOutScope, tmpPartConf);
+
+  pathInformer = factory.createInformer<rst::navigation::Path>(pathOutScope, tmpPartConf);
 
   // RSB listener for disabling/enabling sending the map
   rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope);
@@ -1122,7 +1166,7 @@ int main(int argc, const char **argv){
 
     Eigen::Matrix<double,3,1> rpy;
     rpy(0) = 0;
-    rpy(1) = 1;
+    rpy(1) = 0;
     rpy(2) = pose.theta * M_PI / 180.0f;
     Eigen::Quaternion<double> quat;
     ::conversion::euler2quaternion(&rpy, &quat);

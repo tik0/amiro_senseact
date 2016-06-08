@@ -19,5 +19,5 @@ scp -r sim root@${IP}:~/${NAME}/
 # Copy the website
 #scp -r ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www root@${IP}:~/${NAME}
 
-# Copy the website
-scp -r ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data root@${IP}:~/${NAME}
+# Copy the maps
+scp -r ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/*.png root@${IP}:~/${NAME}/data/
