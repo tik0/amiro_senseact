@@ -34,6 +34,7 @@ struct sample_t {
 struct sample_set_t {
     size_t size;
     sample_t *samples;
+    float totalWeight;
 };
 
 #endif // SAMPLESET_H

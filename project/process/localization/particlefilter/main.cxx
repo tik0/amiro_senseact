@@ -34,7 +34,7 @@
 #include "raycastingmodel.h"
 #include "likelihoodfieldmodel.h"
 
-#include "importancetype/inversedistance.h"
+#include "importancetype/addgaussians.h"
 
 int main(int argc, const char **argv) {
     /*
@@ -139,7 +139,7 @@ int main(int argc, const char **argv) {
 
     // Finally set up the particle filter
     //RayCastingModel sensorModel(&map);
-    LikelihoodFieldModel<InverseDistance> sensorModel(&map);
+    LikelihoodFieldModel<AddGaussians> sensorModel(&map);
     ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip);
 
     /*
@@ -148,7 +148,7 @@ int main(int argc, const char **argv) {
     boost::uint64_t minPeriod = 1000 / maxFrequency; // in ms
     rsc::misc::initSignalWaiter();
     bool running = true;
-    bool visualizeImportance = true;
+    bool visualizeImportance = false;
     while (rsc::misc::lastArrivedSignal() == rsc::misc::NO_SIGNAL && running) {
         boost::uint64_t loopStart = rsc::misc::currentTimeMillis();
 
@@ -169,6 +169,7 @@ int main(int argc, const char **argv) {
             for (size_t i = 0; i < sampleSet->size; ++i) {
                 maxImportance = max(maxImportance, sampleSet->samples[i].importance);
             }
+            maxImportance /= sampleSet->totalWeight;
 
             float meanX = 0.0f, meanY = 0.0f;
             float sumThetaX = 0.0f, sumThetaY = 0.0f;
@@ -176,18 +177,19 @@ int main(int argc, const char **argv) {
             // draw all samples
             for (size_t i = 0; i < sampleSet->size; ++i) {
                 sample_t sample = sampleSet->samples[i];
+                float importance = sample.importance / sampleSet->totalWeight;
                 // accumulate data for mean
-                meanX += sample.importance * sample.pose.x;
-                meanY += sample.importance * sample.pose.y;
-                sumThetaX += sample.importance * cos(sample.pose.theta);
-                sumThetaY += sample.importance * sin(sample.pose.theta);
+                meanX += importance * sample.pose.x;
+                meanY += importance * sample.pose.y;
+                sumThetaX += importance * cos(sample.pose.theta);
+                sumThetaY += importance * sin(sample.pose.theta);
 
                 cv::Point p(sample.pose.x / meterPerPixel * scale, sample.pose.y / meterPerPixel * scale);
 
                 int radius = 5;
                 int intensity = 0;
                 if (visualizeImportance) {
-                    intensity = -255 / maxImportance * sample.importance + 255;
+                    intensity = -255 / maxImportance * importance + 255;
                 }
                 cv::circle(vis, p, radius, cv::Scalar(255,intensity,intensity));
 
@@ -255,6 +257,7 @@ int main(int argc, const char **argv) {
         }
 
         INFO_MSG("==== END OF MAIN LOOP ====");
+        //getchar();
     }
 
     INFO_MSG("Terminating normally");

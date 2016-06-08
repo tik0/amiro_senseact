@@ -29,10 +29,12 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     sampleSet = new sample_set_t;
     sampleSet->size = 0;
     sampleSet->samples = new sample_t[maxSampleCount];
+    sampleSet->totalWeight = 0.0f;
 
     newSampleSet = new sample_set_t;
     newSampleSet->size = 0;
     newSampleSet->samples = new sample_t[maxSampleCount];
+    newSampleSet->totalWeight = 0.0f;
 
     laserscan.size = 0;
     laserscan.values = new float[scanConfig.scan_values_size()];
@@ -104,14 +106,13 @@ ParticleFilter::~ParticleFilter()
 void
 ParticleFilter::initSamples()
 {
-    float initialImportance = 1.0f / maxSampleCount;
-
     sampleSet->size = maxSampleCount;
+    sampleSet->totalWeight = sampleSet->size;
     for (size_t i = 0; i < sampleSet->size; ++i) {
         sampleSet->samples[i].pose.x = fmod(rand(), width * map->meterPerCell);
         sampleSet->samples[i].pose.y = fmod(rand(), height * map->meterPerCell);
         sampleSet->samples[i].pose.theta = fmod(rand(), 2 * M_PI) - M_PI;
-        sampleSet->samples[i].importance = initialImportance;
+        sampleSet->samples[i].importance = 1.0f;
     }
 }
 
@@ -259,8 +260,8 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
         sum += sampleSet->samples[i].importance;
         cumulative[i] = sum;
     }
-    float r = rand() / (float)RAND_MAX;
-    float rand_increment = 1.0f / sampleSet->size;
+    float r = sampleSet->totalWeight * rand() / (float)RAND_MAX;
+    float rand_increment = sampleSet->totalWeight / sampleSet->size;
 
     // for measuring time usage for each step
     boost::uint64_t reSamplingTime = 0;
@@ -282,8 +283,8 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
             sample = rouletteWheelSelection(r);
         }
         r += rand_increment;
-        if (r > 1.0f) {
-            r -= 1.0f;
+        if (r > sampleSet->totalWeight) {
+            r -= sampleSet->totalWeight;
         }
 
         reSamplingTime += (rsc::misc::currentTimeMicros() - start);
@@ -301,6 +302,7 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
         // Add sample to new sample set
         newSampleSet->samples[n] = sample;
         newSampleSet->size++;
+        newSampleSet->totalWeight += sample.importance;
 
         if (doKLDSampling) {
             updateBins(sample);
@@ -336,15 +338,16 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
     DEBUG_MSG("sample set size: " << newSampleSet->size);
 
     // Adopt the new sample set
-    // and reuse the old sample set memory location
     sample_set_t *tmp = sampleSet;
     sampleSet = newSampleSet;
+    // and reuse the old sample set memory location
     newSampleSet = tmp;
     newSampleSet->size = 0;
+    newSampleSet->totalWeight = 0.0f;
 
     // Normalize importance weights
     boost::uint64_t start = rsc::misc::currentTimeMicros();
-    sensorModel->normalizeWeights(sampleSet);
+    //sensorModel->normalizeWeights(sampleSet);
     boost::uint64_t normalizingTime = rsc::misc::currentTimeMicros() - start;
 
 
