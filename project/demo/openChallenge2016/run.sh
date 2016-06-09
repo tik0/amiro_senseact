@@ -59,6 +59,7 @@ sleep 5
   --loadMapWithValidPositionsFromPNG ./data/centralLab-clean-cropped-valid-4-scale-0.5.png --loadMapFromImage ./data/centralLab-clean-cropped-4-scale-0.5.png \
   --erosionRadius 0.3 \
   --initialX 4244.11 --initialY 6446.25 --initialTheta 6.71772 \
+  --targetPose 6000 6000 90 \
   --precomputeOccupancyMap true &
 
 ./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.15 --delay 10 --switchinscope /following > /dev/null &

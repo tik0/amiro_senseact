@@ -128,6 +128,7 @@ static bool doMapUpdate = false;
 // path to goal
 ts_position_t homePose = { 0, 0, 0 };
 bool savedHomePose = false;
+ts_position_t targetPose = {0,0,0};
 
 // Convinience
 static bool sendMapAsCompressedImage = false;
@@ -176,6 +177,18 @@ boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::strin
 
 // ===== Functions =====
 
+inline float normalizeAngle(float angle) {
+    // normalize angle to (-PI; +PI]
+    if (angle < -M_PI || angle >= M_PI) {
+        angle = fmod(angle + M_PI, 2*M_PI);
+        if (angle < 0)
+            angle += 2 * M_PI;
+        angle = angle - M_PI;
+    }
+
+    return angle;
+}
+
 std::mutex sendMapAsCompressedImageMutex;
 void setSendMapAsCompressedImage(boost::shared_ptr<std::string> v) {
     sendMapAsCompressedImageMutex.lock();
@@ -213,7 +226,7 @@ cv::Mat getOccupancyMap() {
   return map;
 }
 
-std::list<cv::Point2i> getPath(ts_position_t &targetPose) {
+std::list<cv::Point2i> getPath(const ts_position_t &targetPose) {
     // Convert from tinySLAM coordinates (mm) to pixel coordinates
     cv::Point2i start(pose.x * MM_TO_METERS / delta_, pose.y * MM_TO_METERS / delta_);
     cv::Point2i goal(targetPose.x * MM_TO_METERS / delta_, targetPose.y * MM_TO_METERS / delta_);
@@ -296,13 +309,7 @@ void drivePath(std::list<cv::Point2i> &path) {
                                           immediatePoseMM.x - pose.x); // in rad [-PI; +PI]
         double globalRobotAngle = pose.theta * DEGREE_TO_RAD; // in rad [?? ; ??]
         double relativeAngle = globalTargetAngle - globalRobotAngle; // in rad
-        // normalize angle to (-PI; +PI]
-        if (relativeAngle < -M_PI || relativeAngle >= M_PI) {
-            relativeAngle = fmod(relativeAngle + M_PI, 2*M_PI);
-            if (relativeAngle < 0)
-                relativeAngle += 2 * M_PI;
-            relativeAngle = relativeAngle - M_PI;
-        }
+        relativeAngle = normalizeAngle(relativeAngle);
 
         // declare parameters for setTargetPosition
         types::position targetPosition;
@@ -767,30 +774,43 @@ void publishPath(const std::list<cv::Point2i> &path) {
     pathInformer->publish(rsbPath);
 }
 
-void doHoming(boost::shared_ptr<std::string> e) {
-    std::list<cv::Point2i> path;
-    ts_position_t targetPose = {0, 0, 0};
+void rotateToPose(const ts_position_t &targetPose) {
+    float targetAngle = targetPose.theta * DEGREE_TO_RAD;
+    DEBUG_MSG("targetAngle: " << targetAngle);
+    float currentAngle = pose.theta * DEGREE_TO_RAD;
+    DEBUG_MSG("currentAngle: " << currentAngle);
+    float rotateBy = targetAngle - currentAngle;
+    DEBUG_MSG("rotateBy: " << rotateBy);
+    rotateBy = normalizeAngle(rotateBy);
+    DEBUG_MSG("rotateBy (norm): " << rotateBy);
 
-    INFO_MSG("Received homing request via RSB")
-    DEBUG_MSG("Searching path to goal...")
-    if(!e->compare(std::string("homing"))) {
-      INFO_MSG("Do homing")
-      targetPose = homePose;
-      path = getPath(homePose);
-    } else if (!e->compare(std::string("save"))) {
-      INFO_MSG("Drive to next save position")
-      if(!getClosestValidPosition(pose, targetPose)) {
-        ERROR_MSG("Fail to get next save position");
-      } else {
-        INFO_MSG("Start path calculation");
-        path = getPath(targetPose);
-        INFO_MSG("Finish path calculation");
-      }
-    } else {
-      ERROR_MSG("Wrong homing command: " << *e);
-    }
+    // Define the steering message for sending over RSB
+    boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
+    // Get the mutable objects
+    rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
+    rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
+    steeringRotation->set_roll(0);
+    steeringRotation->set_pitch(0);
+    steeringRotation->set_yaw(rotateBy);
+    steeringTranslation->set_x(0);
+    steeringTranslation->set_y(0);
+    steeringTranslation->set_z(0);
+    steering->set_target_time(3000);
+
+    targetInformer->publish(steering);
+}
+
+/**
+ * @brief driveToPoseWithObstacleAvoidance plans the path to the given target pose and drives along this path. When a static obstacle is encountered the map is updated and the path recalculated.
+ * @param targetPose
+ * @return false when a no path was found, otherwise true.
+ */
+bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
+    std::list<cv::Point2i> path = getPath(targetPose);
+
     if (path.empty()) {
         ERROR_MSG("Path is empty!");
+        return false;
     } else {
         INFO_MSG("Path not empty :)");
     }
@@ -866,6 +886,37 @@ void doHoming(boost::shared_ptr<std::string> e) {
       publishPath(path);
       usleep(100000);
     }
+
+    // After driving path, rotate to requested pose/theta
+    DEBUG_MSG("Done driving along path, rotating now");
+    rotateToPose(targetPose);
+    usleep(100000);
+
+    return true;
+}
+
+void homingRequestHandler(boost::shared_ptr<std::string> e) {
+    INFO_MSG("Received homing request via RSB")
+    DEBUG_MSG("Searching path to goal...")
+    if(!e->compare(std::string("homing"))) {
+      INFO_MSG("Do homing");
+      driveToPoseWithObstacleAvoidance(homePose);
+    } else if (!e->compare(std::string("save"))) {
+      INFO_MSG("Drive to next save position");
+      ts_position_t validPose = {0, 0, 0};
+      if(!getClosestValidPosition(pose, validPose)) {
+        ERROR_MSG("Fail to get next save position");
+      } else {
+        INFO_MSG("Start path calculation");
+        driveToPoseWithObstacleAvoidance(validPose);
+        INFO_MSG("Finish path calculation");
+      }
+    } else if (!e->compare(std::string("target"))) {
+        INFO_MSG("Drive to target pose");
+        driveToPoseWithObstacleAvoidance(targetPose);
+    } else {
+      ERROR_MSG("Wrong homing command: " << *e);
+    }
 }
 
 int main(int argc, const char **argv){
@@ -889,6 +940,7 @@ int main(int argc, const char **argv){
   std::size_t tsMapSize = 2048;
   std::size_t tsMapSizeMaxVisualization = 700;
   std::string loadOccupancyMapFromFile = "";
+  std::vector<float> targetPoseVec;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
@@ -928,8 +980,8 @@ int main(int argc, const char **argv){
     ("initialTheta", po::value < double > (&initialTheta), "Initial odometry")
     ("erosionRadius", po::value< float > (&erosionRadius), "Erosion radius for obstacle map (m)")
     ("precomputeOccupancyMap", po::value< bool > (&precomputeOccupancyMap), "Precompute occupancy map at start.")
-    ("loadOccupancyMapFromFile", po::value< std::string > (&loadOccupancyMapFromFile), "Occupancy map file be read from file.");
-
+    ("loadOccupancyMapFromFile", po::value< std::string > (&loadOccupancyMapFromFile), "Occupancy map file be read from file.")
+    ("targetPose", po::value< std::vector<float> > (&targetPoseVec)->multitoken(), "Target position (mm, mm, degree) the amiro drives to when triggered.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -974,6 +1026,17 @@ int main(int argc, const char **argv){
       initialX = ts_map_.size / 2 * delta_ * METERS_TO_MM;
       initialY = ts_map_.size / 2 * delta_ * METERS_TO_MM;
       initialTheta = 0;
+  }
+
+  // validate targetPose and set to center of map if not valid
+  if (!vm.count("targetPose") || targetPoseVec.size() < 3) {
+      INFO_MSG("No target pose given, setting to center.");
+      targetPose = { ts_map_.size / 2 * delta_ * METERS_TO_MM, ts_map_.size / 2 * delta_ * METERS_TO_MM, 0 };
+  } else {
+      INFO_MSG("Setting target pose to " << targetPoseVec);
+      targetPose.x = targetPoseVec.at(0);
+      targetPose.y = targetPoseVec.at(1);
+      targetPose.theta = targetPoseVec.at(2);
   }
 
   // Handle options for occupancy map
@@ -1071,7 +1134,7 @@ int main(int argc, const char **argv){
 
   // Prepare RSB listener for homing
   rsb::ListenerPtr homingListener = factory.createListener(homingInScope);
-  homingListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&doHoming)));
+  homingListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&homingRequestHandler)));
 
   // Prepare listener for emergency halts
   emergencyHaltListener = factory.createListener(emergencyHaltInScope);
