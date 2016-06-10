@@ -265,16 +265,12 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 			if (!colorChanged && colors.size() == colorsSet.size()) {
 				for (int led=0; led<colors.size(); led++) {
 					if (colors[led].getRed() != colorsSet[led].getRed() || colors[led].getGreen() != colorsSet[led].getGreen() || colors[led].getBlue() != colorsSet[led].getBlue()) {
-						DEBUG_MSG("Color changed: color of led " << led);
 						colorChanged = true;
 						break;
 					}
 				}
 			} else if (colors.size() != colorsSet.size()) {
-				DEBUG_MSG("Color changed: color count " << colors.size() << " vs. " << colorsSet.size());
 				colorChanged = true;
-			} else {
-				DEBUG_MSG("Color changed: SINGLE " << singleColor << " != " << (!lightTypeChange) << ", Command " << commandType << " vs. " << commandTypeSet << ", Period " << periodTime << " vs. " << periodTimeSet);
 			}
 		}
 					
