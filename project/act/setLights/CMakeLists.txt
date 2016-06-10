@@ -10,7 +10,6 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(OPENCV OpenCV)
 pkg_check_modules(RSB rsb0.11)
 pkg_check_modules(RSC rsc0.11)
 pkg_check_modules(RST rst0.11)
@@ -25,8 +24,6 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${RST_INCLUDE_DIRS}                                             # RST types
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
-    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
-    ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "$ENV{MUROX_INCLUDE_DIRS}/extspread"		            # Programatik spread
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
@@ -47,7 +44,7 @@ file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.hpp)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.hpp $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.cxx)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.hpp $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.cxx)
 
 # Link the executable to the library. 
 # SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
@@ -60,24 +57,6 @@ target_link_libraries (
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
     ${RSTSANDBOX_LIBRARIES}
-    #${OpenCV_LIBS}
-    #   OPENCV
-    opencv_imgproc
-    opencv_calib3d
-    opencv_contrib
-    opencv_core
-    opencv_features2d
-    opencv_flann
-    opencv_gpu
-    opencv_highgui
-    opencv_legacy
-    opencv_ml
-    opencv_nonfree
-    opencv_objdetect
-    opencv_ocl
-    opencv_photo
-    opencv_stitching
-    opencv_superres
     # Boost
     boost_regex
     boost_date_time

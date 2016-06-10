@@ -493,7 +493,7 @@ int main(int argc, char **argv) {
 	INFO_MSG("");
 	INFO_MSG("Initializing:");
 	// set lights
-	setLights(lightInformer, LightModel::LightType::CMD_WARNING, amiro::Color(255,255,0), 600);
+	setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,255,0), 600);
 	while (!initialized) {
 		// check amiro queue
 		if (!amiroQueue->empty()) {
@@ -547,7 +547,7 @@ int main(int argc, char **argv) {
 	bool quitProg = false;
 	while (!quitProg) {
 		// set lights
-		setLights(lightInformer, LightModel::LightType::CMD_SHINE, amiro::Color(255,255,255), 0);
+		setLights(lightInformer, LightModel::LightType::SINGLE_SHINE, amiro::Color(255,255,255), 0);
 
 		// wait for start command
 		bool startHarvest = false;
@@ -603,7 +603,7 @@ int main(int argc, char **argv) {
 		myCAN.setOdometry(odoPos);
 
 		// wait for choreo to begin
-		setLights(lightInformer, LightModel::LightType::CMD_WARNING, amiro::Color(255,255,0), 600);
+		setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,255,0), 600);
 		if (vm.count("verbose")) DEBUG_MSG("Waiting ...");
 		boost::this_thread::sleep_until(*startSystemTime);
 		if (vm.count("verbose")) DEBUG_MSG("Start choreo ...");
@@ -629,7 +629,7 @@ int main(int argc, char **argv) {
 			}
 
 			// set lights
-			setLightsVec(lightInformer, LightModel::LightType::CMD_SHINE, cs.lights, 0);
+			setLightsVec(lightInformer, LightModel::LightType::SINGLE_SHINE, cs.lights, 0);
 
 			// set motors
 			if (useOdo) {
@@ -729,7 +729,7 @@ int main(int argc, char **argv) {
 				if (vm.count("verbose")) DEBUG_MSG("Waiting for rest:");
 				int publishCounter = 5;
 				// set lights
-				setLights(lightInformer, LightModel::LightType::CMD_WARNING, amiro::Color(255,255,0), 600);
+				setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,255,0), 600);
 				while (!ownNameReceived || !allOthersReceived) {
 					// Send own name
 					boost::shared_ptr<std::string> StringPtr(new std::string(amiroName));
@@ -780,7 +780,7 @@ int main(int argc, char **argv) {
 				}
 
 				// Set LEDs
-				setLights(lightInformer, LightModel::LightType::CMD_SHINE, amiro::Color(255,255,0), 0);
+				setLights(lightInformer, LightModel::LightType::SINGLE_SHINE, amiro::Color(255,255,0), 0);
 
 				// to continue just wait until deadline
 				if (vm.count("verbose")) DEBUG_MSG("All are finished. Waiting ...");
@@ -805,11 +805,11 @@ int main(int argc, char **argv) {
 		}
 
 		// set lights
-		setLights(lightInformer, LightModel::LightType::CMD_SHINE, amiro::Color(255,255,255), 0);
+		setLights(lightInformer, LightModel::LightType::SINGLE_SHINE, amiro::Color(255,255,255), 0);
 	}
 
 	// set lights
-	setLights(lightInformer, LightModel::LightType::CMD_INIT, amiro::Color(0,0,0), 0);
+	setLights(lightInformer, LightModel::LightType::SINGLE_INIT, amiro::Color(0,0,0), 0);
 
 	return EXIT_SUCCESS;
 }

@@ -1,7 +1,8 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : -
+// Description : Gets the color set via console and sends it to the setLights
+//               tool via RSB.
 //============================================================================
 
 //#define TRACKING
@@ -36,13 +37,6 @@
 #include <rsb/QueuePushHandler.h>
 
 
-using namespace rsb;
-
-#include <rst/geometry/Pose.pb.h>
-#include <rst/geometry/Translation.pb.h>
-#include <rst/geometry/Rotation.pb.h>
-using namespace rst::geometry;
-
 #include <converter/vecIntConverter/main.hpp>
 using namespace muroxConverter;
 
@@ -54,7 +48,6 @@ using namespace std;
 
 #include <ControllerAreaNetwork.h>
 #include <actModels/lightModel.h>
-#include <extspread.hpp>
 
 using namespace rsb;
 using namespace rsb::patterns;
@@ -72,19 +65,22 @@ int main(int argc, char **argv) {
 	// Handle program options
 	namespace po = boost::program_options;
 
-	int commandType, colorRed, colorGreen, colorBlue, periodTime;
+	int commandType, periodTime;
+	int colorRed = 0;
+	int colorGreen = 0;
+	int colorBlue = 0;
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("commandScope,c", po::value<std::string>(&commandOutscope), "Inscope for commands (default: '/amiro/lights').")
 			("host,h", po::value<std::string>(&spreadhost), "Host for Programatik Spread (default: '127.0.0.1').")
 			("port,p", po::value<std::string>(&spreadport), "Port for Programatik Spread (default: '4803').")
-			("type,t", po::value<int>(&commandType), "Command Type")
-			("red,r", po::value<int>(&colorRed), "Color Red")
-			("green,g", po::value<int>(&colorGreen), "Color Green")
-			("blue,b", po::value<int>(&colorBlue), "Color Blue")
-			("init,i", "Set random colors")
-			("period,d", po::value<int>(&periodTime), "Period Time");
+			("type,t", po::value<int>(&commandType), "Command type (has to be given).")
+			("red,r", po::value<int>(&colorRed), "Color channel red in [0,255] (has to be given if not initial colors set).")
+			("green,g", po::value<int>(&colorGreen), "Color channel green in [0,255] (has to be given if not initial colors set).")
+			("blue,b", po::value<int>(&colorBlue), "Color channel blue in [0,255] (has to be given if not initial colors set).")
+			("init,i", "Set intial colors  (has to be given if not red, green and blue channel are given).")
+			("period,d", po::value<int>(&periodTime), "Period time in ms (has to be given).");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -108,11 +104,13 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	if (colorRed < 0 || colorRed > 255 || colorGreen < 0 || colorGreen > 255 || colorBlue < 0 || colorBlue > 255) {
+		std::cout << "The color channels have to be given in [0,255]! Please check the options!\n\n" << options << "\n";
+		exit(1);
+	}
+
 	// Get the RSB factory
 	rsb::Factory& factory = rsb::Factory::getInstance();
-
-	// Generate the programatik Spreadconfig for extern communication
-	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
 
 	// ------------ Converters ----------------------
 
@@ -125,11 +123,9 @@ int main(int argc, char **argv) {
 	rsb::Informer< std::vector<int> >::Ptr commandInformer = factory.createInformer< std::vector<int> > (commandOutscope);
 
 
-	// Init the CAN interface
-	ControllerAreaNetwork myCAN;
-
 	// prepare publication
 	boost::shared_ptr<std::vector<int>> commandVector;
+	std::string infoColor = "";
 	if (!vm.count("init")) {
 		std::vector<int> command(5,0);
 		command[0] = commandType;
@@ -138,22 +134,24 @@ int main(int argc, char **argv) {
 		command[3] = colorBlue;
 		command[4] = periodTime;
 		commandVector = boost::shared_ptr<std::vector<int> >(new std::vector<int>(command.begin(),command.end()));
+		infoColor = "the RGB color (" + std::to_string(colorRed) + ", " + std::to_string(colorGreen) + ", " + std::to_string(colorBlue) + ")";
 	} else {
-/*		std::vector<int> command(26,0);
-		command[0] = commandType;
-		command[25] = periodTime;
-		for (int led=0; led<8; led++) {
-			command[led*3+1] = (int)(LightModel::initColors[led].getRed());
-			command[led*3+2] = (int)(LightModel::initColors[led].getGreen());
-			command[led*3+3] = (int)(LightModel::initColors[led].getBlue());
-		}*/
 		std::vector<int> command = LightModel::setLights2Vec(commandType, LightModel::initColors, periodTime);
 		commandVector = boost::shared_ptr<std::vector<int> >(new std::vector<int>(command.begin(),command.end()));
+		infoColor = "the initial color set";
 	}
 
 	// publish command
 	commandInformer->publish(commandVector);
-
+	std::string cType = "";
+	std::string minTimeType = "";
+	if (LightModel::lightTypeIsKnown(commandType)) {
+		cType = "lighting type " + LightModel::LightTypeName[commandType];
+		minTimeType = " (minimal period time: " + std::to_string(LightModel::LightTypeMinPeriodTime[commandType]) + " ms)";
+	} else {
+		cType = "unknown lighting type (" + std::to_string(commandType) + ")";
+	}
+	INFO_MSG("Sending " << cType << " with " << infoColor << " and the period time " << periodTime << " ms" << minTimeType << ".");
 
 	return EXIT_SUCCESS;
 }
