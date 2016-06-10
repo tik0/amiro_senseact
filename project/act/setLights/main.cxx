@@ -162,14 +162,14 @@ int main(int argc, char **argv) {
 	while (!exitProg) {
 		// check for new color input
 		colorChanged = false;
-		if (!commandQueue->empty()) {
+		if (timeCounter % 10 == 0 && !commandQueue->empty()) {
 			commandVector = boost::static_pointer_cast<std::vector<int> >(commandQueue->pop());
 			colorChanged = getCommand(commandVector);
 		}
 		if (colorChanged) {
-			timeCounter = 0;
 			changeColorCounter = 0;
-		} else if (timeCounter >= periodTimeSet/10) {
+		}
+		if (timeCounter >= periodTimeSet/10) {
 			timeCounter = 0;
 			if (changeColorCounter >= colorsSet.size()-1) {
 				changeColorCounter = 0;
@@ -212,7 +212,8 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 		std::vector<amiro::Color> colors;
 		int periodTime = commandVector->at(commandSize-1);
 		if (periodTime < 0) periodTime = 0;
-		if ((lightTypeChange && (commandSize-2) % 3 == 0)
+		if ((LightModel::lightTypeIsKnown(commandType))
+		 || (lightTypeChange && (commandSize-2) % 3 == 0)
 		 || (!lightTypeChange && (commandSize == 5 || commandSize == 26))
 		 || (commandTypeInit)
 		) {
@@ -251,17 +252,29 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 				}
 			}
 
+			// correct period time to 100ms steps and to lighting type specific minimal time
+			if (periodTime % 100 != 0) {
+				periodTime += (100 - periodTime % 100);
+			}
+			if (periodTime < LightModel::LightTypeMinPeriodTime[commandType]) {
+				periodTime = LightModel::LightTypeMinPeriodTime[commandType];
+			}
+
 			// check if the color(s), lighting type or period time have been changed
-			colorChanged = (singleColor == lightTypeChange) || commandType != commandTypeSet || periodTime != periodTimeSet;
+			colorChanged = (singleColor && lightTypeChange) || (!singleColor && !lightTypeChange) || commandType != commandTypeSet || periodTime != periodTimeSet;
 			if (!colorChanged && colors.size() == colorsSet.size()) {
 				for (int led=0; led<colors.size(); led++) {
 					if (colors[led].getRed() != colorsSet[led].getRed() || colors[led].getGreen() != colorsSet[led].getGreen() || colors[led].getBlue() != colorsSet[led].getBlue()) {
+						DEBUG_MSG("Color changed: color of led " << led);
 						colorChanged = true;
 						break;
 					}
 				}
 			} else if (colors.size() != colorsSet.size()) {
+				DEBUG_MSG("Color changed: color count " << colors.size() << " vs. " << colorsSet.size());
 				colorChanged = true;
+			} else {
+				DEBUG_MSG("Color changed: SINGLE " << singleColor << " != " << (!lightTypeChange) << ", Command " << commandType << " vs. " << commandTypeSet << ", Period " << periodTime << " vs. " << periodTimeSet);
 			}
 		}
 					
@@ -311,7 +324,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 					colorsSet.push_back(colors[led]);
 				}
 				periodTimeSet = periodTime;
-				// correct period time to 200ms steps and to lighting type specific minimal time
+				// correct period time to 100ms steps and to lighting type specific minimal time
 				if (periodTimeSet % 100 != 0) {
 					periodTimeSet += (100 - periodTimeSet % 100);
 				}
