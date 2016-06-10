@@ -170,6 +170,7 @@ rsb::Informer< std::string >::Ptr emergencyStopSwitchInformer;
 // Global rsb informer for debug images
 rsb::Informer<std::string>::Ptr informer;
 rsb::Informer<rst::navigation::Path>::Ptr pathInformer;
+rsb::Informer<std::string>::Ptr homingInformer;
 
 // Local listener for emergency halts
 rsb::ListenerPtr emergencyHaltListener;
@@ -897,25 +898,32 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
 
 void homingRequestHandler(boost::shared_ptr<std::string> e) {
     INFO_MSG("Received homing request via RSB")
-    DEBUG_MSG("Searching path to goal...")
+    bool reachedGoal = false;
+
     if(!e->compare(std::string("homing"))) {
       INFO_MSG("Do homing");
-      driveToPoseWithObstacleAvoidance(homePose);
+      reachedGoal = driveToPoseWithObstacleAvoidance(homePose);
     } else if (!e->compare(std::string("save"))) {
       INFO_MSG("Drive to next save position");
       ts_position_t validPose = {0, 0, 0};
       if(!getClosestValidPosition(pose, validPose)) {
         ERROR_MSG("Fail to get next save position");
+        return;
       } else {
         INFO_MSG("Start path calculation");
-        driveToPoseWithObstacleAvoidance(validPose);
+        reachedGoal = driveToPoseWithObstacleAvoidance(validPose);
         INFO_MSG("Finish path calculation");
       }
     } else if (!e->compare(std::string("target"))) {
         INFO_MSG("Drive to target pose");
-        driveToPoseWithObstacleAvoidance(targetPose);
+        reachedGoal = driveToPoseWithObstacleAvoidance(targetPose);
     } else {
       ERROR_MSG("Wrong homing command: " << *e);
+    }
+
+    if (reachedGoal) {
+      boost::shared_ptr<std::string> response = boost::shared_ptr<std::string>(new std::string("done"));
+      homingInformer->publish(response);
     }
 }
 
@@ -1132,9 +1140,11 @@ int main(int argc, const char **argv){
   rsb::ListenerPtr sendMapSwitchListener = factory.createListener(sendMapSwitchScope);
   sendMapSwitchListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&setSendMapAsCompressedImage)));
 
-  // Prepare RSB listener for homing
+  // Prepare RSB listener for homing and response informer
   rsb::ListenerPtr homingListener = factory.createListener(homingInScope);
   homingListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&homingRequestHandler)));
+  std::string homingOutScope = homingInScope + "/response";
+  homingInformer = factory.createInformer<std::string>(homingOutScope);
 
   // Prepare listener for emergency halts
   emergencyHaltListener = factory.createListener(emergencyHaltInScope);

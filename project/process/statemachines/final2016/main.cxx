@@ -58,8 +58,8 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-enum states                  { idle , turn, init , following , waypoint, stopped, homing};
-std::string statesString[] = {"idle","turn","init","following","waypoint","stopped","homing"};
+enum states                  { idle , turn, init , following , waypoint, stopped, homing, goToRoom};
+std::string statesString[] = {"idle","turn","init","following","waypoint","stopped","homing", "goToRoom"};
 states amiroState;
 
 bool personEntered = false;
@@ -69,6 +69,7 @@ bool personEntered = false;
 const std::string sFollowingCmdScope("/following");
 const std::string sWaypointCmdScope("/waypoint/command");
 const std::string sHomingCmdScope("/homing");
+const std::string sHomingAnswerScope("/homing/response");
 // We assume a "finish" string, which indicates the current state of the following program
 const std::string sFollowingAnswerScope("/followingState");
 const std::string sWaypointAnswerScope("/waypoint/state");
@@ -84,6 +85,7 @@ void stop_following();
 void set_state_waypoint();
 void set_state_waypoint_entered();
 void set_state_stopped();
+void set_state_goToRoom();
 void stopWaypoint();
 void motorActionMilli(int speed, int turn);
 
@@ -214,6 +216,11 @@ int processSM(void) {
   
   rsb::Informer< std::string >::Ptr informerHoming = factory.createInformer< std::string > (sHomingCmdScope);
 
+  rsb::ListenerPtr listenerHoming = factory.createListener(sHomingAnswerScope);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueHomingAnswer(
+      new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+  listenerHoming->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueHomingAnswer)));
+
   /////////////////// REMOTE SCOPES///////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
 
@@ -265,6 +272,7 @@ int processSM(void) {
   boost::shared_ptr<std::string> signal_stop(new std::string("stop"));
   boost::shared_ptr<std::string> signal_savePosition(new std::string("save"));
   boost::shared_ptr<std::string> signal_homingPosition(new std::string("homing"));
+  boost::shared_ptr<std::string> signal_targetPosition(new std::string("target"));
 
   set_state_idle();
 
@@ -281,6 +289,7 @@ int processSM(void) {
     bool bGotFromTobi_turn = false;
     bool bGotFromTobi_savePosition = false;
     bool bGotFromTobi_homing = false;
+    bool bGotFromTobi_gotoroom = false;
 
     bool bGotFromWaypoint_entered = false; // True if something entered the waypoint's area
     bool bGotFromWaypoint_left = false; // True if something left the waypoint's area
@@ -295,6 +304,9 @@ int processSM(void) {
       if (msg.compare("init") == 0) {
         INFO_MSG("Initialising...")
         bGotFromTobi_init = true;
+      } else if (msg.compare("gotoroom") == 0) {
+          INFO_MSG("Go to room");
+          bGotFromTobi_gotoroom = true;
       } else if (msg.compare("initfollow")== 0) {
         INFO_MSG("Init following")
         bGotFromTobi_initfollowing = true;
@@ -397,12 +409,7 @@ int processSM(void) {
         set_state_init();
 //      }
       break;
-    case turn:
-      motorActionMilli(0,-M_PI/4*1000);
-      sleep(2);
-      motorActionMilli(0,0);
-      set_state_stopped();
-      break;
+
     case init:
       // Clear all variables
       bGotFromTobi_init = false;
@@ -419,37 +426,21 @@ int processSM(void) {
       } else if(bGotFromTobi_initwaypoint) {
         informerWaypoint->publish(signal_init);
         set_state_waypoint();
+      } else if (bGotFromTobi_gotoroom) {
+        informerHoming->publish(signal_targetPosition);
+        set_state_goToRoom();
       }
 //      bGotFromTobi_initfollowing = false;
 //      bGotFromTobi_initwaypoint = false;
       break;
-    case following:
-      if (bGotFromTobi_stopfollowing) {
-        informerFollowing->publish(signal_stop);
-        // HACK START: We just wait a few seconds, so that AMiRo can drive to a save homing position
-        //             and after that, the "rec" message is send to Tobi, so that he go on
-        set_state_homing();
-        usleep(1 /*seconds*/ * 1000000);
-        static bool onceGotHoming = false;
-        if (!onceGotHoming) {
-          informerHoming->publish(signal_savePosition);
-          onceGotHoming = true;
+
+    case goToRoom:
+        // got a response from CoreSLAM, it must have reached the target position
+        if (!queueHomingAnswer->empty()) {
+            queueHomingAnswer->pop();
+            set_state_waypoint();
         }
-        usleep(1 /*seconds*/ * 1000000);
-        std::string output = "stopfollowrec"; *stringPublisher = output; informerRemoteState->publish(stringPublisher);
-        //HACK END
-        set_state_stopped();
-      } else if (bGotFromTobi_initwaypoint) {
-        informerFollowing->publish(signal_stop);
-        informerWaypoint->publish(signal_init);
-        stop_following();
-        set_state_waypoint();
-      } else if (bGotFromTobi_turn) {
-        informerFollowing->publish(signal_stop);
-        stop_following();
-        set_state_turn();
-      }        
-      break;
+        break;
 
     case waypoint:
       DEBUG_MSG("Entered=" << bGotFromWaypoint_entered << ", Left=" << bGotFromWaypoint_left << ", personEntered=" << personEntered);
@@ -494,6 +485,9 @@ int processSM(void) {
         informerHoming->publish(signal_homingPosition);
         informerWaypoint->publish(signal_homingPosition);
         set_state_homing();
+      } else if (bGotFromTobi_gotoroom) {
+        informerHoming->publish(signal_targetPosition);
+        set_state_goToRoom();
       }
       break;
       
@@ -532,6 +526,11 @@ void set_state_turn() {
 void set_state_homing() {
   amiroState = homing;
   setAMiRoColor(255,255,255);
+}
+
+void set_state_goToRoom() {
+    amiroState = goToRoom;
+    setAMiRoColor(0,255,255);
 }
 
 void set_state_init() {
