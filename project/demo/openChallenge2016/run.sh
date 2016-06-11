@@ -19,18 +19,18 @@ trap './stop.sh; exit' INT TERM
 cpufreq-set -g performance
 
 # local spread
-while test -n "$(netstat -an | grep 4803 | grep LISTEN)"; do
+while test -n "$(netstat -an | grep 4803 | grep -e LISTEN -e FIN_WAIT2)"; do
 	echo "port is still in use, waiting...";
 	sleep 1;
 done
 spread &
+
 # external spread
-while test -n "$(netstat -an | grep 4823 | grep LISTEN)"; do
+while test -n "$(netstat -an | grep 4823 | grep -e LISTEN -e FIN_WAIT2)"; do
 	echo "port is still in use, waiting...";
 	sleep 1;
 done
 spread -c amirospread &
-
 sleep 5
 
 # sensing lidar from 'project/sense/senseHokuyo/'
@@ -51,7 +51,7 @@ sleep 5
   --loadMapWithValidPositionsFromPNG ./data/centralLab-clean-cropped-valid-4-scale-0.5.png --loadMapFromImage ./data/centralLab-clean-cropped-4-scale-0.5.png \
   --erosionRadius 0.3 \
   --initialX 4244.11 --initialY 6446.25 --initialTheta 6.71772 \
-  --targetPose 6000 6000 90 \
+  --targetPose "13407 6532.65 -175.95" \
   --precomputeOccupancyMap true &
 
 ./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.15 --delay 10 --switchinscope /following --doEmergencyBehaviour > /dev/null &
