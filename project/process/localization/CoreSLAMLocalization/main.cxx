@@ -850,6 +850,10 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
               // get the new path
               path = getPath(targetPose);
 
+              if (path.empty()) {
+                  ERROR_MSG("No new path was found!");
+              }
+
               // before driving new path, back up
               emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("off"))); // disable emergency stop, so moving is possible
 
@@ -948,7 +952,7 @@ int main(int argc, const char **argv){
   std::size_t tsMapSize = 2048;
   std::size_t tsMapSizeMaxVisualization = 700;
   std::string loadOccupancyMapFromFile = "";
-  std::vector<float> targetPoseVec;
+  std::vector<std::string> targetPoseStrVec;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
@@ -989,7 +993,7 @@ int main(int argc, const char **argv){
     ("erosionRadius", po::value< float > (&erosionRadius), "Erosion radius for obstacle map (m)")
     ("precomputeOccupancyMap", po::value< bool > (&precomputeOccupancyMap), "Precompute occupancy map at start.")
     ("loadOccupancyMapFromFile", po::value< std::string > (&loadOccupancyMapFromFile), "Occupancy map file be read from file.")
-    ("targetPose", po::value< std::vector<float> > (&targetPoseVec)->multitoken(), "Target position (mm, mm, degree) the amiro drives to when triggered.");
+    ("targetPose", po::value< std::vector<std::string> > (&targetPoseStrVec)->multitoken(), "Target position (mm, mm, degree) the amiro drives to when triggered.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -1037,6 +1041,16 @@ int main(int argc, const char **argv){
   }
 
   // validate targetPose and set to center of map if not valid
+  std::stringstream ss;
+  std::copy(targetPoseStrVec.begin(), targetPoseStrVec.end(), std::ostream_iterator<std::string>(ss," "));
+
+  std::vector<float> targetPoseVec;
+  for (float f; ss >> f;) {
+      targetPoseVec.push_back(f);
+  }
+
+  DEBUG_MSG("targetPoseVec: " << targetPoseVec);
+
   if (!vm.count("targetPose") || targetPoseVec.size() < 3) {
       INFO_MSG("No target pose given, setting to center.");
       targetPose = { ts_map_.size / 2 * delta_ * METERS_TO_MM, ts_map_.size / 2 * delta_ * METERS_TO_MM, 0 };
