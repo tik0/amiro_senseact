@@ -8,10 +8,15 @@ trap './stop.sh; exit' EXIT
 lidarscope='/AMiRo_Hokuyo/lidar'
 odomscope='/AMiRo_Hokuyo/odom'
 kinscope='/AMiRo_Hokuyo/diffKin'
+imagescope='/image'
+poseestimatescope='/setPosition'
 
 # start spread
 spread &
 sleep 5
+
+# show map and set pose estimate
+./setPosition/setPosition --i "$imagescope" --o "$poseestimatescope" &
 
 # start gazebo
 gazebo ./data/T.world &

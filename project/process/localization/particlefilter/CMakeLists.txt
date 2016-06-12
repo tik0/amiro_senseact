@@ -32,7 +32,7 @@ include("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 # Get the compiler specific includes and store them in GXX_INCLUDES
 include("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
-# Set the include pathe
+# Set the include path
 include_directories(BEFORE SYSTEM ${RST_INCLUDE_DIRS})
 include_directories(include
     ${RSB_INCLUDE_DIRS}                                             # RSB
@@ -62,12 +62,15 @@ set(SOURCE
     $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc
     $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc
+    $ENV{MUROX_INCLUDE_DIRS}/converter/vecFloatConverter/main.hpp
     importancetype/importancetype.h
     importancetype/addgaussians.h
     importancetype/inversedistance.h
     importancetype/multiplygaussians.h
     importancetype/multiplygaussianslog.h
 )
+
+include("$ENV{MUROX_CMAKE_MODULES}/vecFloatConverterSource.cmake")
 
 # Add the executable
 add_executable("${PROJECT_NAME}" ${SOURCE})

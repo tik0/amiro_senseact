@@ -6,3 +6,5 @@ include("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 add_subdirectory("$ENV{MUROX_PROJECT}/process/localization/particlefilter" particlefilter)
 
 add_subdirectory("$ENV{MUROX_PROJECT}/tools/hmi/sendControlsProtoTwist" sendTwistControls)
+
+add_subdirectory("$ENV{MUROX_PROJECT}/tools/hmi/setPosition" setPosition)

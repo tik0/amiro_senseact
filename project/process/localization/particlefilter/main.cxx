@@ -14,9 +14,10 @@
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/QueuePushHandler.h>
 
-// RST
+// RST converter
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
+#include <converter/vecFloatConverter/main.hpp>
 
 // RST Proto types
 //#include <types/LocatedLaserScan.pb.h>        // already included in particlefilter.h
@@ -36,15 +37,13 @@
 
 #include "importancetype/addgaussians.h"
 
-cv::Mat3b visualize(Map &map, ParticleFilter &particlefilter, bool visualizeImportance) {
+cv::Mat3b visualize(Map &map, ParticleFilter &particlefilter, bool visualizeImportance, float scale) {
     INFO_MSG("Preparing visualization");
     // Visualization
     // convert to RGB
     cv::Mat3b vis(map.size(), CV_8UC3);
     cv::cvtColor(map, vis, CV_GRAY2RGB, 3);
     // resize
-    int height = min(map.size().height, 700);
-    float scale = (float)height / map.size().height;
     cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
 
     // find maximum importance
@@ -103,6 +102,7 @@ int main(int argc, const char **argv) {
     std::string lidarInScope = "/AMiRo_Hokuyo/lidar";
     std::string odomInScope = "/AMiRo_Hokuyo/gps";
     std::string debugImageOutScope = "/particlefilter/debugImage";
+    std::string poseEstimateInScope = "/setPosition";
 
     size_t sampleCount = 10;
     float meterPerPixel = 0.01f;
@@ -117,14 +117,15 @@ int main(int argc, const char **argv) {
     options.add_options()("help,h", "Display a help message.")
             ("lidarInScope", po::value < std::string > (&lidarInScope)->default_value(lidarInScope), "Scope for receiving lidar data")
             ("odomInScope", po::value < std::string > (&odomInScope)->default_value(odomInScope), "Scope for receiving odometry data")
+            ("poseEstimateInScope", po::value< std::string > (&poseEstimateInScope), "Scope for receiving pose estimates (from the setPosition tool).")
+            ("debugImageOutScope", po::value < std::string > (&debugImageOutScope), "Scope for sending the debug image.")
             ("sampleCount", po::value < std::size_t > (&sampleCount)->default_value(sampleCount), "Number of particles")
             ("meterPerPixel", po::value < float > (&meterPerPixel)->default_value(meterPerPixel), "resolution of the map in meter per pixel")
             ("pathToMap", po::value < std::string > (&pathToMap)->default_value(pathToMap), "Filesystem path to image that contains the map")
             ("kldsampling", "Switches on KLD sampling.")
             ("newSampleProb", po::value < float > (&newSampleProb)->default_value(newSampleProb), "Probability for generating a new sample (instead of roulette wheel selection)")
             ("beamskip", po::value < int > (&beamskip)->default_value(beamskip), "Take every n-th beam into account when calculating importance factor")
-            ("maxFrequency", po::value < float > (&maxFrequency)->default_value(maxFrequency), "Maximum frequency at which new positon is published (1/s)")
-            ("debugImageOutScope", po::value < std::string > (&debugImageOutScope), "Scope for sending the debug image.");
+            ("maxFrequency", po::value < float > (&maxFrequency)->default_value(maxFrequency), "Maximum frequency at which new positon is published (1/s)");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -166,6 +167,8 @@ int main(int argc, const char **argv) {
     rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
     boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose > > odomConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose >());
     rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
+    boost::shared_ptr<muroxConverter::vecFloatConverter> vecFloatConverter(new muroxConverter::vecFloatConverter());
+    rsb::converter::converterRepository<std::string>()->registerConverter(vecFloatConverter);
 
     // Prepare RSB listener for incomming lidar scans
     rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -175,6 +178,10 @@ int main(int argc, const char **argv) {
     rsb::ListenerPtr odomListener = factory.createListener(odomInScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>>odomQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
     odomListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(odomQueue)));
+    // Prepare RSB async listener for a pose estimate (with the setPosition tool)
+    rsb::ListenerPtr poseEstimateListener = factory.createListener(poseEstimateInScope);
+    boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr< std::vector<float> >>>poseEstimateQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr< std::vector<float> >>(5));
+    poseEstimateListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler< std::vector<float> >(poseEstimateQueue)));
 
     // Informer for map
     rsb::Informer<std::string>::Ptr debugImageInformer = factory.createInformer<std::string>(debugImageOutScope);
@@ -208,12 +215,15 @@ int main(int argc, const char **argv) {
     boost::uint64_t minPeriod = 1000 / maxFrequency; // in ms
     rsc::misc::initSignalWaiter();
     bool running = true;
+    // visualization parameters
     bool visualizeImportance = false;
+    int height = min(map.size().height, 700);
+    float scale = (float)height / map.size().height;
     while (rsc::misc::lastArrivedSignal() == rsc::misc::NO_SIGNAL && running) {
         boost::uint64_t loopStart = rsc::misc::currentTimeMillis();
 
         if (sendDebugImage) {
-            cv::Mat3b vis = visualize(map, particlefilter, visualizeImportance);
+            cv::Mat3b vis = visualize(map, particlefilter, visualizeImportance, scale);
 #ifndef __arm__
             // finally show image
             cv::flip(vis, vis, 0); // flip horizontally
@@ -228,7 +238,7 @@ int main(int argc, const char **argv) {
                     visualizeImportance = !visualizeImportance;
                     break;
             }
-#else
+#endif
             std::vector<uchar> buf;
             std::vector<int> compression_params;
             compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
@@ -237,7 +247,6 @@ int main(int argc, const char **argv) {
 
             rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
             debugImageInformer->publish(frameJpg);
-#endif
         }
 
         // Update scan
@@ -247,6 +256,25 @@ int main(int argc, const char **argv) {
         // Update odometry
         if (!odomQueue->empty()) {
             odomPtr = odomQueue->pop();
+        }
+
+        // Check for a new pose estimate
+        if (!poseEstimateQueue->empty()) {
+            std::vector<float> poseEstimate = *(poseEstimateQueue->pop());
+            if (poseEstimate.size() == 3) {
+                // pose estimates are given in cell/pixel coordinates, convert them
+                sample_t newSample;
+                newSample.pose.x = poseEstimate.at(0) / scale * map.meterPerCell;
+                newSample.pose.y = (height - poseEstimate.at(1)) / scale * map.meterPerCell; // the image is sent out horizontally flipped, therefore flip back here
+                newSample.pose.theta = -poseEstimate.at(2); // flip back
+
+                sample_set_t *sampleSet = particlefilter.getSamplesSet();
+                newSample.importance = sampleSet->totalWeight * 0.5f;
+                sampleSet->samples[0] = newSample;
+                // XXX: instead maybe search for an unimportant sample?
+            } else {
+                ERROR_MSG("Received a pose estimate vector of wrong size: " << poseEstimate.size());
+            }
         }
 
         boost::uint64_t start = rsc::misc::currentTimeMillis();
