@@ -33,8 +33,9 @@ public:
      * @brief update updates the believe of the particle filter.
      * @param scan currently measured laser scan used for importance sampling.
      * @param odom currently measured odometry to compute odometry delta in the sampling step.
+     * @param forceUpdate forces the particle filter to update even when odometry increment is small.
      */
-    bool update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom);
+    bool update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom, bool forceUpdate = false);
 
     sample_set_t *getSamplesSet() {
         return sampleSet;
@@ -57,15 +58,12 @@ private:
 
     Map *map;
 
-//    Eigen::Vector3d mean = Eigen::Vector3d(0,0,0);
-//    Eigen::Matrix3d covar = Eigen::DiagonalMatrix<double,3,3>(0.01, 0.01, 0.01);
-//    Eigen::EigenMultivariateNormal<double> sampler = Eigen::EigenMultivariateNormal<double>(mean, covar);
-
     //std::default_random_engine rng;
     std::subtract_with_carry_engine<uint_fast32_t, 24, 10, 24> rng; // std::min_stdrand
     std::normal_distribution<float> samplingDistribution;
 
     void initSamples();
+    sample_t randomSample();
 
     float *cumulative;
 

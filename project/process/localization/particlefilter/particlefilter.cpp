@@ -109,11 +109,24 @@ ParticleFilter::initSamples()
     sampleSet->size = maxSampleCount;
     sampleSet->totalWeight = sampleSet->size;
     for (size_t i = 0; i < sampleSet->size; ++i) {
-        sampleSet->samples[i].pose.x = fmod(rand(), width * map->meterPerCell);
-        sampleSet->samples[i].pose.y = fmod(rand(), height * map->meterPerCell);
-        sampleSet->samples[i].pose.theta = fmod(rand(), 2 * M_PI) - M_PI;
+        sampleSet->samples[i] = randomSample();
         sampleSet->samples[i].importance = 1.0f;
     }
+}
+
+sample_t
+ParticleFilter::randomSample()
+{
+    size_t randomIdx = floor(rand() / (float)RAND_MAX * map->freeCells.size());
+    assert(randomIdx < map->freeCells.size());
+    cv::Point2i freeCell = map->freeCells.at(randomIdx);
+
+    sample_t sample;
+    sample.pose.x = freeCell.x * map->meterPerCell;
+    sample.pose.y = freeCell.y * map->meterPerCell;
+    sample.pose.theta = fmod(rand(), 2 * M_PI) - M_PI;
+
+    return sample;
 }
 
 sample_t
@@ -229,12 +242,12 @@ ParticleFilter::convertScan(const rst::vision::LocatedLaserScan &scan)
 }
 
 bool
-ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom)
+ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geometry::Pose &odom, bool forceUpdate)
 {
     // convert odometry and pre-compute deltas for pose update
     pose_t newOdom = convertPose(odom);
     bool doUpdate = preparePoseUpdate(newOdom);
-    if (!doUpdate) {
+    if (!doUpdate && !forceUpdate) {
         DEBUG_MSG("Skipping particle filter update because odometry increment is zero");
         return false;
     }
@@ -275,9 +288,7 @@ ParticleFilter::update(const rst::vision::LocatedLaserScan &scan, const rst::geo
 
         sample_t sample;
         if (rand() / (float)RAND_MAX < newSampleProb) {
-            sample.pose.x = fmod(rand(), width * map->meterPerCell);
-            sample.pose.y = fmod(rand(), height * map->meterPerCell);
-            sample.pose.theta = fmod(rand(), 2 * M_PI) - M_PI;
+            sample = randomSample();
             sample.importance = 0.0f; // will be set in importance sampling
         } else {
             sample = rouletteWheelSelection(r);
