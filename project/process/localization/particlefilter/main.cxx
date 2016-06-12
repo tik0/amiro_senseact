@@ -36,6 +36,66 @@
 
 #include "importancetype/addgaussians.h"
 
+cv::Mat3b visualize(Map &map, ParticleFilter &particlefilter, bool visualizeImportance) {
+    INFO_MSG("Preparing visualization");
+    // Visualization
+    // convert to RGB
+    cv::Mat3b vis(map.size(), CV_8UC3);
+    cv::cvtColor(map, vis, CV_GRAY2RGB, 3);
+    // resize
+    int height = min(map.size().height, 700);
+    float scale = (float)height / map.size().height;
+    cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
+
+    // find maximum importance
+    sample_set_t *sampleSet = particlefilter.getSamplesSet();
+    float maxImportance = 0;
+    for (size_t i = 0; i < sampleSet->size; ++i) {
+        maxImportance = max(maxImportance, sampleSet->samples[i].importance);
+    }
+    maxImportance /= sampleSet->totalWeight;
+
+    float meanX = 0.0f, meanY = 0.0f;
+    float sumThetaX = 0.0f, sumThetaY = 0.0f;
+
+    // draw all samples
+    for (size_t i = 0; i < sampleSet->size; ++i) {
+        sample_t sample = sampleSet->samples[i];
+        float importance = sample.importance / sampleSet->totalWeight;
+        // accumulate data for mean
+        meanX += importance * sample.pose.x;
+        meanY += importance * sample.pose.y;
+        sumThetaX += importance * cos(sample.pose.theta);
+        sumThetaY += importance * sin(sample.pose.theta);
+
+        cv::Point p(sample.pose.x / map.meterPerCell * scale, sample.pose.y / map.meterPerCell * scale);
+
+        int radius = 5;
+        int intensity = 0;
+        if (visualizeImportance) {
+            intensity = -255 / maxImportance * importance + 255;
+        }
+        cv::circle(vis, p, radius, cv::Scalar(255,intensity,intensity));
+
+        // also indicate theta
+        cv::Point q( p.x + cos(sample.pose.theta) * radius * 1.5f, p.y + sin(sample.pose.theta) * 1.5f * radius );
+        cv::line(vis, p, q, cv::Scalar(255,intensity,intensity));
+    }
+
+    // overlay mean
+    float meanTheta = atan2(sumThetaY, sumThetaX);
+
+    cv::Point p(meanX / map.meterPerCell * scale, meanY / map.meterPerCell * scale);
+
+    int radius = 5;
+    cv::circle(vis, p, 5, cv::Scalar(0,0,255));
+
+    cv::Point q( p.x + cos(meanTheta) * radius * 1.5f, p.y + sin(meanTheta) * 1.5f * radius );
+    cv::line(vis, p, q, cv::Scalar(0,0,255));
+
+    return vis;
+}
+
 int main(int argc, const char **argv) {
     /*
      * Handle program options
@@ -153,62 +213,7 @@ int main(int argc, const char **argv) {
         boost::uint64_t loopStart = rsc::misc::currentTimeMillis();
 
         if (sendDebugImage) {
-            INFO_MSG("Preparing visualization");
-            // Visualization
-            // convert to RGB
-            cv::Mat3b vis(map.size(), CV_8UC3);
-            cv::cvtColor(map, vis, CV_GRAY2RGB, 3);
-            // resize
-            int height = min(map.size().height, 700);
-            float scale = (float)height / map.size().height;
-            cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
-
-            // find maximum importance
-            sample_set_t *sampleSet = particlefilter.getSamplesSet();
-            float maxImportance = 0;
-            for (size_t i = 0; i < sampleSet->size; ++i) {
-                maxImportance = max(maxImportance, sampleSet->samples[i].importance);
-            }
-            maxImportance /= sampleSet->totalWeight;
-
-            float meanX = 0.0f, meanY = 0.0f;
-            float sumThetaX = 0.0f, sumThetaY = 0.0f;
-
-            // draw all samples
-            for (size_t i = 0; i < sampleSet->size; ++i) {
-                sample_t sample = sampleSet->samples[i];
-                float importance = sample.importance / sampleSet->totalWeight;
-                // accumulate data for mean
-                meanX += importance * sample.pose.x;
-                meanY += importance * sample.pose.y;
-                sumThetaX += importance * cos(sample.pose.theta);
-                sumThetaY += importance * sin(sample.pose.theta);
-
-                cv::Point p(sample.pose.x / meterPerPixel * scale, sample.pose.y / meterPerPixel * scale);
-
-                int radius = 5;
-                int intensity = 0;
-                if (visualizeImportance) {
-                    intensity = -255 / maxImportance * importance + 255;
-                }
-                cv::circle(vis, p, radius, cv::Scalar(255,intensity,intensity));
-
-                // also indicate theta
-                cv::Point q( p.x + cos(sample.pose.theta) * radius * 1.5f, p.y + sin(sample.pose.theta) * 1.5f * radius );
-                cv::line(vis, p, q, cv::Scalar(255,intensity,intensity));
-            }
-
-            // overlay mean
-            float meanTheta = atan2(sumThetaY, sumThetaX);
-
-            cv::Point p(meanX / meterPerPixel * scale, meanY / meterPerPixel * scale);
-
-            int radius = 5;
-            cv::circle(vis, p, 5, cv::Scalar(0,0,255));
-
-            cv::Point q( p.x + cos(meanTheta) * radius * 1.5f, p.y + sin(meanTheta) * 1.5f * radius );
-            cv::line(vis, p, q, cv::Scalar(0,0,255));
-
+            cv::Mat3b vis = visualize(map, particlefilter, visualizeImportance);
 #ifndef __arm__
             // finally show image
             cv::flip(vis, vis, 0); // flip horizontally
@@ -219,7 +224,7 @@ int main(int argc, const char **argv) {
                     running = false;
                     break;
 
-                case ' ': // space bar
+                case ' ': // space bar toogles importance visualization
                     visualizeImportance = !visualizeImportance;
                     break;
             }
@@ -257,7 +262,6 @@ int main(int argc, const char **argv) {
         }
 
         INFO_MSG("==== END OF MAIN LOOP ====");
-        //getchar();
     }
 
     INFO_MSG("Terminating normally");
