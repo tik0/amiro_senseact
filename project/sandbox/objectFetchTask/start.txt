@@ -38,12 +38,13 @@ The robot can be given some commands. If the flag 'waitForCommand' is set, then 
 ===== Parameters =====
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
-| proximityScope, p      | String | /rir_prox/obstacle  | Scope for receiving floor proximity sensor values. |
-| lidarScope, l          | String | /AMiRo_Hokuyo/lidar | Scope for receiving laser scans of the Hokuyo laser scanner. |
-| commandScope, c        | String | /delivery/commands  | Scope for receiving commands. |
-| watchAngle, w          | Float  | 30                  | Angular range in degrees for the laser scanner, how far to the sides it shall watch for objects. |
-| objectRadius, r        | Float  | 0.06                | Radius of the object in meters. |
-| amiroRadiusAddition, a | Float  | 0.0                 | Radius addition due to bigger cameras, etc. in meters. |
-| anglePositiveToRight   | -      | -                   | Flag, if the angle is not counted positive left side, but right side. |
-| rgbdLaser, d           | -      | -                   | Flag, if not a laser scanner, but a RGBD camera is used for laser scans. |
+| proximityScope, p      | String  | /rir_prox/obstacle  | Scope for receiving floor proximity sensor values. |
+| lidarScope, l          | String  | /AMiRo_Hokuyo/lidar | Scope for receiving laser scans of the Hokuyo laser scanner. |
+| commandScope, c        | String  | /delivery/commands  | Scope for receiving commands. |
+| floorMinValue, f       | Integer | 15000               | Minimal value, which has to be measured by the floor sensors for detecting the table. |
+| watchAngle, w          | Float   | 30                  | Angular range in degrees for the laser scanner, how far to the sides it shall watch for objects. |
+| objectRadius, r        | Float   | 0.06                | Radius of the object in meters. |
+| amiroRadiusAddition, a | Float   | 0.0                 | Radius addition due to bigger cameras, etc. in meters. |
+| anglePositiveToRight   | -       | -                   | Flag, if the angle is not counted positive left side, but right side. |
+| rgbdLaser, d           | -       | -                   | Flag, if not a laser scanner, but a RGBD camera is used for laser scans. |
 | waitForCommand         | -      | -                   | Flag, if the robot should wait until the start command is given. |

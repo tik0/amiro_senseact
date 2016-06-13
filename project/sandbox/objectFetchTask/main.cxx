@@ -16,7 +16,7 @@
 #define INFO_MSG_
 #define DEBUG_MSG_
 // #define SUCCESS_MSG_
-// #define WARNING_MSG_
+#define WARNING_MSG_
 #define ERROR_MSG_
 #include <MSG.h>
 #include <functional>
@@ -133,30 +133,29 @@ void motorDrivePosition(float distanceM, float distanceRad, ControllerAreaNetwor
 
 
 void convertDataToScan(boost::shared_ptr< rst::vision::LocatedLaserScan > data , rst::vision::LocatedLaserScan &rsbScan) {
-  rsbScan = *data;
+	rsbScan = *data;
 }
 
 void convertScan(rst::vision::LocatedLaserScan &scan, ts_sensor_data_t &data) {
-  if (scan.scan_angle_end() < scan.scan_angle_start()){
-    // flip readings
-    endAngle = scan.scan_angle_start();
-    startAngle = scan.scan_angle_end();
-    for(int i=0; i < scan.scan_values_size(); i++)
-      data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
-  } else {
-    startAngle = scan.scan_angle_start();
-    endAngle = scan.scan_angle_end();
-    for(int i=0; i < scan.scan_values_size(); i++)
-      data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
-  }
-  if (firstScan) {
-    laserCount = scan.scan_values_size();
-    minValueScan = (int) (scan.scan_values_min()*METERS_TO_MM);
-    laserAngleDist = (endAngle-startAngle)/(laserCount-1);
-    centerLaser = laserCount/2;
-    neighbourLasers = (watchAngleFromNormal * M_PI/180.0)/laserAngleDist;
-//    printf("\nLaser data:\n - #Laser: %i\n - Start angle: %frad\n - End angle: %frad\n - laser distance: %frad\n - Min Value: %imm\n\n", laserCount, startAngle, endAngle, laserAngleDist, minValueScan);
-  }
+	if (scan.scan_angle_end() < scan.scan_angle_start()){
+		// flip readings
+		endAngle = scan.scan_angle_start();
+		startAngle = scan.scan_angle_end();
+		for(int i=0; i < scan.scan_values_size(); i++)
+		data.d[i] = (int) (scan.scan_values(scan.scan_values_size()-1-i)*METERS_TO_MM);
+	} else {
+		startAngle = scan.scan_angle_start();
+		endAngle = scan.scan_angle_end();
+		for(int i=0; i < scan.scan_values_size(); i++)
+			data.d[i] = (int) (scan.scan_values(i)*METERS_TO_MM);
+	}
+	if (firstScan) {
+		laserCount = scan.scan_values_size();
+		minValueScan = (int) (scan.scan_values_min()*METERS_TO_MM);
+		laserAngleDist = (endAngle-startAngle)/(laserCount-1);
+		centerLaser = laserCount/2;
+		neighbourLasers = (watchAngleFromNormal * M_PI/180.0)/laserAngleDist;
+	}
 }
 
 bool calculateObjectOrientation(ts_sensor_data_t &scan, twbTracking::proto::Pose2D *pose2D) {
@@ -167,8 +166,8 @@ bool calculateObjectOrientation(ts_sensor_data_t &scan, twbTracking::proto::Pose
 		startLaser = 0;
 		endLaser = laserCount-1;
 	} else {
-		int startLaser = centerLaser-neighbourLasers;
-		int endLaser = centerLaser+neighbourLasers;
+		startLaser = centerLaser-neighbourLasers;
+		endLaser = centerLaser+neighbourLasers;
 		if (startLaser < 0) {
 			startLaser = 0;
 		}
@@ -207,6 +206,7 @@ int main(int argc, char **argv) {
 			     ("proximityScope,p", po::value<std::string>(&proxSensorInscope), "Scope for receiving floor proximity sensor values.")
 			     ("lidarScope,l", po::value<std::string>(&lidarInscope), "Scope for receiving laser scans of the Hokuyo laser scanner.")
 			     ("commandScope,c", po::value<std::string>(&commandInscope), "Scope for receiving commands.")
+			     ("floorMinValue,f", po::value<int>(&floorMinValue), "Minimal value, which has to be measured by the floor sensors for detecting the table (default: 15000).")
 			     ("watchAngle,w", po::value<float>(&watchAngleFromNormal), "Angular range in degrees for the laser scanner, how far to the sides it shall watch for objects (default: 30°).")
 			     ("objectRadius,r", po::value<float>(&fakeObjectRadius), "Radius of the object in meters (default: 0.06 m).")
 			     ("amiroRadiusAddition,a", po::value<float>(&amiroRadiusAddition), "Radius addition due to bigger cameras, etc. in meters (default: 0.0 m).")
