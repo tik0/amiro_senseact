@@ -12,10 +12,9 @@ done
 scp run.sh root@${IP}:~/${NAME}
 scp stop.sh root@${IP}:~/${NAME}
 
-# Copy commands
-scp restart.sh root@${IP}:~/${NAME}
-scp transport.sh root@${IP}:~/${NAME}
-scp -r Commands root@${IP}:~/${NAME}
-
-# Copy config
+# Copy RSB configs
+scp amirospread root@${IP}:~/${NAME}
 scp rsb.conf root@${IP}:~/${NAME}
+
+# Copy commands
+scp -r Commands root@${IP}:~/${NAME}

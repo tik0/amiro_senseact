@@ -50,9 +50,6 @@ using namespace std;
 
 #include <Types.h>
 
-#include <types/twbTracking.pb.h>
-#include <types/PoseEuler.pb.h>
-
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
@@ -60,6 +57,9 @@ using namespace std;
 #include <Color.h>
 #include <sensorModels/VCNL4020Models.h>
 #include <actModels/lightModel.h>
+
+#include <extspread/extspread.hpp>
+
 using namespace amiro;
 
 using namespace rsb;
@@ -102,6 +102,9 @@ float turnSpeed = 20.0 * M_PI/180.0; // rad/s
 float irDetectionDist = 0.05; // m
 float edgeMaxDist = 0.055; // m
 float edgeDistVariance = 0.005; // m
+
+std::string spreadhost = "localhost";
+std::string spreadport = "4823";
 
 enum stateType {
 	STturnEdge,
@@ -267,7 +270,9 @@ int main(int argc, char **argv) {
 		("turnSpeed,t", po::value<float>(&turnSpeedS), "Angular speed in degree/s (default: 20.0).")
 		("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m (default: 0.05).")
 		("edgeMaxDist,d", po::value<float>(&edgeMaxDist), "Distance for edge detection in m (default: 0.055).")
-		("edgeDistVariance,v", po::value<float>(&edgeDistVariance), "Maximal variance between the proximity sensors for edge orientation in m (default: 0.005).");
+		("edgeDistVariance,v", po::value<float>(&edgeDistVariance), "Maximal variance between the proximity sensors for edge orientation in m (default: 0.005).")
+		("host", po::value<std::string>(&spreadhost), "Host of external spread (default: localhost).")
+		("port", po::value<std::string>(&spreadport), "Port of external spread (default: 4823).");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -305,6 +310,9 @@ int main(int argc, char **argv) {
 	rsb::Factory& factory = rsb::getFactory();
 #endif
 
+	// Generate the programatik Spreadconfig for extern communication
+	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
+
 	// ------------ Converters ----------------------
 
 	// Register new converter for std::vector<int>
@@ -324,14 +332,14 @@ int main(int argc, char **argv) {
 	proxListenerGround->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(proxQueueGround)));
 
 	// prepare RSB listener for commands
-	rsb::ListenerPtr cmdListener = factory.createListener(commandInscope);
+	rsb::ListenerPtr cmdListener = factory.createListener(commandInscope, extspreadconfig);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> cmdQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
 	cmdListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(cmdQueue)));
 
 	// ------------ Informer ----------------------
 
 	// prepare RSB informer for answers
-	rsb::Informer<std::string>::Ptr informerAnswer = factory.createInformer<std::string> (answerOutscope);
+	rsb::Informer<std::string>::Ptr informerAnswer = factory.createInformer<std::string> (answerOutscope, extspreadconfig);
 
 	// prepare RSB informer for lights
 	rsb::Informer< std::vector<int> >::Ptr informerLights = factory.createInformer< std::vector<int> > (lightOutscope);

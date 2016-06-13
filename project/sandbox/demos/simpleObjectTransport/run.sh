@@ -5,6 +5,11 @@ sleep 1
 
 cpufreq-set -g performance
 
+spread &
+spread -c amirospread &
+
+sleep 5
+
 ./senseRingProximity -o /rir_prox/obstacle > /dev/null &
 ./setLights > /dev/null &
 
