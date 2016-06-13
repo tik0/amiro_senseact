@@ -1,0 +1,53 @@
+====== Simple Object Transport ======
+
+In this task the robot just drives from edge to edge to transport objects:
+
+  - Drive to next table edge
+  - Turn to get the table edge direct behind
+  - Wait for transport command
+  - Drive to next table edge
+  - Wait for restart command
+  - Turn to get the table edge direct behind
+  - Restart from the beginning
+
+===== Build Program =====
+
+  - ''cmake .''
+  - ''make''
+
+===== RSB Scopes =====
+
+^ Name ^ Default Scope ^ Description ^
+| Obstacle Values    | /rir_prox/obstacle | Inscope for receiving proximity sensor values for obstacle model. |
+| Edge Values        | /rir_prox/ground   | Inscope for receiving proximity sensor values for edge model. |
+| Command Input      | /transport/command | Inscope for receiving commands. |
+| Answers and Status | /transport/answer  | Outscope for sending command answers and status messages. |
+| Light Commands     | /amiro/lights      | Outscope for sending light commands. |
+
+===== Status Messages =====
+
+^ Command ^ Type ^ Scope Name ^ Description ^
+| "ready"       | String | Answers and Status | If the robot is waiting for starting the transport. |
+| "transported" | String | Answers and Status | If the robot just transported and waits for restarting the task. |
+
+===== Commands =====
+
+^ Command ^ Type ^ Scope Name ^ Description ^
+| "transport"    | String | Command Input      | If the robot is in the ready status, it will start transporting. |
+| "restart"      | String | Command Input      | If the robot is in the transported status, it will restart the task. |
+| Command+"_rec" | String | Answers and Status | If a command has been received, it will be recognized with the addition "_rec". |
+
+===== Parameters =====
+
+^ Parameter ^ Type ^ Default Value ^ Description ^
+| proxObstacleInscope, o | String | /rir_prox/obstacle | Inscope for receiving proximity sensor values for obstacle model. |
+| proxGroundInscope, g   | String | /rir_prox/ground   | Inscope for receiving proximity sensor values for edge model. |
+| commandInscope, c      | String | /transport/command | Inscope for receiving commands. |
+| answerOutscope, a      | String | /transport/answer  | Outscope for sending command answers and status messages. |
+| lightOutscope, l       | String | /amiro/lights      | Outscope for light commands. |
+| forwardSpeed, f        | Float  | 0.08               | Forward speed in m/s. |
+| turnSpeed, t           | Float  | 20.0               | Angular speed in degree/s. |
+| irDetectionDist, i     | Float  | 0.05               | Maximal distance for command detection by the proximity sensors in m. |
+| edgeMaxDist, d         | Float  | 0.055              | Distance for edge detection in m. |
+| edgeDistVariance, v    | Float  | 0.005              | Maximal variance between the proximity sensors for edge orientation in m. |
+

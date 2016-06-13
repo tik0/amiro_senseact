@@ -1,0 +1,22 @@
+====== Building the Simple Object Transport ======
+
+This is the demo for the [[sandbox:simpleObjectTransport:start|simpleObjectTransport Task]]. The robot is driving from table edge to table edge and transports objects. Please have a look into the [[sandbox:simpleObjectTransport:start|documentation]] for more detailed information.
+
+===== Run the Demo =====
+
+  - ''./build.sh''
+  - ''./copyPrograms.sh <ip address>''
+  - ''./run.sh'' on the AMiRo for running
+    - ''./transport.sh'' on the AMiRo to give transport command
+    - ''./restart.sh'' on the AMiRo to give restart command
+  - ''./stop.sh'' on the AMiRo for stopping
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+
+===== Included Programs =====
+
+^ Program ^ Description ^
+| [[sandbox:simpleObjectTransport:start|simpleObjectTransport]] | Program for the transport behavior and the command communication. |
+| [[sense:senseRingProximity:start|senseRingProximity]] | Program for receiving the ring proximity sensor values. |
+| [[act:setLights:start|setLights]] | Program for setting the colors and the lighting type of the LEDs. |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
