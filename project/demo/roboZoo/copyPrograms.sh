@@ -12,7 +12,7 @@ scp stop.sh root@${IP}:~/${NAME}
 # Copy scripts
 scp Choreos/* root@${IP}:~/${NAME}
 # Copy config
-scp amirospread root@${IP}:~/${NAME}
+scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread root@${IP}:~/${NAME}
 scp rsb.conf root@${IP}:~/${NAME}
 scp -r sim/ root@${IP}:~/${NAME}
 scp playSong.sh root@${IP}:~/${NAME}

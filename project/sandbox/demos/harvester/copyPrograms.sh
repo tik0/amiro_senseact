@@ -20,4 +20,4 @@ scp Choreos/*.xml root@${IP}:~/${NAME}
 
 # Copy config
 scp rsb.conf root@${IP}:~/${NAME}
-scp amirospread root@${IP}:~/${NAME}
+scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread root@${IP}:~/${NAME}

@@ -13,7 +13,7 @@ scp run.sh root@${IP}:~/${NAME}
 scp stop.sh root@${IP}:~/${NAME}
 
 # Copy RSB configs
-scp amirospread root@${IP}:~/${NAME}
+scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread root@${IP}:~/${NAME}
 scp rsb.conf root@${IP}:~/${NAME}
 
 # Copy commands
