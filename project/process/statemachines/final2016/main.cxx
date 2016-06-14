@@ -438,6 +438,8 @@ int processSM(void) {
         // got a response from CoreSLAM, it must have reached the target position
         if (!queueHomingAnswer->empty()) {
             queueHomingAnswer->pop();
+            // enable the waypoint
+            informerWaypoint->publish(signal_init);
             set_state_waypoint();
         }
         break;
