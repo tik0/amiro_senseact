@@ -102,30 +102,10 @@ float turnSpeed = 20.0 * M_PI/180.0; // rad/s
 float irDetectionDist = 0.05; // m
 float edgeMaxDist = 0.055; // m
 float edgeDistVariance = 0.005; // m
+float tableEdgeDist = 0.05; // m
 
 std::string spreadhost = "localhost";
 std::string spreadport = "4823";
-
-enum stateType {
-	STturnEdge,
-	STfindDirection,
-	STroundScan,
-	STdriveEdge,
-	STcheckEdge,
-	STcorrectEdge,
-	STturn,
-	STfinalize
-};
-
-std::string stateTypeString[] {	"turn ortho to edge",
-				"find direction",
-				"round scan",
-				"driving edge",
-				"check edge",
-				"correct edge",
-				"turn",
-				"finalize"
-};
 
 void sendMotorCmd(float speed, float angle, ControllerAreaNetwork &CAN) {
 	CAN.setTargetSpeed((int)(speed*1000000.0), (int)(angle*1000000.0));
@@ -206,7 +186,7 @@ void turnToEdge(ControllerAreaNetwork &myCAN, boost::shared_ptr<rsc::threading::
 			}
 		}
 		sendMotorCmd(0.0, 0.0, myCAN);
-		usleep(200000);
+		usleep(300000);
 		sensorValues = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
 		distS = VCNL4020Models::edgeModel(sensorValues->at(0));
 		distB = VCNL4020Models::edgeModel(sensorValues->at(ringproximity::SENSOR_COUNT-1));
@@ -271,6 +251,7 @@ int main(int argc, char **argv) {
 		("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m (default: 0.05).")
 		("edgeMaxDist,d", po::value<float>(&edgeMaxDist), "Distance for edge detection in m (default: 0.055).")
 		("edgeDistVariance,v", po::value<float>(&edgeDistVariance), "Maximal variance between the proximity sensors for edge orientation in m (default: 0.005).")
+		("tableEdgeDistance,e", po::value<float>(&tableEdgeDist), "Distance between robot and table edge for grasping and setting objects onto the robot in m (default: 0.05).")
 		("host", po::value<std::string>(&spreadhost), "Host of external spread (default: localhost).")
 		("port", po::value<std::string>(&spreadport), "Port of external spread (default: 4823).");
 
@@ -356,9 +337,12 @@ int main(int argc, char **argv) {
 	 * - while (doTask)
 	 *   - drive forward til table edge
 	 *   - turn 180°
+	 *   - correct distance to tabel edge
 	 *   - wait for drive command
 	 *   - drive to start position
+	 *   - correct distance to table edge
 	 *   - wait for fetch command
+	 *   - drive to table edge again
 	 *   - turn 180°
 	 */
 
@@ -372,6 +356,11 @@ int main(int argc, char **argv) {
 
 		// turn to edge
 		turnToEdge(myCAN, proxQueueGround);
+
+		// drive a little bit forward
+		sendMotorCmd(forwardSpeed/2.0, 0.0, myCAN);
+		usleep((int)(tableEdgeDist/(forwardSpeed/2.0)*1000000.0));
+		sendMotorCmd(0.0, 0.0, myCAN);
 
 		// set lights
 		setLights(LightModel::LightType::SINGLE_SHINE, Color(0,255,0), 0, informerLights);
@@ -388,6 +377,11 @@ int main(int argc, char **argv) {
 		// drive forward
 		driveToEdge(myCAN, proxQueueGround);
 
+		// drive a little bit backward
+		sendMotorCmd(-forwardSpeed/2.0, 0.0, myCAN);
+		usleep((int)(tableEdgeDist/(forwardSpeed/2.0)*1000000.0));
+		sendMotorCmd(0.0, 0.0, myCAN);
+
 		// set lights
 		setLights(LightModel::LightType::SINGLE_SHINE, Color(0,255,0), 0, informerLights);
 
@@ -399,6 +393,9 @@ int main(int argc, char **argv) {
 
 		// wait for some seconds before moving
 		sleep(2);
+
+		// drive to edge
+		driveToEdge(myCAN, proxQueueGround);
 
 		// turn to edge
 		turnToEdge(myCAN, proxQueueGround);

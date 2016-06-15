@@ -48,6 +48,7 @@ In this task the robot just drives from edge to edge to transport objects:
 | forwardSpeed, f        | Float  | 0.08               | Forward speed in m/s. |
 | turnSpeed, t           | Float  | 20.0               | Angular speed in degree/s. |
 | irDetectionDist, i     | Float  | 0.05               | Maximal distance for command detection by the proximity sensors in m. |
+| tableEdgeDistance, e   | Float  | 0.05               | Distance between robot and table edge for grasping and setting objects onto the robot in m. |
 | edgeMaxDist, d         | Float  | 0.055              | Distance for edge detection in m. |
 | edgeDistVariance, v    | Float  | 0.005              | Maximal variance between the proximity sensors for edge orientation in m. |
 
