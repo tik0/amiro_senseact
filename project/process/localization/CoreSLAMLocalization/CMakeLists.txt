@@ -52,7 +52,7 @@ include_directories(include
 # Define the source
 SET (SOURCE main.cxx)
 
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecFloatConverterSource.cmake")
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecIntConverterSource.cmake")
 
 # add the executable
 ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_loop_closing.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_state.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_random.c $ENV{MUROX_INCLUDE_DIRS}/libs/CoreSLAM/CoreSLAM_ext.c $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc pathplanner.cpp "$ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc" "$ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc" "$ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc")

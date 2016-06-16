@@ -12,24 +12,26 @@ echo "Start AMiRo with ID ${ID}"
 
 sleep 2
 
-trap './stop.sh; exit' INT TERM
+trap './stop.sh; exit' INT TERM HUP PIPE
 
 ./stop.sh
+
+wait_for_port()
+{
+	while test -n "$(netstat -an | grep $1 | grep -e LISTEN -e FIN_WAIT2)"; do
+		echo "port is still in use, waiting...";
+		sleep 1;
+	done
+}
 
 cpufreq-set -g performance
 
 # local spread
-while test -n "$(netstat -an | grep 4803 | grep -e LISTEN -e FIN_WAIT2)"; do
-	echo "port is still in use, waiting...";
-	sleep 1;
-done
+wait_for_port 4803
 spread &
 
 # external spread
-while test -n "$(netstat -an | grep 4823 | grep -e LISTEN -e FIN_WAIT2)"; do
-	echo "port is still in use, waiting...";
-	sleep 1;
-done
+wait_for_port 4823
 spread -c amirospread &
 sleep 5
 
@@ -44,7 +46,7 @@ sleep 5
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition/${ID} --positionOutScope /amiro${ID}/pose --pathOutScope /amiro${ID}/path \
+./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition/${ID} --targetPoseInScope /setTargetPose/${ID} --positionOutScope /amiro${ID}/pose --pathOutScope /amiro${ID}/path \
   --remotePort 4823 \
   --senImage 0 \
   --delta 0.02 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
@@ -54,9 +56,11 @@ sleep 5
   --targetPose "13407 6532.65 -175.95" \
   --precomputeOccupancyMap true &
 
-./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.15 --delay 10 --switchinscope /following --doEmergencyBehaviour > /dev/null &
+./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.30 --delay 10 --switchinscope /following --doEmergencyBehaviour > /dev/null &
 
 ./actTargetPosition --inscope /targetPositions &
+
+./actAmiroMotor &
 
 wait
 cpufreq-set -g ondemand

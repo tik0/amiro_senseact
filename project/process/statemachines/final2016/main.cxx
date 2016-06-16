@@ -468,7 +468,7 @@ int processSM(void) {
         set_state_turn();
       } else if (bGotFromTobi_homing) {
         informerHoming->publish(signal_homingPosition);
-        informerWaypoint->publish(signal_homingPosition);
+        informerWaypoint->publish(signal_stop);
         set_state_homing();
       }
       break;

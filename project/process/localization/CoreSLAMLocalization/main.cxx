@@ -71,7 +71,7 @@ extern "C"{
 #endif
 
 // Include own converter for setting new position
-#include <converter/vecFloatConverter/main.hpp>
+#include <converter/vecIntConverter/main.hpp>
 
 // ===== Namespaces =====
 using namespace std;
@@ -94,7 +94,7 @@ static double initialTheta = 0;
 static int samples = 100; // Number of resampling steps
 // parameters for coreslam
 static double hole_width_ = 0.1;  // m
-static double delta_ = 0.02;  // Meter per pixel
+static float delta_ = 0.02;  // Meter per pixel
 static ts_map_t ts_map_;
 static ts_state_t state_;
 static ts_position_t position_;
@@ -109,6 +109,7 @@ static ts_laser_parameters_t lparams_;
 #define SECONDS_TO_MS   1000
 #define DEGREE_TO_RAD   M_PI / 180
 #define RAD_TO_URAD     1e6
+#define SECONDS_TO_US   1000000
 static bool got_first_scan_ = false;
 //static bool got_map_ = false;
 static int laser_count_ = 0;
@@ -167,6 +168,7 @@ ts_position_t offset = {0,0,0};
 // Local informer
 rsb::Informer< rst::geometry::TargetPoseEuler >::Ptr targetInformer;
 rsb::Informer< std::string >::Ptr emergencyStopSwitchInformer;
+rsb::Informer< std::vector<int> >::Ptr motorInformer;
 // Global rsb informer for debug images
 rsb::Informer<std::string>::Ptr informer;
 rsb::Informer<rst::navigation::Path>::Ptr pathInformer;
@@ -188,6 +190,22 @@ inline float normalizeAngle(float angle) {
     }
 
     return angle;
+}
+
+ts_position_t convertRSBPoseToTsPose(boost::shared_ptr< rst::geometry::Pose > newPosition) {
+    ts_position_t position;
+    position.x = newPosition->translation().x() * METERS_TO_MM;
+    position.y = newPosition->translation().y() * METERS_TO_MM;
+
+    // Convert from quaternion to euler
+    rst::geometry::Rotation rotation = newPosition->rotation();
+    Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
+    Eigen::Matrix<double,3,1> rpy;
+    ::conversion::quaternion2euler(&lidar_quat, &rpy);
+    const double yaw = rpy(2);
+    position.theta = yaw * 180.0f / M_PI;
+
+    return position;
 }
 
 std::mutex sendMapAsCompressedImageMutex;
@@ -283,6 +301,7 @@ std::list<cv::Point2i> getPath(const ts_position_t &targetPose) {
 }
 
 uint64_t sendNewTargetPositionIn = 0; // timestamp in ms
+//bool goingStraight = false;
 void drivePath(std::list<cv::Point2i> &path) {
     // calculate distance to checkpoint
     cv::Point2i immediatePosePX = path.front();
@@ -294,16 +313,20 @@ void drivePath(std::list<cv::Point2i> &path) {
     DEBUG_MSG("Next waypoint: " << immediatePosePX << " (left: " << path.size() << ")");
     DEBUG_MSG("in MM: " << immediatePoseMM.x << "," << immediatePoseMM.y);
 
-    float distanceMM = sqrt( (immediatePoseMM.x - pose.x) * (immediatePoseMM.x - pose.x)
+    float distance = MM_TO_METERS * sqrt( (immediatePoseMM.x - pose.x) * (immediatePoseMM.x - pose.x)
                            + (immediatePoseMM.y - pose.y) * (immediatePoseMM.y - pose.y) );
 
-    const float minDistanceToTarget = 0.1; // meter
-    DEBUG_MSG("distance to target: " << distanceMM << " mm");
-    if (distanceMM < METERS_TO_MM * minDistanceToTarget) {
+    const float minDistanceToTarget = 0.1f; // meter
+    DEBUG_MSG("distance to target: " << distance << " m");
+    if (distance < minDistanceToTarget) {
         // arrived at checkpoint -> remove it
         DEBUG_MSG("Reached waypoint, deleting it");
         path.pop_front();
         sendNewTargetPositionIn = 0;
+
+        // Stop the robot
+        boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
+        motorInformer->publish(targetSpeed);
     } else {
         // update target position
         double globalTargetAngle = atan2( immediatePoseMM.y - pose.y,
@@ -312,55 +335,61 @@ void drivePath(std::list<cv::Point2i> &path) {
         double relativeAngle = globalTargetAngle - globalRobotAngle; // in rad
         relativeAngle = normalizeAngle(relativeAngle);
 
-        // declare parameters for setTargetPosition
-        types::position targetPosition;
-        uint16_t timeMS;
-
         // firstly rotate to waypoint
         DEBUG_MSG("Angle to target: " << relativeAngle);
-        if (abs(relativeAngle) > 0.15f /*M_PI / 45*/) { // precision of rotation (0.15 rad ~ 8.59°)//(PI/45 = 4°)
+        if (abs(relativeAngle) > 0.30f /*M_PI / 45*/) { // precision of rotation (0.15 rad ~ 8.59°)//(PI/45 = 4°)
             DEBUG_MSG("angle to waypoint too big -> rotating");
-            // package for setTargetPosition
-            targetPosition.x = 0;
-            targetPosition.f_z = relativeAngle * RAD_TO_URAD;
+            //goingStraight = false;
 
-            // calculate time from given speed
-            const double rotationSpeed = M_PI; // rad/s
-            timeMS = SECONDS_TO_MS * (abs(relativeAngle) / rotationSpeed);
-            if (timeMS > 5000)
-                timeMS = 5000;
-        } else {
+            if (sendNewTargetPositionIn <= rsc::misc::currentTimeMillis()) {
+                // calculate time from given speed
+                // Note: this is not the real rotation speed, currently the DiWheelDrive limits this velocity.
+                const double rotationSpeed = M_PI; // rad/s
+                uint16_t timeMS = SECONDS_TO_MS * (abs(relativeAngle) / rotationSpeed);
+                if (timeMS > 5000)
+                    timeMS = 5000;
+
+                // Define the steering message for sending over RSB
+                boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
+                // Get the mutable objects
+                rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
+                rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
+                steeringRotation->set_roll(0);
+                steeringRotation->set_pitch(0);
+                steeringRotation->set_yaw(relativeAngle);
+                steeringTranslation->set_x(0);
+                steeringTranslation->set_y(0);
+                steeringTranslation->set_z(0);
+                steering->set_target_time((unsigned short)timeMS);
+
+                SUCCESS_MSG("Sending target position: yaw: " << steeringRotation->yaw() << " (time: " << timeMS << ")");
+                targetInformer->publish(steering);
+
+                sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::min(std::max((uint16_t)200, timeMS), (uint16_t)5000);
+            } else {
+                DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
+            }
+
+        } else { // angle is small enough
             DEBUG_MSG("angle to waypoint small enough, driving towards it now");
-            // package for setTargetPosition
-            targetPosition.x = distanceMM * MM_TO_UM;
-            targetPosition.f_z = relativeAngle * RAD_TO_URAD;
 
-            // calculate time (derived from velocity)
-            const double velocity_M_S = 0.4;
-            timeMS = SECONDS_TO_MS * ( (MM_TO_METERS * distanceMM) / velocity_M_S );
-        }
+            //if (!goingStraight) { // nothing to do when we already go straight
+                const float velocity = 0.3f; // m/s
+                //goingStraight = true;
+                sendNewTargetPositionIn = 0; // reset setTargetPosition timeout
 
-        if (sendNewTargetPositionIn <= rsc::misc::currentTimeMillis()) {
-            SUCCESS_MSG("Sending target position: " << targetPosition.x << " " << targetPosition.f_z << " (time: " << timeMS << ")");
-            // Define the steering message for sending over RSB
-            boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
-            // Get the mutable objects
-            rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
-            rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
-            steeringRotation->set_roll(0);
-            steeringRotation->set_pitch(0);
-            steeringRotation->set_yaw(static_cast<double>(targetPosition.f_z) * 1e-6);
-            steeringTranslation->set_x(static_cast<double>(targetPosition.x) * 1e-6);
-            steeringTranslation->set_y(0);
-            steeringTranslation->set_z(0);
-            steering->set_target_time((unsigned short)timeMS);
-
-            // can.setTargetPosition(targetPosition, timeMS);
-            targetInformer->publish(steering);
-
-            sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::min(timeMS, (uint16_t)5000);
-        } else {
-            DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
+                // Set the motor speed
+                // Velocity send in µm/s
+                // Angular velocity send in µrad/s
+                boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
+                targetSpeed->at(0) = velocity * METERS_TO_UM;
+                float t = distance / velocity;
+                float w_z = relativeAngle / t;
+                DEBUG_MSG("w_z: " << w_z);
+                w_z = std::max<float>(std::min<float>(M_PI, w_z), -M_PI);
+                targetSpeed->at(1) = w_z * RAD_TO_URAD;
+                motorInformer->publish(targetSpeed);
+            //}
         }
     }
 }
@@ -423,7 +452,7 @@ getOdomPose(ts_position_t& ts_pose)
 
 //  DEBUG_MSG( "-------------------------------------------------------------------------------------------" )
 //  DEBUG_MSG( "Odometry: x(m): " <<  translation.x() << " y(m): " << translation.y() << " theta(rad): " << yaw)
-  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
+//  DEBUG_MSG( "Odometry map-centered: x(mm):" << ts_pose.x << " y(mm): " << ts_pose.y << " theta(deg): " << ts_pose.theta)
 
   return true;
 }
@@ -803,15 +832,16 @@ void rotateToPose(const ts_position_t &targetPose) {
 
 /**
  * @brief driveToPoseWithObstacleAvoidance plans the path to the given target pose and drives along this path. When a static obstacle is encountered the map is updated and the path recalculated.
+ *        When no path is found the robot will rotate to the given pose's orientation.
  * @param targetPose
- * @return false when a no path was found, otherwise true.
+ * @return always true
  */
 bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
     std::list<cv::Point2i> path = getPath(targetPose);
 
     if (path.empty()) {
         ERROR_MSG("Path is empty!");
-        return false;
+        //return false;
     } else {
         INFO_MSG("Path not empty :)");
     }
@@ -828,6 +858,46 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
           if (obstacleCounter > 50) { // wait for obstacle to move (5 seconds)
               DEBUG_MSG("doHoming: obstacle does not move, planning new path");
               obstacleCounter = 0;
+
+              // before driving new path, back up
+              emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("off"))); // disable emergency stop, so moving is possible
+
+              // Define the steering message for sending over RSB
+              boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
+              // Get the mutable objects
+              rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
+              rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
+              steeringRotation->set_roll(0);
+              steeringRotation->set_pitch(0);
+              steeringRotation->set_yaw(0);
+              steeringTranslation->set_x(-0.2f); // back up 20 cm
+              steeringTranslation->set_y(0);
+              steeringTranslation->set_z(0);
+              steering->set_target_time((unsigned short)1); // in 1s
+
+              targetInformer->publish(steering);
+
+              usleep(2 * SECONDS_TO_US); // wait for movement
+              // enable emergency stop again
+              emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("on")));
+
+
+              // If this is the last waypoint and we're close to it, discard it and assume we reached the global goal
+              if (path.size() == 1) {
+                  DEBUG_MSG("doHoming: reached last waypoint");
+                  cv::Point2i immediatePosePX = path.front();
+
+                  float distance = MM_TO_METERS * sqrt( pow(PIXEL_TO_MM(immediatePosePX.x) - pose.x, 2)
+                                         + pow(PIXEL_TO_MM(immediatePosePX.y) - pose.y, 2) );
+
+                  DEBUG_MSG("distance is " << distance << " m");
+                  if (distance < 0.8f) {
+                    path.pop_front();
+                    DEBUG_MSG("discarding last waypoint");
+                    break;
+                  }
+              }
+
               // must be a new static obstacle, so add it to the map
               mtxDoMapUpdate.lock();
               bool oldDoMapUpdate = doMapUpdate;
@@ -847,34 +917,14 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
 
               // re-compute the occupancy map
               occupancyMap = getOccupancyMap();
+
               // get the new path
               path = getPath(targetPose);
 
               if (path.empty()) {
                   ERROR_MSG("No new path was found!");
+                  break;
               }
-
-              // before driving new path, back up
-              emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("off"))); // disable emergency stop, so moving is possible
-
-              // Define the steering message for sending over RSB
-              boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
-              // Get the mutable objects
-              rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
-              rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
-              steeringRotation->set_roll(0);
-              steeringRotation->set_pitch(0);
-              steeringRotation->set_yaw(0);
-              steeringTranslation->set_x(-0.2f); // back up 10 cm
-              steeringTranslation->set_y(0);
-              steeringTranslation->set_z(0);
-              steering->set_target_time((unsigned short)1); // in 1s
-
-              targetInformer->publish(steering);
-
-              usleep(1000000); // wait 1s for movement
-              // enable emergency stop again
-              emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("on")));
 
           } else {
               DEBUG_MSG("doHoming: waiting for obstacle to move");
@@ -895,18 +945,17 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
     // After driving path, rotate to requested pose/theta
     DEBUG_MSG("Done driving along path, rotating now");
     rotateToPose(targetPose);
-    usleep(100000);
+    usleep(6 * SECONDS_TO_US);
 
     return true;
 }
 
 void homingRequestHandler(boost::shared_ptr<std::string> e) {
     INFO_MSG("Received homing request via RSB")
-    bool reachedGoal = false;
 
     if(!e->compare(std::string("homing"))) {
       INFO_MSG("Do homing");
-      reachedGoal = driveToPoseWithObstacleAvoidance(homePose);
+      driveToPoseWithObstacleAvoidance(homePose);
     } else if (!e->compare(std::string("save"))) {
       INFO_MSG("Drive to next save position");
       ts_position_t validPose = {0, 0, 0};
@@ -915,20 +964,19 @@ void homingRequestHandler(boost::shared_ptr<std::string> e) {
         return;
       } else {
         INFO_MSG("Start path calculation");
-        reachedGoal = driveToPoseWithObstacleAvoidance(validPose);
+        driveToPoseWithObstacleAvoidance(validPose);
         INFO_MSG("Finish path calculation");
       }
     } else if (!e->compare(std::string("target"))) {
         INFO_MSG("Drive to target pose");
-        reachedGoal = driveToPoseWithObstacleAvoidance(targetPose);
+        driveToPoseWithObstacleAvoidance(targetPose);
     } else {
       ERROR_MSG("Wrong homing command: " << *e);
+      return;
     }
 
-    if (reachedGoal) {
-      boost::shared_ptr<std::string> response = boost::shared_ptr<std::string>(new std::string("done"));
-      homingInformer->publish(response);
-    }
+    boost::shared_ptr<std::string> response = boost::shared_ptr<std::string>(new std::string("done"));
+    homingInformer->publish(response);
 }
 
 int main(int argc, const char **argv){
@@ -953,6 +1001,7 @@ int main(int argc, const char **argv){
   std::size_t tsMapSizeMaxVisualization = 700;
   std::string loadOccupancyMapFromFile = "";
   std::vector<std::string> targetPoseStrVec;
+  std::string targetPoseInScope = "/setTargetPose";
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
@@ -970,7 +1019,7 @@ int main(int argc, const char **argv){
     ("throttle_scans", po::value < int > (&throttle_scans_), "Only take every n'th scan")
     ("samples", po::value < int > (&samples), "Sampling steps of the marcov localization sampler")
     ("hole_width", po::value < double > (&hole_width_), "Width of impacting rays [m]")
-    ("delta", po::value < double > (&delta_), "Resolution [m/pixel]")
+    ("delta", po::value < float > (&delta_), "Resolution [m/pixel]")
     ("rayPruningAngleDegree", po::value < float > (&rayPruningAngleDegree), "Pruning of adjiacent rays if they differ to much on the impacting surface [0° .. 90°]")
     ("loadMapFromImage", po::value < std::string > (&mapImagePath),"Load map from image file")
     ("loadMapFromPGM", po::value < std::string > (&mapPGMPath),"Load map from *16bit* PGM file")
@@ -993,7 +1042,8 @@ int main(int argc, const char **argv){
     ("erosionRadius", po::value< float > (&erosionRadius), "Erosion radius for obstacle map (m)")
     ("precomputeOccupancyMap", po::value< bool > (&precomputeOccupancyMap), "Precompute occupancy map at start.")
     ("loadOccupancyMapFromFile", po::value< std::string > (&loadOccupancyMapFromFile), "Occupancy map file be read from file.")
-    ("targetPose", po::value< std::vector<std::string> > (&targetPoseStrVec)->multitoken(), "Target position (mm, mm, degree) the amiro drives to when triggered.");
+    ("targetPose", po::value< std::vector<std::string> > (&targetPoseStrVec)->multitoken(), "Target position (mm, mm, degree) the amiro drives to when triggered.")
+    ("targetPoseInScope", po::value< std::string > (&targetPoseInScope), "Scope for receiving a new goal position.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -1121,6 +1171,8 @@ int main(int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(converter);
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter< rst::navigation::Path > > pathConverter(new rsb::converter::ProtocolBufferConverter< rst::navigation::Path >());
   rsb::converter::converterRepository<std::string>()->registerConverter(pathConverter);
+  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
   // Prepare RSB listener for incomming lidar scans
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -1133,18 +1185,19 @@ int main(int argc, const char **argv){
   // Local informer
   targetInformer = factory.createInformer<rst::geometry::TargetPoseEuler> (targetPoseOutScope);
   emergencyStopSwitchInformer = factory.createInformer<std::string>("/following");
+  motorInformer = factory.createInformer<std::vector<int>>("/motor");
 
   // Prepare RSB informer for sending the map as an compressed image
   informer = factory.createInformer<std::string> (mapAsImageOutScope);
 
   // Listener for setting re-init
-  // Register new converter for std::vector<float>
-  boost::shared_ptr<vecFloatConverter> converterVecFloat(new vecFloatConverter());
-  converterRepository<std::string>()->registerConverter(converterVecFloat);
-
   rsb::ListenerPtr setPositionListener = factory.createListener(setPositionScope, tmpPartConf);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>> >setPositionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
   setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(setPositionQueue)));
+
+  rsb::ListenerPtr targetPoseListener = factory.createListener(targetPoseInScope, tmpPartConf);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>> >targetPoseQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
+  targetPoseListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(targetPoseQueue)));
 
   rsb::Informer<rst::geometry::Pose>::Ptr poseInfomer = factory.createInformer<rst::geometry::Pose>(positionOutScope, tmpPartConf);
 
@@ -1216,17 +1269,8 @@ int main(int argc, const char **argv){
         INFO_MSG("Received setPosition request");
         boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(setPositionQueue->pop());
         DEBUG_MSG("New position is: " << newPosition->DebugString());
-        state_.position.x = newPosition->translation().x() * METERS_TO_MM;
-        state_.position.y = newPosition->translation().y() * METERS_TO_MM;
 
-        // Convert from quaternion to euler
-        rst::geometry::Rotation rotation = newPosition->rotation();
-        Eigen::Quaterniond lidar_quat(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
-        Eigen::Matrix<double,3,1> rpy;
-        ::conversion::quaternion2euler(&lidar_quat, &rpy);
-        const double yaw = rpy(2);
-        state_.position.theta = yaw * 180.0f / M_PI;
-
+        state_.position = convertRSBPoseToTsPose(newPosition);
         DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
         // Set higher sigma to make it possible to converge into right position
         state_.sigma_theta = sigma_theta_new_position;
@@ -1240,6 +1284,12 @@ int main(int argc, const char **argv){
         if (state_.sigma_xy != sigma_xy_) {
             state_.sigma_xy = max(sigma_xy_, sigma_decrease_rate * state_.sigma_xy);
         }
+    }
+
+    if (!targetPoseQueue->empty()) {
+        INFO_MSG("Received targetPose request");
+        boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(targetPoseQueue->pop());
+        targetPose = convertRSBPoseToTsPose(newPosition);
     }
 
     DEBUG_MSG("current sigma_xy: " << state_.sigma_xy);
