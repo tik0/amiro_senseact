@@ -6,10 +6,10 @@
 
 //#define TRACKING
 #define INFO_MSG_
-// #define DEBUG_MSG_
+#define DEBUG_MSG_
 // #define SUCCESS_MSG_
-// #define WARNING_MSG_
-// #define ERROR_MSG_
+#define WARNING_MSG_
+#define ERROR_MSG_
 #include <MSG.h>
 #include <functional>
 #include <algorithm>
@@ -56,6 +56,7 @@ using namespace std;
 
 #include <ControllerAreaNetwork.h>
 #include <sensorModels/VCNL4020Models.h>
+#include <actModels/lightModel.h>
 #include <extspread.hpp>
 
 using namespace rsb;
@@ -94,19 +95,18 @@ std::string trackingInscope = "/amiro/tracking";
 std::string GuideOutscope = "/amiro/drive/status";
 std::string GuideInscope = "/amiro/drive/guide";
 std::string CommandInscope = "/amiro/command";
+std::string lightOutscope = "/amiro/lights";
 std::string spreadhost = "127.0.0.1";
 std::string spreadport = "4803";
 
 // color data and light type
 amiro::Color curColor(255, 255, 255);
-bool blinking = false;
-bool blinkWarning = false;
-bool circleLeft = false;
-bool circleRight = false;
+int lightType = LightModel::LightType::SINGLE_SHINE;
 
 
 // method prototypes
-bool setColor(std::string colorInput);
+void setLights(int lightType, amiro::Color color, int period, rsb::Informer< std::vector<int> >::Ptr informer);
+void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr informer);
 void setSteering(boost::shared_ptr<twbTracking::proto::Pose2D> guidePos, boost::shared_ptr<twbTracking::proto::Pose2D> trackPos, ControllerAreaNetwork &CAN);
 bool positionReached(boost::shared_ptr<twbTracking::proto::Pose2D> guidePos, boost::shared_ptr<twbTracking::proto::Pose2D> trackPos);
 int motorAction(float speed, float turn, ControllerAreaNetwork &CAN);
@@ -124,6 +124,7 @@ int main(int argc, char **argv) {
 			("commandScope,c", po::value<std::string>(&CommandInscope), "Inscope for commands (default: '/amiro/command').")
 			("guideInscope,i", po::value<std::string>(&GuideInscope), "Inscope for guided position (default: '/amiro/drive/guide').")
 			("guideOutscope,o", po::value<std::string>(&GuideOutscope), "Outscope for status updates for the guide (default: '/amiro/drive/status').")
+			("lightScope,l", po::value<std::string>(&lightOutscope), "Outscope for light commands (default: '/amiro/lights').")
 			("host,h", po::value<std::string>(&spreadhost), "Host for Programatik Spread (default: '127.0.0.1').")
 			("port,p", po::value<std::string>(&spreadport), "Port for Programatik Spread (default: '4803').");
 
@@ -145,6 +146,15 @@ int main(int argc, char **argv) {
 	po::notify(vm);
 
 	INFO_MSG("Initialize RSB");
+	INFO_MSG("");
+	INFO_MSG("External Spread Scopes:");
+	INFO_MSG(" -> Incomming Commands: " << CommandInscope);
+	INFO_MSG(" -> Incomming Position: " << GuideInscope);
+	INFO_MSG(" -> Sending Status:     " << GuideOutscope);
+	INFO_MSG(" -> Tracking Data:      " << trackingInscope);
+	INFO_MSG("Internal Spread Scopes:");
+	INFO_MSG(" -> Light Commands:     " << lightOutscope);
+	INFO_MSG("");
 
 	boost::shared_ptr<twbTracking::proto::Pose2D> finalePos(new twbTracking::proto::Pose2D());
 
@@ -155,6 +165,10 @@ int main(int argc, char **argv) {
 	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
 
 	// ------------ Converters ----------------------
+
+	// Register new converter for std::vector<int>
+	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
 	// Register converter for the pose list
 	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2DList> > pose2DListConverter(
@@ -188,6 +202,9 @@ int main(int argc, char **argv) {
 	// create rsb informer to publish progress data
 	rsb::Informer<std::string>::Ptr guideInformer = factory.createInformer<std::string>(GuideOutscope, extspreadconfig);
 
+	// prepare RSB informer for lights
+	rsb::Informer< std::vector<int> >::Ptr informerLights = factory.createInformer< std::vector<int> > (lightOutscope);
+
 
 
 	// Init the CAN interface
@@ -201,9 +218,7 @@ int main(int argc, char **argv) {
 	bool exitProg = false;
 	bool errorProg = false;
 
-	for (int led=0; led<8; led++) {
-		myCAN.setLightColor(led, curColor);
-	}
+	setLights(lightType, curColor, 0, informerLights);
 
 	INFO_MSG("Starting driving loop");
 	while (!exitProg) {
@@ -239,6 +254,7 @@ int main(int argc, char **argv) {
 					setSteering(guidePos, trackPos, myCAN);
 				}
 			}
+
 			// check for new color input
 			bool colorChanged = false;
 			if (!commandQueue->empty()) {
@@ -248,38 +264,8 @@ int main(int argc, char **argv) {
 				if (command == CMD_STOP) {
 					exitProg = true;
 				} else if (command.substr(0, CMD_COLOR.length()) == CMD_COLOR) {
-					colorChanged = setColor(command);
+					setColor(command, informerLights);
 				}
-			}
-			// set colors
-			if (   colorChanged
-			    || ((blinking || blinkWarning) && blinkCounter % 2 == 0)
-			    || (circleLeft || circleRight)
-			) {
-				bool ledsLeft = blinkCounter < 4;
-				for (int led=0; led<8; led++) {
-
-					int ledNext = led+1;
-					if (ledNext >= 8) ledNext -= 8;
-
-					if (   (!blinking && !blinkWarning && !circleLeft && !circleRight)
-					    || (blinking && ledsLeft)
-					    || (blinkWarning && ledsLeft && led >= 4)
-					    || (blinkWarning && !ledsLeft && led < 4)
-					    || (circleLeft && (7-led == blinkCounter || 7-ledNext == blinkCounter))
-					    || (circleRight && (led == blinkCounter || ledNext == blinkCounter))
-					) {
-						myCAN.setLightColor(led, curColor);
-					} else {
-						myCAN.setLightColor(led, amiro::Color(0, 0, 0));
-					}
-				}
-			}
-			// set blink counter
-			if (blinkCounter >= 7) {
-				blinkCounter = 0;
-			} else {
-				blinkCounter++;
 			}
 
 			// sleep 100 ms
@@ -303,14 +289,7 @@ int main(int argc, char **argv) {
 	guideInformer->publish(StringPtr);
 
 	// reset lights
-	myCAN.setLightColor(0, amiro::Color(amiro::Color::RED));
-	myCAN.setLightColor(1, amiro::Color(amiro::Color::GREEN));
-	myCAN.setLightColor(2, amiro::Color(amiro::Color::BLUE));
-	myCAN.setLightColor(3, amiro::Color(amiro::Color::WHITE));
-	myCAN.setLightColor(4, amiro::Color(amiro::Color::RED));
-	myCAN.setLightColor(5, amiro::Color(amiro::Color::GREEN));
-	myCAN.setLightColor(6, amiro::Color(amiro::Color::BLUE));
-	myCAN.setLightColor(7, amiro::Color(amiro::Color::WHITE));
+	setLights(LightModel::LightType::SINGLE_INIT, curColor, 0, informerLights);
 
 	// exit procedure if error
 	if (errorProg) {
@@ -323,8 +302,14 @@ int main(int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
+void setLights(int lightType, amiro::Color color, int period, rsb::Informer< std::vector<int> >::Ptr informer) {
+	std::vector<int> lightCommand = setLight2Vec(lightType, color, period);
+	boost::shared_ptr<std::vector<int>> commandVector = boost::shared_ptr<std::vector<int> >(new std::vector<int>(lightCommand.begin(),lightCommand.end()));
+	informer->publish(commandVector);
+}
 
-bool setColor(std::string colorCommand) {
+
+void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr informer) {
 	std::string colorInput = colorCommand.substr(CMD_COLOR.length());
 	// check if there is input
 	if (colorInput.length() >= 1) {
@@ -339,25 +324,35 @@ bool setColor(std::string colorCommand) {
 		}
 
 		// check light type change
-		char lightType = CTP_SHINE;
+		char lightTypeC = CTP_SHINE;
 		if (colorInput.length() >= 2) {
-			lightType = colorInput[1];
+			lightTypeC = colorInput[1];
 		}
-		blinking = false;
-		blinkWarning = false;
-		circleLeft = false;
-		circleRight = false;
-		switch (lightType) {
-			case CTP_SHINE: break;
-			case CTP_BLINK: blinking = true; break;
-			case CTP_WARNING: blinkWarning = true; break;
-			case CTP_CIRCLELEFT: circleLeft = true; break;
-			case CTP_CIRCLERIGHT: circleRight = true; break;
+		int lightTypeCheck = -1;
+		switch (lightTypeC) {
+			case CTP_SHINE: lightTypeCheck = LightModel::LightType::SINGLE_SHINE; break;
+			case CTP_BLINK: lightTypeCheck = LightModel::LightType::SINGLE_BLINK; break;
+			case CTP_WARNING: lightTypeCheck = LightModel::LightType::SINGLE_WARNING; break;
+			case CTP_CIRCLELEFT: lightTypeCheck = LightModel::LightType::SINGLE_CIRCLELEFT; break;
+			case CTP_CIRCLERIGHT: lightTypeCheck = LightModel::LightType::SINGLE_CIRCLERIGHT; break;
 			default: WARNING_MSG("Light type '" << colorInput[0] << "' is unknown!"); break;
+		}
+		if (lightTypeCheck >= 0) {
+			lightType = lightTypeCheck;
+		}
+		int period = 0;
+		std::string lightTypeDesc;
+		switch (lightType) {
+			case LightModel::LightType::SINGLE_SHINE: lightTypeDesc = "shine"; break;
+			case LightModel::LightType::SINGLE_BLINK: lightTypeDesc = "blinking normal"; period = 600; break;
+			case LightModel::LightType::SINGLE_WARNING: lightTypeDesc = "blinking warning"; period = 800; break;
+			case LightModel::LightType::SINGLE_CIRCLELEFT: lightTypeDesc = "circled left"; break;
+			case LightModel::LightType::SINGLE_CIRCLERIGHT: lightTypeDesc = "circled right"; break;
+			default: break;
 		}
 
 		// print color change information
-		std::string lightTypeDesc, colorName;
+		std::string colorName;
 		if (curColor.getRed() == 255 && curColor.getGreen() == 255 && curColor.getBlue() == 255) {
 			colorName = "white";
 		} else if (curColor.getRed() == 255 && curColor.getGreen() == 255) {
@@ -369,22 +364,10 @@ bool setColor(std::string colorCommand) {
 		} else {
 			colorName = "blue";
 		}
-		if (blinking) {
-			lightTypeDesc = "blinking normal";
-		} else if (blinkWarning) {
-			lightTypeDesc = "blinking warning";
-		} else if (circleLeft) {
-			lightTypeDesc = "circled left";
-		} else if (circleRight) {
-			lightTypeDesc = "circled right";
-		} else {
-			lightTypeDesc = "shine";
-		}
 		INFO_MSG("Color changed: Color '" << colorName << "', Light Type '" << lightTypeDesc << "'");
-		
-		return true;
+
+		setLights(lightType, curColor, period, informer);
 	}
-	return false;
 }
 
 
