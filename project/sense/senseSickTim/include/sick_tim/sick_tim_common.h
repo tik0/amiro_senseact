@@ -8,6 +8,8 @@
 #include <vector>
 
 #include <rsb/Factory.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
+#include <rsb/converter/Repository.h>
 
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <diagnostic_updater/publisher.h>

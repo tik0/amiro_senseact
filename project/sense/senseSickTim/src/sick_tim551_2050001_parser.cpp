@@ -165,7 +165,7 @@ int SickTim5512050001Parser::parse_datagram(char* datagram, size_t datagram_leng
   int starting_angle = -1;
   sscanf(fields[23], "%x", &starting_angle);
   msg.set_scan_angle_start((starting_angle / 10000.0) / 180.0 * M_PI - M_PI / 2);
-  // printf("starting_angle: %d, angle_min: %f", starting_angle, msg.angle_min);
+  printf("starting_angle: %d, angle_min: %f\n", starting_angle, msg.scan_angle_start());
 
   // 24: Angular step width (2710)
   unsigned short angular_step_width = -1;
@@ -192,17 +192,19 @@ int SickTim5512050001Parser::parse_datagram(char* datagram, size_t datagram_leng
     index_max--;
   }
 
-  printf("index_min: %d, index_max: %d", index_min, index_max);
-  // printf("angular_step_width: %d, angle_increment: %f, angle_max: %f", angular_step_width, msg.angle_increment, msg.angle_max);
+  printf("index_min: %d, index_max: %d\n", index_min, index_max);
+  printf("angular_step_width: %d, angle_increment: %f, angle_max: %f\n", angular_step_width, msg.scan_angle_increment(), msg.scan_angle_start());
 
   // 26..26 + n - 1: Data_1 .. Data_n
   const int num_samples = index_max - index_min + 1;
+  printf("num_samples: %d, msg.scan_values_size(): %d\n", num_samples, msg.scan_values_size());
   while (num_samples > msg.scan_values_size()) {
     msg.mutable_scan_values()->Add();
   }
   while (num_samples < msg.scan_values_size()) {
     msg.mutable_scan_values()->RemoveLast();
   }
+  printf("Alloc: num_samples: %d, msg.scan_values_size(): %d\n", num_samples, msg.scan_values_size());
   for (int j = index_min; j <= index_max; ++j)
   {
     unsigned short range;
@@ -219,6 +221,7 @@ int SickTim5512050001Parser::parse_datagram(char* datagram, size_t datagram_leng
 
   msg.set_scan_values_min(override_range_min_);
   msg.set_scan_values_max(override_range_max_);
+  msg.set_scan_angle((msg.scan_values_size()-1) * msg.scan_angle_increment());
 
   // ----- adjust start time
   // - last scan point = now  ==>  first scan point = now - number_of_data * time increment

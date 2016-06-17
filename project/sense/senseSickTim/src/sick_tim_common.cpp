@@ -12,6 +12,11 @@ SickTimCommon::SickTimCommon(AbstractParser* parser, std::string rsboutscope) :
 {
 
   rsb::Factory &nh_ = rsb::getFactory();
+
+  // Register converter
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter< rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+  rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
+
   // scan publisher
   pub_ = nh_.createInformer<rst::vision::LocatedLaserScan>(rsboutscope);
 
@@ -143,7 +148,7 @@ bool sick_tim::SickTimCommon::isCompatibleDevice(const std::string identStr) con
 
 int SickTimCommon::loopOnce()
 {
-
+  printf("START LOOPING\n");
   unsigned char receiveBuffer[65536];
   int actual_length = 0;
   static unsigned int iteration_count = 0;
@@ -151,17 +156,18 @@ int SickTimCommon::loopOnce()
   int result = get_datagram(receiveBuffer, 65536, &actual_length);
   if (result != 0)
   {
-      printf("Read Error when getting datagram: %i.", result);
+      printf("Read Error when getting datagram: %i.\n", result);
       return ExitError; // return failure to exit node
   }
   if(actual_length <= 0)
       return ExitSuccess; // return success to continue looping
 
+  printf("START 1\n");
   // ----- if requested, skip frames
-  if (iteration_count++ % (config_.skip + 1) != 0)
-    return ExitSuccess;
-
-  rst::vision::LocatedLaserScan msg;
+//  if (iteration_count++ % (config_.skip + 1) != 0)
+//    return ExitSuccess;
+  printf("START 2\n");
+  boost::shared_ptr<rst::vision::LocatedLaserScan> msg_ptr(new rst::vision::LocatedLaserScan);
 
   /*
    * datagrams are enclosed in <STX> (0x02), <ETX> (0x03) pairs
@@ -173,9 +179,9 @@ int SickTimCommon::loopOnce()
     size_t dlength = dend - dstart;
     *dend = '\0';
     dstart++;
-    int success = parser_->parse_datagram(dstart, dlength, config_, msg);
+    int success = parser_->parse_datagram(dstart, dlength, config_, *msg_ptr);
     if (success == ExitSuccess) {
-      boost::shared_ptr<rst::vision::LocatedLaserScan> msg_ptr(&msg);
+      printf("SEND DATA\n");
       pub_->publish(msg_ptr);
     }
     buffer_pos = dend + 1;
