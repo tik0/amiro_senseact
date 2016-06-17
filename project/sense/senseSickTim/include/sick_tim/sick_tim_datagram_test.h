@@ -4,7 +4,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <std_msgs/String.h>
-#include <dynamic_reconfigure/server.h>
 #include <sick_tim/SickTimConfig.h>
 
 #include "abstract_parser.h"

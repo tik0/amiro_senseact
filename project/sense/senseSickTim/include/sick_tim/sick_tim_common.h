@@ -11,10 +11,6 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 #include <rsb/converter/Repository.h>
 
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <diagnostic_updater/publisher.h>
-
-#include <dynamic_reconfigure/server.h>
 #include <sick_tim/SickTimConfig.h>
 
 #include "abstract_parser.h"
