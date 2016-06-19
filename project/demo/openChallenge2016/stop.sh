@@ -11,6 +11,7 @@ killall -9 actAmiroMotor
 
 # kill all sensing programs
 killall -9 senseHokuyo
+killall -9 senseSickTim
 killall -9 senseCamJpg
 killall -9 sendOdometryProtoPose
 killall -9 CoreSLAM

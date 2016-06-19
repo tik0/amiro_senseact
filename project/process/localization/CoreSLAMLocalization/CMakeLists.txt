@@ -15,9 +15,9 @@ add_definitions(-DIS_AMIRO)
 
 FIND_PACKAGE(PkgConfig)
 pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rstsandbox0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RST rstsandbox0.13)
 pkg_check_modules(OpenCV opencv)
 pkg_check_modules(EIGEN eigen3)
 

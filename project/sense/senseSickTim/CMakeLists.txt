@@ -13,7 +13,7 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 # Get the compiler specific includes and store them in GXX_INCLUDES
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
-SET (RSBV 0.11)
+SET (RSBV 0.13)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(libusb libusb-1.0)

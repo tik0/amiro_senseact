@@ -36,7 +36,8 @@ spread -c amirospread &
 sleep 5
 
 # sensing lidar from 'project/sense/senseHokuyo/'
-./senseHokuyo -d /dev/ttyACM0 -o /lidar &
+#./senseHokuyo -d /dev/ttyACM0 -o /lidar &
+./senseSickTim -o /lidar > /dev/null &
 
 # waypoint program from 'project/sandbox/waypoint/'
 ./waypoint --lidarinscope /lidar &
@@ -51,7 +52,7 @@ sleep 5
   --senImage 0 \
   --delta 0.02 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
   --loadMapWithValidPositionsFromPNG ./data/centralLab-clean-cropped-valid-4-scale-0.5.png --loadMapFromImage ./data/centralLab-clean-cropped-4-scale-0.5.png \
-  --erosionRadius 0.3 \
+  --erosionRadius 0.33 \
   --initialX 4244.11 --initialY 6446.25 --initialTheta 6.71772 \
   --targetPose "13407 6532.65 -175.95" \
   --precomputeOccupancyMap true &

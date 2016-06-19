@@ -285,7 +285,10 @@ std::list<cv::Point2i> getPath(const ts_position_t &targetPose) {
     // DEBUG END
 
     // Get path
+    boost::uint64_t startTime = rsc::misc::currentTimeMillis();
     std::list<cv::Point2i> path = pathplanner.getPath(start, goal, occupancyMap);
+    boost::uint64_t stopTime = rsc::misc::currentTimeMillis();
+    SUCCESS_MSG("calculating Path took: " << (stopTime - startTime) << " ms");
 
     // Optimize path
     DEBUG_MSG("before removing redundant nodes: " << path.size());

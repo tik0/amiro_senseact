@@ -69,7 +69,7 @@ int main(int argc, const char **argv) {
 	po::notify(vm);
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+    rsb::Factory& factory = rsb::getFactory();
 
 	// Register
 	boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan> > scanConverter(
