@@ -4,6 +4,8 @@
 #include <iostream>
 #include <map>
 
+#include <set>
+
 #define VEC_CONTAINS(v,x) (std::find(v.begin(), v.end(), x) != v.end())
 
 PathPlanner::PathPlanner()
@@ -23,7 +25,7 @@ struct pointpointcmp {
 };
 
 std::list<cv::Point2i> PathPlanner::getPath(cv::Point2i &start, cv::Point2i &goal, cv::Mat1b &occupancyMap) {
-    std::vector<cv::Point2i> openlist = { start };
+    //std::vector<cv::Point2i> openlist = { start };
 
     // Stores best-case distances
     cv::Mat f(occupancyMap.cols, occupancyMap.rows, CV_32FC1, cv::Scalar(std::numeric_limits<float>::max()));
@@ -44,6 +46,9 @@ std::list<cv::Point2i> PathPlanner::getPath(cv::Point2i &start, cv::Point2i &goa
         return f.at<float>(p) < f.at<float>(q);
     };
 
+    std::set<cv::Point2i,pointpointcmp> openlist = std::set<cv::Point2i,pointpointcmp>();
+    openlist.insert(start);
+
     // Store predecessors
     std::map<cv::Point2i,cv::Point2i,pointpointcmp> predecessor = std::map<cv::Point2i,cv::Point2i,pointpointcmp>();
 
@@ -51,7 +56,7 @@ std::list<cv::Point2i> PathPlanner::getPath(cv::Point2i &start, cv::Point2i &goa
     bool foundPath = false;
     do {
         // Find most promising candidate
-        std::vector<cv::Point2i>::iterator iter = std::min_element(openlist.begin(), openlist.end(), cmp);
+        auto iter = std::min_element(openlist.begin(), openlist.end(), cmp);
         cv::Point2i currentNode = *iter;
         openlist.erase(iter);
 
@@ -67,7 +72,7 @@ std::list<cv::Point2i> PathPlanner::getPath(cv::Point2i &start, cv::Point2i &goa
         /*
          * Expanding node
          */
-        std::vector<cv::Point2i> successors = {
+        const std::vector<cv::Point2i> successors = {
             cv::Point2i(currentNode.x+1,currentNode.y+1),
             cv::Point2i(currentNode.x+1,currentNode.y),
             cv::Point2i(currentNode.x+1,currentNode.y-1),
@@ -100,7 +105,8 @@ std::list<cv::Point2i> PathPlanner::getPath(cv::Point2i &start, cv::Point2i &goa
             float tentative_g = g.at<float>(currentNode) + cv::norm(successor - currentNode);
 
             // Node is already in openlist and has a shorter distance -> discard it
-            if (VEC_CONTAINS(openlist, successor) && tentative_g >= g.at<float>(successor)) {
+            bool successorInOpenList = openlist.find(successor) != openlist.end();
+            if (successorInOpenList && tentative_g >= g.at<float>(successor)) {
                 continue;
             }
 
@@ -110,8 +116,8 @@ std::list<cv::Point2i> PathPlanner::getPath(cv::Point2i &start, cv::Point2i &goa
 
             // Update best-case distance, h = cv::norm(goal - successor) is the heuristic
             f.at<float>(successor) = tentative_g + cv::norm(goal - successor);
-            if (!VEC_CONTAINS(openlist, successor)) {
-                openlist.push_back(successor);
+            if (!successorInOpenList) {
+                openlist.insert(successor);
             }
         }
 
