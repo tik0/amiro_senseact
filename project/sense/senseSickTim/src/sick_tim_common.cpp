@@ -20,6 +20,8 @@ SickTimCommon::SickTimCommon(AbstractParser* parser, std::string rsboutscope) :
   // scan publisher
   pub_ = nh_.createInformer<rst::vision::LocatedLaserScan>(rsboutscope);
 
+  // Allocate memory for the message
+  msg_ptr = boost::shared_ptr<rst::vision::LocatedLaserScan>(new rst::vision::LocatedLaserScan);
 }
 
 int SickTimCommon::stop_scanner()
@@ -167,7 +169,6 @@ int SickTimCommon::loopOnce()
 //  if (iteration_count++ % (config_.skip + 1) != 0)
 //    return ExitSuccess;
   printf("START 2\n");
-  boost::shared_ptr<rst::vision::LocatedLaserScan> msg_ptr(new rst::vision::LocatedLaserScan);
 
   /*
    * datagrams are enclosed in <STX> (0x02), <ETX> (0x03) pairs

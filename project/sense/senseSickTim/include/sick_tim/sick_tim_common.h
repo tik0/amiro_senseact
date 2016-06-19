@@ -54,7 +54,6 @@ protected:
 
 private:
   // RSB
-//  rsb::Factory nh_;
   rsb::Informer<rst::vision::LocatedLaserScan>::Ptr pub_;
 
   // Diagnostics
@@ -66,6 +65,8 @@ private:
   // Parser
   AbstractParser* parser_;
 
+  // Message
+  boost::shared_ptr<rst::vision::LocatedLaserScan> msg_ptr;
 };
 
 } /* namespace sick_tim */
