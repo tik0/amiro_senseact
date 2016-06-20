@@ -837,7 +837,7 @@ void rotateToPose(const ts_position_t &targetPose) {
  * @brief driveToPoseWithObstacleAvoidance plans the path to the given target pose and drives along this path. When a static obstacle is encountered the map is updated and the path recalculated.
  *        When no path is found the robot will rotate to the given pose's orientation.
  * @param targetPose
- * @return always true
+ * @return wether target position was reached or not
  */
 bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
     std::list<cv::Point2i> path = getPath(targetPose);
@@ -858,7 +858,7 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
           emergencyHaltQueue->pop();
           obstacleCounter++;
 
-          if (obstacleCounter > 50) { // wait for obstacle to move (5 seconds)
+          if (obstacleCounter > 50) { // wait for obstacle to move (~5 seconds)
               DEBUG_MSG("doHoming: obstacle does not move, planning new path");
               obstacleCounter = 0;
 
@@ -926,7 +926,7 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
 
               if (path.empty()) {
                   ERROR_MSG("No new path was found!");
-                  break;
+                  return false;
               }
 
           } else {
@@ -955,10 +955,11 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
 
 void homingRequestHandler(boost::shared_ptr<std::string> e) {
     INFO_MSG("Received homing request via RSB")
+    bool reachedGoal = false;
 
     if(!e->compare(std::string("homing"))) {
       INFO_MSG("Do homing");
-      driveToPoseWithObstacleAvoidance(homePose);
+      reachedGoal = driveToPoseWithObstacleAvoidance(homePose);
     } else if (!e->compare(std::string("save"))) {
       INFO_MSG("Drive to next save position");
       ts_position_t validPose = {0, 0, 0};
@@ -967,19 +968,24 @@ void homingRequestHandler(boost::shared_ptr<std::string> e) {
         return;
       } else {
         INFO_MSG("Start path calculation");
-        driveToPoseWithObstacleAvoidance(validPose);
+        reachedGoal = driveToPoseWithObstacleAvoidance(validPose);
         INFO_MSG("Finish path calculation");
       }
     } else if (!e->compare(std::string("target"))) {
         INFO_MSG("Drive to target pose");
-        driveToPoseWithObstacleAvoidance(targetPose);
+        reachedGoal = driveToPoseWithObstacleAvoidance(targetPose);
     } else {
       ERROR_MSG("Wrong homing command: " << *e);
       return;
     }
 
-    boost::shared_ptr<std::string> response = boost::shared_ptr<std::string>(new std::string("done"));
-    homingInformer->publish(response);
+    if (reachedGoal) {
+        boost::shared_ptr<std::string> response = boost::shared_ptr<std::string>(new std::string("done"));
+        homingInformer->publish(response);
+    } else {
+        boost::shared_ptr<std::string> response = boost::shared_ptr<std::string>(new std::string("failed"));
+        homingInformer->publish(response);
+    }
 }
 
 int main(int argc, const char **argv){

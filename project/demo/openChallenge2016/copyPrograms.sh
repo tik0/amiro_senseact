@@ -21,7 +21,8 @@ files="$files sim"
 # Copy the website
 #files="$files ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www"
 
-# Copy the maps
-files="$files ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data"
+dest="root@${IP}:~/${NAME}/"
+rsync -v --progress -ua $files $dest
 
-rsync -v --progress -ua $files root@${IP}:~/${NAME}/
+# Copy the maps
+rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/*.png "$dest/data/"

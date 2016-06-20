@@ -307,6 +307,9 @@ int processSM(void) {
       } else if (msg.compare("gotoroom") == 0) {
           INFO_MSG("Go to room");
           bGotFromTobi_gotoroom = true;
+          std::string output = "gotoroomrec";
+          *stringPublisher = output;
+          informerRemoteState->publish(stringPublisher);
       } else if (msg.compare("initfollow")== 0) {
         INFO_MSG("Init following")
         bGotFromTobi_initfollowing = true;
@@ -437,10 +440,14 @@ int processSM(void) {
     case goToRoom:
         // got a response from CoreSLAM, it must have reached the target position
         if (!queueHomingAnswer->empty()) {
-            queueHomingAnswer->pop();
-            // enable the waypoint
-            informerWaypoint->publish(signal_init);
-            set_state_waypoint();
+            boost::shared_ptr<std::string> response = queueHomingAnswer->pop();
+            if ((*response).compare("done") == 0) {
+                informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("reachedroom")));
+                set_state_stopped();
+            } else if ((*response).compare("failed") == 0) {
+                informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("failedroom")));
+                set_state_stopped();
+            }
         }
         break;
 
@@ -474,6 +481,16 @@ int processSM(void) {
       break;
 
     case homing:
+        // got a response from CoreSLAM, it must have reached the home position
+        if (!queueHomingAnswer->empty()) {
+            boost::shared_ptr<std::string> response = queueHomingAnswer->pop();
+            if ((*response).compare("done") == 0) {
+                set_state_stopped();
+            } else if ((*response).compare("failed") == 0) {
+                set_state_stopped();
+            }
+        }
+        break;
     case stopped:
       if (bGotFromTobi_initwaypoint) {
         informerWaypoint->publish(signal_init);
