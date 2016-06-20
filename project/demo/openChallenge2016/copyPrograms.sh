@@ -4,20 +4,24 @@ IP=${1}
 NAME=`basename "$PWD"`
 ssh root@${IP} "mkdir -p ~/${NAME}/data"
 
+files=""
 for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
-  scp ${line}/${line} root@${IP}:~/${NAME}
+	files="$files ${line}/${line}"
 done
-scp run.sh root@${IP}:~/${NAME}
-scp stop.sh root@${IP}:~/${NAME}
+files="$files run.sh stop.sh"
+
+
 # Copy config
-scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread root@${IP}:~/${NAME}
-scp rsb.conf root@${IP}:~/${NAME}
+files="$files ${MUROX_INCLUDE_DIRS}/extspread/amirospread"
+files="$files rsb.conf"
 
 # Copy simulation folder
-scp -r sim root@${IP}:~/${NAME}/
+files="$files sim"
 
 # Copy the website
-#scp -r ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www root@${IP}:~/${NAME}
+#files="$files ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www"
 
 # Copy the maps
-scp -r ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/*.png root@${IP}:~/${NAME}/data/
+files="$files ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data"
+
+rsync -v --progress -ua $files root@${IP}:~/${NAME}/
