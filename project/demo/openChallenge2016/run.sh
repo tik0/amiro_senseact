@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 if [ -z "${1}" ]; then
   echo "Set an ID for the AMiRo"
   exit 1
@@ -33,11 +35,16 @@ spread &
 # external spread
 wait_for_port 4823
 spread -c amirospread &
-sleep 5
+sleep 7
 
 # sensing lidar from 'project/sense/senseHokuyo/'
-#./senseHokuyo -d /dev/ttyACM0 -o /lidar &
-./senseSickTim -o /lidar > /dev/null &
+if [ -e /dev/ttyACM0 ]; then
+	echo "Assuming Hokuyo laser scanner"
+	./senseHokuyo -d /dev/ttyACM0 -o /lidar &
+else
+	echo "Assuming SICK laser scanner"
+	./senseSickTim -o /lidar > /dev/null &
+fi
 
 # waypoint program from 'project/sandbox/waypoint/'
 ./waypoint --lidarinscope /lidar &
