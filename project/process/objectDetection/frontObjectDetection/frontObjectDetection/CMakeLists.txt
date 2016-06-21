@@ -6,10 +6,10 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rst0.11)
-pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RST rst0.13)
+pkg_check_modules(RSTSANDBOX rstsandbox0.13)
 pkg_check_modules(LIBV4l2 libv4l2)
 pkg_check_modules(OPENCV opencv)
 

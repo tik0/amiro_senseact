@@ -33,7 +33,7 @@
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 // For checking character pressed in the console
 #include <kbhit.hpp>
@@ -166,7 +166,7 @@ int main (int argc, char * const argv[]) {
     compression_params.push_back(g_uiQuality);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    rsb::Factory &factory = rsb::Factory::getInstance();
+    rsb::Factory &factory = rsb::getFactory();
 
     // Register new converter for std::vector<int>
     boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
@@ -179,7 +179,7 @@ int main (int argc, char * const argv[]) {
     rsb::ListenerPtr listener = factory.createListener(g_sInScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-    listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(commandQueue)));
+    listener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(commandQueue)));
 
 
     // prepare RSB listener for the IR data
