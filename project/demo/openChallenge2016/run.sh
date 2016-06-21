@@ -54,6 +54,11 @@ fi
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
+targetPoses="13407 6532.65 -175.95
+6831.58 7600.05 -89.7282"
+
+targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1)) | tail -n 1)"
+
 ./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition/${ID} --targetPoseInScope /setTargetPose/${ID} --positionOutScope /amiro${ID}/pose --pathOutScope /amiro${ID}/path \
   --remotePort 4823 \
   --senImage 0 \
@@ -61,7 +66,7 @@ fi
   --loadMapWithValidPositionsFromPNG ./data/centralLab-clean-cropped-valid-4-scale-0.5.png --loadMapFromImage ./data/centralLab-clean-cropped-4-scale-0.5.png \
   --erosionRadius 0.33 \
   --initialX 4244.11 --initialY 6446.25 --initialTheta 6.71772 \
-  --targetPose "13407 6532.65 -175.95" \
+  --targetPose "$targetPose" \
   --precomputeOccupancyMap true &
 
 ./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.30 --delay 10 --switchinscope /following --doEmergencyBehaviour > /dev/null &
