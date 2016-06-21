@@ -227,7 +227,7 @@ int processSM(void) {
   // Prepare RSB informer and listener
   rsb::ListenerPtr listenerRemoteTobiState = factory.createListener(g_sStateInScope, tmpPartConf);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueRemoteTobiState(
-      new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
+      new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(20));
   listenerRemoteTobiState->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueRemoteTobiState)));
 
   rsb::Informer< std::string >::Ptr informerRemoteState = factory.createInformer< std::string > (g_sStateOutScope, tmpPartConf);
@@ -442,11 +442,37 @@ int processSM(void) {
         if (!queueHomingAnswer->empty()) {
             boost::shared_ptr<std::string> response = queueHomingAnswer->pop();
             if ((*response).compare("done") == 0) {
-                informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("reachedroom")));
-                set_state_stopped();
+                while (true) {
+                    DEBUG_MSG("Waiting for reachedroomrec");
+                    informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("reachedroom")));
+
+                    if (!queueRemoteTobiState->empty()) {
+                        std::string msg = *(queueRemoteTobiState->pop());
+                        if (msg.compare("reachedroomrec") == 0) {
+                            set_state_stopped();
+                            break;
+                        } else {
+                            DEBUG_MSG("Received other message than reachedroomrec: " << msg);
+                        }
+                    }
+                    usleep(500000);
+                }
             } else if ((*response).compare("failed") == 0) {
-                informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("failedroom")));
-                set_state_stopped();
+                while (true) {
+                    DEBUG_MSG("Waiting for failedroomrec");
+                    informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("failedroom")));
+
+                    if (!queueRemoteTobiState->empty()) {
+                        std::string msg = *(queueRemoteTobiState->pop());
+                        if (msg.compare("failedroomrec") == 0) {
+                            set_state_stopped();
+                            break;
+                        } else {
+                            DEBUG_MSG("Received other message than failedroomrec: " << msg);
+                        }
+                    }
+                    usleep(500000);
+                }
             }
         }
         break;
