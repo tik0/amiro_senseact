@@ -83,20 +83,25 @@ using namespace rsb::patterns;
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 std::string proxSensorInscopeGround = "/rir_prox/ground";
-std::string commandInscope = "/transport/command";
-std::string answerOutscope = "/transport/answer";
+std::string commandInscopePart1 = "/tobiamiro";
+std::string commandInscopePart2 = "/state";
+std::string answerOutscopePart1 = "/amiro";
+std::string answerOutscopePart2 = "tobi/state";
 std::string lightOutscope = "/amiro/lights";
 
 // rsb commands
-std::string cmdRestart = "restart";
-std::string cmdTransport = "transport";
-std::string ansReady = "ready";
-std::string ansFetched = "fetched";
-std::string cmdansRec = "_rec";
+std::string cmdRestart = "drive";
+std::string cmdTransport = "drive";
+std::string ansReady = "finish";
+std::string ansFetched = "finish";
+std::string cmdansRec = "rec";
 
 // velocities
 float forwardSpeed = 0.08; // m/s
 float turnSpeed = 20.0 * M_PI/180.0; // rad/s
+
+// amiro constants
+unsigned int amiroID = 0;
 
 // behavior values
 float irDetectionDist = 0.05; // m
@@ -239,8 +244,11 @@ int main(int argc, char **argv) {
 
 	float turnSpeedS = 20.0;
 
+	std::string commandInscope, answerOutscope;
+
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
+		("id", po::value<unsigned int>(&amiroID), "AMiRo ID (default: 0).")
 		("proxObstacleInscope,o", po::value<std::string>(&proxSensorInscopeObstacle), "Inscope for receiving proximity sensor values for obstacle model.")
 		("proxGroundInscope,g", po::value<std::string>(&proxSensorInscopeGround), "Inscope for receiving proximity sensor values for edge model.")
 		("commandInscope,c", po::value<std::string>(&commandInscope), "Inscope for receiving commands.")
@@ -271,6 +279,9 @@ int main(int argc, char **argv) {
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
 
+	if (!vm.count("commandInscope")) commandInscope = commandInscopePart1 + std::to_string(amiroID) + commandInscopePart2;
+	if (!vm.count("answerOutscope")) answerOutscope = answerOutscopePart1 + std::to_string(amiroID) + answerOutscopePart2;
+
 	turnSpeed = turnSpeedS * M_PI/180.0;
 
 	INFO_MSG("Initialize RSB:");
@@ -285,11 +296,7 @@ int main(int argc, char **argv) {
 	INFO_MSG("");
 
 	// Get the RSB factory
-#if RSB_VERSION_NUMERIC<1200
-	rsb::Factory& factory = rsb::Factory::getInstance();
-#else
 	rsb::Factory& factory = rsb::getFactory();
-#endif
 
 	// Generate the programatik Spreadconfig for extern communication
 	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);

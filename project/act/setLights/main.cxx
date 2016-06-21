@@ -33,7 +33,7 @@
 #include <rsb/util/QueuePushHandler.h>
 #include <rsb/util/EventQueuePushHandler.h>
 #include <rsb/MetaData.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 #include <converter/vecIntConverter/main.hpp>
 using namespace muroxConverter;
@@ -54,8 +54,13 @@ using namespace rsb::patterns;
 
 // scopenames and spread data for rsb
 std::string commandInscope = "/amiro/lights";
+std::string recScope = "/amiro/lightsrec";
 std::string spreadhost = "127.0.0.1";
 std::string spreadport = "4803";
+
+// recognition answers
+std::string REC_OK = "OK";
+std::string REC_ERROR = "ERROR";
 
 // color set
 std::vector<amiro::Color> colorsSet = { LightModel::initColors[0],
@@ -92,7 +97,7 @@ bool exitProg = false;
 
 
 // method prototypes
-bool getCommand(boost::shared_ptr<std::vector<int>> commandVector);
+bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer<std::string>::Ptr recInformer);
 void setColor(bool colorChanged, int counter10ms, int colorCounter, ControllerAreaNetwork &myCAN);
 bool sameColors(amiro::Color c1, amiro::Color c2);
 
@@ -106,6 +111,7 @@ int main(int argc, char **argv) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("commandScope,c", po::value<std::string>(&commandInscope), "Inscope for commands (default: '/amiro/lights').")
+			("recScope,r", po::value<std::string>(&recScope), "Outscope for recognition answers (default: '/amiro/lightsrec').")
 			("host", po::value<std::string>(&spreadhost), "Host for Programatik Spread (default: '127.0.0.1').")
 			("port", po::value<std::string>(&spreadport), "Port for Programatik Spread (default: '4803').");
 
@@ -129,7 +135,7 @@ int main(int argc, char **argv) {
 	INFO_MSG("Initialize RSB");
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	// Generate the programatik Spreadconfig for extern communication
 	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
@@ -146,6 +152,11 @@ int main(int argc, char **argv) {
 	rsb::ListenerPtr commandListener = factory.createListener(commandInscope, extspreadconfig);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
 	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(commandQueue)));
+
+	// ------------ Informer -----------------------
+
+	// prepare RSB informer for recognition
+	rsb::Informer<std::string>::Ptr recInformer = factory.createInformer<std::string> (recScope, extspreadconfig);
 
 
 
@@ -164,7 +175,7 @@ int main(int argc, char **argv) {
 		colorChanged = false;
 		if (timeCounter % 10 == 0 && !commandQueue->empty()) {
 			commandVector = boost::static_pointer_cast<std::vector<int> >(commandQueue->pop());
-			colorChanged = getCommand(commandVector);
+			colorChanged = getCommand(commandVector, recInformer);
 		}
 		if (colorChanged) {
 			changeColorCounter = 0;
@@ -200,7 +211,7 @@ bool sameColors(amiro::Color c1, amiro::Color c2) {
 	return c1.getRed() == c2.getRed() && c1.getGreen() == c2.getGreen() && c1.getBlue() == c2.getBlue();
 }
 
-bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
+bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer<std::string>::Ptr recInformer) {
 	// check if vector has correct length
 	if (commandVector->size() >= 2) {
 		int commandSize = commandVector->size();
@@ -311,6 +322,10 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 					case LightModel::LightType::CHANGE_SHINE: shine = true; singleColor = false; break;
 					case LightModel::LightType::CHANGE_BLINK: blinking = true; singleColor = false; break;
 				}
+
+				boost::shared_ptr<std::string> StringPtr(new std::string(REC_ERROR));
+				recInformer->publish(StringPtr);
+
 				return false;
 			} else {
 				// save lighting type, colors and period time
@@ -342,11 +357,22 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector) {
 						break;
 				}
 
+				boost::shared_ptr<std::string> StringPtr(new std::string(REC_OK));
+				recInformer->publish(StringPtr);
+
 				return true;
 			}
 		}
+
+		boost::shared_ptr<std::string> StringPtr(new std::string(REC_OK));
+		recInformer->publish(StringPtr);
+
 		return false;
 	}
+
+	boost::shared_ptr<std::string> StringPtr(new std::string(REC_ERROR));
+	recInformer->publish(StringPtr);
+
 	return false;
 }
 

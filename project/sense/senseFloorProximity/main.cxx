@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 	converterRepository<std::string>()->registerConverter(converter);
 
 	// Prepare RSB informer
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 	rsb::Informer<std::vector<int> >::Ptr floorProxInformer = factory.createInformer<std::vector<int> >(rsbOutScope);
 
 	// Init the CAN interface

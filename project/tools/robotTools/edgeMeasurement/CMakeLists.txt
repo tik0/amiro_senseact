@@ -12,11 +12,6 @@ find_package(PkgConfig)
 
 # Set the include pathe
 include_directories(
-#    ${RSB_INCLUDE_DIRS}                                             # RSB
-#    ${RSC_INCLUDE_DIRS}                                             # RSC
-#    ${RST_INCLUDE_DIRS}                                             # RST types
-#    ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
-#    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
@@ -35,48 +30,18 @@ file(GLOB HEADERS *.hpp)
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp)
 
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
-
 # Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
 target_link_libraries (
     "${PROJECT_NAME}"
-#    ${RSB_LIBRARIES}
-#    ${RSC_LIBRARIES}
-#    ${RST_LIBRARIES}
-#    ${RSTSANDBOX_LIBRARIES}
-    #${OpenCV_LIBS}
-    #   OPENCV
-#    opencv_imgproc
-#    opencv_calib3d
-#    opencv_contrib
-#    opencv_core
-#    opencv_features2d
-#    opencv_flann
-#    opencv_gpu
-#    opencv_highgui
-#    opencv_legacy
-#    opencv_ml
-#    opencv_nonfree
-#    opencv_objdetect
-#    opencv_ocl
-#    opencv_photo
-#    opencv_stitching
-#    opencv_superres
     # Boost
     boost_regex
     boost_date_time
     boost_program_options
     boost_system
     boost_thread
-    # -- Own libraries
-#    vecIntConverter
-    #matConverter
     ${PROTO_LIBRARIES}
 
 )

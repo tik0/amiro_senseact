@@ -22,7 +22,7 @@
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 // Include own converter
 #include <converter/vecIntConverter/main.hpp>
@@ -136,7 +136,7 @@ bool loadIrConfig(std::string configPath, bool isObstacleConfig) {
 
 void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGround, uint32_t rsbPeriod, bool print, bool noObstacleValues, bool noEdgeValues) {
 
-  rsb::Factory& factory = rsb::Factory::getInstance();
+  rsb::Factory& factory = rsb::getFactory();
 
   // Register new converter for std::vector<int>
   boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
@@ -151,7 +151,7 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
   // Create and start the command listener
   rsb::ListenerPtr listener = factory.createListener(rsbInScopeNewConfig);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-  listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(commandQueue)));
+  listener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(commandQueue)));
 
   // Init the CAN interface
   ControllerAreaNetwork CAN;

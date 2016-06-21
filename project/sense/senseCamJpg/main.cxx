@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     INFO_MSG( "JPEG Quality: " << g_uiQuality)
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  rsb::Factory &factory = rsb::Factory::getInstance();
+  rsb::Factory &factory = rsb::getFactory();
 
   // Create the informer
   Informer<std::string>::Ptr informer = getFactory().createInformer<std::string> (Scope(g_sOutScope));

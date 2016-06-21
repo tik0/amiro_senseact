@@ -10,15 +10,8 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-
-# Not needed. The libraries will be set manualy
-# link_directories(
-#     ${RSB_LIBRARY_DIRS}
-#     ${OPENCV_LIBRARY_DIRS}
-#     ${LIBV4l2_LIBRARY_DIRS}
-# )
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
 
 # Set the include pathe
 include_directories(
@@ -37,30 +30,26 @@ include_directories(
 if (NOT TARGET vecIntConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
 endif()
-#add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
 
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
 
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
-
-# Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
+# Link the executable to the library.
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
 target_link_libraries (
     "${PROJECT_NAME}"
-    rsb0.11
+    ${RSB_LIBRARIES}
+    ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${RSTSANDBOX_LIBRARIES}
     boost_regex
     boost_date_time
     boost_program_options
     boost_system
     boost_thread
     boost_signals
-    rsc0.11
     # -- Own libraries
     vecIntConverter
 )

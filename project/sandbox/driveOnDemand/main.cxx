@@ -33,7 +33,7 @@
 #include <rsb/util/QueuePushHandler.h>
 #include <rsb/util/EventQueuePushHandler.h>
 #include <rsb/MetaData.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 
 using namespace rsb;
@@ -96,6 +96,7 @@ std::string GuideOutscope = "/amiro/drive/status";
 std::string GuideInscope = "/amiro/drive/guide";
 std::string CommandInscope = "/amiro/command";
 std::string lightOutscope = "/amiro/lights";
+std::string lightInscope = "/amiro/lightsrec";
 std::string spreadhost = "127.0.0.1";
 std::string spreadport = "4803";
 
@@ -106,7 +107,7 @@ int lightType = LightModel::LightType::SINGLE_SHINE;
 
 // method prototypes
 void setLights(int lightType, amiro::Color color, int period, rsb::Informer< std::vector<int> >::Ptr informer);
-void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr informer);
+void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr lightInformer, rsb::Informer< std::string >::Ptr guideInformer);
 void setSteering(boost::shared_ptr<twbTracking::proto::Pose2D> guidePos, boost::shared_ptr<twbTracking::proto::Pose2D> trackPos, ControllerAreaNetwork &CAN);
 bool positionReached(boost::shared_ptr<twbTracking::proto::Pose2D> guidePos, boost::shared_ptr<twbTracking::proto::Pose2D> trackPos);
 int motorAction(float speed, float turn, ControllerAreaNetwork &CAN);
@@ -124,7 +125,8 @@ int main(int argc, char **argv) {
 			("commandScope,c", po::value<std::string>(&CommandInscope), "Inscope for commands (default: '/amiro/command').")
 			("guideInscope,i", po::value<std::string>(&GuideInscope), "Inscope for guided position (default: '/amiro/drive/guide').")
 			("guideOutscope,o", po::value<std::string>(&GuideOutscope), "Outscope for status updates for the guide (default: '/amiro/drive/status').")
-			("lightScope,l", po::value<std::string>(&lightOutscope), "Outscope for light commands (default: '/amiro/lights').")
+			("lightOutscope,l", po::value<std::string>(&lightOutscope), "Outscope for light commands (default: '/amiro/lights').")
+			("lightInscope", po::value<std::string>(&lightInscope), "Inscope for light recognition answers (default: '/amiro/lightsrec').")
 			("host,h", po::value<std::string>(&spreadhost), "Host for Programatik Spread (default: '127.0.0.1').")
 			("port,p", po::value<std::string>(&spreadport), "Port for Programatik Spread (default: '4803').");
 
@@ -154,12 +156,13 @@ int main(int argc, char **argv) {
 	INFO_MSG(" -> Tracking Data:      " << trackingInscope);
 	INFO_MSG("Internal Spread Scopes:");
 	INFO_MSG(" -> Light Commands:     " << lightOutscope);
+	INFO_MSG(" -> Light Recognition:  " << lightInscope);
 	INFO_MSG("");
 
 	boost::shared_ptr<twbTracking::proto::Pose2D> finalePos(new twbTracking::proto::Pose2D());
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	// Generate the programatik Spreadconfig for extern communication
 	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
@@ -192,10 +195,16 @@ int main(int argc, char **argv) {
 	guideListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2D>(guideQueue)));
 
 	// prepare RSB listener for amiros
-	rsb::ListenerPtr colorListener = factory.createListener(CommandInscope, extspreadconfig);
+	rsb::ListenerPtr commandListener = factory.createListener(CommandInscope, extspreadconfig);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<EventPtr>> commandQueue(
 			new rsc::threading::SynchronizedQueue<EventPtr>(1));
-	colorListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(commandQueue)));
+	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(commandQueue)));
+
+	// prepare RSB listener for color change
+	rsb::ListenerPtr colorListener = factory.createListener(lightInscope);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<EventPtr>> colorQueue(
+			new rsc::threading::SynchronizedQueue<EventPtr>(1));
+	colorListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(colorQueue)));
 
 	// ---------------- Informer ---------------------
 
@@ -256,7 +265,6 @@ int main(int argc, char **argv) {
 			}
 
 			// check for new color input
-			bool colorChanged = false;
 			if (!commandQueue->empty()) {
 				EventPtr event = commandQueue->pop(0);
 				std::string command = *static_pointer_cast<std::string>(event->getData());
@@ -264,8 +272,15 @@ int main(int argc, char **argv) {
 				if (command == CMD_STOP) {
 					exitProg = true;
 				} else if (command.substr(0, CMD_COLOR.length()) == CMD_COLOR) {
-					setColor(command, informerLights);
+					setColor(command, informerLights, guideInformer);
 				}
+			}
+
+			if (!colorQueue->empty()) {
+				EventPtr event = colorQueue->pop(0);
+				std::string rec = *static_pointer_cast<std::string>(event->getData());
+				boost::shared_ptr<std::string> StringPtr(new std::string("color_" + rec));
+				guideInformer->publish(StringPtr);
 			}
 
 			// sleep 100 ms
@@ -309,7 +324,7 @@ void setLights(int lightType, amiro::Color color, int period, rsb::Informer< std
 }
 
 
-void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr informer) {
+void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr lightInformer, rsb::Informer< std::string >::Ptr guideInformer) {
 	std::string colorInput = colorCommand.substr(CMD_COLOR.length());
 	// check if there is input
 	if (colorInput.length() >= 1) {
@@ -366,7 +381,7 @@ void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr i
 		}
 		INFO_MSG("Color changed: Color '" << colorName << "', Light Type '" << lightTypeDesc << "'");
 
-		setLights(lightType, curColor, period, informer);
+		setLights(lightType, curColor, period, lightInformer);
 	}
 }
 

@@ -17,15 +17,6 @@
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <rsb/Informer.h>
-#include <rsb/Factory.h>
-#include <rsb/Event.h>
-#include <rsb/Handler.h>
-#include <rsb/converter/Repository.h>
-
-// Include own converter
-#include <converter/vecIntConverter/main.hpp>
-
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
@@ -34,7 +25,6 @@
 #define COUNT_MEASUREMENTS 500
 
 using namespace std;
-using namespace muroxConverter;
 
   
 string configFileName = "irConfig.conf";
@@ -78,13 +68,6 @@ int main(int argc, char **argv) {
     WARNING_MSG("Floor and ring proximity sensors shall be ignored ... so there is nothing to do ;)");
     return 0;
   }
-
-  // Register new converter for std::vector<int>
-  boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
-  converterRepository<std::string>()->registerConverter(converter);
-  
-  // Prepare RSB informer
-  rsb::Factory& factory = rsb::Factory::getInstance();
 
   // Init the CAN interface
   ControllerAreaNetwork CAN;    
