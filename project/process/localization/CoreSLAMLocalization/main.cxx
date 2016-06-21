@@ -947,8 +947,10 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
 
     // After driving path, rotate to requested pose/theta
     DEBUG_MSG("Done driving along path, rotating now");
+    emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("off"))); // disable emergency stop, rotation is always safe
     rotateToPose(targetPose);
     usleep(6 * SECONDS_TO_US);
+    emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("on")));
 
     return true;
 }
@@ -1299,6 +1301,7 @@ int main(int argc, const char **argv){
         INFO_MSG("Received targetPose request");
         boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(targetPoseQueue->pop());
         targetPose = convertRSBPoseToTsPose(newPosition);
+        DEBUG_MSG("translated to ts_position: " << targetPose.x << " " << targetPose.y << " " << targetPose.theta);
     }
 
     DEBUG_MSG("current sigma_xy: " << state_.sigma_xy);
