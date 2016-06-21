@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rsb-sendcpp0.13 /transport/command Commands/transport
+rsb-sendcpp0.13 /tobiamiro0/state Commands/transport
 
 
 
