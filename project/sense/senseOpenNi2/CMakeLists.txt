@@ -6,10 +6,11 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rstsandbox0.11)
-pkg_check_modules(OPENCV opencv)
+FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
+FIND_PACKAGE(RSB REQUIRED)
+FIND_PACKAGE(RSC REQUIRED)
+FIND_PACKAGE(Eigen3 REQUIRED)
 pkg_check_modules(OPENNI libopenni2)
 
 # Get modules
@@ -56,7 +57,7 @@ target_link_libraries (
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${OPENCV_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     ${OPENNI_LIBRARIES}
 )
 

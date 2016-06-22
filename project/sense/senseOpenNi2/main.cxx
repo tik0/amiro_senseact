@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     boost::shared_ptr<IplImageConverter> converter(new IplImageConverter());
     converterRepository<std::string>()->registerConverter(converter);
 
-    rsb::Factory &factory = rsb::Factory::getInstance();
+    rsb::Factory &factory = rsb::getFactory();
 
     // Create the informer
     //Informer<rst::vision::Image>::Ptr informer = getFactory().createInformer<rst::vision::Image> (Scope(g_sOutScope));
