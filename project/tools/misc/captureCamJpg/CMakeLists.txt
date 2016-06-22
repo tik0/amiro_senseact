@@ -10,8 +10,8 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(RSB rsb0.9)
-pkg_check_modules(RSC rsc0.9)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
 pkg_check_modules(OPENCV opencv)
 pkg_check_modules(LIBV4l2 libv4l2)
 
@@ -25,15 +25,14 @@ pkg_check_modules(LIBV4l2 libv4l2)
 # Set the include pathe
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
+    ${RSC_INCLUDE_DIRS}                                             # RSC
+    ${RST_INCLUDE_DIRS}                                             # RST types
+    ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
-    "../../includes"                                                # Other includes like converters and stuff
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/rsb"                        # RSB
-    "$ENV{SDKTARGETSYSROOT}/usr/include/rsc"                        # RSC
-    "$ENV{SDKTARGETSYSROOT}/usr/include/rst"                        # RST
-    "$ENV{SDKTARGETSYSROOT}/usr/include/rst-converters/"            # RST-converters
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
     "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
 )
@@ -63,6 +62,10 @@ link_directories (
 
 target_link_libraries (
     "${PROJECT_NAME}"
+    ${RSB_LIBRARIES}
+    ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${RSTSANDBOX_LIBRARIES}
     # boost_regex-mt
     # boost_date_time-mt
     # boost_program_options-mt
@@ -70,8 +73,6 @@ target_link_libraries (
     boost_system
     opencv_core
     opencv_highgui
-    :librsb.so.0.9                                    # This is the explicit name to the rsb library
-    :librsc0.9.so.0.9                                 # This is the explicit name to the rsc library
     # -- Own libraries
     # matConverter
 )

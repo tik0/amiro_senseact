@@ -11,10 +11,10 @@ project ("${PROJECT_NAME}")
 find_package(PkgConfig)
 
 pkg_check_modules(OPENCV OpenCV)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rst0.11)
-pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RST rst0.13)
+pkg_check_modules(RSTSANDBOX rstsandbox0.13)
 
 # Need to add, because rst manual said so:
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
@@ -47,7 +47,6 @@ endif()
 if (NOT TARGET vecIntConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
 endif()
-#add_subdirectory (../../includes/converter/vecIntConverter lib/vecIntConverter)
 
 # Add folders to build and run CMakeLists.txt in it
 if (NOT TARGET matConverter)
@@ -60,12 +59,7 @@ file(GLOB HEADERS *.hpp)
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc)
 
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
-
-# Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
+# Link the executable to the library.
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )

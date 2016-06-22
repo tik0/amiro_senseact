@@ -34,7 +34,6 @@
 #include <rsb/util/QueuePushHandler.h>
 #include <rsb/util/EventQueuePushHandler.h>
 #include <rsb/MetaData.h>
-#include <rsb/QueuePushHandler.h>
 
 
 #include <converter/vecIntConverter/main.hpp>
@@ -110,7 +109,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	// ------------ Converters ----------------------
 

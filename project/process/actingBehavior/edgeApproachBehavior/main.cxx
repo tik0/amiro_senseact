@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
   converterRepository<std::string>()->registerConverter(converter);
   
   // Get the RSB factory
-  rsb::Factory& factory = rsb::Factory::getInstance();
+  rsb::Factory& factory = rsb::getFactory();
 
   // Prepare RSB reader
   rsb::ReaderPtr floorProxSensorReader = factory.createReader(rsbInScope);

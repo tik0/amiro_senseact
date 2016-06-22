@@ -15,11 +15,11 @@ FIND_PACKAGE(PkgConfig)
 
 if ("$ENV{ARCH}" MATCHES arm)
 
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rst0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RST rst0.13)
 pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+pkg_check_modules(RSTSANDBOX rstsandbox0.13)
 pkg_check_modules(EIGEN eigen3)
 
 else("$ENV{ARCH}" MATCHES arm)

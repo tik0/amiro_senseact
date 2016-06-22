@@ -13,32 +13,14 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-#if ("$ENV{ARCH}" MATCHES arm)
-
-pkg_check_modules(OpenCV OpenCV)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rst0.11)
-pkg_check_modules(RSTSANDBOX rstsandbox0.11)
-
-#else("$ENV{ARCH}" MATCHES arm)
-
-#find_package(OpenCV REQUIRED)
-#find_package(RSB REQUIRED)
-#find_package(RSC REQUIRED)
-#find_package(RST REQUIRED COMPONENTS sandbox)
-
-#endif("$ENV{ARCH}" MATCHES arm)
+pkg_check_modules(OPENCV OpenCV)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RST rst0.13)
+pkg_check_modules(RSTSANDBOX rstsandbox0.13)
 
 # Need to add, because rst manual said so:
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
-
-# Not needed. The libraries will be set manualy
-# link_directories(
-#     ${RSB_LIBRARY_DIRS}
-#     ${OPENCV_LIBRARY_DIRS}
-#     ${LIBV4l2_LIBRARY_DIRS}
-# )
 
 # Set the include pathe
 include_directories(
@@ -46,7 +28,7 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${RST_INCLUDE_DIRS}                                             # RST types
     ${RSTSANDBOX_INCLUDE_DIRS}                                      # RST syndbox types
-    ${OpenCV_INCLUDE_DIRS}                                          # OpenCV
+    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
     ${LIBV4l2_INCLUDE_DIRS}                                         # Video for Linux
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "$ENV{MUROX_INCLUDE_DIRS}/extspread"			    # Programatik spread
@@ -59,13 +41,6 @@ include_directories(
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
-# Add sources to build
-#INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
-
-#if (NOT TARGET vecIntConverter)
-#    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-#endif()
-
 if (NOT TARGET matConverter)
     add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/matConverter lib/matConverter)
 endif()
@@ -76,17 +51,10 @@ file(GLOB HEADERS *.hpp)
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.hpp $ENV{MUROX_INCLUDE_DIRS}/extspread/extspread.cxx $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
 
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
-
-# Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
+# Link the executable to the library.
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
-
-#if ("$ENV{ARCH}" MATCHES arm)
 
 target_link_libraries (
     "${PROJECT_NAME}"
@@ -119,29 +87,9 @@ target_link_libraries (
     boost_system
     boost_thread
     # -- Own libraries
-    vecIntConverter
     matConverter
     ${PROTO_LIBRARIES}
 )
-
-#else("$ENV{ARCH}" MATCHES arm)
-
-#target_link_libraries (
-#    "${PROJECT_NAME}"
-#    ${RSB_LIBRARIES}
-#    ${RSC_LIBRARIES}
-#    ${RST_LIBRARIES}
-#    ${RSTSANDBOX_LIBRARIES}
-#    ${PROTO_LIBRARIES}
-#    ${OpenCV_LIBRARIES}
-#    # Boost
-#    ${Boost_LIBRARIES}
-#    # -- Own libraries
-#    vecIntConverter
-#    matConverter
-#)
-
-#endif("$ENV{ARCH}" MATCHES arm)
 
 # Get rid of depricated warnings
 

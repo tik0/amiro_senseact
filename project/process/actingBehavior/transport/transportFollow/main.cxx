@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<twbTracking::proto::Pose2D> finalePos(new twbTracking::proto::Pose2D());
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	// Generate the programatik Spreadconfig for extern communication
 	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);

@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 	po::notify(vm);
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	// ------------ Converters ----------------------
 

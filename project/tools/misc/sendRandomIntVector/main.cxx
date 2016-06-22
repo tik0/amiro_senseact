@@ -78,7 +78,7 @@ int main (int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB informer
-  rsb::Factory& factory = rsb::Factory::getInstance();
+  rsb::Factory& factory = rsb::getFactory();
   rsb::Informer< std::vector<int> >::Ptr informer_vec = factory.createInformer< std::vector<int> > (g_sOutScope_IR);
 
   // Share the pointer to the IR data

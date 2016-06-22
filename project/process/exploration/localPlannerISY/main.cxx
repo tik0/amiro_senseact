@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 	std::string pathOutscope = "/pathUpdate/"+boost::lexical_cast<std::string>(trackingMarkerID);
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 
 	// Generate the programatik Spreadconfig for extern communication

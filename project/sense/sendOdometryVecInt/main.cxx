@@ -81,7 +81,7 @@ int main(int argc, const char **argv) {
 	boost::shared_ptr<twbTracking::proto::Pose2D> poseWrapper(new twbTracking::proto::Pose2D);
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	boost::shared_ptr<
 			rsb::converter::ProtocolBufferConverter<twbTracking::proto::Pose2D> > converterlocalization(

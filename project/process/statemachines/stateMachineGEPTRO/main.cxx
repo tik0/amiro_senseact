@@ -48,7 +48,7 @@ ControllerAreaNetwork myCAN;
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 // RST
 #include <rsb/converter/Repository.h>
@@ -382,7 +382,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerObjectDetAnswerScope = factory.createListener(sObjectDetAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D> > > queueObjectDetAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2D> >(1));
-    listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<twbTracking::proto::Pose2D>(queueObjectDetAnswerScope)));
+    listenerObjectDetAnswerScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2D>(queueObjectDetAnswerScope)));
 
     informerObjectDetScope = factory.createInformer<twbTracking::proto::Pose2DList> (sObjectDetCmdScope);
     informerObjectDetRectScope = factory.createInformer<twbTracking::proto::Pose2DList> (sObjectDetRectOutscope);
@@ -392,7 +392,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerLocalPlannerAnswerScope = factory.createListener(sLocalPlannerAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueLocalPlannerAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerLocalPlannerAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueLocalPlannerAnswerScope)));
+    listenerLocalPlannerAnswerScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueLocalPlannerAnswerScope)));
 
     informerLocalPlannerScope = factory.createInformer< std::string > (sLocalPlannerCmdScope);
 
@@ -400,7 +400,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerBlobDetectionAnswerScope = factory.createListener(sBlobDetectionAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueBlobDetectionAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerBlobDetectionAnswerScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueBlobDetectionAnswerScope)));
+    listenerBlobDetectionAnswerScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueBlobDetectionAnswerScope)));
 
     informerBlobDetectionScope = factory.createInformer< std::string > (sBlobDetectionCmdScope);
 
@@ -408,7 +408,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerExplorationScope = factory.createListener(sExplorationAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueExplorationAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerExplorationScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueExplorationAnswerScope)));
+    listenerExplorationScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueExplorationAnswerScope)));
 
     informerExplorationScope = factory.createInformer< std::string > (sExplorationCmdScope);
 
@@ -422,7 +422,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerDeliveryScope = factory.createListener(sDeliveryAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueDeliveryAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
+    listenerDeliveryScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueDeliveryAnswerScope)));
 
     informerDeliveryScope = factory.createInformer<twbTracking::proto::Pose2D> (sDeliveryCmdScope);
 
@@ -430,7 +430,7 @@ int processSM(void) {
     rsb::ListenerPtr listenerTransportScope = factory.createListener(sTransportAnswerScope);
     boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueTransportAnswerScope(
             new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-    listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueTransportAnswerScope)));
+    listenerTransportScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueTransportAnswerScope)));
 
     informerTransportScope = factory.createInformer< std::string > (sTransportCmdScope);
 
@@ -444,7 +444,7 @@ int processSM(void) {
 
     try {
         listenerOutsideScope = factory.createListener(sInScopeTobi, tmpPartConf);
-        listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
+        listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueOutsideScope)));
 
         informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi, tmpPartConf);
     }

@@ -11,20 +11,13 @@ project ("${PROJECT_NAME}")
 find_package(PkgConfig)
 
 pkg_check_modules(OPENCV OpenCV)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
-pkg_check_modules(RST rst0.11)
-pkg_check_modules(RSTSANDBOX rstsandbox0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RST rst0.13)
+pkg_check_modules(RSTSANDBOX rstsandbox0.13)
 
 # Need to add, because rst manual said so:
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
-
-# Not needed. The libraries will be set manualy
-# link_directories(
-#     ${RSB_LIBRARY_DIRS}
-#     ${OPENCV_LIBRARY_DIRS}
-#     ${LIBV4l2_LIBRARY_DIRS}
-# )
 
 # Set the include pathe
 include_directories(
@@ -47,12 +40,7 @@ file(GLOB HEADERS *.hpp)
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
 
-# Set the compiler
-# SET (CMAKE_C_COMPILER $ENV{CPP})
-# SET (CMAKE_CXX_COMPILER $ENV{CXX})
-
-# Link the executable to the library. 
-# SET (BLAH "$ENV{SDKTARGETSYSROOT}/usr/lib")
+# Link the executable to the library.
 link_directories (
     "$ENV{SDKTARGETSYSROOT}/usr/lib"
 )
@@ -86,7 +74,6 @@ target_link_libraries (
     boost_program_options
     boost_system
     boost_thread
-    # -- Own libraries
     ${PROTO_LIBRARIES}
 
 )

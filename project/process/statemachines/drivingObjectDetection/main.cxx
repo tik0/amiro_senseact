@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
   //////////////////// CREATE A CONFIG TO COMMUNICATE WITH ANOTHER SERVER ////////
   ///////////////////////////////////////////////////////////////////////////////

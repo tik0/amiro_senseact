@@ -13,12 +13,10 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
 pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.11)
-# pkg_check_modules(OPENCV opencv)
-# pkg_check_modules(LIBV4l2 libv4l2)
+pkg_check_modules(RST rstsandbox0.13)
 
 # Set the include pathe
 include_directories(BEFORE SYSTEM ${RST_INCLUDE_DIRS})

@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	// Register new converter for std::vector<int>
 	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());

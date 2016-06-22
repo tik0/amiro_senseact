@@ -47,7 +47,7 @@ ControllerAreaNetwork myCAN;
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 using namespace boost;
 using namespace std;
@@ -198,7 +198,7 @@ int processSM(void) {
 	rsb::ListenerPtr listenerFollowing = factory.createListener(sFollowingAnswerScope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueFollowingAnswer(
 			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-	listenerFollowing->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueFollowingAnswer)));
+	listenerFollowing->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueFollowingAnswer)));
 
 	rsb::Informer< std::string >::Ptr informerFollowing = factory.createInformer< std::string > (sFollowingCmdScope);
 
@@ -206,7 +206,7 @@ int processSM(void) {
 	rsb::ListenerPtr listenerWaypoint = factory.createListener(sWaypointAnswerScope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueWaypointAnswer(
 			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-	listenerWaypoint->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueWaypointAnswer)));
+	listenerWaypoint->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueWaypointAnswer)));
 
 	rsb::Informer< std::string >::Ptr informerWaypoint = factory.createInformer< std::string > (sWaypointCmdScope);
 
@@ -217,7 +217,7 @@ int processSM(void) {
 	rsb::ListenerPtr listenerRemoteTobiState = factory.createListener(g_sStateInScope, tmpPartConf);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueRemoteTobiState(
 			new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
-	listenerRemoteTobiState->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueRemoteTobiState)));
+	listenerRemoteTobiState->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueRemoteTobiState)));
 
 	rsb::Informer< std::string >::Ptr informerRemoteState = factory.createInformer< std::string > (g_sStateOutScope, tmpPartConf);
 

@@ -2,11 +2,11 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <boost/shared_ptr.hpp>
-#include <rsb0.9/rsb/Factory.h>
-#include <rsb0.9/rsb/converter/Repository.h>
-#include <rsb0.9/rsb/Event.h>
-#include <rsb0.9/rsb/Handler.h>
-#include <rsb0.9/rsb/filter/OriginFilter.h>
+#include <rsb/Factory.h>
+#include <rsb/converter/Repository.h>
+#include <rsb/Event.h>
+#include <rsb/Handler.h>
+#include <rsb/filter/OriginFilter.h>
 
 // For checking character pressed in the console
 #include <kbhit.hpp>
@@ -76,7 +76,7 @@ int v4l2_compress_jpeg(int width, int height, unsigned char *src, int src_size, 
 int main() {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  rsb::Factory &factory = rsb::Factory::getInstance();
+  rsb::Factory &factory = rsb::getFactory();
 
   // Create the informer
   Informer<std::string>::Ptr informer = getFactory().createInformer<std::string> (Scope("/image/jpg"));

@@ -12,7 +12,7 @@
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 // For checking character pressed in the console
 #include <kbhit.hpp>
@@ -432,7 +432,7 @@ int main(int argc, char **argv) {
   INFO_MSG("JPEG Quality: " << g_uiQuality);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  rsb::Factory &factory = rsb::Factory::getInstance();
+  rsb::Factory &factory = rsb::getFactory();
 
   // Create the informer
   Informer<std::string>::Ptr imageInformer = getFactory().createInformer<std::string> (Scope(g_sImageScope));
@@ -443,7 +443,7 @@ int main(int argc, char **argv) {
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > commandQueue(
                       new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-  listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(commandQueue)));
+  listener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(commandQueue)));
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

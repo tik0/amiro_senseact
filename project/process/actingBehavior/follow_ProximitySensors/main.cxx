@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	INFO_MSG("Initialize RSB");
 
 	// Get the RSB factory
-	rsb::Factory& factory = rsb::Factory::getInstance();
+	rsb::Factory& factory = rsb::getFactory();
 
 	// ------------ Converters ----------------------
 

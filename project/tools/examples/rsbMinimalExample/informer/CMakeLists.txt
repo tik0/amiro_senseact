@@ -9,16 +9,15 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
 
 # Set the include pathe
 include_directories(
-    /usr/local/include                                       
-    /usr/include
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
-    "${CMAKE_CURRENT_BINARY_DIR}"                            # add the binary tree to the search path for include files
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
+    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
 )
 
 # add the executable
@@ -42,8 +41,6 @@ target_link_libraries (
     boost_filesystem
     boost_program_options
     pthread
-    # -- rsb
-    
 )
 
 # Get rid of depricated warnings

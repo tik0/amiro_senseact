@@ -157,11 +157,7 @@ int main(int argc, char **argv) {
   INFO_MSG("Initialize RSB");
 
   // Get the RSB factory
-#if RSB_VERSION_NUMERIC<1200
-  rsb::Factory& factory = rsb::Factory::getInstance();
-#else
   rsb::Factory& factory = rsb::getFactory();
-#endif
 
   // ------------ Converters ----------------------
 

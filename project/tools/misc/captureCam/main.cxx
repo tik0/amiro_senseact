@@ -28,7 +28,7 @@ int main() {
   shared_ptr<MatConverter> converter(new MatConverter());
   converterRepository<std::string>()->registerConverter(converter);
 
-  rsb::Factory &factory = rsb::Factory::getInstance();
+  rsb::Factory &factory = rsb::getFactory();
 
   // Create the informer
   Informer<cv::Mat>::Ptr informer = getFactory().createInformer<cv::Mat> (Scope("/image"));

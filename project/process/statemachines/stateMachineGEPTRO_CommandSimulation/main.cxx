@@ -49,7 +49,7 @@ ControllerAreaNetwork myCAN;
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 // RST
 #include <rsb/converter/Repository.h>
@@ -331,7 +331,7 @@ int processSM(void) {
 
     try {
         listenerOutsideScope = factory.createListener(sInScopeTobi, tmpPartConf);
-        listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(queueOutsideScope)));
+        listenerOutsideScope->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueOutsideScope)));
 
         informerOutsideScope = factory.createInformer< std::string > (sOutScopeTobi, tmpPartConf);
     }

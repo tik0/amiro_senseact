@@ -25,11 +25,11 @@
 #include <boost/shared_ptr.hpp>
 
 
-#include <rsb0.9/rsb/Informer.h>
-#include <rsb0.9/rsb/Factory.h>
-#include <rsb0.9/rsb/Event.h>
-#include <rsb0.9/rsb/Handler.h>
-#include <rsb0.9/rsb/converter/Repository.h>
+#include <rsb/Informer.h>
+#include <rsb/Factory.h>
+#include <rsb/Event.h>
+#include <rsb/Handler.h>
+#include <rsb/converter/Repository.h>
 
 // Include own converter
 // #include <converter/vecIntConverter/main.hpp>
