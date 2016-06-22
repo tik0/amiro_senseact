@@ -6,10 +6,6 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-#pkg_check_modules(RSB rsb0.11)
-#pkg_check_modules(RSC rsc0.11)
-#pkg_check_modules(RST rst0.11)
-#pkg_check_modules(OPENCV opencv)
 find_package(RSB REQUIRED)
 find_package(RSC REQUIRED)
 find_package(RST REQUIRED)
@@ -56,7 +52,7 @@ target_link_libraries (
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${OPENCV_LIBRARIES}
+    ${OpenCV_LIBRARIES}
 )
 
 # Additional compiler flags

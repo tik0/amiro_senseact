@@ -10,7 +10,7 @@
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 
 
 using namespace boost;
@@ -81,14 +81,14 @@ int main(int argc, char **argv) {
   converterRepository<std::string>()->registerConverter(converterIpl);
 
 
-  rsb::Factory &factory = rsb::Factory::getInstance();
+  rsb::Factory &factory = rsb::getFactory();
 
   // Create and start the listener
   rsb::ListenerPtr listener = factory.createListener(sInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<IplImage> > > imageQueue(
                       new rsc::threading::SynchronizedQueue<boost::shared_ptr<IplImage> >(1));
 
-  listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<IplImage>(imageQueue)));
+  listener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<IplImage>(imageQueue)));
 
   // Create the informer
   Informer<std::string>::Ptr informer = getFactory().createInformer<std::string> (Scope(sOutScope));
@@ -107,8 +107,7 @@ int main(int argc, char **argv) {
   // Pop the images and compress them
   while (true) {
 	// load image
-        image = cv::Mat(imageQueue->pop().get(), true);
-
+        cv::cvarrToMat(&(*imageQueue->pop())).copyTo(image);
 	// compress image
         imencode(".jpeg", image, buf, compression_params);
 
