@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
 	while (!exitProg) {
 		// check for new color input
 		colorChanged = false;
-		if (timeCounter % 10 == 0 && !commandQueue->empty()) {
+		if (!commandQueue->empty()) {
 			commandVector = boost::static_pointer_cast<std::vector<int> >(commandQueue->pop());
 			colorChanged = getCommand(commandVector, recInformer);
 		}
