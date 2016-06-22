@@ -40,7 +40,7 @@ using namespace boost::chrono;
 #include <rsb/Event.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 #include <converter/vecIntConverter/main.hpp>
 using namespace rsb;
 using namespace muroxConverter;
@@ -406,11 +406,7 @@ int main(int argc, char **argv) {
 	// +++++ RSB Initalization +++++
 
 	// Get the RSB factory
-#if RSB_VERSION_NUMERIC<1200
-	rsb::Factory& factory = rsb::Factory::getInstance();
-#else
 	rsb::Factory& factory = rsb::getFactory();
-#endif
 
 	// ------------ Converters ----------------------
 

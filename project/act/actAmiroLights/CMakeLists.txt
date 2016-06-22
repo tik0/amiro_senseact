@@ -5,8 +5,8 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.11)
-pkg_check_modules(RSC rsc0.11)
+pkg_check_modules(RSB rsb0.13)
+pkg_check_modules(RSC rsc0.13)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)

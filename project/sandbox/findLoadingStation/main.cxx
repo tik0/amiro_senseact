@@ -18,7 +18,7 @@
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
-#include <rsb/QueuePushHandler.h>
+#include <rsb/util/QueuePushHandler.h>
 // Include own converter
 #include <converter/vecIntConverter/main.hpp>
 
@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
 	INFO_MSG("");
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
-	rsb::Factory &factory = rsb::Factory::getInstance();
+	rsb::Factory &factory = rsb::getFactory();
 
 	// Register new converter for std::vector<int>
 	boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
@@ -353,7 +353,7 @@ int main(int argc, char **argv) {
 	rsb::ListenerPtr listener = factory.createListener(g_sInScope);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
 
-	listener->addHandler(rsb::HandlerPtr(new rsb::QueuePushHandler<std::string>(commandQueue)));
+	listener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(commandQueue)));
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Creating the cam object
