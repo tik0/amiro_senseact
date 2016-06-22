@@ -83,21 +83,20 @@ using namespace rsb::patterns;
 // scopenames for rsb
 std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
 std::string proxSensorInscopeGround = "/rir_prox/ground";
-std::string commandInscopePart1 = "/tobiamiro";
+std::string commandInscopePart1 = "/tobiamirotable";
 std::string commandInscopePart2 = "/state";
-std::string answerOutscopePart1 = "/amiro";
+std::string answerOutscopePart1 = "/amirotable";
 std::string answerOutscopePart2 = "tobi/state";
 std::string lightOutscope = "/amiro/lights";
 
 // rsb commands
-std::string cmdRestart = "drive";
 std::string cmdTransport = "drive";
 std::string ansReady = "finish";
-std::string ansFetched = "finish";
 std::string cmdansRec = "rec";
 
 // velocities
-float forwardSpeed = 0.08; // m/s
+float forwardSpeed = 0.06; // m/s
+float correctSpeed = 0.02; // m/s
 float turnSpeed = 20.0 * M_PI/180.0; // rad/s
 
 // amiro constants
@@ -106,14 +105,51 @@ unsigned int amiroID = 0;
 // behavior values
 float irDetectionDist = 0.05; // m
 float edgeMaxDist = 0.055; // m
+float edgeMinDist = 0.01; // m
 float edgeDistVariance = 0.005; // m
 float tableEdgeDist = 0.05; // m
 
 std::string spreadhost = "localhost";
 std::string spreadport = "4823";
 
+int stateCount = 7;
+enum States {	waitForCommand,
+		bufferForStart,
+		driveForOrientation,
+		correctForOrientation,
+		turnForOrientation,
+		driveToPosition,
+		correctEdgeDist
+};
+
+std::string stateNames[] = {	"Waiting for drive command.",
+				"Start driving.",
+				"Driving to edge for orientation.",
+				"Correct distance to edge for orientation.",
+				"Turning towards other table edge.",
+				"Drive to position.",
+				"Correct distance to edge."
+};
+
+
+// Initialize command flags
+bool transportCommand = false;
+bool restartCommand = false;
+bool transportFinished = false;
+bool restartFinished = false;
+
+bool commandsViaIR = true;
+
+
 void sendMotorCmd(float speed, float angle, ControllerAreaNetwork &CAN) {
 	CAN.setTargetSpeed((int)(speed*1000000.0), (int)(angle*1000000.0));
+}
+
+void printIRDist(boost::shared_ptr<std::vector<int>> sensorValues) {
+	for (int i=0; i<ringproximity::SENSOR_COUNT; i++) {
+		float dist = VCNL4020Models::obstacleModel(0, sensorValues->at(i));
+		DEBUG_MSG(" -> Sensor " << i << ": " << dist << " (" << sensorValues->at(i) << ")");
+	}
 }
 
 bool gotIRCommand(boost::shared_ptr<std::vector<int>> sensorValues) {
@@ -121,6 +157,7 @@ bool gotIRCommand(boost::shared_ptr<std::vector<int>> sensorValues) {
 	for (int i=0; i<ringproximity::SENSOR_COUNT; i++) {
 		float distCur = VCNL4020Models::obstacleModel(0, sensorValues->at(i));
 		if (distCur < irDetectionDist && distBefore < irDetectionDist) {
+//			printIRDist(sensorValues);
 			return true;
 		}
 		distBefore = distCur;
@@ -128,14 +165,7 @@ bool gotIRCommand(boost::shared_ptr<std::vector<int>> sensorValues) {
 	return false;
 }
 
-void printIRDist(boost::shared_ptr<std::vector<int>> sensorValues) {
-	for (int i=0; i<ringproximity::SENSOR_COUNT; i++) {
-		float dist = VCNL4020Models::obstacleModel(0, sensorValues->at(i));
-		DEBUG_MSG("Sensor " << i << ": " << dist);
-	}
-}
-
-bool edgeIsInfront(boost::shared_ptr<std::vector<int>> sensorValues) {
+bool edgeIsInfront(boost::shared_ptr<std::vector<int>> sensorValues, bool drivingToEdge=true) {
 	for (int i=0; i<4; i++) {
 		float dist = VCNL4020Models::edgeModel(sensorValues->at(i+2));
 		if (dist < edgeMaxDist) {
@@ -145,27 +175,17 @@ bool edgeIsInfront(boost::shared_ptr<std::vector<int>> sensorValues) {
 	return false;
 }
 
-bool edgeIsDirectBehind(boost::shared_ptr<std::vector<int>> sensorValues) {
-	return VCNL4020Models::edgeModel(sensorValues->at(0)) < edgeMaxDist && VCNL4020Models::edgeModel(sensorValues->at(ringproximity::SENSOR_COUNT-1)) < edgeMaxDist;
+bool enoughDistToEdge(boost::shared_ptr<std::vector<int>> sensorValues) {
+	float minDist = 10.0;
+	for (int i=0; i<4; i++) {
+		float dist = VCNL4020Models::edgeModel(sensorValues->at(i+2));
+		minDist = min(dist, minDist);
+	}
+	return minDist > edgeMinDist;
 }
 
-void driveToEdge(ControllerAreaNetwork &myCAN, boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueueGround) {
-	boost::shared_ptr<std::vector<int>> sensorValues = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
-	bool realEdge = false;
-	bool edge = edgeIsInfront(sensorValues);
-	while (!realEdge) {
-		sendMotorCmd(forwardSpeed, 0.0, myCAN);
-		while (!edge) {
-			usleep(100000);
-			sensorValues = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
-			edge = edgeIsInfront(sensorValues);
-		}
-		sendMotorCmd(0.0, 0.0, myCAN);
-		usleep(200000);
-		sensorValues = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
-		realEdge = edgeIsInfront(sensorValues);
-		edge = false;
-	}
+bool edgeIsDirectBehind(boost::shared_ptr<std::vector<int>> sensorValues) {
+	return VCNL4020Models::edgeModel(sensorValues->at(0)) < edgeMaxDist && VCNL4020Models::edgeModel(sensorValues->at(ringproximity::SENSOR_COUNT-1)) < edgeMaxDist;
 }
 
 void turnToEdge(ControllerAreaNetwork &myCAN, boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueueGround) {
@@ -209,32 +229,45 @@ void setLights(int lightType, Color color, int period, rsb::Informer< std::vecto
 	informer->publish(commandVector);
 }
 
-void waitForCommand(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueueObstacle, boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> cmdQueue, rsb::Informer<std::string>::Ptr informerCmd, std::string expCmd, std::string statusCmd) {
-	bool gotCommand = false;
-	int commandCounter = 0;
-	boost::shared_ptr<std::vector<int>> sensorValues;
-	boost::shared_ptr<std::string> stringPublisher(new std::string);
-	do {
-		usleep(200000);
-		*stringPublisher = statusCmd;
+void checkCommands(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> cmdQueue, rsb::Informer<std::string>::Ptr informerCmd, boost::shared_ptr<std::vector<int>> sensorValues) {
+	transportCommand = false;
+	restartCommand = false;
+	if (!cmdQueue->empty()) {
+		std::string command(*cmdQueue->pop());
+		DEBUG_MSG("New command is '" << command << "'");
+		if (command == cmdTransport) {
+			DEBUG_MSG("Transport command received.");
+			transportCommand = true;
+		}
+		if (transportFinished && command == ansReady+cmdansRec) {
+			DEBUG_MSG("Finished transport has been recognized.");
+			transportFinished = false;
+		}
+		if (transportCommand || restartCommand) {
+			boost::shared_ptr<std::string> stringPublisher(new std::string(command + cmdansRec));
+			informerCmd->publish(stringPublisher);
+		}
+	}
+	if (commandsViaIR) {
+		if (gotIRCommand(sensorValues)) {
+			DEBUG_MSG("IR command received.");
+			transportCommand = true;
+			restartCommand = true;
+			boost::shared_ptr<std::string> stringPublisher(new std::string(cmdansRec));
+			informerCmd->publish(stringPublisher);
+		}
+	}
+}
+
+void sendCommands(rsb::Informer<std::string>::Ptr informerCmd) {
+	if (transportFinished) {
+		boost::shared_ptr<std::string> stringPublisher(new std::string(ansReady));
 		informerCmd->publish(stringPublisher);
-		sensorValues = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
-		gotCommand = gotIRCommand(sensorValues);
-		if (gotCommand) {
-			commandCounter++;
-		} else {
-			commandCounter = 0;
-		}
-		if (!cmdQueue->empty()) {
-			std::string command(*cmdQueue->pop());
-			if (command == expCmd) {
-				commandCounter = 3;
-			}
-		}
-	} while (commandCounter < 3);
-	std::string ans = expCmd + cmdansRec;
-	*stringPublisher = ans;
-	informerCmd->publish(stringPublisher);
+	}
+	if (restartFinished) {
+		boost::shared_ptr<std::string> stringPublisher(new std::string(ansReady));
+		informerCmd->publish(stringPublisher);
+	}
 }
 
 int main(int argc, char **argv) {
@@ -243,6 +276,7 @@ int main(int argc, char **argv) {
 	namespace po = boost::program_options;
 
 	float turnSpeedS = 20.0;
+	unsigned int bufferSec = 5;
 
 	std::string commandInscope, answerOutscope;
 
@@ -254,12 +288,14 @@ int main(int argc, char **argv) {
 		("commandInscope,c", po::value<std::string>(&commandInscope), "Inscope for receiving commands.")
 		("answerOutscope,a", po::value<std::string>(&answerOutscope), "Outscope for sending command answers and status messages.")
 		("lightOutscope,l", po::value<std::string>(&lightOutscope), "Outscope for light commands.")
-		("forwardSpeed,f", po::value<float>(&forwardSpeed), "Forward speed in m/s (default: 0.08).")
+		("forwardSpeed,f", po::value<float>(&forwardSpeed), "Forward speed in m/s (default: 0.06).")
 		("turnSpeed,t", po::value<float>(&turnSpeedS), "Angular speed in degree/s (default: 20.0).")
-		("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m (default: 0.05).")
+		("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m (default: 0.01).")
 		("edgeMaxDist,d", po::value<float>(&edgeMaxDist), "Distance for edge detection in m (default: 0.055).")
 		("edgeDistVariance,v", po::value<float>(&edgeDistVariance), "Maximal variance between the proximity sensors for edge orientation in m (default: 0.005).")
 		("tableEdgeDistance,e", po::value<float>(&tableEdgeDist), "Distance between robot and table edge for grasping and setting objects onto the robot in m (default: 0.05).")
+		("bufferStart,b", po::value<unsigned int>(&bufferSec), "Buffer between command recognition and start in seconds (default: 5).")
+		("commandsRSBOnly,r", "Flag, if the commands shall only given via RSB")
 		("host", po::value<std::string>(&spreadhost), "Host of external spread (default: localhost).")
 		("port", po::value<std::string>(&spreadport), "Port of external spread (default: 4823).");
 
@@ -278,6 +314,12 @@ int main(int argc, char **argv) {
 
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
+
+	if (bufferSec < 1) {
+		bufferSec = 1;
+	}
+
+	commandsViaIR = !vm.count("commandsRSBOnly");
 
 	if (!vm.count("commandInscope")) commandInscope = commandInscopePart1 + std::to_string(amiroID) + commandInscopePart2;
 	if (!vm.count("answerOutscope")) answerOutscope = answerOutscopePart1 + std::to_string(amiroID) + answerOutscopePart2;
@@ -337,251 +379,168 @@ int main(int argc, char **argv) {
 	// Init the CAN interface
 	ControllerAreaNetwork myCAN;
 
-	boost::shared_ptr<std::string> stringPublisher(new std::string);
-
-	/*
-	 * - init start position
-	 * - while (doTask)
-	 *   - drive forward til table edge
-	 *   - turn 180°
-	 *   - correct distance to tabel edge
-	 *   - wait for drive command
-	 *   - drive to start position
-	 *   - correct distance to table edge
-	 *   - wait for fetch command
-	 *   - drive to table edge again
-	 *   - turn 180°
-	 */
-
-	// set lights
-	setLights(LightModel::LightType::SINGLE_CIRCLERIGHT, Color(255,255,0), 0, informerLights);
+	// Initialize state
+	States state = States::waitForCommand;
 
 	// start loop
-	while (true) {
-		// drive forward
-		driveToEdge(myCAN, proxQueueGround);
+	int period = 100; // ms
+	bool stateSwitched = true;
+	int problemCounter = 0;
+	int bufferCounter = 0;
+	int bufferMax = bufferSec*1000 / period; // ms
+	int lightTypes[] = {LightModel::LightType::SINGLE_CIRCLERIGHT, LightModel::LightType::SINGLE_WARNING};
+	int lightPeriods[] = {0, 800};
+	bool blinkWarning = true;
 
-		// turn to edge
-		turnToEdge(myCAN, proxQueueGround);
-
-		// drive a little bit forward
-		sendMotorCmd(forwardSpeed/2.0, 0.0, myCAN);
-		usleep((int)(tableEdgeDist/(forwardSpeed/2.0)*1000000.0));
-		sendMotorCmd(0.0, 0.0, myCAN);
-
-		// set lights
-		setLights(LightModel::LightType::SINGLE_SHINE, Color(0,255,0), 0, informerLights);
-
-		// wait for command
-		waitForCommand(proxQueueObstacle, cmdQueue, informerAnswer, cmdTransport, ansReady);
-
-		// set lights
-		setLights(LightModel::LightType::SINGLE_WARNING, Color(255,255,0), 800, informerLights);
-
-		// wait for some seconds before moving
-		sleep(2);
-
-		// drive forward
-		driveToEdge(myCAN, proxQueueGround);
-
-		// drive a little bit backward
-		sendMotorCmd(-forwardSpeed/2.0, 0.0, myCAN);
-		usleep((int)(tableEdgeDist/(forwardSpeed/2.0)*1000000.0));
-		sendMotorCmd(0.0, 0.0, myCAN);
-
-		// set lights
-		setLights(LightModel::LightType::SINGLE_SHINE, Color(0,255,0), 0, informerLights);
-
-		// wait for command
-		waitForCommand(proxQueueObstacle, cmdQueue, informerAnswer, cmdRestart, ansFetched);
-
-		// set lights
-		setLights(LightModel::LightType::SINGLE_CIRCLERIGHT, Color(255,255,0), 0, informerLights);
-
-		// wait for some seconds before moving
-		sleep(2);
-
-		// drive to edge
-		driveToEdge(myCAN, proxQueueGround);
-
-		// turn to edge
-		turnToEdge(myCAN, proxQueueGround);
+	// Get initial sensor values
+	while (proxQueueObstacle->empty() || proxQueueGround->empty()) {
+		usleep(100000);
 	}
+	boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
+	boost::shared_ptr<std::vector<int>> sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
+	
+	while (true) {
+		// Check for problems
+		if (problemCounter > 5) {
+			ERROR_MSG("No incomming data for 500 ms!");
+			break;
+		}
 
+		// load sensor data
+		if (proxQueueObstacle->empty() || proxQueueGround->empty()) {
+			problemCounter++;
+		} else {
+			problemCounter = 0;
+		}
+		if (!proxQueueObstacle->empty()) sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
+		if (!proxQueueGround->empty()) sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
 
+		// Check for incomming commands
+		checkCommands(cmdQueue, informerAnswer, sensorValuesObstacle);
 
-/*
-	uint8_t sensorIdx = 0;
-	bool ok = true;
-	bool turn = 0;
-	int oldValues[2];
+		// Resend messages
+		sendCommands(informerAnswer);
 
-	int counter = 0;
-	while(true) {
+		// Print state
+		if (stateSwitched) INFO_MSG("State: " << stateNames[state]);
 
-    if (!cmdQueue->empty()) {
-      // Read command
-      std::string cmd = *cmdQueue->pop();
+		// Check state
+		States newState = state;
+		switch (state) {
+		case States::waitForCommand:
+			if (stateSwitched) {
+				blinkWarning = !blinkWarning;
+				setLights(LightModel::LightType::SINGLE_SHINE, Color(0,255,0), 0, informerLights);
+			}
+			if (transportCommand) {
+				bufferCounter = 0;
+				newState = States::bufferForStart;
+			}
+			break;
 
-      ok = true;
+		case States::bufferForStart:
+			if (stateSwitched) {
+				bufferCounter = 0;
+				setLights(lightTypes[blinkWarning], Color(255,255,0), lightPeriods[blinkWarning], informerLights);
+			} else if (bufferCounter < bufferMax) {
+				bufferCounter++;
+			} else {
+				newState = States::driveForOrientation;
+			}
+			break;
 
-      stateType state = STturnEdge;
-      stateType stateL = STturn;
+		case States::driveForOrientation:
+			if (stateSwitched) {
+				sendMotorCmd(forwardSpeed, 0.0, myCAN);
+				setLights(lightTypes[blinkWarning], Color(255,255,0), lightPeriods[blinkWarning], informerLights);
+			}
+			if (edgeIsInfront(sensorValuesGround)) {
+				sendMotorCmd(0.0, 0.0, myCAN);
+				usleep(200000);
+				while (proxQueueGround->empty()) {
+					usleep(10000);
+				}
+				sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
+				if (edgeIsInfront(sensorValuesGround)) {
+					newState = States::correctForOrientation;
+				} else {
+					sendMotorCmd(forwardSpeed, 0.0, myCAN);
+				}
+			}
+			break;
 
-      edgeNum = 0;
+		case States::correctForOrientation:
+			if (stateSwitched) {
+				sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
+				sendMotorCmd(-correctSpeed, 0.0, myCAN);
+				setLights(lightTypes[blinkWarning], Color(255,255,0), lightPeriods[blinkWarning], informerLights);
+			}
+			if (enoughDistToEdge(sensorValuesGround)) {
+				sendMotorCmd(0.0, 0.0, myCAN);
+				usleep(200000);
+				while (proxQueueGround->empty()) {
+					usleep(10000);
+				}
+				sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
+				if (enoughDistToEdge(sensorValuesGround)) {
+					newState = States::turnForOrientation;
+				} else {
+					sendMotorCmd(-correctSpeed, 0.0, myCAN);
+				}
+			}
+			break;
 
-      while(ok) {
-        if (!proxQueueObstacle->empty() && !proxQueueGround->empty()) {
-          counter = 0;
-      
-          // Read the proximity data
-          boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
-          boost::shared_ptr<std::vector<int>> sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
+		case States::turnForOrientation:
+			if (stateSwitched) {				
+				setLights(lightTypes[blinkWarning], Color(255,255,0), lightPeriods[blinkWarning], informerLights);
+			}
+			turnToEdge(myCAN, proxQueueGround);
+			newState = States::driveToPosition;
+			break;
 
-          if (state != stateL) {
-            INFO_MSG("Switched to new state '" << stateTypeString[state] << "'");
-            stateL = state;
-          }
+		case States::driveToPosition:
+			if (stateSwitched) {
+				sendMotorCmd(forwardSpeed, 0.0, myCAN);
+				setLights(lightTypes[blinkWarning], Color(255,255,0), lightPeriods[blinkWarning], informerLights);
+			}
+			if (edgeIsInfront(sensorValuesGround)) {
+				sendMotorCmd(0.0, 0.0, myCAN);
+				usleep(200000);
+				while (proxQueueGround->empty()) {
+					usleep(10000);
+				}
+				sensorValuesGround = boost::static_pointer_cast<std::vector<int>>(proxQueueGround->pop());
+				if (edgeIsInfront(sensorValuesGround)) {
+					newState = States::correctEdgeDist;
+				} else {
+					sendMotorCmd(forwardSpeed, 0.0, myCAN);
+				}
+			}
+			break;
 
-          float edgeDistL, edgeDistR, edgeDistFL, edgeDistFR;
-          int minEdgeIdx = 0;
-          float minEdgeDist = 10;
-          int waitingTime_us = 0;
-          switch (state) {
-            case STturnEdge:
-              // Search table edge
-              for (int senIdx=0; senIdx<ringproximity::SENSOR_COUNT; senIdx++) {
-                float ed = VCNL4020Models::edgeModel(sensorValuesGround->at(senIdx));
-                if (ed < minEdgeDist) {
-                  minEdgeIdx = senIdx;
-                  minEdgeDist = ed;
-                }
-              }
-              state = STfindDirection;
-              break;
-            case STfindDirection:
-              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(7));
-              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(0));
-                turn = 0;
-//                sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-//                state = STdriveEdge;
-                sendMotorCmd(0, 0, CAN);
-                state = STroundScan;
-//              }
-              break;
-            case STroundScan:
-//              waitingTime_us = (int)(((2.0*M_PI*1000.0) / ((float)VEL_TURNING*10.0)) * 1000000.0) - 200000; // us
-//              sendMotorCmd(0, mymcm(VEL_TURNING), CAN);
-//              usleep(waitingTime_us);
-              // Save position
-              pose2D = rectPositionsPtr->add_pose();
-              pose2D->set_x(0);
-              pose2D->set_y(0);
-              pose2D->set_orientation(0);
-              pose2D->set_id(0);
-              sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-              state = STdriveEdge;
-            case STdriveEdge:
-              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
-              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
-              if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
-                sendMotorCmd(0, 0, CAN);
-                usleep(500000);
-                state = STcheckEdge;
-              }
-              break;
-            case STcheckEdge:
-              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
-              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
-              if (edgeDistL < GROUND_MARGIN || edgeDistR < GROUND_MARGIN) {
-                INFO_MSG("Edge detected");
-                state = STcorrectEdge;
-              } else {
-                sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-                state = STdriveEdge;
-              }
-              break;
-            case STcorrectEdge:
-              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
-              edgeDistL = edgeDistL*cos(ringproximity::SENSOR_ANGULAR_FRONT_OFFSET);
-              edgeDistR = (GROUND_MARGIN_DANGER - edgeDistR) * 10;
-              INFO_MSG("Distance to edge: " << edgeDistL << " m (" << edgeDistR << " cm too close) -> Driving with " << VEL_FORWARD_SLOW << " cm/s for " << (int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000) << " us");
-              if (edgeDistR > 0) {
-                sendMotorCmd(mymcm(-VEL_FORWARD_SLOW), 0, CAN);
-                usleep((int)(edgeDistR/((float)VEL_FORWARD_SLOW)*1000000));
-                sendMotorCmd(0,0,CAN);
-              }
-              sleep(1);
-              if (odomQueue->empty()) {
-                WARNING_MSG("No odometry available!");
-              }
-              odomInput = *odomQueue->pop();
-              pose2D = rectPositionsPtr->add_pose();
-              pose2D->set_x(odomInput.mutable_translation()->x());
-              pose2D->set_y(odomInput.mutable_translation()->y());
-              pose2D->set_orientation(odomInput.mutable_rotation()->yaw());
-              pose2D->set_id(edgeNum);
-              turn = 2;
-              sendMotorCmd(0, mymcm(-VEL_TURNING), CAN);
-              if (edgeNum >= edgeCount-1) {
-                state = STfinalize;
-              } else {
-                state = STturn;
-              }
-              edgeNum++;
-              DEBUG_MSG("#Edges driven: " << (edgeNum) << " of " << edgeCount);
-              DEBUG_MSG("Saved position " << pose2D->x() << "/" << pose2D->y() << " with " << pose2D->orientation() << " rad and ID " << pose2D->id());
-              break;
-            case STturn:
-              edgeDistL = VCNL4020Models::edgeModel(sensorValuesGround->at(1));
-              edgeDistR = VCNL4020Models::edgeModel(sensorValuesGround->at(2));
-              edgeDistFL = VCNL4020Models::edgeModel(sensorValuesGround->at(3));
-              edgeDistFR = VCNL4020Models::edgeModel(sensorValuesGround->at(4));
-              if (edgeDistL < GROUND_MARGIN && edgeDistR < GROUND_MARGIN && abs(edgeDistR-edgeDistL) < EDGE_DIFF
-                  && edgeDistFL > GROUND_MARGIN && edgeDistFR > GROUND_MARGIN) {
-                turn = 0;
-                sendMotorCmd(mymcm(VEL_FORWARD), 0, CAN);
-                state = STdriveEdge;
-              }
-              break;
-            case STfinalize:
-              waitingTime_us = (int)(((1.25*M_PI*1000.0) / ((float)VEL_TURNING*10.0)) * 1000000.0); // us
-              sendMotorCmd(0, mymcm(VEL_TURNING), CAN);
-              usleep(waitingTime_us);
-              sendMotorCmd(0, 0, CAN);
-              INFO_MSG("All steps done.");
-              ok = false;
-              *stringPublisher = ansFinish;
-              informerAnswer->publish(stringPublisher);
-              break;
-            default:
-              WARNING_MSG("Unknown state!");
-              *stringPublisher = ansProblem;
-              informerAnswer->publish(stringPublisher);
-              return -1;
-          }
+		case States::correctEdgeDist:
+			if (stateSwitched) {
+				setLights(lightTypes[blinkWarning], Color(255,255,0), lightPeriods[blinkWarning], informerLights);
+			}
+			sendMotorCmd(-forwardSpeed/2.0, 0.0, myCAN);
+			usleep((int)(tableEdgeDist/(forwardSpeed/2.0)*1000000.0));
+			sendMotorCmd(0.0, 0.0, myCAN);
+			newState = States::waitForCommand;
+			restartFinished = false;
+			transportFinished = true;
+			break;
 
-        } else if (counter < 4) {
-          counter++;
-          usleep(50000);
-        } else {
-          sendMotorCmd(0, 0, CAN);
-          WARNING_MSG("Didn't received any sensor data for more than 200 ms. Just stopping!");
-          *stringPublisher = ansProblem;
-          informerAnswer->publish(stringPublisher);
-          ok = false;
-        }
-      }
+		default:
+			ERROR_MSG("Unknown state!");
+			return EXIT_FAILURE;
 
-    } else if (!positionQueue->empty()) {
-      positionQueue->pop();
-      positionInformer->publish(rectPositionsPtr);
-    } else {
-      usleep(500000);
-    }
-  }
+		}
 
-*/
+		stateSwitched = newState != state;
+		state = newState;
+
+		usleep(period*1000);
+	}
 
 	return EXIT_SUCCESS;
 }
