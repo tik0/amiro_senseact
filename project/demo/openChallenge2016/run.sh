@@ -19,7 +19,7 @@ trap './stop.sh; exit' INT TERM HUP PIPE
 
 wait_for_port()
 {
-	while test -n "$(netstat -an | grep $1 | grep -e LISTEN -e FIN_WAIT2)"; do
+	while test -n "$(netstat -an | grep $1 | grep -e LISTEN -e FIN_WAIT2 -e TIME_WAIT)"; do
 		echo "port is still in use, waiting...";
 		sleep 1;
 	done
@@ -61,20 +61,25 @@ fi
 # 
 # 36 39
 # 30 37
-targetPoses="13407 6532.65 -175.95
-6831.58 7600.05 -89.7282
-2358.32 5239.28 102.989
-9276.95 5689.94 94.9351"
+targetPoses="3613.16 1791.69 86.8487
+5473.75 8436.29 178.356
+3413.83 13116.3 -1.27339
+3276.9 6502.31 -3.15126"
 
 targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
+
+initialPose="$(cat ./poses/startPose.txt)"
+initialX="$(echo "$initialPose" | cut -d\  -f 1)"
+initialY="$(echo "$initialPose" | cut -d\  -f 2)"
+initialTheta="$(echo "$initialPose" | cut -d\  -f 3)"
 
 ./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition/${ID} --targetPoseInScope /setTargetPose/${ID} --positionOutScope /amiro${ID}/pose --pathOutScope /amiro${ID}/path \
   --remotePort 4823 \
   --senImage 0 \
-  --delta 0.02 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
-  --loadMapWithValidPositionsFromPNG ./data/centralLab-clean-cropped-valid-4-scale-0.5.png --loadMapFromImage ./data/centralLab-clean-cropped-4-scale-0.5.png \
+  --delta 0.05 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
+  --loadMapFromImage ./data/centralLab.png --flipHorizontal true \
   --erosionRadius 0.33 \
-  --initialX 4244.11 --initialY 6446.25 --initialTheta 6.71772 \
+  --initialX $initialX --initialY $initialY --initialTheta $initialTheta \
   --targetPose "$targetPose" \
   --precomputeOccupancyMap true &
 

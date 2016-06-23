@@ -1283,6 +1283,12 @@ int main(int argc, const char **argv){
 
         state_.position = convertRSBPoseToTsPose(newPosition);
         DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
+        std::fstream f;
+        f.open("currentPose.txt", std::ios::out | std::ios::trunc);
+        f << targetPose.x << " " << state_.position.y << " " << state_.position.theta << std::endl;
+        f.flush();
+        f.close();
+
         // Set higher sigma to make it possible to converge into right position
         state_.sigma_theta = sigma_theta_new_position;
         state_.sigma_xy = sigma_xy_new_position;
@@ -1302,6 +1308,11 @@ int main(int argc, const char **argv){
         boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(targetPoseQueue->pop());
         targetPose = convertRSBPoseToTsPose(newPosition);
         DEBUG_MSG("translated to ts_position: " << targetPose.x << " " << targetPose.y << " " << targetPose.theta);
+        std::fstream f;
+        f.open("targetPose.txt", std::ios::out | std::ios::trunc);
+        f << targetPose.x << " " << targetPose.y << " " << targetPose.theta << std::endl;
+        f.flush();
+        f.close();
     }
 
     DEBUG_MSG("current sigma_xy: " << state_.sigma_xy);

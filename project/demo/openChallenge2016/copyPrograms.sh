@@ -19,6 +19,9 @@ for IP in $@; do
 	# Copy simulation folder
 	files="$files sim"
 
+	# Copy poses
+	files="$files poses"
+
 	# Copy the website
 	#files="$files ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www"
 
