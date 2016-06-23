@@ -6,7 +6,7 @@ if [ -z $IP ]; then
   exit 1
 fi
 NAME=`basename "$PWD"`
-ssh root@$IP "mkdir -p ~/${NAME}"
+ssh root@$IP "mkdir -p ~/${NAME}/data"
 
 # collect files
 FILES="run.sh stop.sh ../../includes/conf/RoboCup2016/spread/amirospread rsb.conf"
@@ -18,4 +18,4 @@ done
 scp $FILES root@$IP:~/$NAME/
 
 # copy maps
-scp -r data root@$IP:~/$NAME/
+scp -r data/*.png root@$IP:~/$NAME/data/

@@ -14,7 +14,7 @@ sleep 5
 if [ -e /dev/ttyACM0 ]; then
 	./senseHokuyo -o /lidar &
 else
-	./senseSickTim -o /lidar &
+	./senseSickTim -o /lidar > /dev/null &
 fi
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
