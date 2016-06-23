@@ -9,7 +9,6 @@ fi
 
 ID=${1}
 
-echo "Final setup: ToBI <- AMiRo ID 1 <- AMiRo ID 0"
 echo "Start AMiRo with ID ${ID}"
 
 sleep 2
@@ -54,10 +53,20 @@ fi
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
+# positions:
+# door to amilab (30)
+# first table (36)
+# kitchen (37)
+# next to VR lab (where the shelf used to be) (39)
+# 
+# 36 39
+# 30 37
 targetPoses="13407 6532.65 -175.95
-6831.58 7600.05 -89.7282"
+6831.58 7600.05 -89.7282
+2358.32 5239.28 102.989
+9276.95 5689.94 94.9351"
 
-targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1)) | tail -n 1)"
+targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 
 ./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition/${ID} --targetPoseInScope /setTargetPose/${ID} --positionOutScope /amiro${ID}/pose --pathOutScope /amiro${ID}/path \
   --remotePort 4823 \
