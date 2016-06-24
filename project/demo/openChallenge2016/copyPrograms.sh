@@ -29,6 +29,6 @@ for IP in $@; do
 	rsync -v --progress -ua $files $dest
 
 	# Copy the maps
-	rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/*.png "$dest/data/"
+	rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/* "$dest/data/"
 
 done

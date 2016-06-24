@@ -53,31 +53,36 @@ fi
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-# positions:
-# door to amilab (30)
-# first table (36)
-# kitchen (37)
-# next to VR lab (where the shelf used to be) (39)
-# 
-# 36 39
-# 30 37
-targetPoses="3613.16 1791.69 86.8487
-5473.75 8436.29 178.356
-3413.83 13116.3 -1.27339
-3276.9 6502.31 -3.15126"
+# 0 1 # 30 36
+# 2 3 # 37 39
+initialPoses="14074.9 13336.8 -92.7081
+13464.4 13355.8 -92.9293
+14102.5 13919.3 -93.0445
+13508.3 13949.4 -92.961"
 
-targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
-
-initialPose="$(cat ./poses/startPose.txt)"
+initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 initialX="$(echo "$initialPose" | cut -d\  -f 1)"
 initialY="$(echo "$initialPose" | cut -d\  -f 2)"
 initialTheta="$(echo "$initialPose" | cut -d\  -f 3)"
+
+# positions:
+# 0: first table (30)
+# 1: door to amilab (36)
+# 2: next to VR lab (where the shelf used to be) (37)
+# 3: kitchen (39)
+targetPoses="14544.9 10914.1 177.017
+12753.7 4397.98 87.1896
+12228 8612.58 -2.02987
+12710.6 15501.3 -43.8059"
+
+# take row ID + 1
+targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 
 ./CoreSLAM --odominscope /odom --lidarinscope /lidar --hominginscope /homing --mapAsImageOutScope /CoreSLAMLocalization/image --setPositionScope /setPosition/${ID} --targetPoseInScope /setTargetPose/${ID} --positionOutScope /amiro${ID}/pose --pathOutScope /amiro${ID}/path \
   --remotePort 4823 \
   --senImage 0 \
   --delta 0.05 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
-  --loadMapFromImage ./data/centralLab.png --flipHorizontal true \
+  --loadMapFromImage ./data/centralLab.pgm --flipHorizontal true \
   --erosionRadius 0.33 \
   --initialX $initialX --initialY $initialY --initialTheta $initialTheta \
   --targetPose "$targetPose" \
