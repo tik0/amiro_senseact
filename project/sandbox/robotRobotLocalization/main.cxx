@@ -90,16 +90,18 @@ std::vector<float> calculatePosition(std::vector<Point> marker) {
 	float xSize = float(marker[2].x - marker[1].x);
 	float ySize = float(marker[1].y - marker[0].y);
 
+	float rightPos = float(marker[2].x);
 	float minWidth = ySize/markerHeightMin*markerWidth;
 	float maxWidth = ySize/markerHeightMax*markerWidth;
 	if (xSize > maxWidth) {
+		rightPos -= (xSize-maxWidth)/2.0;
 		xSize = maxWidth;
 	}
 	float ppa = camAngleHeight/imageHeight;
 	float objAngle = xSize * ppa;
 	DEBUG_MSG("=> xSize=" << xSize << "p, ySize=" << ySize << "p, app=" << (ppa*180.0/M_PI) << "°, objAngle=" << (objAngle*180.0/M_PI) << "°")
 	float dist = markerWidth/2.0 * sin(M_PI/2.0-objAngle/2.0) / sin(objAngle/2.0);
-	float angle = camAngleWidth-marker[3].x*ppa - camAngleWidth/2.0 + objAngle/2.0;
+	float angle = (imageWidth-(rightPos-xSize/2.0)-1)*ppa - camAngleWidth/2.0; // camAngleWidth-rightPos*ppa - camAngleWidth/2.0 + objAngle/2.0;
 	std::vector<float> result(2,0);
 	result[0] = dist;
 	result[1] = angle;
