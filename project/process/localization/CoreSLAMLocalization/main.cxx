@@ -579,11 +579,10 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
  * @param path path in the file system where the image should be saved.
  */
 void saveMapAsPGM(ts_map_t *map, std::string path) {
-    std::ofstream file;
-    file.open(path);
+    std::ofstream file(path, std::ofstream::binary);
 
-    // Magic Number for Portable Graymap in ASCII
-    file << "P2" << std::endl;
+    // Magic Number for Portable Graymap in binary
+    file << "P5" << std::endl;
 
     // Dimensions of the PGM
     file << map->size << " " << map->size << std::endl;
@@ -592,14 +591,7 @@ void saveMapAsPGM(ts_map_t *map, std::string path) {
     file << TS_NO_OBSTACLE << std::endl;
 
     // Actual image data
-    int x, y;
-    ts_map_pixel_t *ptr;
-    for (ptr = map->map, y = 0; y < map->size; y++) {
-        for (x = 0; x < map->size; x++, ptr++) {
-            file << *ptr << " ";
-        }
-        file << std::endl;
-    }
+    file.write((char *)map->map, sizeof(ts_map_pixel_t) * map->size * map->size);
 
     file.close();
 }
@@ -1288,10 +1280,9 @@ int main(int argc, const char **argv){
 
         state_.position = convertRSBPoseToTsPose(newPosition);
         DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
-        std::fstream f;
-        f.open("currentPose.txt", std::ios::out | std::ios::trunc);
-        f << targetPose.x << " " << state_.position.y << " " << state_.position.theta << std::endl;
-        f.flush();
+        std::ofstream f;
+        f.open("currentPose.txt");
+        f << state_.position.x << " " << state_.position.y << " " << state_.position.theta << std::endl;
         f.close();
 
         // Set higher sigma to make it possible to converge into right position
@@ -1313,10 +1304,9 @@ int main(int argc, const char **argv){
         boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(targetPoseQueue->pop());
         targetPose = convertRSBPoseToTsPose(newPosition);
         DEBUG_MSG("translated to ts_position: " << targetPose.x << " " << targetPose.y << " " << targetPose.theta);
-        std::fstream f;
-        f.open("targetPose.txt", std::ios::out | std::ios::trunc);
+        std::ofstream f;
+        f.open("targetPose.txt");
         f << targetPose.x << " " << targetPose.y << " " << targetPose.theta << std::endl;
-        f.flush();
         f.close();
     }
 
