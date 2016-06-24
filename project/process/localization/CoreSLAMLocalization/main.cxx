@@ -628,7 +628,7 @@ bool loadMapFromPGM(ts_map_t *map, std::string path) {
 
     // check if image is square
     if (image.cols != image.rows) {
-        ERROR_MSG("Height of image must be equal to width!");
+        ERROR_MSG("Height of image must be equal to width! Maybe this PGM was not created with CoreSLAM? Use loadMapFromImage instead.");
         return false;
     }
 
@@ -665,26 +665,31 @@ bool loadMapFromImage(ts_map_t *map, std::string path) {
         return false;
     }
 
-    // check if image is square
-    if (image.cols != image.rows) {
-        ERROR_MSG("Height of image must be equal to width!");
-        return false;
-    }
-
+    // maybe flip
     if (flipHorizontal) {
         cv::flip(image, image, 0); // 0 is OpenCV's magic flip code for flipping around x axis
     }
 
+    // check if image is square
+    if (image.cols != image.rows) {
+        INFO_MSG("Loaded map image is not square. Padding it...");
+    }
+
     // initalize struct
-    map->size = image.cols;
+    map->size = std::max(image.cols, image.rows);
     map->map = (ts_map_pixel_t *) malloc(sizeof(ts_map_pixel_t) * map->size * map->size);
 
     // convert image to map
     int x, y;
     ts_map_pixel_t *ptr = map->map;
-    for (y = 0; y < image.rows; y++) {
-        for (x = 0; x < image.cols; x++) {
-            *ptr = image.at<uchar>(y,x) * (TS_NO_OBSTACLE / 255);
+    for (y = 0; y < map->size; y++) {
+        for (x = 0; x < map->size; x++) {
+            if (x < image.cols && y < image.rows) {
+                *ptr = image.at<uchar>(y,x) * (TS_NO_OBSTACLE / 255);
+            } else {
+                // mark as unknown
+                *ptr = (TS_OBSTACLE + TS_NO_OBSTACLE) / 2;
+            }
             ptr++;
         }
     }
