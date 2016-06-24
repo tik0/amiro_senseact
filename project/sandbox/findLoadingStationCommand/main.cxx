@@ -97,22 +97,26 @@ int main(int argc, char **argv) {
   rsb::ListenerPtr detectListener = factory.createListener(g_sInScope);
   boost::shared_ptr < rsc::threading::SynchronizedQueue < boost::shared_ptr< std::vector<int> > > >detectQueue(new rsc::threading::SynchronizedQueue< boost::shared_ptr< std::vector<int> > >(1));
   detectListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler< std::vector<int> >(detectQueue)));
+  cv::Mat image;
+  int saveCounter = 0;
 
   // Pop the images and show them
   while (true) {
 
     // Get the image as string
-    std::string imageJpg = *imageQueue->pop().get();
-    if (imageJpg.size() == 0) {
-      ERROR_MSG("Image data size is zero!");
-    } else {
-      DEBUG_MSG("Image data size: " << imageJpg.size());
+    if (!imageQueue->empty()) {
+      std::string imageJpg = *imageQueue->pop().get();
+      if (imageJpg.size() == 0) {
+        ERROR_MSG("Image data size is zero!");
+      } else {
+        DEBUG_MSG("Image data size: " << imageJpg.size());
+      }
+      // Copy to a vector
+      std::vector<unsigned char> data(imageJpg.begin(), imageJpg.end());
+      // Decode the image
+      image = cv::imdecode(data, CV_LOAD_IMAGE_COLOR);
+      cv::imshow(g_sInScope, image);
     }
-    // Copy to a vector
-    std::vector<unsigned char> data(imageJpg.begin(), imageJpg.end());
-    // Decode the image
-    cv::Mat image = cv::imdecode(data, CV_LOAD_IMAGE_COLOR);
-    cv::imshow(g_sInScope, image);
 
     // Get detection
     if (!detectQueue->empty()) {
@@ -139,6 +143,13 @@ int main(int argc, char **argv) {
         case ' ':
           INFO_MSG("Sending find command.");
           command = COMMAND_FIND;
+          break;
+        case 's':
+          command = "images/image" + boost::to_string(saveCounter) + ".png";
+          INFO_MSG("Saving image to '" << command << "'.");
+          cv::imwrite(command, image);
+          saveCounter++;
+          command = "";
           break;
         default:
           INFO_MSG("Unknown command!");
