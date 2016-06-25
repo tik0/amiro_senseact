@@ -1,13 +1,23 @@
 #!/bin/sh
 
+set -e
+
 for IP in $@; do
+	echo "====================="
+	echo "copying to ${IP}"
+	echo "====================="
+
 	#IP=${1}
 	NAME=`basename "$PWD"`
 	ssh root@${IP} "mkdir -p ~/${NAME}/data"
 
 	files=""
 	for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
-		files="$files ${line}/${line}"
+		if [ -f "${line}/${line}" ]; then
+			files="$files ${line}/${line}"
+		else
+			echo ${line}/${line} does not exist
+		fi
 	done
 	files="$files run.sh stop.sh"
 
