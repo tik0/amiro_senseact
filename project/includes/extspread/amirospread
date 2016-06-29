@@ -12,52 +12,52 @@
 #
 # This configures one spread daemon running on port 4823 on localhost.
 
-Spread_Segment  192.168.255.255:4823 {
-    amiro37        192.168.102.37
+Spread_Segment  192.168.102.255:4823 {
+    amiro2        192.168.102.2
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    amiro21        192.168.102.21
+Spread_Segment  192.168.102.255:4823 {
+    amiro3        192.168.102.3
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    amiro39        192.168.102.39
+Spread_Segment  192.168.102.255:4823 {
+    amiro4        192.168.102.4
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    amiro30        192.168.102.30
+Spread_Segment  192.168.102.255:4823 {
+    amiro5        192.168.102.5
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    amiro19        192.168.102.19
+Spread_Segment  192.168.102.255:4823 {
+    amiro6        192.168.102.6
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    amiro31        192.168.102.31
+Spread_Segment  192.168.102.255:4823 {
+    amiro7        192.168.102.7
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    amiro36        192.168.102.36
+Spread_Segment  192.168.102.255:4823 {
+    amiro8        192.168.102.8
 }
 
-Spread_Segment  192.168.255.255:4823 {    
-    tobi       192.168.102.102    
+Spread_Segment  192.168.102.255:4823 {    
+    tobi       192.168.102.9   
 }
 
-Spread_Segment  192.168.255.255:4823 {    
-    meka       192.168.102.103 
+Spread_Segment  192.168.102.255:4823 {    
+    meka       192.168.102.10 
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    timo        192.168.102.4
+Spread_Segment  192.168.102.255:4823 {
+    timo        192.168.102.11
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    skynet        192.168.102.2
+Spread_Segment  192.168.102.255:4823 {
+    skynet        192.168.102.12
 }
 
-Spread_Segment  192.168.255.255:4823 {
-    julian        192.168.102.3
+Spread_Segment  192.168.102.255:4823 {
+    julian        192.168.102.13
 }
 
 # Spread options
