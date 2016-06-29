@@ -1,6 +1,6 @@
 ====== Building the webserver demonstration for AMiRo ======
 
-This demonstration shows the functionality of the [[tools:rsb_ws_bridge_amiro:start|rsb_ws_bridge_amiro]] functionality which is nothing but a webserver based on [[https://github.com/cesanta/mongoose|mongoose]] with an [[http://docs.cor-lab.de//rsb-manual/trunk/html/index.html|RSB]]-[[https://de.wikipedia.org/wiki/WebSocket|WebSockets]]-bridge.
+This demonstration shows the functionality of the [[process:misc:rsb_ws_bridge_amiro:start|rsb_ws_bridge_amiro]] functionality which is nothing but a webserver based on [[https://github.com/cesanta/mongoose|mongoose]] with an [[http://docs.cor-lab.de//rsb-manual/trunk/html/index.html|RSB]]-[[https://de.wikipedia.org/wiki/WebSocket|WebSockets]]-bridge.
 
 This demo was also part of the finals demonstration [[demo:final2015:start|RoboCup@Home 2015 Final]].
 By giving commands, the AMiRo can follow ToBI or serve as a waypoint.
@@ -53,6 +53,6 @@ socket closed/136
 ^ Program ^ Description ^
 | [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading the Hokuyo laser scanner. |
 | [[sense:senseCamJpg:start|senseCamJpg]] | Program for getting the camera images. |
-| [[tools:rsb_ws_bridge_amiro:start|rsb_ws_bridge_amiro]] | Server program for sending the camera images. |
+| [[process:misc:rsb_ws_bridge_amiro:start|rsb_ws_bridge_amiro]] | Server program for sending the camera images. |
 
 
