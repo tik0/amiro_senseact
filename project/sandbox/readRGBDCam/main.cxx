@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 	vector<uchar> bufRgb;
 //	unsigned char bufRgbP[3*height*width];
 
-	for (;;) {
+//	for (;;) {
 
 		respON = device.open(ANY_DEVICE);
 		if (respON != STATUS_OK) {
@@ -205,13 +205,21 @@ int main(int argc, char **argv) {
 		}
 
 		// get rgb stream
-		if (device.getSensorInfo(SENSOR_COLOR) != NULL) {
+		const SensorInfo* sinfo = device.getSensorInfo(SENSOR_COLOR);
+		if (sinfo != NULL) {
 			respON = rgbStream.create(device, SENSOR_COLOR);
 			if (respON != STATUS_OK) {
 				ERROR_MSG("Could not create RGB stream: " << OpenNI::getExtendedError());
 				return EXIT_FAILURE;
 			}
+			const openni::Array<VideoMode>& modes = sinfo->getSupportedVideoModes();
+			rgbStream.setVideoMode(modes[0]);
 		}
+		
+
+//		VideoMode videoMode = rgbStream.getVideoMode();
+//		videoMode.setFps(1);
+//		rgbStream.setVideoMode(videoMode);
 
 		respON = rgbStream.start();
 		if (respON != STATUS_OK) {
@@ -237,8 +245,8 @@ int main(int argc, char **argv) {
 //		if (vm.count("printTime")) DEBUG_MSG("Starting Loop Initialization");
 
 	//	INFO_MSG("Starting Loop");
-		if (vm.count("printTime")) DEBUG_MSG("-----------------------------------------------")
-		systime1 = system_clock::now();
+//		if (vm.count("printTime")) DEBUG_MSG("-----------------------------------------------")
+//		systime1 = system_clock::now();
 
 		respON = rgbStream.readFrame(&rgbImage);
 		if (respON != STATUS_OK) {
@@ -247,9 +255,9 @@ int main(int argc, char **argv) {
 		}
 		int height = rgbImage.getHeight();
 		int width = rgbImage.getWidth();
-//		DEBUG_MSG("Image size: " << width << "/" << height);
+		DEBUG_MSG("Image size: " << width << "/" << height);
 
-		if (vm.count("printTime")) systime2 = system_clock::now();
+/*		if (vm.count("printTime")) systime2 = system_clock::now();
 		if (vm.count("printTime")) mstime = duration_cast<milliseconds>(systime2-systime1);
 		if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
 		
@@ -261,8 +269,8 @@ int main(int argc, char **argv) {
 		if (vm.count("printTime")) systime2 = system_clock::now();
 		if (vm.count("printTime")) mstime = duration_cast<milliseconds>(systime2-systime1);
 		if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
-		
-/*	for(;;) {
+*/		
+	for(;;) {
 
 		if (vm.count("printTime")) DEBUG_MSG("-----------------------------------------------")
 		systime1 = system_clock::now();
@@ -275,14 +283,12 @@ int main(int argc, char **argv) {
 		if (vm.count("printTime")) systime2 = system_clock::now();
 		if (vm.count("printTime")) mstime = duration_cast<milliseconds>(systime2-systime1);
 		if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
-*/
+
 		if (!sendImage) {
-//			int height = rgbImage.getHeight();
-//			int width = rgbImage.getWidth();
+			int height = rgbImage.getHeight();
+			int width = rgbImage.getWidth();
 			INFO_MSG(" => Image loaded: " << width << "/" << height);
 		} else {
-//			if (vm.count("printTime")) systime1 = system_clock::now();
-//			if (vm.count("printTime")) DEBUG_MSG("Conversion to OpenCV");
 			// Convert to cv::Mat
 			if (vm.count("printTime")) systime1 = system_clock::now();
 			if (vm.count("printTime")) DEBUG_MSG("Conversion: Prepare Buffer");
@@ -328,8 +334,12 @@ int main(int argc, char **argv) {
 		if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms")
 		else DEBUG_MSG("Image sent (" << mstime.count() << " ms)");
 
-		usleep(100000);
+		usleep(500000);
 	}
+	
+	rgbStream.stop();
+	rgbStream.destroy();
+	device.close();
 	
 	OpenNI::shutdown();
 
