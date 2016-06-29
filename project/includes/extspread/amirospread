@@ -13,71 +13,51 @@
 # This configures one spread daemon running on port 4823 on localhost.
 
 Spread_Segment  192.168.255.255:4823 {
-    amiro15        192.168.2.15
+    amiro37        192.168.102.37
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    amiro19        192.168.2.19
+    amiro21        192.168.102.21
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    amiro21        192.168.2.21
+    amiro39        192.168.102.39
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    amiro28        192.168.2.28
+    amiro30        192.168.102.30
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    amiro30        192.168.2.30
+    amiro19        192.168.102.19
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    amiro36        192.168.2.36
+    amiro31        192.168.102.31
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    amiro37        192.168.2.37
-}
-
-Spread_Segment  192.168.255.255:4823 {
-    amiro39        192.168.2.39
-}
-
-Spread_Segment  192.168.255.255:4823 {
-    meka-marbel    192.168.2.83
+    amiro36        192.168.102.36
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-    muthrext       192.168.2.100     
+    tobi       192.168.102.102    
 }
 
 Spread_Segment  192.168.255.255:4823 {    
-    multivacext    192.168.2.101    
+    meka       192.168.102.103 
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    tobi          192.168.2.102
+    timo        192.168.102.1
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    exner          192.168.2.200
+    skynet        192.168.102.2
 }
 
 Spread_Segment  192.168.255.255:4823 {
-    lennyEth       192.168.2.201
-}
-
-Spread_Segment  192.168.255.255:4823 {
-    lenny          192.168.2.202
-}
-
-Spread_Segment  192.168.255.255:4823 {
-    skynet         192.168.2.203
-}
-
-Spread_Segment  192.168.255.255:4823 {
-    marax          192.168.2.204
+    julian        192.168.102.3
 }
 
 # Spread options
