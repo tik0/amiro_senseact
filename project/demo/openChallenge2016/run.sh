@@ -53,12 +53,12 @@ fi
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-# 0 1 # 30 36
-# 2 3 # 37 39
-initialPoses="14074.9 13336.8 -92.7081
-13464.4 13355.8 -92.9293
-14102.5 13919.3 -93.0445
-13508.3 13949.4 -92.961"
+# 3 2 1 0
+# 39 37 36 30
+initialPoses="6817.87 26080.3 -90.2865
+10706.6 20368.8 180
+8239.97 26291.8 -90.2865
+9086.97 26260.2 -94.6852"
 
 initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 initialX="$(echo "$initialPose" | cut -d\  -f 1)"
@@ -66,14 +66,14 @@ initialY="$(echo "$initialPose" | cut -d\  -f 2)"
 initialTheta="$(echo "$initialPose" | cut -d\  -f 3)"
 
 # positions:
-# 0: first table (30)
-# 1: door to amilab (36)
-# 2: next to VR lab (where the shelf used to be) (37)
-# 3: kitchen (39)
-targetPoses="14544.9 10914.1 177.017
-12753.7 4397.98 87.1896
-12228 8612.58 -2.02987
-12710.6 15501.3 -43.8059"
+# 0: corridor near the stage (30)
+# 1: next to entrance door (36)
+# 2: shelf in the kitchen (37)
+# 3: dining room by the wall facing the stage (39)
+targetPoses="9048.05 23917.8 89.7135
+5545.7 19998.3 89.7135
+9806.89 19933.7 89.7135
+7772.01 19641.1 87.0505"
 
 # take row ID + 1
 targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
@@ -82,7 +82,7 @@ targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
   --remotePort 4823 \
   --senImage 0 \
   --delta 0.05 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
-  --loadMapFromImage ./data/centralLab.pgm --flipHorizontal true \
+  --loadMapFromImage ./data/Leipzig_Arena_A.pgm --flipHorizontal true \
   --erosionRadius 0.33 \
   --initialX $initialX --initialY $initialY --initialTheta $initialTheta \
   --targetPose "$targetPose" \
