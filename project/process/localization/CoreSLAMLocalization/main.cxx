@@ -303,8 +303,6 @@ std::list<cv::Point2i> getPath(const ts_position_t &targetPose) {
     return path;
 }
 
-uint64_t sendNewTargetPositionIn = 0; // timestamp in ms
-//bool goingStraight = false;
 void drivePath(std::list<cv::Point2i> &path) {
     // calculate distance to checkpoint
     cv::Point2i immediatePosePX = path.front();
@@ -325,7 +323,6 @@ void drivePath(std::list<cv::Point2i> &path) {
         // arrived at checkpoint -> remove it
         DEBUG_MSG("Reached waypoint, deleting it");
         path.pop_front();
-        sendNewTargetPositionIn = 0;
 
         // Stop the robot
         boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
@@ -342,57 +339,34 @@ void drivePath(std::list<cv::Point2i> &path) {
         DEBUG_MSG("Angle to target: " << relativeAngle);
         if (abs(relativeAngle) > 0.30f /*M_PI / 45*/) { // precision of rotation (0.15 rad ~ 8.59°)//(PI/45 = 4°)
             DEBUG_MSG("angle to waypoint too big -> rotating");
-            //goingStraight = false;
 
-            if (sendNewTargetPositionIn <= rsc::misc::currentTimeMillis()) {
-                // calculate time from given speed
-                // Note: this is not the real rotation speed, currently the DiWheelDrive limits this velocity.
-                const double rotationSpeed = M_PI; // rad/s
-                uint16_t timeMS = SECONDS_TO_MS * (abs(relativeAngle) / rotationSpeed);
-                if (timeMS > 5000)
-                    timeMS = 5000;
-
-                // Define the steering message for sending over RSB
-                boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
-                // Get the mutable objects
-                rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
-                rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
-                steeringRotation->set_roll(0);
-                steeringRotation->set_pitch(0);
-                steeringRotation->set_yaw(relativeAngle);
-                steeringTranslation->set_x(0);
-                steeringTranslation->set_y(0);
-                steeringTranslation->set_z(0);
-                steering->set_target_time((unsigned short)timeMS);
-
-                SUCCESS_MSG("Sending target position: yaw: " << steeringRotation->yaw() << " (time: " << timeMS << ")");
-                targetInformer->publish(steering);
-
-                sendNewTargetPositionIn = rsc::misc::currentTimeMillis() + std::min(std::max((uint16_t)200, timeMS), (uint16_t)5000);
-            } else {
-                DEBUG_MSG("Will send new target position in " << (sendNewTargetPositionIn - rsc::misc::currentTimeMillis()) << " ms");
+            boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
+            float angularVelocity = 1.0f;
+            if (relativeAngle < 0) {
+                angularVelocity = -angularVelocity;
             }
+
+            targetSpeed->at(1) = angularVelocity * RAD_TO_URAD;
+            motorInformer->publish(targetSpeed);
+
+            usleep(0.1f * SECONDS_TO_US);
 
         } else { // angle is small enough
             DEBUG_MSG("angle to waypoint small enough, driving towards it now");
 
-            //if (!goingStraight) { // nothing to do when we already go straight
-                const float velocity = 0.3f; // m/s
-                //goingStraight = true;
-                sendNewTargetPositionIn = 0; // reset setTargetPosition timeout
+            const float velocity = 0.3f; // m/s
 
-                // Set the motor speed
-                // Velocity send in µm/s
-                // Angular velocity send in µrad/s
-                boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
-                targetSpeed->at(0) = velocity * METERS_TO_UM;
-                float t = distance / velocity;
-                float w_z = relativeAngle / t;
-                DEBUG_MSG("w_z: " << w_z);
-                w_z = std::max<float>(std::min<float>(M_PI, w_z), -M_PI);
-                targetSpeed->at(1) = w_z * RAD_TO_URAD;
-                motorInformer->publish(targetSpeed);
-            //}
+            // Set the motor speed
+            // Velocity send in µm/s
+            // Angular velocity send in µrad/s
+            boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
+            targetSpeed->at(0) = velocity * METERS_TO_UM;
+            float t = distance / velocity;
+            float w_z = relativeAngle / t;
+            DEBUG_MSG("w_z: " << w_z);
+            w_z = std::max<float>(std::min<float>(M_PI, w_z), -M_PI);
+            targetSpeed->at(1) = w_z * RAD_TO_URAD;
+            motorInformer->publish(targetSpeed);
         }
     }
 }
@@ -825,7 +799,7 @@ void rotateToPose(const ts_position_t &targetPose) {
     steeringTranslation->set_x(0);
     steeringTranslation->set_y(0);
     steeringTranslation->set_z(0);
-    steering->set_target_time(3000);
+    steering->set_target_time(1);
 
     targetInformer->publish(steering);
 }
