@@ -2,6 +2,9 @@
 
 set -e
 
+PASS=$1
+shift
+
 for IP in $@; do
 	echo "====================="
 	echo "copying to ${IP}"
@@ -9,7 +12,7 @@ for IP in $@; do
 
 	#IP=${1}
 	NAME=`basename "$PWD"`
-	ssh root@${IP} "mkdir -p ~/${NAME}/data"
+	sshpass -p$PASS ssh root@${IP} "mkdir -p ~/${NAME}/data"
 
 	files=""
 	for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
@@ -36,9 +39,9 @@ for IP in $@; do
 	#files="$files ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www"
 
 	dest="root@${IP}:~/${NAME}/"
-	rsync -v --progress -ua $files $dest
+	sshpass -p$PASS rsync -v --progress -ua $files $dest
 
 	# Copy the maps
-	rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/* "$dest/data/"
+	sshpass -p$PASS rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/* "$dest/data/"
 
 done
