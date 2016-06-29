@@ -35,6 +35,9 @@ for IP in $@; do
 	# Copy poses
 	files="$files poses"
 
+	# Copy set-hostname script
+	files="$files $MUROX_PROJECT/tools/robotTools/set-hostname.sh"
+
 	# Copy the website
 	#files="$files ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www"
 

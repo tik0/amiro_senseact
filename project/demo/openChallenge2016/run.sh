@@ -2,6 +2,8 @@
 
 set -e
 
+./set-hostname.sh
+
 if [ -z "${1}" ]; then
   echo "Set an ID for the AMiRo"
   exit 1
