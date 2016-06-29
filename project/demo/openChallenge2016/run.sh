@@ -53,12 +53,12 @@ fi
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
-# 3 2 1 0
-# 39 37 36 30
-initialPoses="6817.87 26080.3 -90.2865
-10706.6 20368.8 180
-8239.97 26291.8 -90.2865
-9086.97 26260.2 -94.6852"
+# 0 1
+# 2 3
+initialPoses="26455.8 18401.5 0
+26450.4 17901.8 0.62263
+25956.1 18401.5 -0.153631
+25950.7 17901.8 0"
 
 initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 initialX="$(echo "$initialPose" | cut -d\  -f 1)"
@@ -70,10 +70,19 @@ initialTheta="$(echo "$initialPose" | cut -d\  -f 3)"
 # 1: next to entrance door (36)
 # 2: shelf in the kitchen (37)
 # 3: dining room by the wall facing the stage (39)
-targetPoses="9048.05 23917.8 89.7135
-5545.7 19998.3 89.7135
-9806.89 19933.7 89.7135
-7772.01 19641.1 87.0505"
+
+# 0: living room
+# 1: dining_room
+# 2: kitchen
+# 3: corridor
+kitchen="27400.7 18478 -90"
+dining_room="29312.9 18658.4 -90"
+living_room="32758.5 18387.8 -90"
+corridor="27978 11695.1 90"
+targetPoses="$living_room
+$dining_room
+$kitchen
+$corridor"
 
 # take row ID + 1
 targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
