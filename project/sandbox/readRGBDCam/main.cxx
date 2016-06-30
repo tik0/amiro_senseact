@@ -74,12 +74,14 @@ static unsigned int g_uiQuality = 100;
 bool sendImage = false;
 bool justPrint = false;
 bool debugImage = false;
+bool showIR = false;
 
 int main(int argc, char **argv) {
 
 	namespace po = boost::program_options;
 	int rgbMode = -1;
 	int depthMode = -1;
+	int irMode = -1;
 	unsigned int period = 10; // ms
 	
 	po::options_description options("Allowed options");
@@ -90,8 +92,10 @@ int main(int argc, char **argv) {
 			("device,v", po::value<int>(&g_iDevice), "Camera device ID")
 			("rgbMode", po::value<int>(&rgbMode), "Mode of RGB Image.")
 			("depthMode", po::value<int>(&depthMode), "Mode of Depth Image.")
+			("irMode", po::value<int>(&irMode), "Mode of IR Image.")
 			("period", po::value<unsigned int>(&period), "Period between two image fetches in ms (default: 10).")
 			("compression,c", po::value<unsigned int>(&g_uiQuality), "Compression value [0,100]")
+			("showIR", "Flag if the IR image shall be shown instead of the RGB Image.")
 			("sendImage,s", "Flag if the image shall be converted to OpenCV and send via RSB.")
 			("printInfo,p", "Flag if just the camera infos shall be printed. The tool closes afterwards.")
 			("debugImage,i", "Flag if over the RGB scope the RGB image and depth image shall be send in one image.");
@@ -112,9 +116,17 @@ int main(int argc, char **argv) {
 	sendImage = vm.count("sendImage");
 	justPrint = vm.count("printInfo");
 	debugImage = vm.count("debugImage");
+	showIR = vm.count("showIR");
 	
-	if (rgbMode >= 0) INFO_MSG("Mode of RGB Image will be set to " << rgbMode);
+	if (!showIR && rgbMode >= 0) INFO_MSG("Mode of RGB Image will be set to " << rgbMode);
+	if (showIR && irMode >= 0) INFO_MSG("Mode of IR Image will be set to " << irMode);
 	if (depthMode >= 0) INFO_MSG("Mode of Depth Image will be set to " << depthMode);
+	
+	std::string rgbName = "RGB";
+	if (showIR) {
+		rgbName = "IR";
+		rgbMode = irMode;
+	}
 	
 	// Initialize clock
 	system_clock::time_point systime1, systime2;
@@ -155,7 +167,7 @@ int main(int argc, char **argv) {
 	vector<int> compression_params;
 	compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
 	compression_params.push_back(g_uiQuality);
-	vector<uchar> bufRgb, bufDepth;
+	vector<uchar> bufRgb, bufDepth, bufIR;
 
 	Status respON = OpenNI::initialize();
 	if (respON != STATUS_OK) {
@@ -172,16 +184,25 @@ int main(int argc, char **argv) {
 	}
 
 	// get rgb stream
-	const SensorInfo* rgbinfo = device.getSensorInfo(SENSOR_COLOR);
+	const SensorInfo* rgbinfo;
+	if (showIR) {
+		rgbinfo = device.getSensorInfo(SENSOR_IR);
+	} else {
+		rgbinfo = device.getSensorInfo(SENSOR_COLOR);
+	}
 	if (rgbinfo != NULL) {
-		respON = rgbStream.create(device, SENSOR_COLOR);
+		if (showIR) {
+			respON = rgbStream.create(device, SENSOR_IR);
+		} else {
+			respON = rgbStream.create(device, SENSOR_COLOR);
+		}
 		if (respON != STATUS_OK) {
-			ERROR_MSG("Could not create RGB stream: " << OpenNI::getExtendedError());
+			ERROR_MSG("Could not create " << rgbName << " stream: " << OpenNI::getExtendedError());
 			return EXIT_FAILURE;
 		}
 		const openni::Array<VideoMode>& modes = rgbinfo->getSupportedVideoModes();
 		if (justPrint) {
-			INFO_MSG("Modes of rgb stream:");
+			INFO_MSG("Modes of " << rgbName << " stream:");
 			for (int i=0; i<modes.getSize(); i++) {
 				INFO_MSG(" " << i << ": " << modes[i].getResolutionX() << "x" << modes[i].getResolutionY() << ", " << modes[i].getFps() << " fps, " << modes[i].getPixelFormat() << " format");
 			}
@@ -189,7 +210,7 @@ int main(int argc, char **argv) {
 		if (rgbMode < modes.getSize() && rgbMode >= 0) {
 			respON = rgbStream.setVideoMode(modes[rgbMode]);
 			if (respON != STATUS_OK) {
-				ERROR_MSG("Could not set mode of RGB stream: " << OpenNI::getExtendedError());
+				ERROR_MSG("Could not set mode of " << rgbName << " stream: " << OpenNI::getExtendedError());
 				return EXIT_FAILURE;
 			}
 		}
@@ -222,7 +243,7 @@ int main(int argc, char **argv) {
 	// start streams
 	respON = rgbStream.start();
 	if (respON != STATUS_OK) {
-		ERROR_MSG("Could not start the RGB stream: " << OpenNI::getExtendedError());
+		ERROR_MSG("Could not start the " << rgbName << " stream: " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
 	respON = depthStream.start();
@@ -235,7 +256,7 @@ int main(int argc, char **argv) {
 	int changedRgbStreamDummy;
 	respON = OpenNI::waitForAnyStream(&rgbStreamTemp, 1, &changedRgbStreamDummy, SAMPLE_READ_WAIT_TIMEOUT);
 	if (respON != STATUS_OK) {
-		ERROR_MSG("Wait for RGB stream failed (timeout is "  << SAMPLE_READ_WAIT_TIMEOUT << " ms): " << OpenNI::getExtendedError());
+		ERROR_MSG("Wait for " << rgbName << " stream failed (timeout is "  << SAMPLE_READ_WAIT_TIMEOUT << " ms): " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
 	VideoStream* depthStreamTemp = &depthStream;
@@ -249,7 +270,7 @@ int main(int argc, char **argv) {
 	// read first image
 	respON = rgbStream.readFrame(&rgbImage);
 	if (respON != STATUS_OK) {
-		ERROR_MSG("Read RGB image failed: " << OpenNI::getExtendedError());
+		ERROR_MSG("Read " << rgbName << " image failed: " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
 	
@@ -259,21 +280,24 @@ int main(int argc, char **argv) {
 		ERROR_MSG("Read depth image failed: " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
+	
 	if (justPrint) {
 		int imageHeight = rgbImage.getHeight();
 		int imageWidth = rgbImage.getWidth();
 		int scanHeight = depthImage.getHeight();
 		int scanWidth = depthImage.getWidth();
-		INFO_MSG("Image size " << imageWidth << "x" << imageHeight << " with laser image " << scanWidth << "x" << scanHeight);
+		INFO_MSG(rgbName << " Image size " << imageWidth << "x" << imageHeight << " with laser image " << scanWidth << "x" << scanHeight);
 	}
 
+	double minVal, maxVal;
+	float alpha, beta;
 	while (!justPrint) {
 		if (vm.count("printTime")) DEBUG_MSG("-----------------------------------------------")
 		systime1 = system_clock::now();
 		if (vm.count("printTime")) DEBUG_MSG("Reading camera frames");
 		respON = rgbStream.readFrame(&rgbImage);
 		if (respON != STATUS_OK) {
-			ERROR_MSG("Read RGB image failed: " << OpenNI::getExtendedError());
+			ERROR_MSG("Read " << rgbName << " image failed: " << OpenNI::getExtendedError());
 			return EXIT_FAILURE;
 		}
 		respON = depthStream.readFrame(&depthImage);
@@ -290,7 +314,7 @@ int main(int argc, char **argv) {
 			int rgbWidth = rgbImage.getWidth();
 			int dHeight = depthImage.getHeight();
 			int dWidth = depthImage.getWidth();
-			INFO_MSG(" => Image loaded: " << rgbWidth << "/" << rgbHeight << ", " << dWidth << "/" << dHeight);
+			INFO_MSG(" => " << rgbName << " Image loaded: " << rgbWidth << "/" << rgbHeight << ", " << dWidth << "/" << dHeight);
 		} else {
 			// Convert to cv::Mat
 			if (vm.count("printTime")) systime1 = system_clock::now();
@@ -309,16 +333,15 @@ int main(int argc, char **argv) {
 			if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
 			
 			if (vm.count("printTime")) systime1 = system_clock::now();
-			if (vm.count("printTime")) DEBUG_MSG("Conversion: Convert to correctly flipped RGB images");
+			if (vm.count("printTime")) DEBUG_MSG("Conversion: Convert to correctly flipped " << rgbName << " images");
 			
 			cvtColor(rgbMat, rgbMat, CV_BGR2RGB);
 			flip(rgbMat, rgbMat, 1);
 			
 			Mat depthDataImage1C;
-			double minVal, maxVal;
 			minMaxLoc(depthdata, &minVal, &maxVal);
-			float alpha = 255.0 / maxVal;
-			float beta = 255.0 - maxVal*alpha;
+			alpha = 255.0 / maxVal;
+			beta = 255.0 - maxVal*alpha;
 			depthdata.convertTo(depthDataImage1C, CV_8UC1, alpha, beta);
 			cvtColor(depthDataImage1C, depthMat, CV_GRAY2RGB);
 			flip(depthMat, depthMat, 1);
@@ -332,7 +355,7 @@ int main(int argc, char **argv) {
 			if (vm.count("printTime")) DEBUG_MSG("Compressing and sending images");
 			if (debugImage) {
 				Mat publicMat(max(rgbMat.rows, depthMat.rows), rgbMat.cols+depthMat.cols, CV_8UC3);
-				Mat part[2];
+				Mat part[3];
 				part[0] = Mat(publicMat, Rect(0, 0, rgbMat.cols, rgbMat.rows));
 				part[1] = Mat(publicMat, Rect(rgbMat.cols, 0, depthMat.cols, depthMat.rows));
 				rgbMat.copyTo(part[0]);
@@ -359,8 +382,10 @@ int main(int argc, char **argv) {
 	
 	rgbStream.stop();
 	rgbStream.destroy();
-	device.close();
+	depthStream.stop();
+	depthStream.destroy();
 	
+	device.close();
 	OpenNI::shutdown();
 
 	return EXIT_SUCCESS;
