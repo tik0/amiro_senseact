@@ -50,7 +50,7 @@ include_directories(include
 )
 
 # Define the source
-SET (SOURCE main.cxx)
+SET (SOURCE main.cxx map-io.cpp)
 
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecIntConverterSource.cmake")
 

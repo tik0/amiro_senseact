@@ -73,6 +73,8 @@ extern "C"{
 // Include own converter for setting new position
 #include <converter/vecIntConverter/main.hpp>
 
+#include "map-io.h"
+
 // ===== Namespaces =====
 using namespace std;
 using namespace rsb;
@@ -303,6 +305,8 @@ std::list<cv::Point2i> getPath(const ts_position_t &targetPose) {
     return path;
 }
 
+float targetSpeed0 = 0.1f;
+float targetSpeed1 = 1.0f;
 void drivePath(std::list<cv::Point2i> &path) {
     // calculate distance to checkpoint
     cv::Point2i immediatePosePX = path.front();
@@ -341,7 +345,23 @@ void drivePath(std::list<cv::Point2i> &path) {
             DEBUG_MSG("angle to waypoint too big -> rotating");
 
             boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
-            float angularVelocity = 1.0f;
+            // trick 17 (tm)
+            targetSpeed->at(0) = targetSpeed0 * METERS_TO_UM;
+
+            float minAngularVelocity = 1.2f; // 0.30 rad = 17.90°
+            float maxAngularVelocity = 2.0f; // 90°
+
+            float angularVelocity = targetSpeed1;
+
+            float m = (maxAngularVelocity - minAngularVelocity) / (M_PI/2 - 0.30f);
+            float b = maxAngularVelocity - M_PI/2 * m;
+
+            angularVelocity = m * abs(relativeAngle) + b;
+
+            angularVelocity = std::min(maxAngularVelocity, std::max(minAngularVelocity, angularVelocity));
+
+            DEBUG_MSG("angularVelocity: " << angularVelocity);
+
             if (relativeAngle < 0) {
                 angularVelocity = -angularVelocity;
             }
@@ -349,7 +369,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             targetSpeed->at(1) = angularVelocity * RAD_TO_URAD;
             motorInformer->publish(targetSpeed);
 
-            usleep(0.1f * SECONDS_TO_US);
+            //usleep(0.05f * SECONDS_TO_US);
 
         } else { // angle is small enough
             DEBUG_MSG("angle to waypoint small enough, driving towards it now");
@@ -548,122 +568,6 @@ bool addScan(const rst::vision::LocatedLaserScan &scan, ts_position_t &pose)
 }
 
 /**
- * @brief saveMapAsPGM Saves a given map as a 16bit PGM.
- * @param map pointer to tinySLAM map struct.
- * @param path path in the file system where the image should be saved.
- */
-void saveMapAsPGM(ts_map_t *map, std::string path) {
-    std::ofstream file(path, std::ofstream::binary);
-
-    // Magic Number for Portable Graymap in binary
-    file << "P5" << std::endl;
-
-    // Dimensions of the PGM
-    file << map->size << " " << map->size << std::endl;
-
-    // Image depth
-    file << TS_NO_OBSTACLE << std::endl;
-
-    // Actual image data
-    file.write((char *)map->map, sizeof(ts_map_pixel_t) * map->size * map->size);
-
-    file.close();
-}
-
-/**
- * @brief loadMapFromPGM loads a 16bit grayscale PGM and converts it into a tinySLAM map struct. This function can be used to load PGMs created with saveMapAsPGM(). In contrast to loadMapFromImage() PGM are loaded with 16bit depth.
- * @param map pointer to a tinySLAM map struct.
- * @param path path in the file system to the PGM file.
- * @return true on success, otherwise false
- */
-bool loadMapFromPGM(ts_map_t *map, std::string path) {
-    // read image from file
-    cv::Mat image;
-    if (!path.empty()) {
-      image = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED); // load unchanged to keep 16bit
-    } else {
-      ERROR_MSG("Empty path to map");
-      return false;
-    }
-
-    // check if loading image failed
-    if (!image.data) {
-        ERROR_MSG("Could not open file: " << path);
-        return false;
-    }
-
-    // check if image is square
-    if (image.cols != image.rows) {
-        ERROR_MSG("Height of image must be equal to width! Maybe this PGM was not created with CoreSLAM? Use loadMapFromImage instead.");
-        return false;
-    }
-
-    // initalize struct
-    map->size = image.cols;
-    map->map = (ts_map_pixel_t *) malloc(sizeof(ts_map_pixel_t) * map->size * map->size);
-
-    // copy image into map structure
-    int x, y;
-    ts_map_pixel_t *ptr = map->map;
-    for (y = 0; y < image.rows; y++) {
-        for (x = 0; x < image.cols; x++) {
-            *ptr = image.at<uint16_t>(y,x);
-            ptr++;
-        }
-    }
-
-    return true;
-}
-
-/**
- * @brief loadMapFromImage loads a grayscale image using OpenCV and converts it into a tinySLAM map struct.
- * @param map pointer to a tinySLAM map struct.
- * @param path path in the file system to the image file.
- * @return true on success, otherwise false
- */
-bool loadMapFromImage(ts_map_t *map, std::string path) {
-    // read image from file
-    cv::Mat image = cv::imread(path, CV_LOAD_IMAGE_GRAYSCALE);
-
-    // check if loading image failed
-    if (!image.data) {
-        ERROR_MSG("Could not open file: " << path);
-        return false;
-    }
-
-    // maybe flip
-    if (flipHorizontal) {
-        cv::flip(image, image, 0); // 0 is OpenCV's magic flip code for flipping around x axis
-    }
-
-    // check if image is square
-    if (image.cols != image.rows) {
-        INFO_MSG("Loaded map image is not square. Padding it...");
-    }
-
-    // initalize struct
-    map->size = std::max(image.cols, image.rows);
-    map->map = (ts_map_pixel_t *) malloc(sizeof(ts_map_pixel_t) * map->size * map->size);
-
-    // convert image to map
-    int x, y;
-    ts_map_pixel_t *ptr = map->map;
-    for (y = 0; y < map->size; y++) {
-        for (x = 0; x < map->size; x++) {
-            if (x < image.cols && y < image.rows) {
-                *ptr = image.at<uchar>(y,x) * (TS_NO_OBSTACLE / 255);
-            } else {
-                // mark as unknown
-                *ptr = (TS_OBSTACLE + TS_NO_OBSTACLE) / 2;
-            }
-            ptr++;
-        }
-    }
-
-    return true;
-}
-
-/**
  * @brief getClosestValidPosition Calculates the closest valid pose
  * @param currentPose Current pose
  * @param targetPose Target pose set by calculating the shortest path given a map with valid positions
@@ -672,7 +576,7 @@ bool loadMapFromImage(ts_map_t *map, std::string path) {
 bool getClosestValidPosition(const ts_position_t &currentPose, ts_position_t &targetPose) {
   ts_map_t map;
   INFO_MSG("path " <<  mapValidPositionsPNGPath);
-  if (!loadMapFromImage(&map, mapValidPositionsPNGPath)) {
+  if (!loadMapFromImage(&map, mapValidPositionsPNGPath, flipHorizontal)) {
     ERROR_MSG("No valid map");
     return false;
   }
@@ -780,11 +684,11 @@ void publishPath(const std::list<cv::Point2i> &path) {
 
 void rotateToPose(const ts_position_t &targetPose) {
     float targetAngle = targetPose.theta * DEGREE_TO_RAD;
-    DEBUG_MSG("targetAngle: " << targetAngle);
+    DEBUG_MSG("targetAngle:     " << targetAngle);
     float currentAngle = pose.theta * DEGREE_TO_RAD;
-    DEBUG_MSG("currentAngle: " << currentAngle);
+    DEBUG_MSG("currentAngle:    " << currentAngle);
     float rotateBy = targetAngle - currentAngle;
-    DEBUG_MSG("rotateBy: " << rotateBy);
+    DEBUG_MSG("rotateBy:        " << rotateBy);
     rotateBy = normalizeAngle(rotateBy);
     DEBUG_MSG("rotateBy (norm): " << rotateBy);
 
@@ -799,7 +703,7 @@ void rotateToPose(const ts_position_t &targetPose) {
     steeringTranslation->set_x(0);
     steeringTranslation->set_y(0);
     steeringTranslation->set_z(0);
-    steering->set_target_time(1);
+    steering->set_target_time(3000);
 
     targetInformer->publish(steering);
 }
@@ -836,22 +740,21 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
               // before driving new path, back up
               emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("off"))); // disable emergency stop, so moving is possible
 
-              // Define the steering message for sending over RSB
-              boost::shared_ptr< rst::geometry::TargetPoseEuler > steering(new rst::geometry::TargetPoseEuler);
-              // Get the mutable objects
-              rst::geometry::RotationEuler *steeringRotation = steering->mutable_target_pose()->mutable_rotation();
-              rst::geometry::Translation *steeringTranslation = steering->mutable_target_pose()->mutable_translation();
-              steeringRotation->set_roll(0);
-              steeringRotation->set_pitch(0);
-              steeringRotation->set_yaw(0);
-              steeringTranslation->set_x(-0.2f); // back up 20 cm
-              steeringTranslation->set_y(0);
-              steeringTranslation->set_z(0);
-              steering->set_target_time((unsigned short)1); // in 1s
+              const float velocity = 0.2f; // m/s
 
-              targetInformer->publish(steering);
+              // Set the motor speed
+              // Velocity send in µm/s
+              // Angular velocity send in µrad/s
+              boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
+              targetSpeed->at(0) = -velocity * METERS_TO_UM;
+              motorInformer->publish(targetSpeed);
 
-              usleep(2 * SECONDS_TO_US); // wait for movement
+              usleep(1 * SECONDS_TO_US); // wait for movement
+
+              // stop again
+              targetSpeed = boost::shared_ptr< std::vector<int> >( new std::vector<int>(2,0) );
+              motorInformer->publish(targetSpeed);
+
               // enable emergency stop again
               emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("on")));
 
@@ -1025,7 +928,10 @@ int main(int argc, const char **argv){
     ("precomputeOccupancyMap", po::value< bool > (&precomputeOccupancyMap), "Precompute occupancy map at start.")
     ("loadOccupancyMapFromFile", po::value< std::string > (&loadOccupancyMapFromFile), "Occupancy map file be read from file.")
     ("targetPose", po::value< std::vector<std::string> > (&targetPoseStrVec)->multitoken(), "Target position (mm, mm, degree) the amiro drives to when triggered.")
-    ("targetPoseInScope", po::value< std::string > (&targetPoseInScope), "Scope for receiving a new goal position.");
+    ("targetPoseInScope", po::value< std::string > (&targetPoseInScope), "Scope for receiving a new goal position.")
+    ("targetSpeed0", po::value< float > (&targetSpeed0), "")
+    ("targetSpeed1", po::value< float > (&targetSpeed1), "");
+
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -1049,7 +955,7 @@ int main(int argc, const char **argv){
   // initalize map
   if (!mapImagePath.empty()) {
       INFO_MSG("Reading map from file.");
-      bool ret = loadMapFromImage(&ts_map_, mapImagePath);
+      bool ret = loadMapFromImage(&ts_map_, mapImagePath, flipHorizontal);
       if (!ret) {
           DEBUG_MSG("Map could not be loaded.");
           return 1;
