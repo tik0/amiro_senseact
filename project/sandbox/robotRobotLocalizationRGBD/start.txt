@@ -1,0 +1,3 @@
+====== Robot Robot Localization with RGBD Camera ======
+
+One robot tries to localize the other.

@@ -44,7 +44,7 @@ static struct timeval tv;
 static rsb::ListenerPtr listenerPtr;
 static rsb::HandlerPtr  handlerPtr;
 static rsb::ParticipantConfig config;
-static rsb::Factory& factory = rsb::Factory::getInstance(); //rsb::getFactory();
+static rsb::Factory& factory = rsb::getFactory();
 // RSB WS interaction
 static bool newRsbData = false;
 static std::string newRsbPayload;
@@ -168,6 +168,7 @@ static int process_request(struct mg_connection *conn) {
             MG_FALSE : MG_TRUE;
   } else {
     //load everything that belongs to the html site automatically
+    std::cout << "nein, doch nicht ;-)" << std::endl;
     return MG_FALSE;
   }
 }

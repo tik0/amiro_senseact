@@ -103,6 +103,8 @@ std::string spreadport = "4803";
 // color data and light type
 amiro::Color curColor(255, 255, 255);
 int lightType = LightModel::LightType::SINGLE_SHINE;
+std::string oldColorCmd = "";
+std::string colorAns = "";
 
 
 // method prototypes
@@ -271,7 +273,8 @@ int main(int argc, char **argv) {
 				DEBUG_MSG("Incomming command: " << command);
 				if (command == CMD_STOP) {
 					exitProg = true;
-				} else if (command.substr(0, CMD_COLOR.length()) == CMD_COLOR) {
+				} else if (command.substr(0, CMD_COLOR.length()) == CMD_COLOR) { // && oldColorCmd != command) {
+					oldColorCmd = command;
 					setColor(command, informerLights, guideInformer);
 				}
 			}
@@ -279,7 +282,8 @@ int main(int argc, char **argv) {
 			if (!colorQueue->empty()) {
 				EventPtr event = colorQueue->pop(0);
 				std::string rec = *static_pointer_cast<std::string>(event->getData());
-				boost::shared_ptr<std::string> StringPtr(new std::string("color_" + rec));
+				colorAns += rec;
+				boost::shared_ptr<std::string> StringPtr(new std::string(colorAns));
 				guideInformer->publish(StringPtr);
 			}
 
@@ -380,6 +384,8 @@ void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr l
 			colorName = "blue";
 		}
 		INFO_MSG("Color changed: Color '" << colorName << "', Light Type '" << lightTypeDesc << "'");
+		
+		colorAns = colorInput;
 
 		setLights(lightType, curColor, period, lightInformer);
 	}
