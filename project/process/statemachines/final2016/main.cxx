@@ -49,6 +49,9 @@ ControllerAreaNetwork myCAN;
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/QueuePushHandler.h>
 
+// IR sensor model
+#include <sensorModels/VCNL4020Models.h>
+
 using namespace boost;
 using namespace std;
 using std::vector;
@@ -100,6 +103,24 @@ int turn_degree = 180;
 int turn_follow = 0;
 int move_follow = 0;
 
+
+// IR triggering related
+float irDetectionDist = 0.01; // m
+std::string proxSensorInscopeObstacle = "/rir_prox/obstacle";
+
+bool gotIRCommand(boost::shared_ptr<std::vector<int>> sensorValues, int sensorIdxStart = 0, int sensorIdxEnd = 7) {
+    float distBefore = VCNL4020Models::obstacleModel(0, sensorValues->at(ringproximity::SENSOR_COUNT-1));
+    for (int i=sensorIdxStart; i != (sensorIdxEnd + 1) % ringproximity::SENSOR_COUNT; i = (i + 1) % ringproximity::SENSOR_COUNT) {
+        float distCur = VCNL4020Models::obstacleModel(0, sensorValues->at(i));
+        DEBUG_MSG("dist " << i << ": " << distCur);
+        if (distCur < irDetectionDist && distBefore < irDetectionDist) {
+            return true;
+        }
+        distBefore = distCur;
+    }
+    return false;
+}
+
 int main(int argc, char **argv) {
   namespace po = boost::program_options;
 
@@ -112,7 +133,9 @@ int main(int argc, char **argv) {
             ("id", po::value<std::string> (&amiro_id), "ID of AMiRo.")
         ("turn", po::value<int> (&turn_degree), "Angle to turn in turning state.")
         ("turnAfterFollow", po::value<int> (&turn_follow), "Angle to turn after following (in grad, positiv: counter clockwise).")
-        ("moveAfterFollow", po::value<int> (&move_follow), "Distance to move after following after turning (in mm, positiv: forward).");
+        ("moveAfterFollow", po::value<int> (&move_follow), "Distance to move after following after turning (in mm, positiv: forward).")
+        ("proxObstacleInscope,o", po::value<std::string>(&proxSensorInscopeObstacle), "Inscope for receiving proximity sensor values for obstacle model.")
+        ("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m.");
 
   // Allow to give the value as a positional argument
   po::positional_options_description p;
@@ -195,6 +218,12 @@ int processSM(void) {
   ///////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////
 
+  // ------------ Converters ----------------------
+
+  // Register new converter for std::vector<int>
+  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+
   /////////////////// LOCAL SCOPES///////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////
 
@@ -220,6 +249,11 @@ int processSM(void) {
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> > > queueHomingAnswer(
       new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string> >(1));
   listenerHoming->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::string>(queueHomingAnswer)));
+
+  // prepare RSB listener for the IR data (obstacles)
+  rsb::ListenerPtr proxListenerObstacle = factory.createListener(proxSensorInscopeObstacle);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >proxQueueObstacle(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
+  proxListenerObstacle->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(proxQueueObstacle)));
 
   /////////////////// REMOTE SCOPES///////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////
@@ -293,6 +327,9 @@ int processSM(void) {
 
     bool bGotFromWaypoint_entered = false; // True if something entered the waypoint's area
     bool bGotFromWaypoint_left = false; // True if something left the waypoint's area
+
+    bool gotFromIRgoToRoom = false;
+    bool gotFromIRinitWaypoint = false;
 
     // --- Check for incoming messaturn_degreeges/triggers/signals ---
 
@@ -374,6 +411,19 @@ int processSM(void) {
 //      bGotFollowing_undock = false;
 //    }
 
+    // check for IR sensor trigger
+    gotFromIRgoToRoom = false;
+    gotFromIRinitWaypoint = false;
+    if (!proxQueueObstacle->empty()) {
+        boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
+        // check front sensors
+        if (gotIRCommand(sensorValuesObstacle, 3, 4)) {
+            gotFromIRgoToRoom = true;
+        } else if (gotIRCommand(sensorValuesObstacle, 7, 0)) { // check back sensors
+            gotFromIRinitWaypoint = true;
+        }
+    }
+
     // Get messages from waypoint
     if (!queueWaypointAnswer->empty()) {
       INFO_MSG("Received a message from waypoint.")
@@ -426,10 +476,10 @@ int processSM(void) {
       if(bGotFromTobi_initfollowing) {
         informerFollowing->publish(signal_init);
         set_state_following();
-      } else if(bGotFromTobi_initwaypoint) {
+      } else if(bGotFromTobi_initwaypoint || gotFromIRinitWaypoint) {
         informerWaypoint->publish(signal_init);
         set_state_waypoint();
-      } else if (bGotFromTobi_gotoroom) {
+      } else if (bGotFromTobi_gotoroom || gotFromIRgoToRoom) {
         informerHoming->publish(signal_targetPosition);
         set_state_goToRoom();
       }
@@ -518,7 +568,7 @@ int processSM(void) {
         }
         break;
     case stopped:
-      if (bGotFromTobi_initwaypoint) {
+      if (bGotFromTobi_initwaypoint || gotFromIRinitWaypoint) {
         informerWaypoint->publish(signal_init);
         set_state_waypoint();
       } else if (bGotFromTobi_initfollowing) {
@@ -530,7 +580,7 @@ int processSM(void) {
         informerHoming->publish(signal_homingPosition);
         informerWaypoint->publish(signal_homingPosition);
         set_state_homing();
-      } else if (bGotFromTobi_gotoroom) {
+      } else if (bGotFromTobi_gotoroom || gotFromIRgoToRoom) {
         informerHoming->publish(signal_targetPosition);
         set_state_goToRoom();
       }

@@ -15,3 +15,4 @@ add_subdirectory ($ENV{MUROX_PROJECT}/process/localization/CoreSLAMLocalization 
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actTargetPosition actTargetPosition)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actEmergencyStop actEmergencyStop)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actAmiroMotor actAmiroMotor)
+add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)

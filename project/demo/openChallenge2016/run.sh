@@ -47,6 +47,9 @@ else
 	./senseSickTim -o /lidar > /dev/null &
 fi
 
+# sense ringproximty
+./senseRingProximity --outscopeObstacle /rir_prox/obstacle --noEdgeValues &
+
 # waypoint program from 'project/sandbox/waypoint/'
 ./waypoint --lidarinscope /lidar &
 
@@ -57,10 +60,10 @@ fi
 
 # 0 1
 # 2 3
-initialPoses="26455.8 18401.5 0
-26450.4 17901.8 0.62263
-25956.1 18401.5 -0.153631
-25950.7 17901.8 0"
+initialPoses="33749.9 17848.6 -90
+33250.2 17848.6 -90
+33743.3 18348.3 -90
+33250.2 18348.3 -90"
 
 initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 initialX="$(echo "$initialPose" | cut -d\  -f 1)"
@@ -68,23 +71,20 @@ initialY="$(echo "$initialPose" | cut -d\  -f 2)"
 initialTheta="$(echo "$initialPose" | cut -d\  -f 3)"
 
 # positions:
-# 0: corridor near the stage (30)
-# 1: next to entrance door (36)
-# 2: shelf in the kitchen (37)
-# 3: dining room by the wall facing the stage (39)
-
 # 0: living room
 # 1: dining_room
 # 2: kitchen
 # 3: corridor
 kitchen="27400.7 18478 -90"
 dining_room="29312.9 18658.4 -90"
-living_room="32758.5 18387.8 -90"
-corridor="27978 11695.1 90"
-targetPoses="$living_room
-$dining_room
+#living_room="32758.5 18387.8 -90"
+living_room="33250.2 18348.3 -90"
+#corridor="27978 11695.1 90"
+corridor="27830.3 14194.7 -90"
+targetPoses="$dining_room
 $kitchen
-$corridor"
+$corridor
+$living_room"
 
 # take row ID + 1
 targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"

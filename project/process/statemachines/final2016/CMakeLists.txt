@@ -42,6 +42,10 @@ include_directories(include
     ${Boost_INCLUDE_DIR}
 )
 
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
+
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx $ENV{MUROX_INCLUDE_DIRS}/Color.cpp)
 TARGET_LINK_LIBRARIES (
@@ -52,6 +56,7 @@ TARGET_LINK_LIBRARIES (
     ${PROTOBUF_LIBRARIES}
     ${Boost_LIBRARIES}
     ${OpenCV_LIBRARIES}
+    vecIntConverter
 )
 
 # Additional compiler flags
