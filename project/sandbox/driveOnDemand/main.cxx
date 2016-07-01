@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
 
 	INFO_MSG("Starting driving loop");
 	while (!exitProg) {
-		// wait for new guide command
+/*		// wait for new guide command
 		while (guideQueue->empty() && !exitProg) {
 			// continue driving
 			if (driving) {
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
 					setSteering(guidePos, trackPos, myCAN);
 				}
 			}
-
+*/
 			// check for new color input
 			if (!commandQueue->empty()) {
 				EventPtr event = commandQueue->pop(0);
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
 
 			// sleep 100 ms
 			usleep(100000);
-		}
+/*		}
 		if (!exitProg) {
 			// get new guided position and start driving
 			guidePos = guideQueue->pop();
@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
 			guideInformer->publish(StringPtr);
 			INFO_MSG("Start driving to position " << guidePos->x() << "/" << guidePos->y() << " [m].");
 		}
-	}
+*/	}
 
 	// stop motors
 	motorAction(0, 0, myCAN);
@@ -383,7 +383,7 @@ void setColor(std::string colorCommand, rsb::Informer< std::vector<int> >::Ptr l
 		} else {
 			colorName = "blue";
 		}
-		INFO_MSG("Color changed: Color '" << colorName << "', Light Type '" << lightTypeDesc << "'");
+		INFO_MSG("Color set: Color '" << colorName << "', Light Type '" << lightTypeDesc << "'");
 		
 		colorAns = colorInput;
 

@@ -212,6 +212,7 @@ bool sameColors(amiro::Color c1, amiro::Color c2) {
 }
 
 bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer<std::string>::Ptr recInformer) {
+	DEBUG_MSG("New command received");
 	// check if vector has correct length
 	if (commandVector->size() >= 2) {
 		int commandSize = commandVector->size();
@@ -250,6 +251,10 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 				}
 			} else if (colorCount == 0) {
 				WARNING_MSG("Missing colors! Please set colors for lighting types, which do not use initial colors!");
+
+				boost::shared_ptr<std::string> StringPtr(new std::string(REC_ERROR));
+				recInformer->publish(StringPtr);
+
 				return false;
 			} else if (!lightTypeChange && colorCount == 1) {
 				amiro::Color color(commandVector->at(1), commandVector->at(2), commandVector->at(3));
@@ -360,6 +365,8 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 				boost::shared_ptr<std::string> StringPtr(new std::string(REC_OK));
 				recInformer->publish(StringPtr);
 
+				DEBUG_MSG(" => Lights have been changed.");
+
 				return true;
 			}
 		}
@@ -367,11 +374,15 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 		boost::shared_ptr<std::string> StringPtr(new std::string(REC_OK));
 		recInformer->publish(StringPtr);
 
+		DEBUG_MSG(" => Lights already set.");
+
 		return false;
 	}
 
 	boost::shared_ptr<std::string> StringPtr(new std::string(REC_ERROR));
 	recInformer->publish(StringPtr);
+
+	WARNING_MSG("Invalid color command!");
 
 	return false;
 }

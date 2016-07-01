@@ -16,6 +16,13 @@ pkg_check_modules(RSC rsc0.13)
 pkg_check_modules(RST rst0.13)
 pkg_check_modules(RSTSANDBOX rstsandbox0.13)
 
+# Get modules
+SET (BOOST_COMPONENTS regex date_time program_options system chrono filesystem thread)
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
+
+# Get the compiler specific includes and store them in GXX_INCLUDES
+INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
+
 # Need to add, because rst manual said so:
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
@@ -30,10 +37,8 @@ include_directories(
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "$ENV{MUROX_INCLUDE_DIRS}/extspread"		            # Programatik spread
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-    "$ENV{SDKTARGETSYSROOT}/usr/include"                            # System includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++"                        # System c++ includes
-    "$ENV{SDKTARGETSYSROOT}/usr/include/c++/arm-poky-linux-gnueabi" # IO streams
     ${GXX_INCLUDES}
+    ${BOOST_INCLUDE_DIR}
 )
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
@@ -59,31 +64,9 @@ target_link_libraries (
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
+    ${BOOST_LIBRARIES}
     ${RSTSANDBOX_LIBRARIES}
-    #${OpenCV_LIBS}
-    #   OPENCV
-    opencv_imgproc
-    opencv_calib3d
-    opencv_contrib
-    opencv_core
-    opencv_features2d
-    opencv_flann
-    opencv_gpu
-    opencv_highgui
-    opencv_legacy
-    opencv_ml
-    opencv_nonfree
-    opencv_objdetect
-    opencv_ocl
-    opencv_photo
-    opencv_stitching
-    opencv_superres
-    # Boost
-    boost_regex
-    boost_date_time
-    boost_program_options
-    boost_system
-    boost_thread
+    ${OPENCV_LIBRARIES}
     # -- Own libraries
     vecIntConverter
     ${PROTO_LIBRARIES}
