@@ -37,6 +37,11 @@ include_directories(
 # Define the source
 SET (SOURCE main.cxx)
 
+# Add folders to build and run CMakeLists.txt in it
+if (NOT TARGET vecIntConverter)
+    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+endif()
+
 LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}
     ${RSC_LIBRARY_DIRS}
@@ -57,6 +62,8 @@ target_link_libraries (
     ${OpenCV_LIBRARIES}
     ${OPENNI2_LIBRARIES}
     jpeg
+    # -- Own libraries
+    vecIntConverter
 )
 
 # Additional compiler flags

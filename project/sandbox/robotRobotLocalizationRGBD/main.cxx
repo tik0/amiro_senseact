@@ -51,6 +51,9 @@
 
 #include <extspread/extspread.hpp>
 
+#include <converter/vecIntConverter/main.hpp>
+using namespace muroxConverter;
+
 using namespace std;
 using namespace boost::chrono;
 using namespace cv;
@@ -65,6 +68,7 @@ std::string commandScope = "/amiro/command";
 std::string CommandInscope = "/amiro/drive/status";
 std::string imageInscope = "/image";
 std::string imageOutscope = "/detected";
+std::string trackingOutscope = "/amiro/tracking";
 std::string spreadhost = "127.0.0.1";
 std::string spreadport = "4823";
 static int g_iDevice = 6;
@@ -135,16 +139,21 @@ cv::Mat getRSBImage(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::s
 }
 
 void waitForColorSet(std::string colorCommand, boost::shared_ptr< rsc::threading::SynchronizedQueue< EventPtr > > commandQueue, rsb::Informer<std::string>::Ptr commandInformer) {
-	// send light command
-	boost::shared_ptr<std::string> command(new std::string(colorCommand));
-	commandInformer->publish(command);
-	
-	// wait for receiving color command answer
-	while (commandQueue->empty()) {
-		// sleep 10 ms
-		usleep(10000);
+	// clear command queue
+	while (!commandQueue->empty()) {
+		commandQueue->pop();
 	}
+	// wait for receiving color command answer
+	do {
+		// send light command
+		boost::shared_ptr<std::string> command(new std::string(colorCommand));
+		commandInformer->publish(command);
+				
+		// sleep 100 ms
+		usleep(100000);
+	} while (commandQueue->empty());
 	commandQueue->pop();
+	usleep(100000);
 }
 
 void loadRgbMatFromRgbStream(Mat &xMat, VideoStream &rgbStream, VideoFrameRef &rgbImage) {
@@ -157,7 +166,6 @@ void loadRgbMatFromRgbStream(Mat &xMat, VideoStream &rgbStream, VideoFrameRef &r
 	
 	// convert to OpenCV
 	const openni::RGB888Pixel* rgbBuffer = (const openni::RGB888Pixel*)rgbImage.getData();
-//	xMat.create(rgbImage.getHeight(), rgbImage.getWidth(), CV_8UC3);
 	memcpy(xMat.data, rgbBuffer, 3*rgbImage.getHeight()*rgbImage.getWidth()*sizeof(uint8_t));
 }
 
@@ -179,7 +187,8 @@ int main(int argc, char **argv) {
 			("dilate", po::value < unsigned int > (&dilateSize),"Dilation size")
 			("erode", po::value < unsigned int > (&erodeSize),"Erosion size")
 			("compression,c", po::value < unsigned int > (&g_uiQuality),"Compression value [0,100]")
-			("continuess,s", "Flag, if every new image shall be used for calculation continuess.");
+			("continuess,s", "Flag, if every new image shall be used for calculation continuess.")
+			("dontSend", "Flag, ...");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -224,6 +233,12 @@ int main(int argc, char **argv) {
 	// Generate the programatik Spreadconfig for extern communication
 	rsb::ParticipantConfig extspreadconfig = getextspreadconfig(factory, spreadhost, spreadport);
 
+	// ------------ Converters ----------------------
+
+	// Register new converter for std::vector<int>
+	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+
 	// +++ Listener +++
 
 	// Create and start the listener for pictures
@@ -238,10 +253,13 @@ int main(int argc, char **argv) {
 	// +++ Informer +++
 
 	// create informer for images
-	rsb::Informer<std::string>::Ptr RGBInformer = factory.createInformer<std::string> (imageOutscope, extspreadconfig);
+	rsb::Informer<std::string>::Ptr RGBInformer = factory.createInformer<std::string> (imageOutscope);
 
 	// create informer for amiro commands
 	rsb::Informer<std::string>::Ptr commandInformer = factory.createInformer<std::string> (commandScope, extspreadconfig);
+	
+	// create informer for tracking information
+	rsb::Informer< std::vector<int> >::Ptr trackingInformer = factory.createInformer< std::vector<int> > (trackingOutscope, extspreadconfig);
 
 
 	VideoFrameRef rgbImage, depthImage;
@@ -423,6 +441,7 @@ int main(int argc, char **argv) {
 		}
 		
 		Mat channels[3], conclusion;
+		matDetect *= 0.0;
 		for (int actColor=0; actColor<3; actColor++) {
 			// set channel into result image
 			rgbMats[actColor].copyTo(part[actColor+3]);
@@ -543,6 +562,13 @@ int main(int argc, char **argv) {
 			cv::circle(part[0], objPoint, 5, cv::Scalar(0, 255, 0));
 			cv::circle(part[1], objPoint, 5, cv::Scalar(0, 255, 0));
 			if (laserMin < 10000) {
+				// publish tracking point
+				std::vector<int> trackingPoint(2,0);
+				trackingPoint[0] = laserMin*1000; // um
+				trackingPoint[1] = int(objPos[1]*1000000.0); //urad
+				boost::shared_ptr< std::vector<int> > trackingPointCmd = boost::shared_ptr<std::vector<int> >(new std::vector<int>(trackingPoint.begin(),trackingPoint.end()));
+				trackingInformer->publish(trackingPointCmd);
+				
 				Point minLaserPoint(xPosMinLaser, yPosMinLaser);
 				cv::circle(part[0], minLaserPoint, 5, cv::Scalar(255, 0, 255));
 				cv::circle(part[1], minLaserPoint, 5, cv::Scalar(255, 0, 255));
@@ -580,8 +606,10 @@ int main(int argc, char **argv) {
 		if (vm.count("printTime")) systime1 = system_clock::now();
 		if (vm.count("printTime")) DEBUG_MSG("Compressing and sending image");
 		imencode(".jpg", resultImage, bufRgb, compression_params);
-		shared_ptr< std::string > rgbFrameJpg(new std::string(bufRgb.begin(), bufRgb.end()));
-		RGBInformer->publish(rgbFrameJpg);
+		if (!vm.count("dontSend")) {
+			shared_ptr< std::string > rgbFrameJpg(new std::string(bufRgb.begin(), bufRgb.end()));
+			RGBInformer->publish(rgbFrameJpg);
+		}
 		systime2 = system_clock::now();
 		mstime = duration_cast<milliseconds>(systime2-systime1);
 		if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms")
