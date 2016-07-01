@@ -329,8 +329,8 @@ void drivePath(std::list<cv::Point2i> &path) {
         path.pop_front();
 
         // Stop the robot
-        boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
-        motorInformer->publish(targetSpeed);
+        //boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
+        //motorInformer->publish(targetSpeed);
     } else {
         // update target position
         double globalTargetAngle = atan2( immediatePoseMM.y - pose.y,
@@ -345,23 +345,10 @@ void drivePath(std::list<cv::Point2i> &path) {
             DEBUG_MSG("angle to waypoint too big -> rotating");
 
             boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
-            // trick 17 (tm)
+            // trick 17 (tm): drive forward when rotating?!
             targetSpeed->at(0) = targetSpeed0 * METERS_TO_UM;
 
-            float minAngularVelocity = 1.2f; // 0.30 rad = 17.90°
-            float maxAngularVelocity = 2.0f; // 90°
-
             float angularVelocity = targetSpeed1;
-
-            float m = (maxAngularVelocity - minAngularVelocity) / (M_PI/2 - 0.30f);
-            float b = maxAngularVelocity - M_PI/2 * m;
-
-            angularVelocity = m * abs(relativeAngle) + b;
-
-            angularVelocity = std::min(maxAngularVelocity, std::max(minAngularVelocity, angularVelocity));
-
-            DEBUG_MSG("angularVelocity: " << angularVelocity);
-
             if (relativeAngle < 0) {
                 angularVelocity = -angularVelocity;
             }
@@ -388,6 +375,8 @@ void drivePath(std::list<cv::Point2i> &path) {
             targetSpeed->at(1) = w_z * RAD_TO_URAD;
             motorInformer->publish(targetSpeed);
         }
+
+        usleep(100000);
     }
 }
 
@@ -813,6 +802,8 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
           mtxPathToDraw.lock();
           pathToDraw = path;
           mtxPathToDraw.unlock();
+
+          continue;
       }
 
       publishPath(path);

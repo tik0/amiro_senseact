@@ -11,3 +11,6 @@ sendOdometryProtoPose
 actEmergencyStop
 actTargetPosition
 CoreSLAM
+senseRingProximity
+senseSickTim
+actAMiRoMotor

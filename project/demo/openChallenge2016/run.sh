@@ -48,7 +48,7 @@ else
 fi
 
 # sense ringproximty
-./senseRingProximity --outscopeObstacle /rir_prox/obstacle --noEdgeValues &
+./senseRingProximity --outscopeObstacle /rir_prox/obstacle --noEdgeValues --period 100 &
 
 # waypoint program from 'project/sandbox/waypoint/'
 ./waypoint --lidarinscope /lidar &
@@ -71,20 +71,20 @@ initialY="$(echo "$initialPose" | cut -d\  -f 2)"
 initialTheta="$(echo "$initialPose" | cut -d\  -f 3)"
 
 # positions:
-# 0: living room
+# 0: corridor
 # 1: dining_room
-# 2: kitchen
-# 3: corridor
-kitchen="27400.7 18478 -90"
-dining_room="29312.9 18658.4 -90"
-#living_room="32758.5 18387.8 -90"
-living_room="33250.2 18348.3 -90"
-#corridor="27978 11695.1 90"
-corridor="27830.3 14194.7 -90"
-targetPoses="$dining_room
-$kitchen
-$corridor
-$living_room"
+# 2: living_room
+# 3: kitchen
+
+corridor="27830.3 14000.7 -90"
+kitchen="25500.8 15824.3 142.125"
+dining_room="28366.7 14903.5 0"
+living_room="31807.2 18491.4 -90"
+
+targetPoses="$corridor
+$dining_room
+$living_room
+$kitchen"
 
 # take row ID + 1
 targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
@@ -94,12 +94,13 @@ targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
   --senImage 0 \
   --delta 0.05 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
   --loadMapFromImage ./data/Leipzig_Arena_A.pgm --flipHorizontal true \
-  --erosionRadius 0.33 \
+  --erosionRadius 0.35 \
   --initialX $initialX --initialY $initialY --initialTheta $initialTheta \
   --targetPose "$targetPose" \
-  --precomputeOccupancyMap true &
+  --precomputeOccupancyMap true \
+  --targetSpeed0 0 --targetSpeed1 1.5 &
 
-./actEmergencyStop --lidarinscope /lidar --cntMax 25 --distance 0.30 --delay 10 --switchinscope /following --doEmergencyBehaviour > /dev/null &
+./actEmergencyStop --lidarinscope /lidar --cntMax 15 --distance 0.25 --delay 10 --switchinscope /following --doEmergencyBehaviour > /dev/null &
 
 ./actTargetPosition --inscope /targetPositions &
 
