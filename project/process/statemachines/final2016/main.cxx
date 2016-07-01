@@ -61,8 +61,8 @@ using namespace muroxConverter;
 using namespace rsb::converter;
 
 // State machine states
-enum states                  { idle , turn, init , following , waypoint, stopped, homing, goToRoom};
-std::string statesString[] = {"idle","turn","init","following","waypoint","stopped","homing", "goToRoom"};
+enum states                  { idle , turn, init , following , waypoint, stopped, homing, goToRoom, reachedroom, failedroom};
+std::string statesString[] = {"idle","turn","init","following","waypoint","stopped","homing", "goToRoom", "reachedroom", "failedroom"};
 states amiroState;
 
 bool personEntered = false;
@@ -89,6 +89,8 @@ void set_state_waypoint();
 void set_state_waypoint_entered();
 void set_state_stopped();
 void set_state_goToRoom();
+void set_state_reachedroom();
+void set_state_failedroom();
 void stopWaypoint();
 void motorActionMilli(int speed, int turn);
 
@@ -330,6 +332,8 @@ int processSM(void) {
 
     bool gotFromIRgoToRoom = false;
     bool gotFromIRinitWaypoint = false;
+    bool gotFromIRstopWaypoint = false;
+    bool gotFromIRhoming = false;
 
     // --- Check for incoming messaturn_degreeges/triggers/signals ---
 
@@ -414,13 +418,19 @@ int processSM(void) {
     // check for IR sensor trigger
     gotFromIRgoToRoom = false;
     gotFromIRinitWaypoint = false;
+    gotFromIRstopWaypoint = false;
+    gotFromIRhoming = false;
     if (!proxQueueObstacle->empty()) {
         boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
         // check front sensors
-        if (gotIRCommand(sensorValuesObstacle, 3, 4)) {
+        if (gotIRCommand(sensorValuesObstacle, 3, 4)) { // front sensors
             gotFromIRgoToRoom = true;
-        } else if (gotIRCommand(sensorValuesObstacle, 7, 0)) { // check back sensors
+        } else if (gotIRCommand(sensorValuesObstacle, 5, 6)) { // right sensors
             gotFromIRinitWaypoint = true;
+        } else if (gotIRCommand(sensorValuesObstacle, 7, 0)) { // check back sensors
+            gotFromIRstopWaypoint = true;
+        } else if (gotIRCommand(sensorValuesObstacle, 1, 2)) { // left sensors
+            gotFromIRhoming = true;
         }
     }
 
@@ -492,44 +502,58 @@ int processSM(void) {
         if (!queueHomingAnswer->empty()) {
             boost::shared_ptr<std::string> response = queueHomingAnswer->pop();
             if ((*response).compare("done") == 0) {
-                while (true) {
-                    DEBUG_MSG("Waiting for reachedroomrec");
-                    informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("reachedroom")));
-
-                    if (!queueRemoteTobiState->empty()) {
-                        std::string msg = *(queueRemoteTobiState->pop());
-                        if (msg.compare("reachedroomrec") == 0) {
-                            set_state_stopped();
-                            break;
-                        } else {
-                            DEBUG_MSG("Received other message than reachedroomrec: " << msg);
-                        }
-                    }
-                    usleep(500000);
-                }
+                set_state_reachedroom();
             } else if ((*response).compare("failed") == 0) {
-                while (true) {
-                    DEBUG_MSG("Waiting for failedroomrec");
-                    informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("failedroom")));
-
-                    if (!queueRemoteTobiState->empty()) {
-                        std::string msg = *(queueRemoteTobiState->pop());
-                        if (msg.compare("failedroomrec") == 0) {
-                            set_state_stopped();
-                            break;
-                        } else {
-                            DEBUG_MSG("Received other message than failedroomrec: " << msg);
-                        }
-                    }
-                    usleep(500000);
-                }
+                set_state_failedroom();
             }
+        }
+        break;
+
+
+    case reachedroom:
+        informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("reachedroom")));
+
+        if (!queueRemoteTobiState->empty()) {
+            std::string msg = *(queueRemoteTobiState->pop());
+            if (msg.compare("reachedroomrec") == 0) {
+                set_state_stopped();
+            } else {
+                DEBUG_MSG("Received other message than reachedroomrec: " << msg);
+            }
+        } else if (gotFromIRinitWaypoint) {
+            informerWaypoint->publish(signal_init);
+            set_state_waypoint();
+        } else if (gotFromIRhoming) {
+            informerHoming->publish(signal_homingPosition);
+            informerWaypoint->publish(signal_stop);
+            set_state_homing();
+        }
+        break;
+
+
+    case failedroom:
+        informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("failedroom")));
+
+        if (!queueRemoteTobiState->empty()) {
+            std::string msg = *(queueRemoteTobiState->pop());
+            if (msg.compare("failedroomrec") == 0) {
+                set_state_stopped();
+            } else {
+                DEBUG_MSG("Received other message than failedroomrec: " << msg);
+            }
+        } else if (gotFromIRinitWaypoint) {
+            informerWaypoint->publish(signal_init);
+            set_state_waypoint();
+        } else if (gotFromIRhoming) {
+            informerHoming->publish(signal_homingPosition);
+            informerWaypoint->publish(signal_stop);
+            set_state_homing();
         }
         break;
 
     case waypoint:
       DEBUG_MSG("Entered=" << bGotFromWaypoint_entered << ", Left=" << bGotFromWaypoint_left << ", personEntered=" << personEntered);
-      if(bGotFromTobi_stopwaypoint) {
+      if(bGotFromTobi_stopwaypoint || gotFromIRstopWaypoint) {
         informerWaypoint->publish(signal_stop);
         set_state_stopped();
       } else if (bGotFromWaypoint_entered && !personEntered) {
@@ -549,7 +573,7 @@ int processSM(void) {
       } else if (bGotFromTobi_turn) {
         informerWaypoint->publish(signal_stop);
         set_state_turn();
-      } else if (bGotFromTobi_homing) {
+      } else if (bGotFromTobi_homing || gotFromIRhoming) {
         informerHoming->publish(signal_homingPosition);
         informerWaypoint->publish(signal_stop);
         set_state_homing();
@@ -576,7 +600,7 @@ int processSM(void) {
         set_state_following();
       } else if (bGotFromTobi_turn) {
         set_state_turn();
-      } else if (bGotFromTobi_homing) {
+      } else if (bGotFromTobi_homing || gotFromIRhoming) {
         informerHoming->publish(signal_homingPosition);
         informerWaypoint->publish(signal_homingPosition);
         set_state_homing();
@@ -626,6 +650,16 @@ void set_state_homing() {
 void set_state_goToRoom() {
     amiroState = goToRoom;
     setAMiRoColor(0,255,255);
+}
+
+void set_state_reachedroom() {
+    amiroState = reachedroom;
+    setAMiRoColor(0,255,100);
+}
+
+void set_state_failedroom() {
+    amiroState = failedroom;
+    setAMiRoColor(100,0,100);
 }
 
 void set_state_init() {
