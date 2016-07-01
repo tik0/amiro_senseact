@@ -114,7 +114,7 @@ bool gotIRCommand(boost::shared_ptr<std::vector<int>> sensorValues, int sensorId
     float distBefore = VCNL4020Models::obstacleModel(0, sensorValues->at(ringproximity::SENSOR_COUNT-1));
     for (int i=sensorIdxStart; i != (sensorIdxEnd + 1) % ringproximity::SENSOR_COUNT; i = (i + 1) % ringproximity::SENSOR_COUNT) {
         float distCur = VCNL4020Models::obstacleModel(0, sensorValues->at(i));
-        DEBUG_MSG("dist " << i << ": " << distCur);
+        //DEBUG_MSG("dist " << i << ": " << distCur);
         if (distCur < irDetectionDist && distBefore < irDetectionDist) {
             return true;
         }
@@ -335,6 +335,9 @@ int processSM(void) {
     bool gotFromIRstopWaypoint = false;
     bool gotFromIRhoming = false;
 
+    bool bGotFromTobi_reachedroomrec = false;
+    bool bGotFromTobi_failedroomrec = false;
+
     // --- Check for incoming messaturn_degreeges/triggers/signals ---
 
     // Get messages from Tobi
@@ -385,8 +388,17 @@ int processSM(void) {
         std::string output = "homingrec";
         *stringPublisher = output;
         informerRemoteState->publish(stringPublisher);
+      } else if (msg.compare("reachedroomrec") == 0) {
+        INFO_MSG("Reachedroomrec");
+        bGotFromTobi_reachedroomrec = true;
+      } else if (msg.compare("failedroomrec") == 0) {
+        INFO_MSG("Failedroomrec");
+        bGotFromTobi_failedroomrec = true;
       }
-      queueRemoteTobiState->clear();
+
+      if (!bGotFromTobi_reachedroomrec && !bGotFromTobi_failedroomrec) {
+        queueRemoteTobiState->clear();
+      }
     } else {
       bGotFromTobi_something = false;
       bGotFromTobi_init = false;
@@ -396,6 +408,8 @@ int processSM(void) {
       bGotFromTobi_stopwaypoint = false;
       bGotFromTobi_savePosition = false;
       bGotFromTobi_homing = false;
+      bGotFromTobi_reachedroomrec = false;
+      bGotFromTobi_failedroomrec = false;
     }
     // HACK Ignoring TURN commands, so that after a stopFollow, the turning is not initialized, but the homing to a save position
     bGotFromTobi_turn = false;
@@ -513,13 +527,8 @@ int processSM(void) {
     case reachedroom:
         informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("reachedroom")));
 
-        if (!queueRemoteTobiState->empty()) {
-            std::string msg = *(queueRemoteTobiState->pop());
-            if (msg.compare("reachedroomrec") == 0) {
-                set_state_stopped();
-            } else {
-                DEBUG_MSG("Received other message than reachedroomrec: " << msg);
-            }
+        if (bGotFromTobi_reachedroomrec) {
+            set_state_stopped();
         } else if (gotFromIRinitWaypoint) {
             informerWaypoint->publish(signal_init);
             set_state_waypoint();
@@ -534,13 +543,8 @@ int processSM(void) {
     case failedroom:
         informerRemoteState->publish(boost::shared_ptr<std::string>(new std::string("failedroom")));
 
-        if (!queueRemoteTobiState->empty()) {
-            std::string msg = *(queueRemoteTobiState->pop());
-            if (msg.compare("failedroomrec") == 0) {
-                set_state_stopped();
-            } else {
-                DEBUG_MSG("Received other message than failedroomrec: " << msg);
-            }
+        if (bGotFromTobi_failedroomrec) {
+            set_state_stopped();
         } else if (gotFromIRinitWaypoint) {
             informerWaypoint->publish(signal_init);
             set_state_waypoint();
