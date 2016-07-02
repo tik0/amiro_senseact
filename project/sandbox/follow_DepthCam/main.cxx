@@ -263,24 +263,26 @@ int main(int argc, char **argv) {
 	
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
-			("RGBOutscope,o", po::value < std::string > (&rgbScope),"Scope for sending debug image.")
+			("commandScope", po::value < std::string > (&inScope),"Scope for receiving commands (default: /following).")
+			("rbgScope", po::value < std::string > (&rgbScope),"Scope for sending debug image (default: /images/rgb).")
+			("lightScope", po::value < std::string > (&lightScope),"Scope for sending light commands (default: /amiro/lights).")
 			("host", po::value < std::string > (&host),"Host name of external spread (default: localhost).")
 			("port", po::value < std::string > (&port),"Port of external spread (default: 4823).")
-			("printTime,t","Prints the time")
-			("rgbMode", po::value<int>(&rgbMode), "Mode of RGB Image.")
-			("depthMode", po::value<int>(&depthMode), "Mode of Depth Image.")
+			("printTime,t","Prints the time of single parts.")
+			("rgbMode", po::value<int>(&rgbMode), "Mode of RGB Image (default: 0).")
+			("depthMode", po::value<int>(&depthMode), "Mode of Depth Image (default: 0).")
 			("period", po::value<unsigned int>(&period), "Period between two image fetches in ms (default: 10).")
-			("compression,c", po::value<unsigned int>(&g_uiQuality), "Compression value [0,100]")
-			("sectorCount", po::value<unsigned int>(&sectorCount), "Count of sectors per side.")
+			("compression,c", po::value<unsigned int>(&g_uiQuality), "Compression value [0,100] (default: 100)")
+			("sectorCount", po::value<unsigned int>(&sectorCount), "Count of sectors per side (default: 9).")
 			("invalidRange,a", po::value<uint16_t>(&invalidRange), "Range until it is invalid in mm (default 350).")
-			("maxRange,b", po::value<uint16_t>(&maxRange), "Maximal range in mm (default: 1000).")
-			("maxVelX,c", po::value<float>(&maxVelocityX), "Maximal forward velocity in m (default: 0.5).")
-			("minVelX,d", po::value<float>(&minVelocityX), "Minimal forward velocity in m (default: 0.1).")
-			("maxVelW,e", po::value<float>(&maxAngVelDeg), "Maximal angular velocity in degrees (default: 20.0).")
-			("minVelW,f", po::value<float>(&minAngVelDeg), "Minimal angular velocity in degrees (default: 10.0).")
+			("maxRange,b", po::value<uint16_t>(&maxRange), "Maximal range in mm (default: 2000).")
+			("maxVelX,c", po::value<float>(&maxVelocityX), "Maximal forward velocity in m/s (default: 0.5).")
+			("minVelX,d", po::value<float>(&minVelocityX), "Minimal forward velocity in m/s (default: 0.1).")
+			("maxVelW,e", po::value<float>(&maxAngVelDeg), "Maximal angular velocity in degrees/s (default: 45.0).")
+			("minVelW,f", po::value<float>(&minAngVelDeg), "Minimal angular velocity in degrees/s (default: 20.0).")
 			("sendImage,s", "Flag if the image shall be converted to OpenCV and send via RSB.")
 			("startImmediatley,i", "Flag if the following procedure shall start immediately.")
-			("printInfo,p", "Flag if just the camera infos shall be printed. The tool closes afterwards.");
+			("printInfo,p", "Flag if just the camera information shall be printed. The tool closes afterwards.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;

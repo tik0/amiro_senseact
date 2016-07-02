@@ -1,15 +1,13 @@
-====== Building the Drive On Demand ======
+====== Building Follow by Depth Camera ======
 
-This demo contains the program for driving on demand. Via RSB there can be given commands for driving to a given position or for setting the lights. For detailed application and procedure information, please check the [[sandbox:driveOnDemand:start|driveOnDemand documentation]].
+This demo contains the program for the following procedure by the depth camera. Via RSB the commands for starting and stopping can be given. For more detailed information, please have a look into the [[sandbox:follow_DepthCam:start|follow procedure documentation]].
 
 ===== Command structure =====
 
-There can be given specific commands for driving to a position and for setting the lights' color and light type. These commands are defined in the [[sandbox:driveOnDemand:start|driveOnDemand documentation]].
-
-For sending commands, the prepared scripts in the directory 'Command' can be used:
+For sending commands (starting and stopping the following), the prepared scripts in the directory 'Command' can be used:
 
   - ''./stop.sh'' for sending the stop command
-  - ''./color.sh'' for sending the color command (change color file to your specific command)
+  - ''./init.sh'' for sending the the start command
 
 ===== Run the Demo =====
 
@@ -23,5 +21,6 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[sandbox:driveOnDemand:start|driveOnDemand]] | Program for driving on demand including setting lights. |
-| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[sandbox:follow_DepthCam:start|follow_DepthCam]] | Program of following procedure by depth camera. |
+| [[act:setLights:start|setLights]]                 | Program for setting the lights. |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]]    | Program for stopping the AMiRo (stopping motors and resetting lights). |
