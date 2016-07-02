@@ -59,6 +59,7 @@ include_directories(
     ${PROTOBUF_INCLUDE_DIRS}                                        # Protobuffer
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${GXX_INCLUDES}
     # ${EIGEN_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR}
