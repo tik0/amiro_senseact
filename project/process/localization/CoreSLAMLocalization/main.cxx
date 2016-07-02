@@ -180,6 +180,10 @@ rsb::Informer<std::string>::Ptr homingInformer;
 rsb::ListenerPtr emergencyHaltListener;
 boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>> emergencyHaltQueue;
 
+// abort navigation
+bool abortNavigation = false;
+std::mutex mtxAbortNavigation;
+
 // ===== Functions =====
 
 inline float normalizeAngle(float angle) {
@@ -242,7 +246,7 @@ cv::Mat getOccupancyMap() {
                             cv::Point(erosionRadius/delta_, erosionRadius/delta_));
   cv::erode(map, map, structuringElement);
 
-  cv::imwrite("occupancymap.png", map);
+ // cv::imwrite("occupancymap.png", map);
 
   return map;
 }
@@ -370,7 +374,7 @@ void drivePath(std::list<cv::Point2i> &path) {
             targetSpeed->at(0) = velocity * METERS_TO_UM;
             float t = distance / velocity;
             float w_z = relativeAngle / t;
-            DEBUG_MSG("w_z: " << w_z);
+//            DEBUG_MSG("w_z: " << w_z);
             w_z = std::max<float>(std::min<float>(M_PI, w_z), -M_PI);
             targetSpeed->at(1) = w_z * RAD_TO_URAD;
             motorInformer->publish(targetSpeed);
@@ -717,6 +721,21 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
     uint obstacleCounter = 0; // how often we saw an obstacle
     while(!path.empty()) {
 
+      mtxAbortNavigation.lock();
+      if (abortNavigation) {
+          INFO_MSG("Aborting navigation");
+          abortNavigation = false;
+          mtxAbortNavigation.unlock();
+
+          // stop the robot
+          boost::shared_ptr< std::vector<int> > targetSpeed( new std::vector<int>(2,0) );
+          motorInformer->publish(targetSpeed);
+
+          return false;
+      } else {
+        mtxAbortNavigation.unlock();
+      }
+
       // There's an obstacle in the way...
       if (!emergencyHaltQueue->empty()) {
           emergencyHaltQueue->pop();
@@ -818,6 +837,17 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
     emergencyStopSwitchInformer->publish(boost::shared_ptr<std::string>(new std::string("on")));
 
     return true;
+}
+
+void abortHomingRequestHandler(boost::shared_ptr<std::string> e) {
+    if (!e->compare(std::string("abort"))) {
+        INFO_MSG("Requesting navigation abort");
+        mtxAbortNavigation.lock();
+        abortNavigation = true;
+        mtxAbortNavigation.unlock();
+    } else {
+        ERROR_MSG("is not abort commando");
+    }
 }
 
 void homingRequestHandler(boost::shared_ptr<std::string> e) {
@@ -1089,6 +1119,7 @@ int main(int argc, const char **argv){
   // Prepare RSB listener for homing and response informer
   rsb::ListenerPtr homingListener = factory.createListener(homingInScope);
   homingListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&homingRequestHandler)));
+  homingListener->addHandler(HandlerPtr(new DataFunctionHandler<std::string> (&abortHomingRequestHandler)));
   std::string homingOutScope = homingInScope + "/response";
   homingInformer = factory.createInformer<std::string>(homingOutScope);
 
@@ -1181,8 +1212,8 @@ int main(int argc, const char **argv){
         f.close();
     }
 
-    DEBUG_MSG("current sigma_xy: " << state_.sigma_xy);
-    DEBUG_MSG("current sigma_theta: " << state_.sigma_theta);
+    //DEBUG_MSG("current sigma_xy: " << state_.sigma_xy);
+    //DEBUG_MSG("current sigma_theta: " << state_.sigma_theta);
 
     // Publish estimated pose
     boost::shared_ptr<rst::geometry::Pose> rsbPose(new rst::geometry::Pose);
@@ -1265,7 +1296,7 @@ int main(int argc, const char **argv){
 //    DEBUG_MSG( "Pose TinySLAM: " << pose.x << ", " << pose.y << ", " << pose.theta)
 //    DEBUG_MSG( "Pose Odometry: " << odom_pose.x << ", " << odom_pose.y << ", " << odom_pose.theta)
 //    DEBUG_MSG( "Target pose: " << homePose.x << ", " << homePose.y << ", " << homePose.theta)
-    DEBUG_MSG( "------------ END OF MAIN LOOP --------------");
+//    DEBUG_MSG( "------------ END OF MAIN LOOP --------------");
   }
 
   return 0;

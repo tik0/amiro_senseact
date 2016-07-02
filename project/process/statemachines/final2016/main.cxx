@@ -309,6 +309,7 @@ int processSM(void) {
   boost::shared_ptr<std::string> signal_savePosition(new std::string("save"));
   boost::shared_ptr<std::string> signal_homingPosition(new std::string("homing"));
   boost::shared_ptr<std::string> signal_targetPosition(new std::string("target"));
+  boost::shared_ptr<std::string> signal_abortPosition(new std::string("abort"));
 
   set_state_idle();
 
@@ -436,8 +437,12 @@ int processSM(void) {
     gotFromIRhoming = false;
     if (!proxQueueObstacle->empty()) {
         boost::shared_ptr<std::vector<int>> sensorValuesObstacle = boost::static_pointer_cast<std::vector<int>>(proxQueueObstacle->pop());
-        // check front sensors
-        if (gotIRCommand(sensorValuesObstacle, 3, 4)) { // front sensors
+
+        // check side sensors
+        if (gotIRCommand(sensorValuesObstacle, 5, 6) && gotIRCommand(sensorValuesObstacle, 1, 2)) {
+            // abort navigation
+            informerHoming->publish(signal_abortPosition);
+        } else if (gotIRCommand(sensorValuesObstacle, 3, 4)) { // front sensors
             gotFromIRgoToRoom = true;
         } else if (gotIRCommand(sensorValuesObstacle, 5, 6)) { // right sensors
             gotFromIRinitWaypoint = true;
