@@ -1,0 +1,19 @@
+====== Building the RRL based Navigation ======
+
+This demo contains the navigation based on the Robot Robot Localization (RRL). For more detailed information, please check the [[sandbox:driveOnRRL:start|driveOnRRL documentation]].
+
+===== Run the Demo =====
+
+  - ''. ./build.sh .''
+  - ''./copyPrograms.sh <ip address>''
+  - ''./run.sh'' on the AMiRo
+  - ''./stop.sh'' on the AMiRo for stopping
+
+One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+
+===== Included Programs =====
+
+^ Program ^ Description ^
+| [[sandbox:driveOnRRL:start|driveOnRRL]]        | Program for navigation based on RRL. |
+| [[act:setLights:start|setLights]]              | Program for setting the lights. |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
