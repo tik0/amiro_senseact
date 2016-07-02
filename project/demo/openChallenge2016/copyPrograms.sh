@@ -38,6 +38,9 @@ for IP in $@; do
 	# Copy set-hostname script
 	files="$files $MUROX_PROJECT/tools/robotTools/set-hostname.sh"
 
+	# Copy the trained tree for the leg detector
+	files="$files $MUROX_PROJECT/sense/waypointLegDetector/bigDataSet_Tree.yaml"
+
 	# Copy the website
 	#files="$files ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www"
 

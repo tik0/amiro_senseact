@@ -51,7 +51,7 @@ fi
 ./senseRingProximity --outscopeObstacle /rir_prox/obstacle --noEdgeValues --period 100 &
 
 # waypoint program from 'project/sandbox/waypoint/'
-./waypoint --lidarinscope /lidar &
+./waypoint --lidarinscope /lidar --range 1.5 &
 
 # start state machine
 ./final2016 --id ${ID} &
