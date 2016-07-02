@@ -717,6 +717,10 @@ bool driveToPoseWithObstacleAvoidance(const ts_position_t &targetPose) {
         INFO_MSG("Path not empty :)");
     }
 
+    mtxAbortNavigation.lock();
+    abortNavigation = false;
+    mtxAbortNavigation.unlock();
+
     // Drive the path
     uint obstacleCounter = 0; // how often we saw an obstacle
     while(!path.empty()) {
