@@ -106,6 +106,7 @@ int main(int argc, const char **argv) {
 
 	bool enabled = false;
 	bool triggered = false;
+  bool triggered_new = false;
 
 	// ----------------------------------------------------------------------------
 	// Init the decision tree
@@ -156,106 +157,107 @@ int main(int argc, const char **argv) {
 			}
 		}
 
-		// Fetch a new scan and store it to scan
-		scan = *lidarQueue->pop();
+		if (enabled) {
+      // Fetch a new scan and store it to scan
+      scan = *lidarQueue->pop();
 
-		// ----------------LEG DETECTION-----------------------------
+      // ----------------LEG DETECTION-----------------------------
 
-		// CUT SCAN
-		const float maxRange = range;
-		for (int idx = 0; idx < scan.scan_values_size(); ++idx) {
-	     if (scan.scan_values(idx) > maxRange) {
-	       scan.mutable_scan_values()->Set(idx, maxRange);
-	     }
-		}
+      // CUT SCAN
+      const float maxRange = range;
+      for (int idx = 0; idx < scan.scan_values_size(); ++idx) {
+         if (scan.scan_values(idx) > maxRange) {
+           scan.mutable_scan_values()->Set(idx, maxRange);
+         }
+      }
 
-	  // THE LEG DETECTOR
-	  laser_processor::ScanMask mask_;
-	  laser_processor::ScanProcessor processor(&scan, mask_);
-	  processor.splitConnected(0.06 /*from contructor*/ );  // connected_thresh_
-	  processor.removeLessThan(5);
+      // THE LEG DETECTOR
+      laser_processor::ScanMask mask_;
+      laser_processor::ScanProcessor processor(&scan, mask_);
+      processor.splitConnected(0.06 /*from contructor*/ );  // connected_thresh_
+      processor.removeLessThan(5);
 
-//	  processor.getClusters().list()
-	   mask_.mask_.center();
+  //	  processor.getClusters().list()
+       mask_.mask_.center();
 
-	  // Detection step: build up the set of "candidate" clusters
-	  // For each candidate, find the closest tracker (within threshold) and add to the match list
-	  // If no tracker is found, start a new one
-    std::vector<float> prob_vec, x_mean_vec, y_mean_vec;
-	  for (list<laser_processor::SampleSet*>::iterator i = processor.getClusters().begin();
-	       i != processor.getClusters().end();
-	       i++)
-	  {
-	    vector<float> f = calcLegFeatures(*i, &scan);
+      // Detection step: build up the set of "candidate" clusters
+      // For each candidate, find the closest tracker (within threshold) and add to the match list
+      // If no tracker is found, start a new one
+      std::vector<float> prob_vec, x_mean_vec, y_mean_vec;
+      for (list<laser_processor::SampleSet*>::iterator i = processor.getClusters().begin();
+           i != processor.getClusters().end();
+           i++)
+      {
+        vector<float> f = calcLegFeatures(*i, &scan);
 
-//	    std::cout << "detections prob: ";
-	    for (int k = 0; k < feat_count_; k++) {
-	      tmp_mat->data.fl[k] = (float)(f[k]);
-//	      std::cout << f[k] << " ";
-	    }
-	    float probability = forest.predict_prob(tmp_mat);
-//	    std::cout << probability;
+  //	    std::cout << "detections prob: ";
+        for (int k = 0; k < feat_count_; k++) {
+          tmp_mat->data.fl[k] = (float)(f[k]);
+  //	      std::cout << f[k] << " ";
+        }
+        float probability = forest.predict_prob(tmp_mat);
+  //	    std::cout << probability;
 
-	    // Number of points
-	    int num_points = (*i)->size();
-	    float x_mean = 0.0;
-	    float y_mean = 0.0;
-	    vector<float> x_median_set;
-	    vector<float> y_median_set;
-	    for (laser_processor::SampleSet::iterator it = (*i)->begin(); it != (*i)->end(); it++) {
-	      x_mean += ((*it)->x) / num_points;
-	      y_mean += ((*it)->y) / num_points;
-	      x_median_set.push_back((*it)->x);
-	      y_median_set.push_back((*it)->y);
-	    }
-//	    std::cout << " x: " << x_mean << ", y: " << y_mean << std::endl << std::flush;
+        // Number of points
+        int num_points = (*i)->size();
+        float x_mean = 0.0;
+        float y_mean = 0.0;
+        vector<float> x_median_set;
+        vector<float> y_median_set;
+        for (laser_processor::SampleSet::iterator it = (*i)->begin(); it != (*i)->end(); it++) {
+          x_mean += ((*it)->x) / num_points;
+          y_mean += ((*it)->y) / num_points;
+          x_median_set.push_back((*it)->x);
+          y_median_set.push_back((*it)->y);
+        }
+  //	    std::cout << " x: " << x_mean << ", y: " << y_mean << std::endl << std::flush;
 
-	    // Store the stuff
-	    prob_vec.push_back(probability);
-	    x_mean_vec.push_back(x_mean);
-	    y_mean_vec.push_back(y_mean);
-	  }
+        // Store the stuff
+        prob_vec.push_back(probability);
+        x_mean_vec.push_back(x_mean);
+        y_mean_vec.push_back(y_mean);
+      }
 
-//	  std::vector<float> dist(prob_vec.size());
-	  int id = 0;
-	  bool triggered_new = false;
-	  for (unsigned int idx = 0; idx < x_mean_vec.size(); ++idx) {
-	    for (unsigned int idy = idx+1; idy < x_mean_vec.size(); ++idy) {
-	      const float dist = sqrt(pow(float(x_mean_vec[idx] - x_mean_vec[idy]),2) + pow(float(y_mean_vec[idx] - y_mean_vec[idy]),2));
-	      if ( prob_vec[idy] > 0.999f && prob_vec[idx] > 0.999f && dist < legDist) { // Only get legs which are legDist away and have high probability (>0.999)
-	        triggered_new = true;
-	        std::cout << "Dist: " << float(dist) << ", P: " << float(prob_vec[idx]) << " " << float(prob_vec[idy]) << std::endl;
-	        break;
-	      }
-	      ++id;
-	    }
-	  }
+  //	  std::vector<float> dist(prob_vec.size());
+      int id = 0;
+      for (unsigned int idx = 0; idx < x_mean_vec.size(); ++idx) {
+        for (unsigned int idy = idx+1; idy < x_mean_vec.size(); ++idy) {
+          const float dist = sqrt(pow(float(x_mean_vec[idx] - x_mean_vec[idy]),2) + pow(float(y_mean_vec[idx] - y_mean_vec[idy]),2));
+          if ( prob_vec[idy] > 0.999f && prob_vec[idx] > 0.999f && dist < legDist) { // Only get legs which are legDist away and have high probability (>0.999)
+            triggered_new = true;
+            std::cout << "Dist: " << float(dist) << ", P: " << float(prob_vec[idx]) << " " << float(prob_vec[idy]) << std::endl;
+            break;
+          }
+          ++id;
+        }
+      }
 
-//    std::cout << std::endl;
+  //    std::cout << std::endl;
 
-    // ---------------------------------------------
+      // ---------------------------------------------
 
-    // OLD check if the waypoint is triggered
-//    for (int i = 1; i < scan.scan_values_size() - 1; ++i) {
-//      if ((scan.scan_values(i) > scan.scan_values_min() && initscan.scan_values(i) > initscan.scan_values_min()
-//          && scan.scan_values(i) < range && initscan.scan_values(i) - scan.scan_values(i) > diffThreshold)
-//          || (initscan.scan_values(i) < initscan.scan_values_min()
-//              && scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < range)) {
-//        //DEBUG_MSG(abs(scan.scan_values(i) - initscan.scan_values(i)));
-//        triggered_new = true;
-//        break;
-//      }
-//    }
+      // OLD check if the waypoint is triggered
+  //    for (int i = 1; i < scan.scan_values_size() - 1; ++i) {
+  //      if ((scan.scan_values(i) > scan.scan_values_min() && initscan.scan_values(i) > initscan.scan_values_min()
+  //          && scan.scan_values(i) < range && initscan.scan_values(i) - scan.scan_values(i) > diffThreshold)
+  //          || (initscan.scan_values(i) < initscan.scan_values_min()
+  //              && scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < range)) {
+  //        //DEBUG_MSG(abs(scan.scan_values(i) - initscan.scan_values(i)));
+  //        triggered_new = true;
+  //        break;
+  //      }
+  //    }
 
-    // send update state
-    if (triggered_new) {
-      stateInformer->publish(Informer<string>::DataPtr(new string("entered")));
-      DEBUG_MSG("entered");
-    } else {
-      stateInformer->publish(Informer<string>::DataPtr(new string("left")));
-      DEBUG_MSG("left");
     }
 
+      // send update state
+      if (triggered_new) {
+        stateInformer->publish(Informer<string>::DataPtr(new string("entered")));
+        DEBUG_MSG("entered");
+      } else {
+        stateInformer->publish(Informer<string>::DataPtr(new string("left")));
+        DEBUG_MSG("left");
+      }
 		usleep(200000);
 	}
   cvReleaseMat(&tmp_mat);
