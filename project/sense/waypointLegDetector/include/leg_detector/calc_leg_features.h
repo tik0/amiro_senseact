@@ -36,7 +36,6 @@
 #define CALCLEGFEATURES_HH
 
 #include "laser_processor.h"
-#include "sensor_msgs/LaserScan.h"
 
 // TODO: Should remove scan dependency from here.
 // Only used for jump distance

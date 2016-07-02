@@ -2,8 +2,8 @@
 #include <iostream>
 using namespace std;
 
-//#define INFO_MSG_
-//#define DEBUG_MSG_
+#define INFO_MSG_
+#define DEBUG_MSG_
 
 #include "../../includes/MSG.h"
 
@@ -50,9 +50,12 @@ int main(int argc, const char **argv) {
 	std::string stateOutScope = "/waypoint/state";
 	std::string commandInscope = "/waypoint/command";
 	float range = 1.0;
-	float diffThreshold = 0.3;
+	float diffThreshold = 0.3f;
+	float probBound = 0.999f;
 	// LEG DETECTOR CONFIGURATION
 	float legDist = 0.5f;
+	float splitConnected = 0.06f;
+	int removeLessThan = 5;
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
@@ -62,7 +65,10 @@ int main(int argc, const char **argv) {
 			("commandinscope", po::value<std::string>(&commandInscope), "Scope for receiving commands")
 			("range,r", po::value<float>(&range), "Range of detection in m")
 			("diffThreshold", po::value<float>(&diffThreshold), "Difference threshold in m")
-			("legPairDistance", po::value<float>(&legDist), "Range between detected legs to be classified as a pair");
+			("legPairDistance", po::value<float>(&legDist), "Range between detected legs to be classified as a pair")
+			("probBound", po::value<float>(&probBound), "Minimum leg pair probability")
+			("splitConnected", po::value<float>(&splitConnected), "Minimum distance between datapoints to be a cluster")
+			("removeLessThan", po::value<int>(&removeLessThan), "Minimum number in a cluster");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -105,7 +111,6 @@ int main(int argc, const char **argv) {
 	rst::vision::LocatedLaserScan scan, initscan, initscan_raw;
 
 	bool enabled = false;
-	bool triggered = false;
   bool triggered_new = false;
 
 	// ----------------------------------------------------------------------------
@@ -119,6 +124,7 @@ int main(int argc, const char **argv) {
   // ----------------------------------------------------------------------------
   CvMat *tmp_mat = cvCreateMat(1, feat_count_, CV_32FC1);
 	while (true) {
+	  bool triggered = false;
 		// check if the checkpoint is enabled/disabled by the stateMachine
 		if (!enabled) {
 			bool initNow = vm.count("startNow");
@@ -167,15 +173,15 @@ int main(int argc, const char **argv) {
       const float maxRange = range;
       for (int idx = 0; idx < scan.scan_values_size(); ++idx) {
          if (scan.scan_values(idx) > maxRange) {
-           scan.mutable_scan_values()->Set(idx, maxRange);
+           scan.mutable_scan_values()->Set(idx, 0);
          }
       }
 
       // THE LEG DETECTOR
       laser_processor::ScanMask mask_;
       laser_processor::ScanProcessor processor(&scan, mask_);
-      processor.splitConnected(0.06 /*from contructor*/ );  // connected_thresh_
-      processor.removeLessThan(5);
+      processor.splitConnected(splitConnected /*from contructor*/ );  // connected_thresh_
+      processor.removeLessThan(removeLessThan);
 
   //	  processor.getClusters().list()
        mask_.mask_.center();
@@ -220,12 +226,13 @@ int main(int argc, const char **argv) {
 
   //	  std::vector<float> dist(prob_vec.size());
       int id = 0;
+      triggered_new = false;
       for (unsigned int idx = 0; idx < x_mean_vec.size(); ++idx) {
         for (unsigned int idy = idx+1; idy < x_mean_vec.size(); ++idy) {
           const float dist = sqrt(pow(float(x_mean_vec[idx] - x_mean_vec[idy]),2) + pow(float(y_mean_vec[idx] - y_mean_vec[idy]),2));
-          if ( prob_vec[idy] > 0.999f && prob_vec[idx] > 0.999f && dist < legDist) { // Only get legs which are legDist away and have high probability (>0.999)
+          if ( prob_vec[idy] > probBound && prob_vec[idx] > probBound && dist < legDist) { // Only get legs which are legDist away and have high probability (>0.999)
             triggered_new = true;
-            std::cout << "Dist: " << float(dist) << ", P: " << float(prob_vec[idx]) << " " << float(prob_vec[idy]) << std::endl;
+            DEBUG_MSG( "Dist: " << float(dist) << ", P: " << float(prob_vec[idx]) << " " << float(prob_vec[idy]) );
             break;
           }
           ++id;
