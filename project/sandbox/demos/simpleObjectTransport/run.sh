@@ -37,7 +37,7 @@ sleep 1
 # -e: Distance between robot and table edge for setting and grasping objects onto the robot  in m (default: 0.05).
 # -b: Buffer between command recognition and start in seconds (default: 5).
 # -r: Flag, if the commands shall only be given via RSB (otherwise they can also be given with the proximity sensor ring).
-./objectTransport --id ${ID} -f 0.08 -t 20.0 -i 0.01 -d 0.055 -v 0.01 -e 0.1 -b 5
+./objectTransport --id ${ID} -f 0.08 -t 20.0 -i 0.01 -d 0.055 -v 0.008 -e 0.1 -b 5 &
 
 wait
 cpufreq-set -g ondemand
