@@ -43,6 +43,8 @@ int main(int argc, const char **argv) {
 	float range = 1.0;
 	float diffThreshold = 0.3;
 
+    int scanStartIndex = 0, scanEndIndex = -1;
+
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")("lidarinscope", po::value<std::string>(&lidarInScope),
 			"Scope for receiving lidar data")("startNow,s",
@@ -50,7 +52,9 @@ int main(int argc, const char **argv) {
 			po::value<std::string>(&stateOutScope), "Scope for sending states")("commandinscope",
 			po::value<std::string>(&commandInscope), "Scope for receiving commands")("range,r",
 			po::value<float>(&range), "Range of detection in m")("diffThreshold", po::value<float>(&diffThreshold),
-			"Difference threshold in m");
+            "Difference threshold in m")
+            ("scanStartIndex", po::value<int>(&scanStartIndex))
+            ("scanEndIndex", po::value<int>(&scanEndIndex));
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -110,13 +114,18 @@ int main(int argc, const char **argv) {
 				// initialize scan
 				initscan_raw = *lidarQueue->pop();
 				initscan = initscan_raw;
-				for (int i = 0; i < initscan_raw.scan_values_size(); ++i) {
+
+                if (scanEndIndex == -1) {
+                    scanEndIndex = initscan.scan_values_size();
+                }
+
+                for (int i = scanStartIndex; i < scanEndIndex; ++i) {
 					if (initscan_raw.scan_values(i) < initscan_raw.scan_values_min()) {
 						initscan_raw.set_scan_values(i, 10000);
 					}
 				}
 				// filter initial scan
-				for (int i = 1; i < initscan.scan_values_size() - 1; ++i) {
+                for (int i = scanStartIndex + 1; i < scanEndIndex - 1; ++i) {
 					initscan.set_scan_values(i,
 							min(initscan_raw.scan_values(i - 1),
 									min(initscan_raw.scan_values(i), initscan_raw.scan_values(i + 1))));
@@ -137,9 +146,13 @@ int main(int argc, const char **argv) {
 		// Fetch a new scan and store it to scan
 		scan = *lidarQueue->pop();
 
+        if (scanEndIndex == -1) {
+            scanEndIndex = initscan.scan_values_size();
+        }
+
 		// check if the waypoint is triggered
 		bool triggered_new = false;
-		for (int i = 1; i < scan.scan_values_size() - 1; ++i) {
+        for (int i = scanStartIndex + 1; i < scanEndIndex - 1; ++i) {
 			if ((scan.scan_values(i) > scan.scan_values_min() && initscan.scan_values(i) > initscan.scan_values_min()
 					&& scan.scan_values(i) < range && initscan.scan_values(i) - scan.scan_values(i) > diffThreshold)
 					|| (initscan.scan_values(i) < initscan.scan_values_min()
