@@ -35,6 +35,7 @@ v4l2-ctl -d/dev/v4l-subdev8 --set-ctrl=vertical_flip=1
 
 # start state machine
 ./final2015 --id ${ID} --turnAfterFollow 90 &
+#./follow_LaserScanner -s -l /lidar --forwardSpeed 800 --forwardMinSpeed 400 --followMinDist 400 --followDistSlowingDown 400 --followMinBackDist 200 --maxRange 1500
 #--moveAfterFollow -300 &
 
 # webserver running on port 80

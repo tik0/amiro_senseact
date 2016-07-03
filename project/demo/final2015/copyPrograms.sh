@@ -1,20 +1,33 @@
-#!/bin/sh
+#!/bin/bash
 
 IP=${1}
 NAME=`basename "$PWD"`
-ssh root@${IP} "mkdir -p ~/${NAME}"
+
+echo "Please enter password:"
+read -s PASS
+
+result=$(sshpass -p ${PASS} ssh root@${IP} "mkdir -p ~/${NAME}" 2>&1)
+if [ "${result}" ]; then
+  echo "Could not connect: ${result}"
+  exit 1
+fi
+
+
+echo "Start copying"
 
 for line in `ls -d */ | sed 's#\ ##g' | sed 's#\/##g' | grep -v CMakeFiles`; do
-  scp ${line}/${line} root@${IP}:~/${NAME}
+  sshpass -p ${PASS} scp ${line}/${line} root@${IP}:~/${NAME}
 done
-scp run.sh root@${IP}:~/${NAME}
-scp stop.sh root@${IP}:~/${NAME}
+sshpass -p ${PASS} scp run.sh root@${IP}:~/${NAME}
+sshpass -p ${PASS} scp stop.sh root@${IP}:~/${NAME}
 # Copy config
-scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread root@${IP}:~/${NAME}
-scp rsb.conf root@${IP}:~/${NAME}
+sshpass -p ${PASS} scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread root@${IP}:~/${NAME}
+sshpass -p ${PASS} scp rsb.conf root@${IP}:~/${NAME}
 
 # Copy simulation folder
-scp -r sim root@${IP}:~/${NAME}/
+sshpass -p ${PASS} scp -r sim root@${IP}:~/${NAME}/
 
 # Copy the website
-scp -r ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www root@${IP}:~/${NAME}
+sshpass -p ${PASS} scp -r ${MUROX_PROJECT}/process/misc/rsb_ws_bridge_amiro/www root@${IP}:~/${NAME}
+
+echo "Copying finished"

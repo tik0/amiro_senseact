@@ -84,6 +84,7 @@ int forwardMinSpeed = 150; // mm/s
 int turningSpeed = 100; // mradian/s
 int turnCorrectSpeed = 60; //mradian/s
 float rotationTolarence = M_PI/36.0; // rad
+int maxRange = 2000; // mm
 
 
 void motorActionMilli(int speed, int turn) {
@@ -140,13 +141,13 @@ void calculateDrivingBehavior(ts_sensor_data_t &scan) {
     }
   }
 
-  if (shortId < 0) {
+  if (shortId < 0 || shortDist > maxRange) {
     motorActionMilli(0,0);
     printf("No minimum found!\n");
   } else {
     orientationLaser = shortId;
 
-    float angle = startAngle+shortId*laserAngleDist;
+    float angle = 2.0*M_PI-(startAngle+shortId*laserAngleDist);
 
     printf("Orientation: id=%i (aus [0,%i]), angle=%f\n", orientationLaser, laserCount-1, angle);
 
@@ -209,6 +210,7 @@ int main(int argc, const char **argv){
     ("forwardMinSpeed", po::value < int > (&forwardMinSpeed), "")
     ("turningSpeed", po::value < int > (&turningSpeed), "")
     ("turnCorrectSpeed", po::value < int > (&turnCorrectSpeed), "")
+    ("maxRange", po::value < int > (&maxRange), "")
     ("rotationTolarence", po::value < float > (&rotationTolarence), "");
 
   // allow to give the value as a positional argument
