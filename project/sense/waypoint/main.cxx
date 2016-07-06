@@ -171,7 +171,7 @@ int main(int argc, const char **argv) {
 			DEBUG_MSG("left");
 		}
 
-		usleep(200000);
+        usleep(100000);
 	}
 
 	return 0;

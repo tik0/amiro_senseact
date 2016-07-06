@@ -48,6 +48,7 @@ for IP in $@; do
 	sshpass -p$PASS rsync -v --progress -ua $files $dest
 
 	# Copy the maps
-	sshpass -p$PASS rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/* "$dest/data/"
+	#sshpass -p$PASS rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/* "$dest/data/"
+	sshpass -p$PASS rsync -v --progress -au ${MUROX_PROJECT}/demo/CoreSLAMLocalization/data/Leipzig_Arena_A.pgm "$dest/data/"
 
 done

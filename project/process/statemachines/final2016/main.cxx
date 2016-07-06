@@ -43,11 +43,13 @@ ControllerAreaNetwork myCAN;
 #include <boost/shared_ptr.hpp>
 #include <rsb/Factory.h>
 #include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/QueuePushHandler.h>
+#include <rst/geometry/Pose.pb.h>
 
 // IR sensor model
 #include <sensorModels/VCNL4020Models.h>
@@ -76,6 +78,7 @@ const std::string sHomingAnswerScope("/homing/response");
 // We assume a "finish" string, which indicates the current state of the following program
 const std::string sFollowingAnswerScope("/followingState");
 const std::string sWaypointAnswerScope("/waypoint/state");
+std::string poseScope("/amiro0/pose");
 
 int processSM(void);
 void setAMiRoColor(int r, int g, int b);
@@ -105,6 +108,8 @@ int turn_degree = 180;
 int turn_follow = 0;
 int move_follow = 0;
 
+
+float poseXThreshold = 0;
 
 // IR triggering related
 float irDetectionDist = 0.01; // m
@@ -137,7 +142,9 @@ int main(int argc, char **argv) {
         ("turnAfterFollow", po::value<int> (&turn_follow), "Angle to turn after following (in grad, positiv: counter clockwise).")
         ("moveAfterFollow", po::value<int> (&move_follow), "Distance to move after following after turning (in mm, positiv: forward).")
         ("proxObstacleInscope,o", po::value<std::string>(&proxSensorInscopeObstacle), "Inscope for receiving proximity sensor values for obstacle model.")
-        ("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m.");
+        ("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m.")
+        ("poseXThreshold", po::value<float>(&poseXThreshold), "poseXThreshold in meter")
+        ("poseScope", po::value<std::string>(&poseScope), "Scope for receiving pose.");
 
   // Allow to give the value as a positional argument
   po::positional_options_description p;
@@ -225,6 +232,9 @@ int processSM(void) {
   // Register new converter for std::vector<int>
   boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
   rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose> >
+          converter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   /////////////////// LOCAL SCOPES///////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////
@@ -269,6 +279,13 @@ int processSM(void) {
   rsb::Informer< std::string >::Ptr informerRemoteState = factory.createInformer< std::string > (g_sStateOutScope, tmpPartConf);
 
   rsb::Informer< std::string >::Ptr informerRemoteWaypoint = factory.createInformer< std::string > (g_sWaypointOutScope, tmpPartConf);
+
+  // Listener for position
+  INFO_MSG("listening for pose on " << poseScope);
+  rsb::ListenerPtr listenerPosition = factory.createListener(poseScope, tmpPartConf);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose> > > queuePosition(
+      new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose> >(1));
+  listenerPosition->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(queuePosition)));
 
 /*  try {
     for (int idx = 0; idx < NUM_STATES; ++idx) {
@@ -415,6 +432,16 @@ int processSM(void) {
     // HACK Ignoring TURN commands, so that after a stopFollow, the turning is not initialized, but the homing to a save position
     bGotFromTobi_turn = false;
 
+
+    if (!queuePosition->empty()) {
+        rst::geometry::Pose pose = *(queuePosition->pop());
+
+        DEBUG_MSG("X: " << pose.translation().x());
+        if (pose.translation().x() > poseXThreshold) {
+            bGotFromTobi_stopfollowing = true;
+        }
+    }
+
 //    // Get messages from following
 //    if (!queueFollowingAnswer->empty()) {
 //      INFO_MSG("Received a message from following.")
@@ -488,7 +515,8 @@ int processSM(void) {
     case idle:
       setAMiRoColor(255,255,255);
 //      if(bGotFromTobi_init) {
-        set_state_init();
+//        set_state_init();
+      set_state_waypoint();
 //      }
       break;
 
@@ -514,6 +542,38 @@ int processSM(void) {
       }
 //      bGotFromTobi_initfollowing = false;
 //      bGotFromTobi_initwaypoint = false;
+      break;
+
+    case following:
+      if (bGotFromTobi_stopfollowing) {
+        informerFollowing->publish(signal_stop);
+        // HACK START: We just wait a few seconds, so that AMiRo can drive to a save homing position
+        //             and after that, the "rec" message is send to Tobi, so that he go on
+        set_state_homing();
+        informerHoming->publish(signal_homingPosition);
+        boost::shared_ptr<std::string> tmp(new std::string("left"));
+        informerRemoteWaypoint->publish(tmp);
+        informerWaypoint->publish(signal_stop);
+//        usleep(1 /*seconds*/ * 1000000);
+//        static bool onceGotHoming = false;
+//        if (!onceGotHoming) {
+//          informerHoming->publish(signal_savePosition);
+//          onceGotHoming = true;
+//        }
+//        usleep(1 /*seconds*/ * 1000000);
+//        std::string output = "stopfollowrec"; *stringPublisher = output; informerRemoteState->publish(stringPublisher);
+        //HACK END
+        //set_state_stopped();
+      } else if (bGotFromTobi_initwaypoint) {
+        informerFollowing->publish(signal_stop);
+        informerWaypoint->publish(signal_init);
+        stop_following();
+        set_state_waypoint();
+      } else if (bGotFromTobi_turn) {
+        informerFollowing->publish(signal_stop);
+        stop_following();
+        set_state_turn();
+      }
       break;
 
     case goToRoom:
@@ -570,11 +630,23 @@ int processSM(void) {
         set_state_waypoint_entered();
         boost::shared_ptr<std::string> tmp(new std::string("entered"));
         informerRemoteWaypoint->publish(tmp);
+
+        // stop waypoint and start following
+//        informerWaypoint->publish(signal_stop);
+//        informerFollowing->publish(signal_init);
+//        set_state_following();
+
       } else if (bGotFromWaypoint_left && personEntered) {
         DEBUG_MSG("Switched to left in waypoint!");
         set_state_waypoint();
         boost::shared_ptr<std::string> tmp(new std::string("left"));
         informerRemoteWaypoint->publish(tmp);
+
+        // stop waypoint and start following
+        informerWaypoint->publish(signal_stop);
+        informerFollowing->publish(signal_init);
+        set_state_following();
+
       } else if (bGotFromTobi_initfollowing) {
         informerWaypoint->publish(signal_stop);
         informerFollowing->publish(signal_init);
@@ -594,7 +666,8 @@ int processSM(void) {
         if (!queueHomingAnswer->empty()) {
             boost::shared_ptr<std::string> response = queueHomingAnswer->pop();
             if ((*response).compare("done") == 0) {
-                set_state_stopped();
+                //set_state_stopped();
+                set_state_idle();
             } else if ((*response).compare("failed") == 0) {
                 set_state_stopped();
             }
@@ -629,7 +702,7 @@ int processSM(void) {
 //    informerRemoteState[amiroState]->publish(signal_state);
     // informerAmiroState->publish(signal_state);
 //    boost::this_thread::sleep(boost::posix_time::seconds(1));
-    usleep(500000);
+    usleep(100000);
 
   }
   return 0;
@@ -683,7 +756,7 @@ void set_state_following() {
 
 void stop_following() {
   if (turn_follow != 0 || move_follow != 0) {
-    usleep(500000);
+    //usleep(500000);
   }
   if (turn_follow != 0) {
     float vel = M_PI/4.0;
@@ -693,7 +766,7 @@ void stop_following() {
     }
     float waiting_us = angle/vel * 1000000.0;
     motorActionMilli(0, (int)(vel*1000.0));
-    usleep((int)waiting_us);
+    //usleep((int)waiting_us);
     motorActionMilli(0, 0);
   }
   if (move_follow != 0) {
@@ -704,7 +777,7 @@ void stop_following() {
     }
     float waiting_us = dist/vel * 1000000.0;
     motorActionMilli((int)(vel*1000.0), 0);
-    usleep((int)waiting_us);
+    //usleep((int)waiting_us);
     motorActionMilli(0, 0);
   }
 }
