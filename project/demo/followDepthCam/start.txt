@@ -1,6 +1,6 @@
 ====== Building Follow by Depth Camera ======
 
-This demo contains the program for the following procedure by the depth camera. Via RSB the commands for starting and stopping can be given. For more detailed information, please have a look into the [[sandbox:follow_DepthCam:start|follow procedure documentation]].
+This demo contains the program for the following procedure by the depth camera. Via RSB the commands for starting and stopping can be given. For more detailed information, please have a look into the [[process:actingBehavior:follow_DepthCam:start|follow procedure documentation]].
 
 ===== Command structure =====
 
@@ -21,6 +21,6 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[sandbox:follow_DepthCam:start|follow_DepthCam]] | Program of following procedure by depth camera. |
+| [[process:actingBehavior:follow_DepthCam:start|follow_DepthCam]] | Program of following procedure by depth camera. |
 | [[act:setLights:start|setLights]]                 | Program for setting the lights. |
 | [[tools:robotTools:stopAMiRo:start|stopAMiRo]]    | Program for stopping the AMiRo (stopping motors and resetting lights). |

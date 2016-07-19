@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : -
+// Description : Follows the guide based on the height of the guiding object.
 //============================================================================
 
 #define INFO_MSG_
@@ -17,7 +17,6 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/nonfree/nonfree.hpp>
-//#include <converter/iplImageConverter/IplImageConverter.h>
 
 #include <boost/shared_ptr.hpp>
 #include <rsb/Factory.h>
@@ -33,12 +32,6 @@
 #include <rsc/threading/PeriodicTask.h>
 #include <rsc/threading/ThreadedTaskExecutor.h>
 #include <rsc/misc/SignalWaiter.h>
-
-// RST
-//#include <rsb/converter/ProtocolBufferConverter.h>
-// RST Proto types
-//#include <types/LocatedLaserScan.pb.h>
-//#include <rst/geometry/Pose.pb.h>
 
 // For program options
 #include <boost/program_options.hpp>
@@ -57,6 +50,8 @@ using namespace muroxConverter;
 #include <ctime>
 #include <boost/chrono.hpp>
 #include <boost/chrono/chrono_io.hpp>
+
+
 #define SAMPLE_READ_WAIT_TIMEOUT 2000 //2000ms
 
 using namespace std;
@@ -157,7 +152,6 @@ void sectorFocus2Motor(vector< vector<int> > values, rsb::Informer< std::vector<
 	if (heightFound) {
 		int center = values.size()/2;
 		int centerWidth = int(float(center)/3.0);
-//		INFO_MSG("Focus Height: " << focusHeight << ", center: " << center << ", center width: " << centerWidth);
 		
 		// Initialize velocity
 		float velX = 0.0;
@@ -224,24 +218,6 @@ void sectorFocus2Motor(vector< vector<int> > values, rsb::Informer< std::vector<
 			curColors[5].setRedGreenBlue(255, 255, 0);
 			curColors[6].setRedGreenBlue(255, 255, 0);
 		}
-		
-/*		if (velX > 0 && velW > 0) {
-			INFO_MSG("Driving forward and left: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		} else if (velX < 0 && velW > 0) {
-			INFO_MSG("Driving backward and left: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		} else if (velX > 0 && velW < 0) {
-			INFO_MSG("Driving forward and right: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		} else if (velX < 0 && velW < 0) {
-			INFO_MSG("Driving backward and right: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		} else if (velX > 0 && velW == 0) {
-			INFO_MSG("Driving straight forward: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		} else if (velX < 0 && velW == 0) {
-			INFO_MSG("Driving straight backward: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		} else if (velX == 0 && velW > 0) {
-			INFO_MSG("Standing and turning left: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		} else if (velX == 0 && velW < 0) {
-			INFO_MSG("Standing and turning right: " << velX << " m/s, " << (velW*180.0/M_PI) << " °/s");
-		}*/
 		
 		// set motor velocity
 		motorAction(velX, velW);
@@ -649,8 +625,7 @@ int main(int argc, char **argv) {
 			}
 			systime2 = system_clock::now();
 			mstime = duration_cast<milliseconds>(systime2-systime1);
-//			if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms")
-//			else DEBUG_MSG("Image sent (" << mstime.count() << " ms)");
+			if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
 		}
 
 		usleep(period*1000);
