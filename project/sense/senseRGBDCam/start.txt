@@ -1,4 +1,4 @@
-====== Read RGBD Camera ======
+====== Sense RGB Depth Camera ======
 
 This tool is for reading images from depth cameras.
 
