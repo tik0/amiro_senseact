@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : -
+// Description : Reading images from depth cameras.
 //============================================================================
 
 #define INFO_MSG_
@@ -32,12 +32,6 @@
 #include <rsc/threading/ThreadedTaskExecutor.h>
 #include <rsc/misc/SignalWaiter.h>
 
-// RST
-//#include <rsb/converter/ProtocolBufferConverter.h>
-// RST Proto types
-//#include <types/LocatedLaserScan.pb.h>
-//#include <rst/geometry/Pose.pb.h>
-
 // For program options
 #include <boost/program_options.hpp>
 
@@ -53,9 +47,10 @@
 #include <ctime>
 #include <boost/chrono.hpp>
 #include <boost/chrono/chrono_io.hpp>
+
+
 #define SAMPLE_READ_WAIT_TIMEOUT 2000 //2000ms
 
-//using namespace boost;
 using namespace std;
 using namespace boost::chrono;
 using namespace cv;
@@ -63,13 +58,11 @@ using namespace boost;
 using namespace rsb;
 using namespace rsb::converter;
 using namespace openni;
-//using namespace rst::converters::opencv;
 
 
 // scope names
 std::string rgbScope = "/images/rgb";
 std::string depthScope = "/images/depth";
-static int g_iDevice = 6;
 static unsigned int g_uiQuality = 100;
 bool sendImage = false;
 bool justPrint = false;
@@ -89,7 +82,6 @@ int main(int argc, char **argv) {
 			("RGBOutscope,r", po::value < std::string > (&rgbScope),"Scope for sending RGB image.")
 			("DepthOutscope,d", po::value < std::string > (&depthScope),"Scope for sending depth image.")
 			("printTime,t","Prints the time")
-			("device,v", po::value<int>(&g_iDevice), "Camera device ID")
 			("rgbMode", po::value<int>(&rgbMode), "Mode of RGB Image.")
 			("depthMode", po::value<int>(&depthMode), "Mode of Depth Image.")
 			("irMode", po::value<int>(&irMode), "Mode of IR Image.")
@@ -135,7 +127,11 @@ int main(int argc, char **argv) {
 	if (vm.count("printTime")) systime1 = system_clock::now();
 	if (vm.count("printTime")) DEBUG_MSG("Starting RSB Initialization");
 
+
+
+
 	// +++++ RSB Initialization +++++
+
 	rsb::Factory &factory = rsb::getFactory();
 	
 	INFO_MSG("RSB Scopes:");
@@ -154,9 +150,12 @@ int main(int argc, char **argv) {
 	if (vm.count("printTime")) mstime = duration_cast<milliseconds>(systime2-systime1);
 	if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
 
+
+
+	// +++++ OpenNI Initialization +++++
+
 	if (vm.count("printTime")) systime1 = system_clock::now();
 	if (vm.count("printTime")) DEBUG_MSG("Starting OpenNI Initialization");
-	// +++++ OpenNI Initialization +++++
 	VideoFrameRef rgbImage, depthImage;
 	VideoStream rgbStream, depthStream;
 	Device device;
@@ -374,8 +373,7 @@ int main(int argc, char **argv) {
 		}
 		systime2 = system_clock::now();
 		mstime = duration_cast<milliseconds>(systime2-systime1);
-//		if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms")
-//		else DEBUG_MSG("Image sent (" << mstime.count() << " ms)");
+		if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
 
 		usleep(period*1000);
 	}
