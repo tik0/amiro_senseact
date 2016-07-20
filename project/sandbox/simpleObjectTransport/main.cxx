@@ -1,9 +1,9 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : mbarther <mbarther@techfak.uni-bielefeld.de>
-// Description : The robot drives forward to the next edge and turns to the
-//               right. This procedure is repeated as often as set (on
-//               default it's done twice).
+// Description : The robot drives forward to the current edge, turns until the
+//               edge is behind and drives to the next edge. Afterwards it 
+//               drives a little bit backwards to get distance from the edge.
 //============================================================================
 
 //#define TRACKING
@@ -285,12 +285,10 @@ int main(int argc, char **argv) {
 		("id", po::value<unsigned int>(&amiroID), "AMiRo ID (default: 0).")
 		("proxObstacleInscope,o", po::value<std::string>(&proxSensorInscopeObstacle), "Inscope for receiving proximity sensor values for obstacle model.")
 		("proxGroundInscope,g", po::value<std::string>(&proxSensorInscopeGround), "Inscope for receiving proximity sensor values for edge model.")
-		("commandInscope,c", po::value<std::string>(&commandInscope), "Inscope for receiving commands.")
-		("answerOutscope,a", po::value<std::string>(&answerOutscope), "Outscope for sending command answers and status messages.")
 		("lightOutscope,l", po::value<std::string>(&lightOutscope), "Outscope for light commands.")
 		("forwardSpeed,f", po::value<float>(&forwardSpeed), "Forward speed in m/s (default: 0.06).")
 		("turnSpeed,t", po::value<float>(&turnSpeedS), "Angular speed in degree/s (default: 20.0).")
-		("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m (default: 0.01).")
+		("irDetectionDist,i", po::value<float>(&irDetectionDist), "Maximal distance for command detection by the proximity sensors in m (default: 0.05).")
 		("edgeMaxDist,d", po::value<float>(&edgeMaxDist), "Distance for edge detection in m (default: 0.055).")
 		("edgeDistVariance,v", po::value<float>(&edgeDistVariance), "Maximal variance between the proximity sensors for edge orientation in m (default: 0.005).")
 		("tableEdgeDistance,e", po::value<float>(&tableEdgeDist), "Distance between robot and table edge for grasping and setting objects onto the robot in m (default: 0.05).")
@@ -321,8 +319,8 @@ int main(int argc, char **argv) {
 
 	commandsViaIR = !vm.count("commandsRSBOnly");
 
-	if (!vm.count("commandInscope")) commandInscope = commandInscopePart1 + std::to_string(amiroID) + commandInscopePart2;
-	if (!vm.count("answerOutscope")) answerOutscope = answerOutscopePart1 + std::to_string(amiroID) + answerOutscopePart2;
+	commandInscope = commandInscopePart1 + std::to_string(amiroID) + commandInscopePart2;
+	answerOutscope = answerOutscopePart1 + std::to_string(amiroID) + answerOutscopePart2;
 
 	turnSpeed = turnSpeedS * M_PI/180.0;
 
