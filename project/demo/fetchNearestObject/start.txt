@@ -4,7 +4,7 @@ The robot focusses the nearest object, which can be detected with a laser scanne
 
 For (re)starting the fetching procedure, the robot has to be taken from the table and set on any position.
 
-Please have a look into the [[sandbox:objectFetchTask:start|objectFetchTask documentation]] for detailed application and procedure information.
+Please have a look into the [[process:actingBehavior:fetchNearestObject:start|objectFetchTask documentation]] for detailed application and procedure information.
 
 ===== Run the Demo =====
 
@@ -20,7 +20,7 @@ One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communicati
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[sandbox:objectFetchTask:start|objectFetchTask]] | Program for fetching procedure. |
+| [[process:actingBehavior:fetchNearestObject:start|objectFetchTask]] | Program for fetching procedure. |
 | [[sense:senseRingProximity:start|senseRingProximity]] | Program for reading ring proximity values. |
 | [[sense:senseHokuyo:start|senseHokuyo]] | Program for reading laser data of the Hokuyo Laser Scanner. |
 | [[sense:senseSimple3DTo2D:start|senseSimple3DTo2D]] | Program for reading laser data of a RGBD camera. |
