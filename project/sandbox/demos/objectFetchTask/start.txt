@@ -1,6 +1,6 @@
 ====== Building the Object Fetch Task ======
 
-The robot focusses the nearest object, which it can detect with its laser scanner or a RGBD camera. Afterwards it drives around this object and pushs it to the robot's start position. The navigation is only based on odometry.
+The robot focusses the nearest object, which can be detected with a laser scanner or a RGBD camera. Afterwards it drives around this object and pushs it to the robot's start position. The navigation is only based on odometry.
 
 For (re)starting the fetching procedure, the robot has to be taken from the table and set on any position.
 

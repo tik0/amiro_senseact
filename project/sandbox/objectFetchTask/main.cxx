@@ -365,8 +365,6 @@ int main(int argc, char **argv) {
 			}
 
 			// check for object position and size
-			// TODO buildin laser scanner!
-
 			float objectRadius = fakeObjectRadius;
 			float objectPosX = fakeObjectPosX;
 			float objectPosY = fakeObjectPosY;
