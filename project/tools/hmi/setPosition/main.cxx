@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
   cv::setMouseCallback(winName, onMouse);
 
   // Exit the program if escape was pressed
-  while (cv::waitKey(1) != KB_ESCAPE) {
+  while (cv::waitKey(30) != KB_ESCAPE) {
     // Get the image as string
 
     if (!imageQueue->empty()) {
