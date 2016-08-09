@@ -1,5 +1,5 @@
 # Check the build type and set it to "release" if nothing is set
-STRING(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
+STRING(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE)
 IF (CMAKE_BUILD_TYPE MATCHES "debug")
     message("DEBUG MODE")
     add_definitions(-DINFO_MSG_)
