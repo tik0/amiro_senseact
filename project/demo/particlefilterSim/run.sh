@@ -1,6 +1,6 @@
 #!/bin/bash
 
-trap './stop.sh; exit' EXIT
+trap 'echo got SIGINT or script is exiting; ./stop.sh; exit' EXIT SIGINT
 
 ./stop.sh
 
@@ -11,14 +11,19 @@ kinscope='/AMiRo_Hokuyo/diffKin'
 imagescope='/image'
 poseestimatescope='/setPosition'
 
-# start spread
-spread &
-sleep 5
+# start spread if not running
+if ps -C spread && test -S /tmp/4803; then
+	echo "spread is still running"
+else
+	echo "spread is not running, starting it"
+	spread &
+	sleep 5
+fi
 
 # show map and set pose estimate
 ./setPosition/setPosition --i "$imagescope" --o "$poseestimatescope" &
 
-# start gazebo
+# start gazebo (simulation of AMiRo etc.)
 gazebo ./data/T.world &
 
 # start particle filter
