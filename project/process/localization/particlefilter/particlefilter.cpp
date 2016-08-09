@@ -62,14 +62,14 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
 
     srand(time(NULL));
     this->rng = std::subtract_with_carry_engine<uint_fast32_t, 24, 10, 24>(time(NULL));
-    samplingDistribution = std::normal_distribution<float>(0.0f, 0.01f);
+    samplingDistribution = std::normal_distribution<float>(0.0f, 0.05f);
 
     initSamples();
 
     if (this->doKLDSampling) {
         nbBinsY = ceil((map->rows * map->meterPerCell) / binSizeY);
         nbBinsX = ceil((map->cols * map->meterPerCell) / binSizeX);
-        nbBinsRot = ceil(M_PI / binSizeRot);
+        nbBinsRot = ceil(2 * M_PI / binSizeRot);
 
         bins = new bool**[nbBinsY];
         for (int i = 0; i < nbBinsY; ++i) {

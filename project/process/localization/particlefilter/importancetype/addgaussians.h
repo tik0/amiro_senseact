@@ -12,7 +12,7 @@ private:
     /**
      * @brief importance aggregation helper variable for importance of a scan
      */
-    float importance = 0.0f;
+    float importance = 1.0f;
 
     /**
      * @brief sigma for the gaussian:
@@ -21,7 +21,7 @@ private:
      *
      * 4m * 0.01 = 0.04m
      */
-    const float sigma = 0.04f;
+    const float sigma = 0.1f;
 
 public:
     inline void addBeamDistance(float distance) final
@@ -33,7 +33,7 @@ public:
     {
         float ret = importance;
         // reset importance
-        importance = 0.0f;
+        importance = 1.0f;
 
         return ret;
     }

@@ -35,7 +35,7 @@
 #include "raycastingmodel.h"
 #include "likelihoodfieldmodel.h"
 
-#include "importancetype/addgaussians.h"
+#include "importancetype/multiplygaussians.h"
 
 cv::Mat3b visualize(Map &map, ParticleFilter &particlefilter, bool visualizeImportance, float scale) {
     INFO_MSG("Preparing visualization");
@@ -206,7 +206,7 @@ int main(int argc, const char **argv) {
 
     // Finally set up the particle filter
     //RayCastingModel sensorModel(&map);
-    LikelihoodFieldModel<AddGaussians> sensorModel(&map);
+    LikelihoodFieldModel<MultiplyGaussians> sensorModel(&map);
     ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip);
 
     /*
