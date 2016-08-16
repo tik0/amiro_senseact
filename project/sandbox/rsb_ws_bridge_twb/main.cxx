@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
 
   // Create the mongoose server
   struct mg_server *server = mg_create_server(NULL, ev_handler);
-  mg_set_option(server, "listening_port", "80");
+  mg_set_option(server, "listening_port", "8080");
   mg_set_option(server, "document_root", "./www");
   std::cout << "Started on port " << mg_get_option(server, "listening_port")
             << std::endl;

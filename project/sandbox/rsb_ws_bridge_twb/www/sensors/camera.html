@@ -88,7 +88,7 @@ body {
     function send() {
         if (socket.readyState == WebSocket.OPEN) {
 //             log.value = ""; // Clear log on new scope setup
-            socket.send("/cam");
+            socket.send("/image/visualization");
             console.log("Receive scope: " + text.value +"\n");
         } else {
             console.log("Not connected\n");
