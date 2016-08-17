@@ -89,7 +89,7 @@ body {
         if (socket.readyState == WebSocket.OPEN) {
 //             log.value = ""; // Clear log on new scope setup
 //            socket.send("/image/synced");
-            socket.send("/image/stitcher");
+            socket.send("/image/visualization");
 //            socket.send("/image/cam1");
             console.log("Receive scope: " + text.value +"\n");
         } else {
