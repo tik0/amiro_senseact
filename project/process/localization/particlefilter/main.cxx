@@ -22,6 +22,7 @@
 // RST Proto types
 //#include <types/LocatedLaserScan.pb.h>        // already included in particlefilter.h
 //#include <rst/geometry/Translation.pb.h>      // s.a.
+#include <types/PoseEuler.pb.h>
 
 // RSC
 #include <rsc/misc/SignalWaiter.h>
@@ -95,6 +96,21 @@ cv::Mat3b visualize(Map &map, ParticleFilter &particlefilter, bool visualizeImpo
     return vis;
 }
 
+rsb::Informer<rst::geometry::PoseEuler>::Ptr poseInformer;
+void publishPose(const pose_t &pose) {
+    rsb::Informer<rst::geometry::PoseEuler>::DataPtr data(new rst::geometry::PoseEuler);
+
+    // convert
+    data->mutable_translation()->set_x(pose.x);
+    data->mutable_translation()->set_y(pose.y);
+    data->mutable_translation()->set_z(0);
+    data->mutable_rotation()->set_pitch(0);
+    data->mutable_rotation()->set_roll(0);
+    data->mutable_rotation()->set_yaw(pose.theta);
+
+    poseInformer->publish(data);
+}
+
 int main(int argc, const char **argv) {
     /*
      * Handle program options
@@ -103,6 +119,7 @@ int main(int argc, const char **argv) {
     std::string odomInScope = "/AMiRo_Hokuyo/gps";
     std::string debugImageOutScope = "/particlefilter/debugImage";
     std::string poseEstimateInScope = "/setPosition";
+    std::string poseEstimateOutScope = "/pose";
 
     size_t sampleCount = 10;
     float meterPerPixel = 0.01f;
@@ -119,6 +136,7 @@ int main(int argc, const char **argv) {
             ("odomInScope", po::value < std::string > (&odomInScope)->default_value(odomInScope), "Scope for receiving odometry data")
             ("poseEstimateInScope", po::value< std::string > (&poseEstimateInScope), "Scope for receiving pose estimates (from the setPosition tool).")
             ("debugImageOutScope", po::value < std::string > (&debugImageOutScope), "Scope for sending the debug image.")
+            ("poseEstimateOutScope", po::value< std::string > (&poseEstimateOutScope), "Scope for publishing the estimated pose.")
             ("sampleCount", po::value < std::size_t > (&sampleCount)->default_value(sampleCount), "Number of particles")
             ("meterPerPixel", po::value < float > (&meterPerPixel)->default_value(meterPerPixel), "resolution of the map in meter per pixel")
             ("pathToMap", po::value < std::string > (&pathToMap)->default_value(pathToMap), "Filesystem path to image that contains the map")
@@ -142,6 +160,11 @@ int main(int argc, const char **argv) {
 
     // afterwards, let program options handle argument errors
     po::notify(vm);
+
+    INFO_MSG("lidarInScope: " << lidarInScope);
+    INFO_MSG("odomInScope: " << odomInScope);
+    INFO_MSG("poseEstimateInScope: " << poseEstimateInScope);
+    INFO_MSG("poseEstimateOutScope: " << poseEstimateOutScope);
 
     // do KLD sampling?
     bool doKLDSampling = false;
@@ -169,6 +192,8 @@ int main(int argc, const char **argv) {
     rsb::converter::converterRepository<std::string>()->registerConverter(odomConverter);
     boost::shared_ptr<muroxConverter::vecFloatConverter> vecFloatConverter(new muroxConverter::vecFloatConverter());
     rsb::converter::converterRepository<std::string>()->registerConverter(vecFloatConverter);
+    rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler>::Ptr poseConverter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler>());
+    rsb::converter::converterRepository<std::string>()->registerConverter(poseConverter);
 
     // Prepare RSB listener for incomming lidar scans
     rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -185,6 +210,8 @@ int main(int argc, const char **argv) {
 
     // Informer for map
     rsb::Informer<std::string>::Ptr debugImageInformer = factory.createInformer<std::string>(debugImageOutScope);
+    // Informer for current pose estimate
+    poseInformer = factory.createInformer<rst::geometry::PoseEuler>(poseEstimateOutScope);
 
     /*
      * Setup the particle filter
@@ -278,11 +305,13 @@ int main(int argc, const char **argv) {
         }
 
         boost::uint64_t start = rsc::misc::currentTimeMillis();
-        particlefilter.update(*scanPtr, *odomPtr);
+        particlefilter.update(*scanPtr, *odomPtr, true);
         boost::uint64_t stop = rsc::misc::currentTimeMillis();
         INFO_MSG("Updating particle filter took " << (stop - start) << " ms");
 
-        // TODO: publish position here
+        // publish the estimated pose
+        pose_t meanPose = particlefilter.getWeightedMeanPose();
+        publishPose(meanPose);
 
         boost::uint64_t loopPeriod = rsc::misc::currentTimeMillis() - loopStart;
         if (loopPeriod < minPeriod) {

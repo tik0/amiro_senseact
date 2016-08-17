@@ -37,7 +37,9 @@ public:
         INFO_MSG("done. Took " << (time(NULL) - start) << " seconds");
 
 #ifndef __arm__
+#ifndef NDEBUG
     showDistanceMap();
+#endif
 #endif
     }
 

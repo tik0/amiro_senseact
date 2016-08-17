@@ -41,6 +41,28 @@ public:
         return sampleSet;
     }
 
+    pose_t getWeightedMeanPose() {
+        float meanX = 0.0f, meanY = 0.0f;
+        float sumThetaX = 0.0f, sumThetaY = 0.0f;
+
+        for (size_t i = 0; i < sampleSet->size; ++i) {
+            sample_t sample = sampleSet->samples[i];
+            float importance = sample.importance / sampleSet->totalWeight;
+            // accumulate data for mean
+            meanX += importance * sample.pose.x;
+            meanY += importance * sample.pose.y;
+            sumThetaX += importance * cos(sample.pose.theta);
+            sumThetaY += importance * sin(sample.pose.theta);
+        }
+
+        pose_t meanPose;
+        meanPose.x = meanX;
+        meanPose.y = meanY;
+        meanPose.theta = atan2(sumThetaY, sumThetaX);
+
+        return meanPose;
+    }
+
 private:
     size_t maxSampleCount;
     size_t width, height;
