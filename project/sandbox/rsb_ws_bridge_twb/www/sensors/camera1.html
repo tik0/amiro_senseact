@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
-  <title>TWB Tracking</title>
+  <title>TWB Camera 1</title>
   <link rel="icon" type="image/png" href="../media/logo.png">
   <link rel="apple-touch-icon" href="../media/logo.png" />
   <link rel="stylesheet" href="../iui/iui_sensors.css" type="text/css" />
@@ -47,7 +47,7 @@ body {
 
 <body>
   <div class="toolbar">
-      <h1 id="pageTitle">TWB Tracking</h1>
+      <h1 id="pageTitle">TWB Camera 1</h1>
       <a id="backButton" class="button" href="#"></a>
   </div>
 
@@ -89,8 +89,8 @@ body {
         if (socket.readyState == WebSocket.OPEN) {
 //             log.value = ""; // Clear log on new scope setup
 //            socket.send("/image/synced");
-            socket.send("/image/stitcher");
-//            socket.send("/image/cam1");
+//            socket.send("/image/stitcher");
+            socket.send("/image/cam1");
             console.log("Receive scope: " + text.value +"\n");
         } else {
             console.log("Not connected\n");
