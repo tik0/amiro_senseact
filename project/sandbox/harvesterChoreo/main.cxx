@@ -37,6 +37,7 @@ using namespace boost::chrono;
 #include <rsb/MetaData.h>
 #include <boost/shared_ptr.hpp>
 #include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
 #include <rsb/Event.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
@@ -46,7 +47,13 @@ using namespace rsb;
 using namespace muroxConverter;
 
 // types
-#include <types/twbTracking.pb.h>
+//#include <types/twbTracking.pb.h>
+#include <types/enum.pb.h>
+#include <types/loc.pb.h>
+#include <types/pose.pb.h>
+#include <types/rotation.pb.h>
+#include <types/shapes.pb.h>
+#include <types/vertex.pb.h>
 #include <ControllerAreaNetwork.h>
 #include <actModels/lightModel.h>
 
@@ -58,6 +65,7 @@ using namespace muroxConverter;
 #define TO_MICRO 1000000.0
 #define MILLI_TO 0.001
 #define MICRO_TO 0.000001
+#define TRACKING_TIMEOUT 5 // s
 
 // xml constants
 std::string XMLMainName = "choreo";
@@ -84,7 +92,7 @@ float driveSpeed = 0.08; // m/s
 int timebuffer = (int)(0.125 * TO_MICRO); // us
 std::string amiroName = "amiro0";
 int markerID = 0;
-float meterPerPixel = 1.0/400.0; // m/pixel
+float meterPerPixel = 1.0; // m/pixel
 float trackingVariance = 0.005; // m
 
 // Flags
@@ -99,12 +107,12 @@ std::string lightOutscope = "/amiro/lights";
 std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
-std::string trackingInscope = "/twb/tracking";
+std::string trackingInscope = "/tracking/merger";
 
 types::position odoPos;
 
 
-
+/*
 types::position readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
 	twbTracking::proto::Pose2D pose2D;
 	for (int i = 0; i < data->pose_size(); i++) {
@@ -119,7 +127,6 @@ types::position readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> d
 	pos.f_z = pose2D.orientation()*TO_MICRO;
 	return pos;
 }
-
 
 
 bool isBeingTracked(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingID) {
@@ -150,7 +157,81 @@ types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::Synchronize
 	} while (true);
 	return readTracking(data, markerID);
 }
+*/
 
+float normAngle(float angle) {
+	while (angle < 0) angle += 2.0*M_PI;
+	while (angle >= 2.0*M_PI) angle -= 2.0*M_PI;
+	return angle;
+}	
+
+/*float inverseAngle(float angle) {
+	return 2.0*M_PI - normAngle(angle);
+}*/
+
+types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
+	twbTracking::proto::Pose pose2D;
+	for (int i = 0; i < data->object_size(); i++) {
+		if (trackingMarkerID == data->object(i).id()) {
+			pose2D = data->object(i).position();
+			break;
+		}
+	}
+	types::position pos;
+	pos.x = pose2D.translation().x()*meterPerPixel*TO_MICRO;
+	pos.y = pose2D.translation().y()*meterPerPixel*TO_MICRO;
+	pos.f_z = normAngle(pose2D.rotation().z()*M_PI/180.0)*TO_MICRO;
+	INFO_MSG(" -> Loaded new position:");
+	INFO_MSG("    x: " << pos.x);
+	INFO_MSG("    y: " << pos.y);
+	INFO_MSG("    Ø: " << pos.f_z);
+	return pos;
+}
+
+
+bool isBeingTracked(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingID) {
+	bool isIn = false;
+	for (int i = 0; i < data->object_size(); i++) {
+		if (trackingID == data->object(i).id()) {
+			if (data->object(i).position().translation().x() != 0 && data->object(i).position().translation().y() != 0) {
+				isIn = true;
+			}
+			break;
+		}
+	}
+	return isIn;
+}
+
+types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
+	boost::shared_ptr<twbTracking::proto::ObjectList> data;
+	INFO_MSG("Loading new tracking position for marker " << markerID << ":");
+	INFO_MSG(" -> Waiting for new tracking data");
+	int restTime = TRACKING_TIMEOUT * 1000; // ms
+	do {
+		if (!trackingQueue->empty()) {
+			data = boost::static_pointer_cast<twbTracking::proto::ObjectList>(trackingQueue->pop());
+			INFO_MSG("    -> Tracking data received");
+			if (isBeingTracked(data, markerID)) {
+				INFO_MSG("    -> Marker " << markerID << " has been found");
+				break;
+			} else {
+				INFO_MSG("    -> Marker " << markerID << " missed");
+			}
+		} else if (restTime <= 0) {
+			types::position errorPos;
+			errorPos.x = 0;
+			errorPos.y = 0;
+			errorPos.f_z = -1;
+			ERROR_MSG("Marker could not be detected in the last " << TRACKING_TIMEOUT << " seconds!");
+			return errorPos;
+		} else {
+			// sleep for 10 ms
+			usleep(10000);
+			restTime -= 10;
+		}
+	} while (true);
+	return readTracking(data, markerID);
+}
 
 void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v, float &w, float &time, float &dist, float &angle) {
 	float actAngle = (float)(curPos.f_z)*MICRO_TO;
@@ -414,6 +495,9 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
+	rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>::Ptr converterObjectList(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterObjectList);	
+
 	// ------------ ExtSpread Config ----------------
 
 	// Generate the programatik Spreadconfig for extern communication
@@ -443,6 +527,28 @@ int main(int argc, char **argv) {
 		tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
 	}
 
+	rsb::ParticipantConfig trackingPartConf = factory.getDefaultParticipantConfig(); {
+		// disable socket transport
+		rsc::runtime::Properties trackingPropSocket  = trackingPartConf.mutableTransport("socket").getOptions();
+		trackingPropSocket["enabled"] = boost::any(std::string("0"));
+
+		// Get the options for spread transport, because we want to change them
+		rsc::runtime::Properties trackingPropSpread  = trackingPartConf.mutableTransport("spread").getOptions();
+
+		// enable socket transport
+		trackingPropSpread["enabled"] = boost::any(std::string("1"));
+
+		// Change the config
+		trackingPropSpread["host"] = boost::any(std::string("alpia.techfak.uni-bielefeld.de"));
+
+		// Change the Port
+		trackingPropSpread["port"] = boost::any(std::string("4803"));
+
+		// Write the tranport properties back to the participant config
+		trackingPartConf.mutableTransport("socket").setOptions(trackingPropSocket);
+		trackingPartConf.mutableTransport("spread").setOptions(trackingPropSpread);
+	}
+
 	// ------------ Listener ---------------------
 
 	// prepare RSB listener for choreos
@@ -458,9 +564,9 @@ int main(int argc, char **argv) {
 	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(commandQueue)));
 
 	// prepare rsb listener for tracking data
-	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, tmpPartConf);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
-	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
+	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, trackingPartConf);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>(1));
+	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::ObjectList>(trackingQueue)));
 
 	// prepare RSB listener for amiros
 	rsb::ListenerPtr amiroListener = factory.createListener(amiroScope, tmpPartConf);
@@ -479,7 +585,7 @@ int main(int argc, char **argv) {
 
 
 	// Initialize the robot communication
-	boost::shared_ptr<twbTracking::proto::Pose2DList> data;
+//	boost::shared_ptr<twbTracking::proto::ObjectList> data;
 	std::vector<std::string> amiros;
 	bool initialized = false;
 	bool exitProg = false;
@@ -617,6 +723,10 @@ int main(int argc, char **argv) {
 			// get current position
 			if (useTwb) {
 				odoPos = getNextTrackingPos(trackingQueue);
+				if (odoPos.f_z < 0) {
+					setSpeeds(0, 0, myCAN);
+					return EXIT_FAILURE;
+				}
 				DEBUG_MSG("Position of marker " << markerID << ": " << odoPos.x << "/" << odoPos.y << ", " << odoPos.f_z);
 			}
 			if (!relativePosition) {
@@ -683,8 +793,15 @@ int main(int argc, char **argv) {
 					}
 
 					odoPos = getNextTrackingPos(trackingQueue);
+					if (odoPos.f_z < 0) {
+						setSpeeds(0, 0, myCAN);
+						return EXIT_FAILURE;
+					}
 					moveDirX = (goalPos.x - odoPos.x)*MICRO_TO;
 					moveDirY = (goalPos.y - odoPos.y)*MICRO_TO;
+
+					// sleep 100 ms
+					usleep(100000);
 				}
 			}
 
