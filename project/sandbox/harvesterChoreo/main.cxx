@@ -74,6 +74,7 @@ std::string XMLInclude = "choreoinclude";
 std::string XMLBrake = "brake";
 std::string XMLPositionX = "posx";
 std::string XMLPositionY = "posy";
+std::string XMLPositionT = "postheta";
 std::string XMLLightAll = "la";
 std::string XMLLightID = "l"; // + ID in [0,7]
 std::string XMLLightSeperator = ",";
@@ -88,12 +89,14 @@ std::string COMMAND_STOP = "stop";
 ControllerAreaNetwork myCAN;
 
 // constants
-float driveSpeed = 0.08; // m/s
+float driveSpeed = 0.1; // m/s
+float turnSpeed = M_PI/6.0; // rad/s
 int timebuffer = (int)(0.125 * TO_MICRO); // us
 std::string amiroName = "amiro0";
 int markerID = 0;
 float meterPerPixel = 1.0; // m/pixel
 float trackingVariance = 0.005; // m
+float trackingAngleVar = 3.0 * M_PI/180.0; // rad
 
 // Flags
 bool printChoreo = false;
@@ -160,14 +163,22 @@ types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::Synchronize
 */
 
 float normAngle(float angle) {
-	while (angle < 0) angle += 2.0*M_PI;
-	while (angle >= 2.0*M_PI) angle -= 2.0*M_PI;
-	return angle;
+	float normed = fmod(angle, 2.0*M_PI);
+	if (normed < 0) normed += 2.0*M_PI;
+	return normed;
 }	
 
 /*float inverseAngle(float angle) {
 	return 2.0*M_PI - normAngle(angle);
 }*/
+
+float angleDiff(float angle1, float angle2) {
+	float diff = fmod(angle1-angle2+M_PI, 2.0*M_PI);
+	if (diff > M_PI) {
+		diff = -1.0 * (diff-M_PI);
+	}
+	return diff;
+}
 
 types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
 	twbTracking::proto::Pose pose2D;
@@ -263,6 +274,47 @@ void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v
 }
 
 
+void trackingSpeeds(types::position curPos, float relDistx, float relDisty, float &v, float &w) {
+	float actAngle = (float)(curPos.f_z)*MICRO_TO;
+
+	float distDir = sqrt(relDistx*relDistx + relDisty*relDisty);
+	float angleDist = atan2(relDisty, relDistx);
+	float angleDir = angleDiff(actAngle, angleDir);
+
+	if (angleDir == 0.0) {
+		v = driveSpeed; // m/s
+		w = 0.0; // rad/s
+
+	} else if (fabs(angleDir) > M_PI/2.0) {
+		v = 0.0; // m/s
+		if (angleDir < 0) {
+			w = -turnSpeed; // rad/s
+		} else {
+			w = turnSpeed; // rad/s
+		}
+
+	} else {
+		float angleBasis = fabs(M_PI/2.0 - fabs(angleDir));
+		float moveDist, moveAngle;
+		if (angleBasis <= 0.0) {
+			moveAngle = M_PI;
+			moveDist = distDir*M_PI/2.0;
+
+		} else {
+			float angleTop = M_PI - 2.0*angleBasis;
+			float moveRadius = distDir * sin(angleBasis) / sin(angleTop);
+			moveAngle = 2.0*angleDir * 1.1;
+			moveDist = 2.0*moveRadius*M_PI * abs(moveAngle)/(2.0*M_PI);
+		}
+
+		// calculate speeds; // m/s
+		float time = moveDist/driveSpeed; // s
+		v = driveSpeed; // m/s
+		w = moveAngle/time; // rad/s
+	}
+}
+
+
 
 // load a (sub)choreography from a file
 Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::string> parents) {
@@ -298,6 +350,7 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 				position_t position;
 				position[0] = (float)(tree.second.get<int>(XMLPositionX))*MICRO_TO;
 				position[1] = (float)(tree.second.get<int>(XMLPositionY))*MICRO_TO;
+				position[2] = (float)(tree.second.get<int>(XMLPositionT))*MICRO_TO * M_PI/180.0;
 				choreoStep.position = position;
 				light_t lights;
 				std::string lightinput;
@@ -326,7 +379,7 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 				choreoStep.lights = lights;
 				choreo.push_back(choreoStep);
 				if (printChoreo) {
-					DEBUG_MSG(spacesC << "-> choreo step: " << position[0] << "/" << position[1] << " [m]");
+					DEBUG_MSG(spacesC << "-> choreo step: " << position[0] << "/" << position[1] << " [m], Ø: " << (position[2]*180.0/M_PI) << "°");
 				}
 			} else if (tree.first == XMLInclude) {
 				std::string newfile = tree.second.get<std::string>(XMLIncludeName);
@@ -714,12 +767,18 @@ int main(int argc, char **argv) {
 		while (!amiroQueue->empty()) {
 			amiroQueue->pop(0);
 		}
+		setSpeeds(0.08, 0, myCAN);
+		usleep(1500000);
+		setSpeeds(-0.08, 0, myCAN);
+		usleep(1500000);
+		setSpeeds(0, 0, myCAN);
 
 		// perform the choreo
 		for (ChoreoStep cs : choreo) {
 
 			float moveDirX = cs.position[0];
 			float moveDirY = cs.position[1];
+			float goalAngle = cs.position[2];
 			// get current position
 			if (useTwb) {
 				odoPos = getNextTrackingPos(trackingQueue);
@@ -775,7 +834,7 @@ int main(int argc, char **argv) {
 				types::position goalPos;
 				goalPos.x = odoPos.x + moveDirX*TO_MICRO;
 				goalPos.y = odoPos.y + moveDirY*TO_MICRO;
-				while (moveDirX > trackingVariance || moveDirY > trackingVariance) {
+				while (abs(moveDirX) > trackingVariance || abs(moveDirY) > trackingVariance) {
 					// calculate speeds
 					float v, w, time, dist, angle;
 					calcSpeeds(odoPos, moveDirX, moveDirY, v, w, time, dist, angle);
@@ -802,6 +861,22 @@ int main(int argc, char **argv) {
 
 					// sleep 100 ms
 					usleep(100000);
+				}
+
+				// set orientation
+				while (fabs(angleDiff(odoPos.f_z*MICRO_TO, goalAngle)) > trackingAngleVar) {
+					if (angleDiff(odoPos.f_z*MICRO_TO, goalAngle) < 0) {
+						setSpeeds(0, -turnSpeed, myCAN);
+					} else {
+						setSpeeds(0, turnSpeed, myCAN);
+					}
+					INFO_MSG(" -> Turning (" << (angleDiff(odoPos.f_z*MICRO_TO, goalAngle)*180.0/M_PI) << "° left)");
+					usleep(100000);
+					odoPos = getNextTrackingPos(trackingQueue);
+					if (odoPos.f_z < 0) {
+						setSpeeds(0, 0, myCAN);
+						return EXIT_FAILURE;
+					}
 				}
 			}
 
