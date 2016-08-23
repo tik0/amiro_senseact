@@ -60,7 +60,7 @@ using namespace rsb;
 #define TRACKING_TIMEOUT 5 // s
 
 // constants
-int markerID = 0;
+int markerID = -1;
 float meterPerPixel = 1.0; // m/pixel
 
 
@@ -68,11 +68,24 @@ float meterPerPixel = 1.0; // m/pixel
 std::string trackingInscope = "/tracking/merger";
 
 
+// flags
+bool specificMarker = false;
+bool showVar = false;
+
+
 
 float normAngle(float angle) {
 	float normed = fmod(angle, 2.0*M_PI);
 	if (normed < 0) normed += 2.0*M_PI;
 	return normed;
+}
+
+float angleDiff(float angle1, float angle2) {
+	float diff = fmod(angle1-angle2+M_PI, 2.0*M_PI);
+	if (diff > M_PI) {
+		diff = -1.0 * (diff-M_PI);
+	}
+	return diff;
 }
 
 
@@ -87,7 +100,7 @@ types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> d
 	types::position pos;
 	pos.x = pose2D.translation().x()*meterPerPixel*TO_MICRO;
 	pos.y = pose2D.translation().y()*meterPerPixel*TO_MICRO;
-	pos.f_z = normAngle(pose2D.rotation().z())*TO_MICRO;
+	pos.f_z = (int)(normAngle(pose2D.rotation().z()*M_PI/180.0)*180.0/M_PI*TO_MICRO);
 	return pos;
 }
 
@@ -130,13 +143,44 @@ types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::Synchronize
 	return readTracking(data, markerID);
 }
 
+std::vector<types::position> getNextTrackingPoses(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
+	boost::shared_ptr<twbTracking::proto::ObjectList> data;
+	int restTime = TRACKING_TIMEOUT * 1000; // ms
+	do {
+		if (!trackingQueue->empty()) {
+			data = boost::static_pointer_cast<twbTracking::proto::ObjectList>(trackingQueue->pop());
+			break;
+		} else if (restTime <= 0) {
+			std::vector<types::position> positions;
+			types::position errorPos;
+			errorPos.x = 0;
+			errorPos.y = 0;
+			errorPos.f_z = -1;
+			positions.push_back(errorPos);
+			ERROR_MSG("There wasn't any tracking data in the last " << TRACKING_TIMEOUT << " seconds!");
+			return positions;
+		} else {
+			// sleep for 10 ms
+			usleep(10000);
+			restTime -= 10;
+		}
+	} while (true);
+	std::vector<types::position> positions;
+	for (int i = 0; i < data->object_size(); i++) {
+		types::position objPos = readTracking(data, data->object(i).id());
+		positions.push_back(objPos);
+	}
+	return positions;
+}
+
 
 int main(int argc, char **argv) {
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
-			("markerId,i", po::value<int>(&markerID), "ID of the marker for robot detection.")
-			("mmp,m", po::value<float>(&meterPerPixel), "Meter per pixel of the robot detection.");
+			("markerId,i", po::value<int>(&markerID), "ID of the marker for robot detection (if not given, all detected IDs will be shown).")
+			("mmp,m", po::value<float>(&meterPerPixel), "Meter per pixel of the robot detection in meters (default 1.0).")
+			("var,v", "Flag, if the variance of all the data of a specific marker shall be shown.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -152,7 +196,7 @@ int main(int argc, char **argv) {
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
 
-	if (!vm.count("markerId") && !vm.count("mmp")) {
+/*	if (!vm.count("markerId") && !vm.count("mmp")) {
 		std::cout << "Please set the marker ID and the meter per pixel factor!\nPlease check the options.\n\n" << options << "\n";
 		exit(1);
 	} else if (!vm.count("markerId")) {
@@ -160,6 +204,14 @@ int main(int argc, char **argv) {
 		exit(1);
 	} else if (!vm.count("mmp")) {
 		std::cout << "Please set the meter per pixel factor!\nPlease check the options.\n\n" << options << "\n";
+		exit(1);
+	}*/
+
+	specificMarker = vm.count("markerId");
+	showVar = vm.count("var");
+
+	if (showVar && !specificMarker) {
+		std::cout << "Please set the marker ID, if the variance shall be shown!\nPlease check the options.\n\n" << options << "\n";
 		exit(1);
 	}
 
@@ -207,14 +259,53 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::ObjectList>(trackingQueue)));
 
-	while(true) {
-		types::position pos = getNextTrackingPos(trackingQueue);
-		if (pos.f_z < 0) return EXIT_FAILURE;
 
-		INFO_MSG("Current Position:");
-		INFO_MSG(" x: " << (pos.x*MICRO_TO) << " m");
-		INFO_MSG(" y: " << (pos.y*MICRO_TO) << " m");
-		INFO_MSG(" Ø: " << (pos.f_z*MICRO_TO) << "°");
+	bool initialized = false;
+	float xMinVar = 0, xMaxVar = 0, yMinVar = 0, yMaxVar = 0, tMinVar = 0, tMaxVar = 0, tOri = 0;
+
+	while(true) {
+		if (specificMarker) {
+			types::position pos = getNextTrackingPos(trackingQueue);
+			if (pos.f_z < 0) return EXIT_FAILURE;
+			float posX = pos.x*MICRO_TO;
+			float posY = pos.y*MICRO_TO;
+			float posT = pos.f_z*MICRO_TO;
+
+			INFO_MSG("Current Position:");
+			if (showVar) {
+				if (!initialized) {
+					xMinVar = posX;
+					yMinVar = posY;
+					xMaxVar = posX;
+					yMaxVar = posY;
+					tOri = posT;
+					tMinVar = 0;
+					tMaxVar = 0;
+					initialized = true;
+				} else {
+					if (posX < xMinVar) xMinVar = posX;
+					if (posY < yMinVar) yMinVar = posY;
+					if (posX > xMaxVar) xMaxVar = posX;
+					if (posY > yMaxVar) yMaxVar = posY;
+					float angDiff = angleDiff(tOri*M_PI/180.0, posT*M_PI/180.0) * 180.0/M_PI;
+					if (fabs(angDiff) < 90.0) {
+						if (angDiff < tMinVar) tMinVar = angDiff;
+						if (angDiff > tMaxVar) tMaxVar = angDiff;
+					}
+				}
+				float minAngle = tOri+tMinVar;
+				float maxAngle = tOri+tMaxVar;
+				INFO_MSG(" x: " << posX << " m (" << xMinVar << " m <-> " << xMaxVar << " m, " << (xMaxVar-xMinVar) << " m)");
+				INFO_MSG(" y: " << posY << " m (" << yMinVar << " m <-> " << yMaxVar << " m, " << (yMaxVar-yMinVar) << " m)");
+				INFO_MSG(" Ø: " << posT << "° (" << maxAngle << "° <-> " << minAngle << "°, " << (maxAngle-minAngle) << "°)");
+			} else {
+				INFO_MSG(" x: " << posX << " m");
+				INFO_MSG(" y: " << posY << " m");
+				INFO_MSG(" Ø: " << posT << "°");
+			}
+		} else {
+			break;
+		}
 
 		usleep(500000);
 	}
