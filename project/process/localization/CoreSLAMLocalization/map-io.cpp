@@ -6,10 +6,10 @@
  * @param path path in the file system where the image should be saved.
  */
 void saveMapAsPGM(ts_map_t *map, std::string path) {
-    std::ofstream file(path, std::ofstream::binary);
+    std::ofstream file(path);
 
-    // Magic Number for Portable Graymap in binary
-    file << "P5" << std::endl;
+    // Magic Number for Portable Graymap in ASCII
+    file << "P2" << std::endl;
 
     // Dimensions of the PGM
     file << map->size << " " << map->size << std::endl;
@@ -18,7 +18,14 @@ void saveMapAsPGM(ts_map_t *map, std::string path) {
     file << TS_NO_OBSTACLE << std::endl;
 
     // Actual image data
-    file.write((char *)map->map, sizeof(ts_map_pixel_t) * map->size * map->size);
+    int x, y;
+    ts_map_pixel_t *ptr;
+    for (ptr = map->map, y = 0; y < map->size; y++) {
+        for (x = 0; x < map->size; x++, ptr++) {
+            file << *ptr << " ";
+        }
+        file << std::endl;
+    }
 
     file.close();
 }
