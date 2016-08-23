@@ -75,6 +75,7 @@ std::string XMLBrake = "brake";
 std::string XMLPositionX = "posx";
 std::string XMLPositionY = "posy";
 std::string XMLPositionT = "postheta";
+std::string XMLDirectly = "direct";
 std::string XMLLightAll = "la";
 std::string XMLLightID = "l"; // + ID in [0,7]
 std::string XMLLightSeperator = ",";
@@ -96,7 +97,7 @@ std::string amiroName = "amiro0";
 int markerID = 0;
 float meterPerPixel = 1.0; // m/pixel
 float trackingVariance = 0.005; // m
-float trackingAngleVar = 3.0 * M_PI/180.0; // rad
+float trackingAngleVar = 4.0 * M_PI/180.0; // rad
 
 // Flags
 bool printChoreo = false;
@@ -113,6 +114,7 @@ std::string amiroScope = "/harvesters/harvester";
 std::string trackingInscope = "/tracking/merger";
 
 types::position odoPos;
+types::position oldPos;
 
 
 /*
@@ -274,14 +276,14 @@ void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v
 }
 
 
-void trackingSpeeds(types::position curPos, float relDistx, float relDisty, float &v, float &w) {
+void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool directly, float &v, float &w) {
 	float actAngle = (float)(curPos.f_z)*MICRO_TO;
 
 	float distDir = sqrt(relDistx*relDistx + relDisty*relDisty);
 	float angleDist = atan2(relDisty, relDistx);
-	float angleDir = angleDiff(actAngle, angleDir);
+	float angleDir = angleDiff(actAngle, angleDist);
 
-	if (angleDir == 0.0) {
+	if (directly || angleDir == 0.0) {
 		v = driveSpeed; // m/s
 		w = 0.0; // rad/s
 
@@ -303,15 +305,46 @@ void trackingSpeeds(types::position curPos, float relDistx, float relDisty, floa
 		} else {
 			float angleTop = M_PI - 2.0*angleBasis;
 			float moveRadius = distDir * sin(angleBasis) / sin(angleTop);
-			moveAngle = 2.0*angleDir * 1.1;
+			moveAngle = 2.0*angleDir;
 			moveDist = 2.0*moveRadius*M_PI * abs(moveAngle)/(2.0*M_PI);
 		}
 
 		// calculate speeds; // m/s
 		float time = moveDist/driveSpeed; // s
 		v = driveSpeed; // m/s
-		w = moveAngle/time; // rad/s
+		if (abs(relDistx) > trackingVariance && abs(relDisty) > trackingVariance) {
+			w = moveAngle/time * 1.2; // rad/s
+		} else {
+			w = 0.0; // rad/s
+		}
 	}
+}
+
+void saveOldPos() {
+	oldPos.x = odoPos.x;
+	oldPos.y = odoPos.y;
+	oldPos.f_z = odoPos.f_z;
+}
+
+void correctPosition() {
+	// get orientations
+/*	float curOri = (float)(odoPos.f_z)*MICRO_TO;
+	float oldOri = (float)(oldPos.f_z)*MICRO_TO;
+
+	// check if robot didn't move
+	if (abs(odoPos.x-oldPos.x)*MICRO_TO < trackingVariance && abs(odoPos.y-oldPos.y)*MICRO_TO < trackingVariance) {
+		DEBUG_MSG("Robot did not move. Taking tracking orientation.");
+
+	// check if orientation is valid
+	} else if (fabs(angleDiff(curOri, oldOri))*2.0 < turnSpeed) {
+		DEBUG_MSG("Robot turned correctly");
+
+	// There is an error in orientation
+	} else {
+		DEBUG_MSG("The orientation switched too much!");
+		float movedAngle = atan2(oldPos.y-odoPos.y, oldPos.x-odoPos.x);
+		odoPos.f_z = (int)(movedAngle*2.0*TO_MICRO);
+	}*/
 }
 
 
@@ -347,6 +380,7 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 			if (tree.first == XMLStep) {
 				ChoreoStep choreoStep;
 				choreoStep.braking = tree.second.get<int>(XMLBrake);
+				choreoStep.directMovement = tree.second.get<int>(XMLDirectly) > 0;
 				position_t position;
 				position[0] = (float)(tree.second.get<int>(XMLPositionX))*MICRO_TO;
 				position[1] = (float)(tree.second.get<int>(XMLPositionY))*MICRO_TO;
@@ -450,6 +484,12 @@ void setLightsVec(rsb::Informer< std::vector<int> >::Ptr informer, int lightType
 	std::vector<int> lightVector = LightModel::setLights2Vec(lightType, colorVec, periodTime);
 	boost::shared_ptr<std::vector<int>> commandVector = boost::shared_ptr<std::vector<int> >(new std::vector<int>(lightVector.begin(),lightVector.end()));
 	informer->publish(commandVector);
+}
+
+int failureProc(rsb::Informer< std::vector<int> >::Ptr lightInformer) {
+	setSpeeds(0, 0, myCAN);
+	setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,0,0), 600);
+	return EXIT_FAILURE;
 }
 
 int main(int argc, char **argv) {
@@ -781,11 +821,10 @@ int main(int argc, char **argv) {
 			float goalAngle = cs.position[2];
 			// get current position
 			if (useTwb) {
+				saveOldPos();
 				odoPos = getNextTrackingPos(trackingQueue);
-				if (odoPos.f_z < 0) {
-					setSpeeds(0, 0, myCAN);
-					return EXIT_FAILURE;
-				}
+				if (odoPos.f_z < 0) return failureProc(lightInformer);
+				correctPosition();
 				DEBUG_MSG("Position of marker " << markerID << ": " << odoPos.x << "/" << odoPos.y << ", " << odoPos.f_z);
 			}
 			if (!relativePosition) {
@@ -834,10 +873,30 @@ int main(int argc, char **argv) {
 				types::position goalPos;
 				goalPos.x = odoPos.x + moveDirX*TO_MICRO;
 				goalPos.y = odoPos.y + moveDirY*TO_MICRO;
+				float angleToGoal = normAngle(atan2(moveDirY, moveDirX));
+
+				// set start orientation of direct movement
+				while (cs.directMovement && fabs(angleDiff(odoPos.f_z*MICRO_TO, angleToGoal)) > trackingAngleVar) {
+					if (angleDiff(odoPos.f_z*MICRO_TO, goalAngle) < 0) {
+						setSpeeds(0, -turnSpeed, myCAN);
+					} else {
+						setSpeeds(0, turnSpeed, myCAN);
+					}
+					INFO_MSG(" -> Turning (" << (angleDiff(odoPos.f_z*MICRO_TO, goalAngle)*180.0/M_PI) << "° left)");
+					usleep(100000);
+					saveOldPos();
+					odoPos = getNextTrackingPos(trackingQueue);
+					if (odoPos.f_z < 0) return failureProc(lightInformer);
+					correctPosition();
+				}
+				setSpeeds(0, 0, myCAN);
+				usleep(1500000);
+
+				// move to position
 				while (abs(moveDirX) > trackingVariance || abs(moveDirY) > trackingVariance) {
 					// calculate speeds
 					float v, w, time, dist, angle;
-					calcSpeeds(odoPos, moveDirX, moveDirY, v, w, time, dist, angle);
+					trackingSpeeds(odoPos, moveDirX, moveDirY, false, v, w);
 					setSpeeds(v, w, myCAN);
 
 					// print action messages
@@ -851,20 +910,21 @@ int main(int argc, char **argv) {
 						DEBUG_MSG("time: " << time << " s");
 					}
 
+					saveOldPos();
 					odoPos = getNextTrackingPos(trackingQueue);
-					if (odoPos.f_z < 0) {
-						setSpeeds(0, 0, myCAN);
-						return EXIT_FAILURE;
-					}
+					if (odoPos.f_z < 0) return failureProc(lightInformer);
+					correctPosition();
 					moveDirX = (goalPos.x - odoPos.x)*MICRO_TO;
 					moveDirY = (goalPos.y - odoPos.y)*MICRO_TO;
 
 					// sleep 100 ms
 					usleep(100000);
 				}
+				setSpeeds(0, 0, myCAN);
+				usleep(1500000);
 
-				// set orientation
-				while (fabs(angleDiff(odoPos.f_z*MICRO_TO, goalAngle)) > trackingAngleVar) {
+				// set final orientation
+				while (cs.directMovement && fabs(angleDiff(odoPos.f_z*MICRO_TO, goalAngle)) > trackingAngleVar) {
 					if (angleDiff(odoPos.f_z*MICRO_TO, goalAngle) < 0) {
 						setSpeeds(0, -turnSpeed, myCAN);
 					} else {
@@ -873,11 +933,10 @@ int main(int argc, char **argv) {
 					INFO_MSG(" -> Turning (" << (angleDiff(odoPos.f_z*MICRO_TO, goalAngle)*180.0/M_PI) << "° left)");
 					usleep(100000);
 					odoPos = getNextTrackingPos(trackingQueue);
-					if (odoPos.f_z < 0) {
-						setSpeeds(0, 0, myCAN);
-						return EXIT_FAILURE;
-					}
+					if (odoPos.f_z < 0) return failureProc(lightInformer);
 				}
+				setSpeeds(0, 0, myCAN);
+				usleep(1500000);
 			}
 
 

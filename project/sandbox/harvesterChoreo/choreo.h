@@ -18,6 +18,7 @@ typedef struct {
 	int braking;
 	position_t position;
 	light_t lights;
+	bool directMovement;
 } ChoreoStep;
 
 // define type for the choreography
