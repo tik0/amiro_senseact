@@ -37,6 +37,7 @@ using namespace boost::chrono;
 #include <rsb/MetaData.h>
 #include <boost/shared_ptr.hpp>
 #include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
 #include <rsb/Event.h>
 #include <rsb/filter/OriginFilter.h>
 #include <rsc/threading/SynchronizedQueue.h>
@@ -46,7 +47,13 @@ using namespace rsb;
 using namespace muroxConverter;
 
 // types
-#include <types/twbTracking.pb.h>
+//#include <types/twbTracking.pb.h>
+#include <types/enum.pb.h>
+#include <types/loc.pb.h>
+#include <types/pose.pb.h>
+#include <types/rotation.pb.h>
+#include <types/shapes.pb.h>
+#include <types/vertex.pb.h>
 #include <ControllerAreaNetwork.h>
 #include <actModels/lightModel.h>
 
@@ -58,6 +65,7 @@ using namespace muroxConverter;
 #define TO_MICRO 1000000.0
 #define MILLI_TO 0.001
 #define MICRO_TO 0.000001
+#define TRACKING_TIMEOUT 5 // s
 
 // xml constants
 std::string XMLMainName = "choreo";
@@ -66,6 +74,8 @@ std::string XMLInclude = "choreoinclude";
 std::string XMLBrake = "brake";
 std::string XMLPositionX = "posx";
 std::string XMLPositionY = "posy";
+std::string XMLPositionT = "postheta";
+std::string XMLDirectly = "direct";
 std::string XMLLightAll = "la";
 std::string XMLLightID = "l"; // + ID in [0,7]
 std::string XMLLightSeperator = ",";
@@ -80,12 +90,15 @@ std::string COMMAND_STOP = "stop";
 ControllerAreaNetwork myCAN;
 
 // constants
-float driveSpeed = 0.08; // m/s
+float driveSpeed = 0.1; // m/s
+float turnSpeed = M_PI/6.0; // rad/s
 int timebuffer = (int)(0.125 * TO_MICRO); // us
 std::string amiroName = "amiro0";
 int markerID = 0;
-float meterPerPixel = 1.0/400.0; // m/pixel
+float meterPerPixel = 1.0; // m/pixel
 float trackingVariance = 0.005; // m
+float trackingAngleVar = 4.0 * M_PI/180.0; // rad
+float drivingMaxAngle = 20.0 * M_PI/180.0; // rad
 
 // Flags
 bool printChoreo = false;
@@ -99,12 +112,13 @@ std::string lightOutscope = "/amiro/lights";
 std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
-std::string trackingInscope = "/twb/tracking";
+std::string trackingInscope = "/tracking/merger";
 
 types::position odoPos;
+types::position oldPos;
 
 
-
+/*
 types::position readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
 	twbTracking::proto::Pose2D pose2D;
 	for (int i = 0; i < data->pose_size(); i++) {
@@ -119,7 +133,6 @@ types::position readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> d
 	pos.f_z = pose2D.orientation()*TO_MICRO;
 	return pos;
 }
-
 
 
 bool isBeingTracked(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingID) {
@@ -150,7 +163,111 @@ types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::Synchronize
 	} while (true);
 	return readTracking(data, markerID);
 }
+*/
 
+float normAngle(float angle) {
+	float normed = fmod(angle, 2.0*M_PI);
+	if (normed < 0) normed += 2.0*M_PI;
+	return normed;
+}	
+
+/*float inverseAngle(float angle) {
+	return 2.0*M_PI - normAngle(angle);
+}*/
+
+float angleDiff(float angle1, float angle2) {
+	angle1 = normAngle(angle1);
+	angle2 = normAngle(angle2);
+	float direction = 1.0;
+	if (angle1 > angle2) {
+		float tmp = angle1;
+		angle1 = angle2;
+		angle2 = tmp;
+		direction = -1.0;
+	}
+	float diff = angle2-angle1;
+	if (diff > M_PI) {
+		diff = 2.0*M_PI-diff;
+		direction *= -1.0;
+	}
+/* Examples: angle1, angle2, direction1*diff1 -> direction2*diff2
+ * 150°, 210°, 60 -> 60
+ * 210°, 150°, -60 -> -60
+ * 30°, 330°, 300 -> -60
+ * 330°, 30°, -300 -> 60
+ */
+
+//	float diff = fmod(angle1-angle2+M_PI, 2.0*M_PI);
+//	if (diff > M_PI) {
+//		diff = -1.0 * (diff-M_PI);
+//	}
+//	return diff;
+/* Examples: angle1, angle2, diff -> result
+ * 150°, 210°, 120° -> 120°
+ * 210°, 150°, 240° -> -120°
+ * 30°, 330°, -120° -> -120°
+ * 330°, 30°, 120° -> 120°
+ */
+	return direction*diff;
+}
+
+types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
+	twbTracking::proto::Pose pose2D;
+	for (int i = 0; i < data->object_size(); i++) {
+		if (trackingMarkerID == data->object(i).id()) {
+			pose2D = data->object(i).position();
+			break;
+		}
+	}
+	types::position pos;
+	pos.x = pose2D.translation().x()*meterPerPixel*TO_MICRO;
+	pos.y = pose2D.translation().y()*meterPerPixel*TO_MICRO;
+	pos.f_z = normAngle(pose2D.rotation().z()*M_PI/180.0)*TO_MICRO;
+	DEBUG_MSG("New position:");
+	DEBUG_MSG("    x: " << pos.x);
+	DEBUG_MSG("    y: " << pos.y);
+	DEBUG_MSG("    Ø: " << pos.f_z);
+	return pos;
+}
+
+
+bool isBeingTracked(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingID) {
+	bool isIn = false;
+	for (int i = 0; i < data->object_size(); i++) {
+		if (trackingID == data->object(i).id()) {
+			if (data->object(i).position().translation().x() != 0 && data->object(i).position().translation().y() != 0) {
+				isIn = true;
+			}
+			break;
+		}
+	}
+	return isIn;
+}
+
+types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
+	boost::shared_ptr<twbTracking::proto::ObjectList> data;
+	int restTime = TRACKING_TIMEOUT * 1000; // ms
+	do {
+		if (!trackingQueue->empty()) {
+			data = boost::static_pointer_cast<twbTracking::proto::ObjectList>(trackingQueue->pop());
+			if (isBeingTracked(data, markerID)) {
+				break;
+			}
+		} else if (restTime <= 0) {
+			types::position errorPos;
+			errorPos.x = 0;
+			errorPos.y = 0;
+			errorPos.f_z = -1;
+			ERROR_MSG("Marker " << markerID << " could not be detected in the last " << TRACKING_TIMEOUT << " seconds!");
+			return errorPos;
+		} else {
+			// sleep for 10 ms
+			usleep(10000);
+			restTime -= 10;
+		}
+	} while (true);
+	return readTracking(data, markerID);
+}
 
 void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v, float &w, float &time, float &dist, float &angle) {
 	float actAngle = (float)(curPos.f_z)*MICRO_TO;
@@ -179,6 +296,84 @@ void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v
 	w = moveAngle/time; // rad/s
 	dist = moveDist; // m
 	angle = moveAngle; // rad
+}
+
+
+void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool directly, float &v, float &w) {
+	float actAngle = (float)(curPos.f_z)*MICRO_TO;
+
+	float distDir = sqrt(relDistx*relDistx + relDisty*relDisty);
+	float angleDist = atan2(relDisty, relDistx);
+	float angleDir = angleDiff(actAngle, angleDist);
+
+	DEBUG_MSG("Calculated speeds:");
+
+	if (angleDir == 0.0) { //directly ||
+		DEBUG_MSG(" -> just straight forward (direct movement: " << directly << ")"); 
+		v = driveSpeed; // m/s
+		w = 0.0; // rad/s
+
+	} else if (fabs(angleDir) > drivingMaxAngle && directly || fabs(angleDir) >= M_PI/2.0 && !directly) {
+		DEBUG_MSG(" -> just turning (angle is " << (angleDir*180.0/M_PI) << "° (" << (actAngle*180.0/M_PI) << "° -> " << (angleDist*180.0/M_PI) << "° , direct movement: " << directly << ")");
+		v = 0.0; // m/s
+		if (angleDir < 0) {
+			w = -turnSpeed; // rad/s
+		} else {
+			w = turnSpeed; // rad/s
+		}
+
+	} else {
+		float angleBasis = fabs(M_PI/2.0 - fabs(angleDir));
+		float moveDist, moveAngle;
+		if (angleBasis <= 0.0) {
+			moveAngle = M_PI;
+			moveDist = distDir*M_PI/2.0;
+
+		} else {
+			float angleTop = M_PI - 2.0*angleBasis;
+			float moveRadius = distDir * sin(angleBasis) / sin(angleTop);
+			moveAngle = 2.0*angleDir;
+			moveDist = 2.0*moveRadius*M_PI * abs(moveAngle)/(2.0*M_PI);
+		}
+		DEBUG_MSG(" -> driving curve: distance is " << moveDist << " m and angle is " << (moveAngle*180.0/M_PI) << "° (direct movement: " << directly << ")");
+		moveAngle *= 1.1;
+
+		// calculate speeds; // m/s
+		float time = moveDist/driveSpeed; // s
+		v = driveSpeed; // m/s
+		if (abs(relDistx) > trackingVariance && abs(relDisty) > trackingVariance) {
+			w = moveAngle/time; // rad/s
+		} else {
+			w = 0.0; // rad/s
+		}
+	}
+}
+
+void saveOldPos() {
+	oldPos.x = odoPos.x;
+	oldPos.y = odoPos.y;
+	oldPos.f_z = odoPos.f_z;
+}
+
+void correctPosition() {
+	// get orientations
+/*	float curOri = (float)(odoPos.f_z)*MICRO_TO;
+	float oldOri = (float)(oldPos.f_z)*MICRO_TO;
+
+	// check if robot didn't move
+	if (abs(odoPos.x-oldPos.x)*MICRO_TO < trackingVariance && abs(odoPos.y-oldPos.y)*MICRO_TO < trackingVariance) {
+		DEBUG_MSG("Robot did not move. Taking tracking orientation.");
+
+	// check if orientation is valid
+	} else if (fabs(angleDiff(curOri, oldOri))*2.0 < turnSpeed) {
+		DEBUG_MSG("Robot turned correctly");
+
+	// There is an error in orientation
+	} else {
+		DEBUG_MSG("The orientation switched too much!");
+		float movedAngle = atan2(oldPos.y-odoPos.y, oldPos.x-odoPos.x);
+		odoPos.f_z = (int)(movedAngle*2.0*TO_MICRO);
+	}*/
 }
 
 
@@ -214,9 +409,11 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 			if (tree.first == XMLStep) {
 				ChoreoStep choreoStep;
 				choreoStep.braking = tree.second.get<int>(XMLBrake);
+				choreoStep.directMovement = tree.second.get<int>(XMLDirectly) > 0;
 				position_t position;
 				position[0] = (float)(tree.second.get<int>(XMLPositionX))*MICRO_TO;
 				position[1] = (float)(tree.second.get<int>(XMLPositionY))*MICRO_TO;
+				position[2] = (float)(tree.second.get<int>(XMLPositionT))*MICRO_TO * M_PI/180.0;
 				choreoStep.position = position;
 				light_t lights;
 				std::string lightinput;
@@ -245,7 +442,7 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 				choreoStep.lights = lights;
 				choreo.push_back(choreoStep);
 				if (printChoreo) {
-					DEBUG_MSG(spacesC << "-> choreo step: " << position[0] << "/" << position[1] << " [m]");
+					DEBUG_MSG(spacesC << "-> choreo step: " << position[0] << "/" << position[1] << " [m], Ø: " << (position[2]*180.0/M_PI) << "°");
 				}
 			} else if (tree.first == XMLInclude) {
 				std::string newfile = tree.second.get<std::string>(XMLIncludeName);
@@ -316,6 +513,12 @@ void setLightsVec(rsb::Informer< std::vector<int> >::Ptr informer, int lightType
 	std::vector<int> lightVector = LightModel::setLights2Vec(lightType, colorVec, periodTime);
 	boost::shared_ptr<std::vector<int>> commandVector = boost::shared_ptr<std::vector<int> >(new std::vector<int>(lightVector.begin(),lightVector.end()));
 	informer->publish(commandVector);
+}
+
+int failureProc(rsb::Informer< std::vector<int> >::Ptr lightInformer) {
+	setSpeeds(0, 0, myCAN);
+	setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,0,0), 600);
+	return EXIT_FAILURE;
 }
 
 int main(int argc, char **argv) {
@@ -414,6 +617,9 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
+	rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>::Ptr converterObjectList(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterObjectList);	
+
 	// ------------ ExtSpread Config ----------------
 
 	// Generate the programatik Spreadconfig for extern communication
@@ -443,6 +649,28 @@ int main(int argc, char **argv) {
 		tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
 	}
 
+	rsb::ParticipantConfig trackingPartConf = factory.getDefaultParticipantConfig(); {
+		// disable socket transport
+		rsc::runtime::Properties trackingPropSocket  = trackingPartConf.mutableTransport("socket").getOptions();
+		trackingPropSocket["enabled"] = boost::any(std::string("0"));
+
+		// Get the options for spread transport, because we want to change them
+		rsc::runtime::Properties trackingPropSpread  = trackingPartConf.mutableTransport("spread").getOptions();
+
+		// enable socket transport
+		trackingPropSpread["enabled"] = boost::any(std::string("1"));
+
+		// Change the config
+		trackingPropSpread["host"] = boost::any(std::string("alpia.techfak.uni-bielefeld.de"));
+
+		// Change the Port
+		trackingPropSpread["port"] = boost::any(std::string("4803"));
+
+		// Write the tranport properties back to the participant config
+		trackingPartConf.mutableTransport("socket").setOptions(trackingPropSocket);
+		trackingPartConf.mutableTransport("spread").setOptions(trackingPropSpread);
+	}
+
 	// ------------ Listener ---------------------
 
 	// prepare RSB listener for choreos
@@ -458,9 +686,9 @@ int main(int argc, char **argv) {
 	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(commandQueue)));
 
 	// prepare rsb listener for tracking data
-	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, tmpPartConf);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>(1));
-	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::Pose2DList>(trackingQueue)));
+	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, trackingPartConf);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>(1));
+	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::ObjectList>(trackingQueue)));
 
 	// prepare RSB listener for amiros
 	rsb::ListenerPtr amiroListener = factory.createListener(amiroScope, tmpPartConf);
@@ -479,7 +707,7 @@ int main(int argc, char **argv) {
 
 
 	// Initialize the robot communication
-	boost::shared_ptr<twbTracking::proto::Pose2DList> data;
+//	boost::shared_ptr<twbTracking::proto::ObjectList> data;
 	std::vector<std::string> amiros;
 	bool initialized = false;
 	bool exitProg = false;
@@ -608,15 +836,24 @@ int main(int argc, char **argv) {
 		while (!amiroQueue->empty()) {
 			amiroQueue->pop(0);
 		}
+		setSpeeds(0.08, 0, myCAN);
+		usleep(1500000);
+		setSpeeds(-0.08, 0, myCAN);
+		usleep(1500000);
+		setSpeeds(0, 0, myCAN);
 
 		// perform the choreo
 		for (ChoreoStep cs : choreo) {
 
 			float moveDirX = cs.position[0];
 			float moveDirY = cs.position[1];
+			float goalAngle = cs.position[2];
 			// get current position
 			if (useTwb) {
+				saveOldPos();
 				odoPos = getNextTrackingPos(trackingQueue);
+				if (odoPos.f_z < 0) return failureProc(lightInformer);
+				correctPosition();
 				DEBUG_MSG("Position of marker " << markerID << ": " << odoPos.x << "/" << odoPos.y << ", " << odoPos.f_z);
 			}
 			if (!relativePosition) {
@@ -665,10 +902,28 @@ int main(int argc, char **argv) {
 				types::position goalPos;
 				goalPos.x = odoPos.x + moveDirX*TO_MICRO;
 				goalPos.y = odoPos.y + moveDirY*TO_MICRO;
-				while (moveDirX > trackingVariance || moveDirY > trackingVariance) {
+				float angleToGoal = normAngle(atan2(moveDirY, moveDirX));
+
+				// set start orientation of direct movement
+				while (cs.directMovement && fabs(angleDiff(odoPos.f_z*MICRO_TO, angleToGoal)) > trackingAngleVar) {
+					if (angleDiff(odoPos.f_z*MICRO_TO, goalAngle) < 0) {
+						setSpeeds(0, -turnSpeed, myCAN);
+					} else {
+						setSpeeds(0, turnSpeed, myCAN);
+					}
+					INFO_MSG(" -> Turning (" << (angleDiff(odoPos.f_z*MICRO_TO, goalAngle)*180.0/M_PI) << "° left)");
+					usleep(100000);
+					saveOldPos();
+					odoPos = getNextTrackingPos(trackingQueue);
+					if (odoPos.f_z < 0) return failureProc(lightInformer);
+					correctPosition();
+				}
+
+				// move to position
+				while (abs(moveDirX) > trackingVariance || abs(moveDirY) > trackingVariance) {
 					// calculate speeds
 					float v, w, time, dist, angle;
-					calcSpeeds(odoPos, moveDirX, moveDirY, v, w, time, dist, angle);
+					trackingSpeeds(odoPos, moveDirX, moveDirY, cs.directMovement, v, w);
 					setSpeeds(v, w, myCAN);
 
 					// print action messages
@@ -682,9 +937,28 @@ int main(int argc, char **argv) {
 						DEBUG_MSG("time: " << time << " s");
 					}
 
+					saveOldPos();
 					odoPos = getNextTrackingPos(trackingQueue);
+					if (odoPos.f_z < 0) return failureProc(lightInformer);
+					correctPosition();
 					moveDirX = (goalPos.x - odoPos.x)*MICRO_TO;
 					moveDirY = (goalPos.y - odoPos.y)*MICRO_TO;
+
+					// sleep 100 ms
+					usleep(100000);
+				}
+
+				// set final orientation
+				while (cs.directMovement && fabs(angleDiff(odoPos.f_z*MICRO_TO, goalAngle)) > trackingAngleVar) {
+					if (angleDiff(odoPos.f_z*MICRO_TO, goalAngle) < 0) {
+						setSpeeds(0, -turnSpeed, myCAN);
+					} else {
+						setSpeeds(0, turnSpeed, myCAN);
+					}
+					INFO_MSG(" -> Turning (" << (angleDiff(odoPos.f_z*MICRO_TO, goalAngle)*180.0/M_PI) << "° left)");
+					usleep(100000);
+					odoPos = getNextTrackingPos(trackingQueue);
+					if (odoPos.f_z < 0) return failureProc(lightInformer);
 				}
 			}
 

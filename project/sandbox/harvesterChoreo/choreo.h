@@ -11,13 +11,14 @@
 // define a type to access all values of the light ring
 typedef std::array<std::array<int,3>,8> light_t;
 // define a type to access all values of the position
-typedef std::array<float,2> position_t;
+typedef std::array<float,3> position_t;
 
 // define a step in the choreography
 typedef struct {
 	int braking;
 	position_t position;
 	light_t lights;
+	bool directMovement;
 } ChoreoStep;
 
 // define type for the choreography

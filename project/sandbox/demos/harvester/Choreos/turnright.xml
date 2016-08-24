@@ -1,13 +1,13 @@
 <!--<?xml version="1.0"> -->
 <choreo>
   <choreoStep>
-    <brake>1</brake>
-    <posx>500000</posx>
-    <posy>0</posy>
+    <brake>0</brake>
+    <posx>0</posx>
+    <posy>500000</posy>
     <postheta>0</postheta>
-    <direct>1</direct>
+    <direct>0</direct>
 <!-- blue,green,red -->
-    <la>0,255,0</la>
+    <la>255,0,0</la>
   </choreoStep>
 </choreo>  
 

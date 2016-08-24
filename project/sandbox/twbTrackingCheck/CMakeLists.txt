@@ -48,16 +48,11 @@ include_directories(
 
 message(STATUS " RST ${RST_INCLUDE_DIRS}")
 
-# Add folders to build and run CMakeLists.txt in it
-if (NOT TARGET vecIntConverter)
-    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-endif()
-
 file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.h)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/enum.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/loc.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/pose.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/rotation.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/shapes.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/vertex.pb.cc)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/types/enum.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/loc.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/pose.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/rotation.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/shapes.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/vertex.pb.cc)
 #$ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc
 
 # Link the executable to the library.
@@ -81,8 +76,6 @@ target_link_libraries (
     boost_system
     boost_thread
     boost_chrono
-    # -- Own libraries
-    vecIntConverter
 )
 
 else("$ENV{ARCH}" MATCHES arm)
@@ -95,8 +88,6 @@ target_link_libraries (
     ${PROTO_LIBRARIES}
     # Boost
     ${Boost_LIBRARIES}
-    # -- Own libraries
-    vecIntConverter
 )
 endif("$ENV{ARCH}" MATCHES arm)
 

@@ -21,7 +21,7 @@ spread -c amirospread &
 sleep 5
 
 ./setLights > /dev/null &
-./harvester -a ${ID} -c harvest.xml --choreoDelay 5000 --idDelay 2000 -rpvo &
+./harvester -a ${ID} -c harvest.xml --choreoDelay 5000 --idDelay 2000 -rpvo --useTwb -m 16 --mmp 1.0 &
 
 #wait
 #cpufreq-set -g ondemand

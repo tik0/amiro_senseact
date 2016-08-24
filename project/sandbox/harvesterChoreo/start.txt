@@ -33,8 +33,8 @@ The filename of a choreography has to be a xml file.
 ^ XML Part ^ Description ^
 | choreo | Includes the hole Choreo (includes choreoSteps or/and choreoincludes). |
 | choreoStep | This is one Step of the Choreo containing x-y-position, light configuration and braking flak. |
-| posx | X coordinate of the position (relative or absolute), which should be driven to (in meters). |
-| posy | Y coordinate of the position (relative or absolute), which should be driven to (in meters). |
+| posx | X coordinate of the position (relative or absolute), which should be driven to (in micro meters). |
+| posy | Y coordinate of the position (relative or absolute), which should be driven to (in micro meters). |
 | brake | Flag, if the robot shall stop and wait for the others after this step (integer of [0,1]). |
 | l<id> | Color of the LED with given id (id as integer of [0,7], color as integer of [0,255] for blue, green, red). It can be overwritten by 'la' |
 | la | Color for all LEDs (color as integer of [0,255] for blue, green, red). It overwrittes 'l<id>' |
