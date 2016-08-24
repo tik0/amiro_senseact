@@ -179,15 +179,23 @@ ParticleFilter::sampling(sample_t &sample)
 bool
 ParticleFilter::preparePoseUpdate(pose_t &newOdom)
 {
-    drivingDirection = atan2(newOdom.y - prevOdom.y, newOdom.x - prevOdom.x);
-    phi1 = normalizeAngle(drivingDirection - prevOdom.theta);
     odometryIncrement = sqrt( pow(newOdom.x - prevOdom.x, 2) + pow(newOdom.y - prevOdom.y, 2) );
-    phi2 = normalizeAngle(newOdom.theta - drivingDirection);
 
-    DEBUG_MSG("poseUpdate: drivingDirection: " << drivingDirection
-              << " phi1: " << phi1
-              << " odometryIncrement: " << odometryIncrement
-              << " phi2: " << phi2);
+    if (odometryIncrement == 0) {
+        phi1 = normalizeAngle(newOdom.theta - prevOdom.theta);
+        phi2 = 0.0f;
+        DEBUG_MSG("odometryIncrement is zero, phi1: " << phi1);
+    } else {
+        // angle of vector from old odometry to new odometry
+        float drivingDirection = atan2(newOdom.y - prevOdom.y, newOdom.x - prevOdom.x);
+        phi1 = normalizeAngle(drivingDirection - prevOdom.theta);
+        phi2 = normalizeAngle(newOdom.theta - drivingDirection);
+
+        DEBUG_MSG("poseUpdate: drivingDirection: " << drivingDirection
+                  << " phi1: " << phi1
+                  << " odometryIncrement: " << odometryIncrement
+                  << " phi2: " << phi2);
+    }
 
     // return wether increment is > 0
     DEBUG_MSG("odomIncrement:  " << (abs(odometryIncrement) > 1e-2));
