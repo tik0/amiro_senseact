@@ -36,11 +36,7 @@ public:
         computeLikelihoodFieldTree();
         INFO_MSG("done. Took " << (time(NULL) - start) << " seconds");
 
-#ifndef __arm__
-#ifndef NDEBUG
-    showDistanceMap();
-#endif
-#endif
+        showDistanceMap();
     }
 
     ~LikelihoodFieldModel()
@@ -89,9 +85,9 @@ public:
             } else {
                 // find a point on map by clamping
                 int onMapX = std::max(0, std::min(idxx, map->cols - 1));
-                int onMapY = std::max(0, std::min(idxx, map->rows - 1));
+                int onMapY = std::max(0, std::min(idxy, map->rows - 1));
                 // distance to next obstacle is distance from on-map point + on-map points distance to next obstacle
-                d = distanceToObstacle[onMapY * map->cols + onMapY];
+                d = distanceToObstacle[onMapY * map->cols + onMapX];
                 d += map->meterPerCell * sqrt( pow(onMapX - idxx, 2) + pow(onMapY - idxy, 2) );
             }
 //            distanceTime += (rsc::misc::currentTimeMicros() - start);
@@ -194,8 +190,12 @@ private:
             }
         }
 
+#ifndef __arm__
         cv::imshow("distance map", dbgImg);
         cv::waitKey(0);
+#else
+        cv::imwrite("distances.png", dbgImg);
+#endif
     }
 };
 
