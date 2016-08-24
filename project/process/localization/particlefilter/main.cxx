@@ -127,6 +127,7 @@ int main(int argc, const char **argv) {
     int beamskip = 1;
     float newSampleProb = 0.1f;
     float maxFrequency = 10.0f;
+    bool flip = false;
 
     namespace po = boost::program_options;
 
@@ -140,6 +141,7 @@ int main(int argc, const char **argv) {
             ("sampleCount", po::value < std::size_t > (&sampleCount)->default_value(sampleCount), "Number of particles")
             ("meterPerPixel", po::value < float > (&meterPerPixel)->default_value(meterPerPixel), "resolution of the map in meter per pixel")
             ("pathToMap", po::value < std::string > (&pathToMap)->default_value(pathToMap), "Filesystem path to image that contains the map")
+            ("flip", po::bool_switch(&flip), "Flip map around x axis.")
             ("kldsampling", "Switches on KLD sampling.")
             ("newSampleProb", po::value < float > (&newSampleProb)->default_value(newSampleProb), "Probability for generating a new sample (instead of roulette wheel selection)")
             ("beamskip", po::value < int > (&beamskip)->default_value(beamskip), "Take every n-th beam into account when calculating importance factor")
@@ -165,6 +167,8 @@ int main(int argc, const char **argv) {
     INFO_MSG("odomInScope: " << odomInScope);
     INFO_MSG("poseEstimateInScope: " << poseEstimateInScope);
     INFO_MSG("poseEstimateOutScope: " << poseEstimateOutScope);
+
+    INFO_MSG("meter per pixel: " << meterPerPixel);
 
     // do KLD sampling?
     bool doKLDSampling = false;
@@ -217,11 +221,16 @@ int main(int argc, const char **argv) {
      * Setup the particle filter
      */
     // Load map
-    Map map(cv::imread(pathToMap, CV_LOAD_IMAGE_GRAYSCALE));
-    if (!map.data) {
+    cv::Mat1b tmp_mat = cv::imread(pathToMap, CV_LOAD_IMAGE_GRAYSCALE);
+    if (!tmp_mat.data) {
         ERROR_MSG("Could not load map file: " << pathToMap);
         return 1;
     }
+    if (flip) {
+        INFO_MSG("Flipping map around x-axis.");
+        cv::flip(tmp_mat, tmp_mat, 0); // 0 => around x-axis
+    }
+    Map map(tmp_mat);
     map.meterPerCell = meterPerPixel;
 
     // Blocks until first scan is received. It will be used as configuration for the particle filter
@@ -243,7 +252,7 @@ int main(int argc, const char **argv) {
     rsc::misc::initSignalWaiter();
     bool running = true;
     // visualization parameters
-    bool visualizeImportance = false;
+    bool visualizeImportance = true;
     int height = min(map.size().height, 700);
     float scale = (float)height / map.size().height;
     while (rsc::misc::lastArrivedSignal() == rsc::misc::NO_SIGNAL && running) {
@@ -251,8 +260,20 @@ int main(int argc, const char **argv) {
 
         if (sendDebugImage) {
             cv::Mat3b vis = visualize(map, particlefilter, visualizeImportance, scale);
+
+            // convert to jpeg
+            std::vector<uchar> buf;
+            std::vector<int> compression_params;
+            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+            compression_params.push_back(100);
+            cv::imencode(".jpg", vis, buf, compression_params);
+
+            // and publish
+            rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
+            debugImageInformer->publish(frameJpg);
+
 #ifndef __arm__
-            // finally show image
+            // alternatively show image in opencv window (when on x86)
             cv::flip(vis, vis, 0); // flip horizontally
             cv::imshow("visualization", vis);
             int key = cv::waitKey(100);
@@ -266,14 +287,6 @@ int main(int argc, const char **argv) {
                     break;
             }
 #endif
-            std::vector<uchar> buf;
-            std::vector<int> compression_params;
-            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-            compression_params.push_back(100);
-            cv::imencode(".jpg", vis, buf, compression_params);
-
-            rsb::Informer<std::string>::DataPtr frameJpg(new std::string(buf.begin(), buf.end()));
-            debugImageInformer->publish(frameJpg);
         }
 
         // Update scan
@@ -292,13 +305,24 @@ int main(int argc, const char **argv) {
                 // pose estimates are given in cell/pixel coordinates, convert them
                 sample_t newSample;
                 newSample.pose.x = poseEstimate.at(0) / scale * map.meterPerCell;
-                newSample.pose.y = (height - poseEstimate.at(1)) / scale * map.meterPerCell; // the image is sent out horizontally flipped, therefore flip back here
-                newSample.pose.theta = -poseEstimate.at(2); // flip back
+                newSample.pose.y = poseEstimate.at(1) / scale * map.meterPerCell;
+                newSample.pose.theta = poseEstimate.at(2);
 
                 sample_set_t *sampleSet = particlefilter.getSamplesSet();
-                newSample.importance = sampleSet->totalWeight * 0.5f;
+                newSample.importance = sampleSet->size * sampleSet->totalWeight;
+                // first adapt the total weight
+                sampleSet->totalWeight -= sampleSet->samples[0].importance;
+                sampleSet->totalWeight += newSample.importance;
+                // and then replace old sample
                 sampleSet->samples[0] = newSample;
-                // XXX: instead maybe search for an unimportant sample?
+
+                for (size_t i = 1; i < sampleSet->size; i++) {
+                    sampleSet->samples[i].importance = 0;
+                }
+
+                sampleSet->totalWeight = newSample.importance;
+
+                // XXX: instead maybe search for an unimportant sample? or update multiple?
             } else {
                 ERROR_MSG("Received a pose estimate vector of wrong size: " << poseEstimate.size());
             }
