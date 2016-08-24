@@ -98,6 +98,7 @@ int markerID = 0;
 float meterPerPixel = 1.0; // m/pixel
 float trackingVariance = 0.005; // m
 float trackingAngleVar = 4.0 * M_PI/180.0; // rad
+float drivingMaxAngle = 20.0 * M_PI/180.0; // rad
 
 // Flags
 bool printChoreo = false;
@@ -175,11 +176,39 @@ float normAngle(float angle) {
 }*/
 
 float angleDiff(float angle1, float angle2) {
-	float diff = fmod(angle1-angle2+M_PI, 2.0*M_PI);
-	if (diff > M_PI) {
-		diff = -1.0 * (diff-M_PI);
+	angle1 = normAngle(angle1);
+	angle2 = normAngle(angle2);
+	float direction = 1.0;
+	if (angle1 > angle2) {
+		float tmp = angle1;
+		angle1 = angle2;
+		angle2 = tmp;
+		direction = -1.0;
 	}
-	return diff;
+	float diff = angle2-angle1;
+	if (diff > M_PI) {
+		diff = 2.0*M_PI-diff;
+		direction *= -1.0;
+	}
+/* Examples: angle1, angle2, direction1*diff1 -> direction2*diff2
+ * 150°, 210°, 60 -> 60
+ * 210°, 150°, -60 -> -60
+ * 30°, 330°, 300 -> -60
+ * 330°, 30°, -300 -> 60
+ */
+
+//	float diff = fmod(angle1-angle2+M_PI, 2.0*M_PI);
+//	if (diff > M_PI) {
+//		diff = -1.0 * (diff-M_PI);
+//	}
+//	return diff;
+/* Examples: angle1, angle2, diff -> result
+ * 150°, 210°, 120° -> 120°
+ * 210°, 150°, 240° -> -120°
+ * 30°, 330°, -120° -> -120°
+ * 330°, 30°, 120° -> 120°
+ */
+	return direction*diff;
 }
 
 types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
@@ -194,10 +223,10 @@ types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> d
 	pos.x = pose2D.translation().x()*meterPerPixel*TO_MICRO;
 	pos.y = pose2D.translation().y()*meterPerPixel*TO_MICRO;
 	pos.f_z = normAngle(pose2D.rotation().z()*M_PI/180.0)*TO_MICRO;
-	INFO_MSG(" -> Loaded new position:");
-	INFO_MSG("    x: " << pos.x);
-	INFO_MSG("    y: " << pos.y);
-	INFO_MSG("    Ø: " << pos.f_z);
+	DEBUG_MSG("New position:");
+	DEBUG_MSG("    x: " << pos.x);
+	DEBUG_MSG("    y: " << pos.y);
+	DEBUG_MSG("    Ø: " << pos.f_z);
 	return pos;
 }
 
@@ -217,25 +246,19 @@ bool isBeingTracked(boost::shared_ptr<twbTracking::proto::ObjectList> data, int 
 
 types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
 	boost::shared_ptr<twbTracking::proto::ObjectList> data;
-	INFO_MSG("Loading new tracking position for marker " << markerID << ":");
-	INFO_MSG(" -> Waiting for new tracking data");
 	int restTime = TRACKING_TIMEOUT * 1000; // ms
 	do {
 		if (!trackingQueue->empty()) {
 			data = boost::static_pointer_cast<twbTracking::proto::ObjectList>(trackingQueue->pop());
-			INFO_MSG("    -> Tracking data received");
 			if (isBeingTracked(data, markerID)) {
-				INFO_MSG("    -> Marker " << markerID << " has been found");
 				break;
-			} else {
-				INFO_MSG("    -> Marker " << markerID << " missed");
 			}
 		} else if (restTime <= 0) {
 			types::position errorPos;
 			errorPos.x = 0;
 			errorPos.y = 0;
 			errorPos.f_z = -1;
-			ERROR_MSG("Marker could not be detected in the last " << TRACKING_TIMEOUT << " seconds!");
+			ERROR_MSG("Marker " << markerID << " could not be detected in the last " << TRACKING_TIMEOUT << " seconds!");
 			return errorPos;
 		} else {
 			// sleep for 10 ms
@@ -283,11 +306,15 @@ void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool
 	float angleDist = atan2(relDisty, relDistx);
 	float angleDir = angleDiff(actAngle, angleDist);
 
-	if (directly || angleDir == 0.0) {
+	DEBUG_MSG("Calculated speeds:");
+
+	if (angleDir == 0.0) { //directly ||
+		DEBUG_MSG(" -> just straight forward (direct movement: " << directly << ")"); 
 		v = driveSpeed; // m/s
 		w = 0.0; // rad/s
 
-	} else if (fabs(angleDir) > M_PI/2.0) {
+	} else if (fabs(angleDir) > drivingMaxAngle && directly || fabs(angleDir) >= M_PI/2.0 && !directly) {
+		DEBUG_MSG(" -> just turning (angle is " << (angleDir*180.0/M_PI) << "° (" << (actAngle*180.0/M_PI) << "° -> " << (angleDist*180.0/M_PI) << "° , direct movement: " << directly << ")");
 		v = 0.0; // m/s
 		if (angleDir < 0) {
 			w = -turnSpeed; // rad/s
@@ -308,12 +335,14 @@ void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool
 			moveAngle = 2.0*angleDir;
 			moveDist = 2.0*moveRadius*M_PI * abs(moveAngle)/(2.0*M_PI);
 		}
+		DEBUG_MSG(" -> driving curve: distance is " << moveDist << " m and angle is " << (moveAngle*180.0/M_PI) << "° (direct movement: " << directly << ")");
+		moveAngle *= 1.1;
 
 		// calculate speeds; // m/s
 		float time = moveDist/driveSpeed; // s
 		v = driveSpeed; // m/s
 		if (abs(relDistx) > trackingVariance && abs(relDisty) > trackingVariance) {
-			w = moveAngle/time * 1.2; // rad/s
+			w = moveAngle/time; // rad/s
 		} else {
 			w = 0.0; // rad/s
 		}
@@ -889,14 +918,12 @@ int main(int argc, char **argv) {
 					if (odoPos.f_z < 0) return failureProc(lightInformer);
 					correctPosition();
 				}
-				setSpeeds(0, 0, myCAN);
-				usleep(1500000);
 
 				// move to position
 				while (abs(moveDirX) > trackingVariance || abs(moveDirY) > trackingVariance) {
 					// calculate speeds
 					float v, w, time, dist, angle;
-					trackingSpeeds(odoPos, moveDirX, moveDirY, false, v, w);
+					trackingSpeeds(odoPos, moveDirX, moveDirY, cs.directMovement, v, w);
 					setSpeeds(v, w, myCAN);
 
 					// print action messages
@@ -920,8 +947,6 @@ int main(int argc, char **argv) {
 					// sleep 100 ms
 					usleep(100000);
 				}
-				setSpeeds(0, 0, myCAN);
-				usleep(1500000);
 
 				// set final orientation
 				while (cs.directMovement && fabs(angleDiff(odoPos.f_z*MICRO_TO, goalAngle)) > trackingAngleVar) {
@@ -935,8 +960,6 @@ int main(int argc, char **argv) {
 					odoPos = getNextTrackingPos(trackingQueue);
 					if (odoPos.f_z < 0) return failureProc(lightInformer);
 				}
-				setSpeeds(0, 0, myCAN);
-				usleep(1500000);
 			}
 
 
