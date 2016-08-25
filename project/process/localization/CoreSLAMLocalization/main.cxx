@@ -902,6 +902,7 @@ int main(int argc, const char **argv){
   std::string setPositionScope = "/setPosition";
   bool setPositionUseVec = false;
   std::string positionOutScope = "/position";
+  bool publishPoseEuler = false;
   std::string pathOutScope = "/path";
   std::string sendMapSwitchScope = "/sendMap";
   std::string homingInScope = "/homing";
@@ -940,6 +941,7 @@ int main(int argc, const char **argv){
     ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope for receiving a new position")
     ("setPositionUseVec", po::bool_switch(&setPositionUseVec), "If given it's assumed that received positions are of type vector<float> (instead of rst::geometry::Pose).")
     ("positionOutScope", po::value < std::string > (&positionOutScope), "Scope for publishing current position")
+    ("publishPoseEuler", po::bool_switch(&publishPoseEuler), "Publish pose as rst::geometry::PoseEuler, instead of rst::geometry::Pose.")
     ("pathOutScope", po::value < std::string > (&pathOutScope), "Scope for publishing navigation path")
     ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set (mm)")
     ("sigma_theta_new_position", po::value < double > (&sigma_theta_new_position), "Theta uncertainty for marcov localization after new position was set (rad)")
@@ -1088,6 +1090,10 @@ int main(int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(pathConverter);
   boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
   rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+  if (publishPoseEuler) {
+      boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler> > converter(new rsb::converter::ProtocolBufferConverter<rst::geometry::PoseEuler>());
+      rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+  }
 
   // Prepare RSB listener for incomming lidar scans
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
@@ -1120,6 +1126,7 @@ int main(int argc, const char **argv){
   targetPoseListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(targetPoseQueue)));
 
   rsb::Informer<rst::geometry::Pose>::Ptr poseInfomer = factory.createInformer<rst::geometry::Pose>(positionOutScope, tmpPartConf);
+  rsb::Informer<rst::geometry::PoseEuler>::Ptr poseEulerInfomer = factory.createInformer<rst::geometry::PoseEuler>(positionOutScope, tmpPartConf);
 
   pathInformer = factory.createInformer<rst::navigation::Path>(pathOutScope, tmpPartConf);
 
@@ -1238,24 +1245,37 @@ int main(int argc, const char **argv){
     //DEBUG_MSG("current sigma_theta: " << state_.sigma_theta);
 
     // Publish estimated pose
-    boost::shared_ptr<rst::geometry::Pose> rsbPose(new rst::geometry::Pose);
-    rsbPose->mutable_translation()->set_x(pose.x * MM_TO_METERS);
-    rsbPose->mutable_translation()->set_y(pose.y * MM_TO_METERS);
-    rsbPose->mutable_translation()->set_z(0);
+    if (publishPoseEuler) {
+        boost::shared_ptr<rst::geometry::PoseEuler> rsbPose(new rst::geometry::PoseEuler);
+        rsbPose->mutable_translation()->set_x(pose.x * MM_TO_METERS);
+        rsbPose->mutable_translation()->set_y(pose.y * MM_TO_METERS);
+        rsbPose->mutable_translation()->set_z(0);
 
-    Eigen::Matrix<double,3,1> rpy;
-    rpy(0) = 0;
-    rpy(1) = 0;
-    rpy(2) = pose.theta * M_PI / 180.0f;
-    Eigen::Quaternion<double> quat;
-    ::conversion::euler2quaternion(&rpy, &quat);
+        rsbPose->mutable_rotation()->set_yaw(pose.theta * M_PI / 180.0f);
+        rsbPose->mutable_rotation()->set_pitch(0);
+        rsbPose->mutable_rotation()->set_roll(0);
 
-    rsbPose->mutable_rotation()->set_qx(quat.x());
-    rsbPose->mutable_rotation()->set_qy(quat.y());
-    rsbPose->mutable_rotation()->set_qz(quat.z());
-    rsbPose->mutable_rotation()->set_qw(quat.w());
+        poseEulerInfomer->publish(rsbPose);
+    } else {
+        boost::shared_ptr<rst::geometry::Pose> rsbPose(new rst::geometry::Pose);
+        rsbPose->mutable_translation()->set_x(pose.x * MM_TO_METERS);
+        rsbPose->mutable_translation()->set_y(pose.y * MM_TO_METERS);
+        rsbPose->mutable_translation()->set_z(0);
 
-    poseInfomer->publish(rsbPose);
+        Eigen::Matrix<double,3,1> rpy;
+        rpy(0) = 0;
+        rpy(1) = 0;
+        rpy(2) = pose.theta * M_PI / 180.0f;
+        Eigen::Quaternion<double> quat;
+        ::conversion::euler2quaternion(&rpy, &quat);
+
+        rsbPose->mutable_rotation()->set_qx(quat.x());
+        rsbPose->mutable_rotation()->set_qy(quat.y());
+        rsbPose->mutable_rotation()->set_qz(quat.z());
+        rsbPose->mutable_rotation()->set_qw(quat.w());
+
+        poseInfomer->publish(rsbPose);
+    }
 
     if (sendMapAsCompressedImage) {
 
