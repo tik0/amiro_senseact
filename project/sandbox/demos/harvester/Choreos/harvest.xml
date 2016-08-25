@@ -1,19 +1,19 @@
 <!--<?xml version="1.0"> -->
 <choreo>
-  <choreoinclude>
+  <!--choreoinclude>
     <choreopart>starting.xml</choreopart>
-  </choreoinclude>
+  </choreoinclude-->
   <choreoinclude>
     <choreopart>forward.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turnleft.xml</choreopart>
+    <choreopart>turnup.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
     <choreopart>backward.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
-    <choreopart>turnright.xml</choreopart>
+    <choreopart>turnup.xml</choreopart>
   </choreoinclude>
   <choreoinclude>
     <choreopart>forward.xml</choreopart>

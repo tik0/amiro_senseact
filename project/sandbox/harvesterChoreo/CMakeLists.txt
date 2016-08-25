@@ -57,7 +57,7 @@ file(GLOB SOURCES *.cxx)
 file(GLOB HEADERS *.h)
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/enum.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/loc.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/pose.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/rotation.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/shapes.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/vertex.pb.cc)
+add_executable ("${PROJECT_NAME}" ${SOURCES} ${HEADERS} $ENV{MUROX_INCLUDE_DIRS}/Color.cpp $ENV{MUROX_INCLUDE_DIRS}/types/enum.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/loc.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/pose.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/poselist.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/rotation.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/shapes.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/vertex.pb.cc)
 #$ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc
 
 # Link the executable to the library.

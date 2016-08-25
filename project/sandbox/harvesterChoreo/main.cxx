@@ -51,6 +51,7 @@ using namespace muroxConverter;
 #include <types/enum.pb.h>
 #include <types/loc.pb.h>
 #include <types/pose.pb.h>
+#include <types/poselist.pb.h>
 #include <types/rotation.pb.h>
 #include <types/shapes.pb.h>
 #include <types/vertex.pb.h>
@@ -85,6 +86,11 @@ std::string XMLIncludeName = "choreopart";
 std::string COMMAND_INIT = "init";
 std::string COMMAND_START = "start";
 std::string COMMAND_STOP = "stop";
+std::string COMMAND_BREAK = "break";
+std::string COMMAND_CORR = "correct";
+
+// command enum
+enum CommandId {cmd_none, cmd_init, cmd_start, cmd_stop, cmd_break, cmd_corr};
 
 // initialize CAN
 ControllerAreaNetwork myCAN;
@@ -102,9 +108,9 @@ float drivingMaxAngle = 20.0 * M_PI/180.0; // rad
 
 // Flags
 bool printChoreo = false;
-bool relativePosition = false;
 bool useOdo = false;
 bool useTwb = false;
+bool startPosition = false;
 
 
 // scopenames for rsb
@@ -113,67 +119,25 @@ std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
 std::string trackingInscope = "/tracking/merger";
+std::string choreoCorrectionInscope = "/harvester/choreocorrection";
+std::string goalScope = "/amiro/goal";
 
-types::position odoPos;
-types::position oldPos;
+// global positions
+position_t odoPos;
+position_t oldPos;
 
-
-/*
-types::position readTracking(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingMarkerID) {
-	twbTracking::proto::Pose2D pose2D;
-	for (int i = 0; i < data->pose_size(); i++) {
-		if (trackingMarkerID == data->pose(i).id()) {
-			pose2D = data->pose(i);
-			break;
-		}
-	}
-	types::position pos;
-	pos.x = pose2D.x()*meterPerPixel*TO_MICRO;
-	pos.y = pose2D.y()*meterPerPixel*TO_MICRO;
-	pos.f_z = pose2D.orientation()*TO_MICRO;
-	return pos;
-}
-
-
-bool isBeingTracked(boost::shared_ptr<twbTracking::proto::Pose2DList> data, int trackingID) {
-	bool isIn = false;
-	for (int i = 0; i < data->pose_size(); i++) {
-		if (trackingID == data->pose(i).id()) {
-			if (data->pose(i).x() != 0 && data->pose(i).y() != 0) {
-				isIn = true;
-			}
-			break;
-		}
-	}
-	return isIn;
-}
-
-types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::Pose2DList>>> trackingQueue) {
-	boost::shared_ptr<twbTracking::proto::Pose2DList> data;
-	do {
-		if (!trackingQueue->empty()) {
-			data = boost::static_pointer_cast<twbTracking::proto::Pose2DList>(trackingQueue->pop());
-			if (isBeingTracked(data, markerID)) {
-				break;
-			}
-		} else {
-			// sleep for 10 ms
-			usleep(10000);
-		}
-	} while (true);
-	return readTracking(data, markerID);
-}
-*/
+// global variables
+bool doChoreo = false;
+bool pauseChoreo = false;
+bool correctChoreo = false;
+bool fakeCorrection = false;
+int stepNumber = 0;
 
 float normAngle(float angle) {
 	float normed = fmod(angle, 2.0*M_PI);
 	if (normed < 0) normed += 2.0*M_PI;
 	return normed;
-}	
-
-/*float inverseAngle(float angle) {
-	return 2.0*M_PI - normAngle(angle);
-}*/
+}
 
 float angleDiff(float angle1, float angle2) {
 	angle1 = normAngle(angle1);
@@ -208,10 +172,25 @@ float angleDiff(float angle1, float angle2) {
  * 30°, 330°, -120° -> -120°
  * 330°, 30°, 120° -> 120°
  */
+
+//	float diff = fmod(angle1-angle2, 2.0*M_PI);
+//	if (diff > M_PI) {
+//		diff = -1.0 * (diff-2.0*M_PI);
+//	}
+//	if (diff < -M_PI) {
+//		diff = -1.0 * (diff+2.0*M_PI);
+//	}
+//	return diff;
+/* Examples: angle1, angle2, diff -> result
+ * 150°, 210°, -60° -> -60° / 300° -> -60°
+ * 210°, 150°, 60° -> 60°
+ * 30°, 330°, -300° -> -60° / 60° -> 60° !!!
+ * 330°, 30°, 300° -> 60°
+ */
 	return direction*diff;
 }
 
-types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
+position_t readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
 	twbTracking::proto::Pose pose2D;
 	for (int i = 0; i < data->object_size(); i++) {
 		if (trackingMarkerID == data->object(i).id()) {
@@ -219,14 +198,14 @@ types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> d
 			break;
 		}
 	}
-	types::position pos;
-	pos.x = pose2D.translation().x()*meterPerPixel*TO_MICRO;
-	pos.y = pose2D.translation().y()*meterPerPixel*TO_MICRO;
-	pos.f_z = normAngle(pose2D.rotation().z()*M_PI/180.0)*TO_MICRO;
+	position_t pos;
+	pos[0] = pose2D.translation().x()*meterPerPixel;
+	pos[1] = pose2D.translation().y()*meterPerPixel;
+	pos[2] = normAngle(pose2D.rotation().z()*M_PI/180.0);
 	DEBUG_MSG("New position:");
-	DEBUG_MSG("    x: " << pos.x);
-	DEBUG_MSG("    y: " << pos.y);
-	DEBUG_MSG("    Ø: " << pos.f_z);
+	DEBUG_MSG("    x: " << pos[0]);
+	DEBUG_MSG("    y: " << pos[1]);
+	DEBUG_MSG("    Ø: " << pos[2]);
 	return pos;
 }
 
@@ -244,7 +223,7 @@ bool isBeingTracked(boost::shared_ptr<twbTracking::proto::ObjectList> data, int 
 	return isIn;
 }
 
-types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
+position_t getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
 	boost::shared_ptr<twbTracking::proto::ObjectList> data;
 	int restTime = TRACKING_TIMEOUT * 1000; // ms
 	do {
@@ -254,10 +233,10 @@ types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::Synchronize
 				break;
 			}
 		} else if (restTime <= 0) {
-			types::position errorPos;
-			errorPos.x = 0;
-			errorPos.y = 0;
-			errorPos.f_z = -1;
+			position_t errorPos;
+			errorPos[0] = 0;
+			errorPos[1] = 0;
+			errorPos[2] = -1;
 			ERROR_MSG("Marker " << markerID << " could not be detected in the last " << TRACKING_TIMEOUT << " seconds!");
 			return errorPos;
 		} else {
@@ -269,8 +248,8 @@ types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::Synchronize
 	return readTracking(data, markerID);
 }
 
-void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v, float &w, float &time, float &dist, float &angle) {
-	float actAngle = (float)(curPos.f_z)*MICRO_TO;
+void calcSpeeds(position_t curPos, float relDistx, float relDisty, float &v, float &w, float &time, float &dist, float &angle) {
+	float actAngle = curPos[2];
 	while (actAngle >= 2.0*M_PI) actAngle -= 2.0*M_PI;
 	while (actAngle < 0) actAngle += 2.0*M_PI;
 
@@ -290,7 +269,6 @@ void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v
 		moveDist = distDir;
 	}
 
-	// calculate speeds; // m/s
 	time = moveDist/driveSpeed; // s
 	v = driveSpeed; // m/s
 	w = moveAngle/time; // rad/s
@@ -299,8 +277,8 @@ void calcSpeeds(types::position curPos, float relDistx, float relDisty, float &v
 }
 
 
-void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool directly, float &v, float &w) {
-	float actAngle = (float)(curPos.f_z)*MICRO_TO;
+void trackingSpeeds(position_t curPos, float relDistx, float relDisty, bool directly, float &v, float &w) {
+	float actAngle = curPos[2];
 
 	float distDir = sqrt(relDistx*relDistx + relDisty*relDisty);
 	float angleDist = atan2(relDisty, relDistx);
@@ -308,13 +286,11 @@ void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool
 
 	DEBUG_MSG("Calculated speeds:");
 
-	if (angleDir == 0.0) { //directly ||
-		DEBUG_MSG(" -> just straight forward (direct movement: " << directly << ")"); 
+	if (angleDir == 0.0) {
 		v = driveSpeed; // m/s
 		w = 0.0; // rad/s
 
 	} else if (fabs(angleDir) > drivingMaxAngle && directly || fabs(angleDir) >= M_PI/2.0 && !directly) {
-		DEBUG_MSG(" -> just turning (angle is " << (angleDir*180.0/M_PI) << "° (" << (actAngle*180.0/M_PI) << "° -> " << (angleDist*180.0/M_PI) << "° , direct movement: " << directly << ")");
 		v = 0.0; // m/s
 		if (angleDir < 0) {
 			w = -turnSpeed; // rad/s
@@ -335,10 +311,12 @@ void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool
 			moveAngle = 2.0*angleDir;
 			moveDist = 2.0*moveRadius*M_PI * abs(moveAngle)/(2.0*M_PI);
 		}
-		DEBUG_MSG(" -> driving curve: distance is " << moveDist << " m and angle is " << (moveAngle*180.0/M_PI) << "° (direct movement: " << directly << ")");
-		moveAngle *= 1.1;
+		if (directly) {
+			moveAngle *= 2.0;
+		} else {
+			moveAngle *= 1.1;
+		}
 
-		// calculate speeds; // m/s
 		float time = moveDist/driveSpeed; // s
 		v = driveSpeed; // m/s
 		if (abs(relDistx) > trackingVariance && abs(relDisty) > trackingVariance) {
@@ -350,36 +328,19 @@ void trackingSpeeds(types::position curPos, float relDistx, float relDisty, bool
 }
 
 void saveOldPos() {
-	oldPos.x = odoPos.x;
-	oldPos.y = odoPos.y;
-	oldPos.f_z = odoPos.f_z;
+	oldPos[0] = odoPos[0];
+	oldPos[1] = odoPos[1];
+	oldPos[2] = odoPos[2];
 }
 
 void correctPosition() {
-	// get orientations
-/*	float curOri = (float)(odoPos.f_z)*MICRO_TO;
-	float oldOri = (float)(oldPos.f_z)*MICRO_TO;
-
-	// check if robot didn't move
-	if (abs(odoPos.x-oldPos.x)*MICRO_TO < trackingVariance && abs(odoPos.y-oldPos.y)*MICRO_TO < trackingVariance) {
-		DEBUG_MSG("Robot did not move. Taking tracking orientation.");
-
-	// check if orientation is valid
-	} else if (fabs(angleDiff(curOri, oldOri))*2.0 < turnSpeed) {
-		DEBUG_MSG("Robot turned correctly");
-
-	// There is an error in orientation
-	} else {
-		DEBUG_MSG("The orientation switched too much!");
-		float movedAngle = atan2(oldPos.y-odoPos.y, oldPos.x-odoPos.x);
-		odoPos.f_z = (int)(movedAngle*2.0*TO_MICRO);
-	}*/
+	// TODO some orientation correction?
 }
 
 
 
 // load a (sub)choreography from a file
-Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::string> parents) {
+Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::string> parents, float &xPos, float &yPos, float &tPos) {
 	bool loadingCorrect = true;
 	bool parentFound = false;
 	parents.push_back(choreoName);
@@ -410,10 +371,13 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 				ChoreoStep choreoStep;
 				choreoStep.braking = tree.second.get<int>(XMLBrake);
 				choreoStep.directMovement = tree.second.get<int>(XMLDirectly) > 0;
+				xPos += (float)(tree.second.get<int>(XMLPositionX))*MICRO_TO;
+				yPos += (float)(tree.second.get<int>(XMLPositionY))*MICRO_TO;
+				tPos = normAngle(tPos + (float)(tree.second.get<int>(XMLPositionT))*MICRO_TO * M_PI/180.0);
 				position_t position;
-				position[0] = (float)(tree.second.get<int>(XMLPositionX))*MICRO_TO;
-				position[1] = (float)(tree.second.get<int>(XMLPositionY))*MICRO_TO;
-				position[2] = (float)(tree.second.get<int>(XMLPositionT))*MICRO_TO * M_PI/180.0;
+				position[0] = xPos;
+				position[1] = yPos;
+				position[2] = tPos;
 				choreoStep.position = position;
 				light_t lights;
 				std::string lightinput;
@@ -464,7 +428,7 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 					break;
 				}
 				// otherwise go on
-				Choreo choreoInclude = loadSubChoreo(newfile, subChoreoNum+1, parents);
+				Choreo choreoInclude = loadSubChoreo(newfile, subChoreoNum+1, parents, xPos, yPos, tPos);
 				if (choreoInclude.empty()) {
 					loadingCorrect = false;
 					choreo.clear();
@@ -488,9 +452,29 @@ Choreo loadSubChoreo(std::string choreoName, int subChoreoNum, std::vector<std::
 }
 
 // loading choreography procedure
-Choreo loadChoreo(std::string choreoName) {
+Choreo loadChoreo(std::string choreoName, float startX = 0.0, float startY = 0.0, float startTheta = 0.0) {
+	float xPos = startX, yPos = startY, tPos = startTheta;
 	std::vector<std::string> parents;
-	return loadSubChoreo(choreoName, 0, parents);
+	Choreo choreo;
+	ChoreoStep choreoStep;
+	choreoStep.braking = 1;
+	choreoStep.directMovement = true;
+	position_t position;
+	position[0] = xPos;
+	position[1] = yPos;
+	position[2] = tPos;
+	choreoStep.position = position;
+	light_t lights;
+	for (int i = 0; i < 8; i++) {
+		lights[i][0] = 255;
+		lights[i][1] = 255;
+		lights[i][2] = 0;
+	}
+	choreoStep.lights = lights;
+	choreo.push_back(choreoStep);
+	Choreo realChoreo = loadSubChoreo(choreoName, 0, parents, xPos, yPos, tPos);
+	choreo.insert(choreo.end(), realChoreo.begin(), realChoreo.end());
+	return choreo;
 }
 
 
@@ -521,6 +505,102 @@ int failureProc(rsb::Informer< std::vector<int> >::Ptr lightInformer) {
 	return EXIT_FAILURE;
 }
 
+CommandId checkCommands(boost::shared_ptr<rsc::threading::SynchronizedQueue< EventPtr > > commandQueue, uint64_t &receiveTime) {
+	CommandId result = cmd_none;
+	if (!commandQueue->empty()) {
+		EventPtr event = commandQueue->pop(0);
+		std::string command = *static_pointer_cast<std::string>(event->getData());
+		receiveTime = event->getMetaData().getReceiveTime();
+		bool initializeCommand = command == COMMAND_INIT;
+		bool stopCommand = command == COMMAND_STOP;
+		bool startCommand = command == COMMAND_START;
+		bool breakCommand = command == COMMAND_BREAK;
+		bool correctCommand = command == COMMAND_CORR;
+		if (stopCommand) {
+			result = cmd_stop;
+		} else if (breakCommand) {
+			result = cmd_break;
+		} else if (startCommand) {
+			result = cmd_start;
+		} else if (initializeCommand) {
+			result = cmd_init;
+		} else if (correctCommand) {
+			result = cmd_corr;
+		}
+	}
+	return result;
+}
+
+CommandId checkCommands(boost::shared_ptr<rsc::threading::SynchronizedQueue< EventPtr > > commandQueue) {
+	uint64_t time;
+	return checkCommands(commandQueue, time);
+}
+
+void choreoSleep_ms(int sleep_ms, boost::shared_ptr<rsc::threading::SynchronizedQueue< EventPtr > > commandQueue, boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::PoseList>>>choreoCorrectionQueue) {
+	usleep(sleep_ms*1000);
+	CommandId cmdId = checkCommands(commandQueue);
+	if (doChoreo && cmdId == cmd_stop) doChoreo = false;
+	if (pauseChoreo && cmdId == cmd_start) pauseChoreo = false;
+	if (!pauseChoreo && cmdId == cmd_break) pauseChoreo = true;
+	if (!correctChoreo && cmdId == cmd_corr) {
+		correctChoreo = true;
+		fakeCorrection = true;
+		pauseChoreo = true;
+		INFO_MSG("*** !!! Fake correction received !!! ***");
+	}
+	if (!choreoCorrectionQueue->empty()) {
+		correctChoreo = true;
+		pauseChoreo = true;
+		INFO_MSG("*** !!! Correction received !!! ***");
+	}
+}
+
+Choreo insertPoseListIntoChoreo(Choreo choreo, int curStepNo, boost::shared_ptr<twbTracking::proto::PoseList> poses) {
+	// transform new positions to choreo steps
+	Choreo includedChoreo;
+	for (int i=0; i<poses->pose_size(); i++) {
+		ChoreoStep choreoStep;
+		choreoStep.braking = 0;
+		choreoStep.directMovement = true;
+		position_t position;
+		position[0] = poses->pose(i).translation().x();
+		position[1] = poses->pose(i).translation().y();
+		position[2] = poses->pose(i).rotation().z();
+		choreoStep.position = position;
+		light_t lights;
+		for (int i = 0; i < 8; i++) {
+			lights[i][0] = 255;
+			lights[i][1] = 0;
+			lights[i][2] = 0;
+		}
+		choreoStep.lights = lights;
+		includedChoreo.push_back(choreoStep);
+	}
+
+	// print choreo before combination
+	INFO_MSG("Choreo steps before:");
+	for (int i=0; i<choreo.size(); i++) {
+		INFO_MSG(" " << (i+1) << ". " << choreo[i].position[0] << "/" << choreo[i].position[1]);
+	}
+
+	// combine choreos
+	std::size_t skippedSteps = (std::size_t)(curStepNo);
+	Choreo choreo1(choreo.begin(), choreo.begin()+skippedSteps);
+	Choreo choreo2(choreo.begin()+skippedSteps, choreo.end());
+	choreo.clear();
+	choreo.insert(choreo.end(), choreo1.begin(), choreo1.end());
+	choreo.insert(choreo.end(), includedChoreo.begin(), includedChoreo.end());
+	choreo.insert(choreo.end(), choreo2.begin(), choreo2.end());
+
+	// print choreo after combination
+	INFO_MSG("Choreo steps now:");
+	for (int i=0; i<choreo.size(); i++) {
+		INFO_MSG(" " << (i+1) << ". " << choreo[i].position[0] << "/" << choreo[i].position[1]);
+	}
+
+	return choreo;
+}
+
 int main(int argc, char **argv) {
 
 	// delay to start the choreo after the rsb-event was created in ms
@@ -533,6 +613,8 @@ int main(int argc, char **argv) {
 
 	int amiroID = 0;
 
+	float startX = 0.0, startY = 0.0, startTheta = 0.0;
+
 	// Handle program options
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
@@ -541,8 +623,10 @@ int main(int argc, char **argv) {
 			("lightsOut", po::value<std::string>(&lightOutscope), "Light outscope.")
 			("choreoIn", po::value<std::string>(&choreoInscope), "Choreography inscope.")
 			("choreoname,c", po::value<std::string>(&choreoName), "Initial Choreography name.")
-			("choreoRelative,r", "Flag if the positions in the choreo are relative.")
 			("printChoreo,p", "Prints the loaded steps of the choreo.")
+			("startX", po::value<float>(&startX), "Optional start position on x-axis in meters.")
+			("startY", po::value<float>(&startY), "Optional start position on y-axis in meters.")
+			("startTheta", po::value<float>(&startTheta), "Optional start position angle in degrees.")
 			("choreoDelay", po::value<int>(&choreoDelay), "Delay between receiving the start command via RSB and starting the choreography in ms (default 2000 ms).")
 			("stepDelay", po::value<int>(&stepDelay), "Delay of the brake between two steps of the choreography in ms (default 1000 ms).")
 			("idDelay", po::value<int>(&idDelay), "Delay between the AMiRo starts in ms (default: 1000 ms).")
@@ -570,6 +654,13 @@ int main(int argc, char **argv) {
 		std::cout << "The AMiRo ID has to be given! Please check the options.\n\n" << options << "\n";
 		exit(1);
 	}
+
+	startPosition = vm.count("startX") && vm.count("startY") && vm.count("startTheta");
+	if ((vm.count("startX") || vm.count("startY") || vm.count("startTheta")) && !startPosition) {
+		std::cout << "If defining the optional start position, please give x- and y-coordinates and the angle.\n\nPlease check the options.\n\n" << options << "\n";
+		exit(1);
+	}
+	startTheta *= M_PI/180.0;
 
 	// check for given navigation type
 	if (!vm.count("useOdo") && !vm.count("useTwb")) {
@@ -601,7 +692,6 @@ int main(int argc, char **argv) {
 	int delayS = stepDelay + idDelay*amiroID;
 
 	printChoreo = vm.count("printChoreo");
-	relativePosition = vm.count("choreoRelative");
 
 
 	INFO_MSG("Start harvester algorithm with name '" << amiroName << "'.");
@@ -618,7 +708,13 @@ int main(int argc, char **argv) {
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
 	rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>::Ptr converterObjectList(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>);
-	rsb::converter::converterRepository<std::string>()->registerConverter(converterObjectList);	
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterObjectList);
+
+	rsb::converter::ProtocolBufferConverter<twbTracking::proto::Object>::Ptr converterObject(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Object>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterObject);
+
+	rsb::converter::ProtocolBufferConverter<twbTracking::proto::PoseList>::Ptr converterPoseList(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::PoseList>);
+	rsb::converter::converterRepository<std::string>()->registerConverter(converterPoseList);
 
 	// ------------ ExtSpread Config ----------------
 
@@ -679,6 +775,11 @@ int main(int argc, char **argv) {
 			new rsc::threading::SynchronizedQueue<EventPtr>(1));
 	choreoListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(choreoQueue)));
 
+	// prepare RSB listener for choreo corrections
+	rsb::ListenerPtr choreoCorrectionListener = factory.createListener(choreoCorrectionInscope, tmpPartConf);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::PoseList>>>choreoCorrectionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::PoseList>>(1));
+	choreoCorrectionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::PoseList>(choreoCorrectionQueue)));
+
 	// prepare RSB listener for commands
 	rsb::ListenerPtr commandListener = factory.createListener(commandInscope, tmpPartConf);
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<EventPtr>> commandQueue(
@@ -701,13 +802,15 @@ int main(int argc, char **argv) {
 	// prepare RSB informer for amiros
 	rsb::Informer<std::string>::Ptr amiroInformer = factory.createInformer<std::string> (amiroScope, tmpPartConf);
 
+	// prepare RSB informer for goal position publication
+	rsb::Informer<twbTracking::proto::Object>::Ptr goalInformer = factory.createInformer<twbTracking::proto::Object> (goalScope, tmpPartConf);
+
 	// prepare RSB informer for setting lights
 	rsb::Informer< std::vector<int> >::Ptr lightInformer = factory.createInformer< std::vector<int> > (lightOutscope);
 
 
 
 	// Initialize the robot communication
-//	boost::shared_ptr<twbTracking::proto::ObjectList> data;
 	std::vector<std::string> amiros;
 	bool initialized = false;
 	bool exitProg = false;
@@ -718,6 +821,12 @@ int main(int argc, char **argv) {
 	INFO_MSG("Initializing:");
 	// set lights
 	setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,255,0), 600);
+	setSpeeds(0.08, 0, myCAN);
+	usleep(1500000);
+	setSpeeds(-0.08, 0, myCAN);
+	usleep(1500000);
+	setSpeeds(0, 0, myCAN);
+
 	while (!initialized) {
 		// check amiro queue
 		if (!amiroQueue->empty()) {
@@ -739,11 +848,7 @@ int main(int argc, char **argv) {
 		}
 
 		// check command queue
-		if (!commandQueue->empty()) {
-			EventPtr event = commandQueue->pop(0);
-			std::string command = *static_pointer_cast<std::string>(event->getData());
-			initialized = command == COMMAND_INIT;
-		}
+		initialized = checkCommands(commandQueue) == cmd_init;
 
 		// inform other amiros
 		if (waitCounter >= 5) {
@@ -770,6 +875,11 @@ int main(int argc, char **argv) {
 
 	bool quitProg = false;
 	while (!quitProg) {
+		// delete all old messages
+		while (!commandQueue->empty()) {
+			commandQueue->pop(0);
+		}
+
 		// set lights
 		setLights(lightInformer, LightModel::LightType::SINGLE_SHINE, amiro::Color(255,255,255), 0);
 
@@ -786,21 +896,19 @@ int main(int argc, char **argv) {
 			}
 
 			// check command queue
-			if (!commandQueue->empty()) {
-				EventPtr event = commandQueue->pop(0);
-				std::string command = *static_pointer_cast<std::string>(event->getData());
-				startHarvest = command == COMMAND_START;
-				exitProg = command == COMMAND_STOP;
-				if (startHarvest) {
-					delete startSystemTime;
-					startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delay));
-				} else if (exitProg) {
-					INFO_MSG("");
-					INFO_MSG("Exit Harvester ...");
-					break;
-				}
+			uint64_t receiveTime;
+			CommandId commandId = checkCommands(commandQueue, receiveTime);
+			if (commandId == cmd_start) {
+				startHarvest = true;
+				delete startSystemTime;
+				startSystemTime = new system_clock::time_point(microseconds(receiveTime) + milliseconds(delay));
+			} else if (commandId == cmd_stop) {
+				exitProg = true;
+				INFO_MSG("");
+				INFO_MSG("Exit Harvester ...");
+				break;
 			}
-
+			
 			// wait for 100 ms
 			usleep(100000);
 		}
@@ -810,7 +918,28 @@ int main(int argc, char **argv) {
 		}
 
 		// load choreo
-		Choreo choreo = loadChoreo(choreoName);
+		Choreo choreo;
+		if (startPosition) {
+			choreo = loadChoreo(choreoName, startX, startY, startTheta);
+		} else if (useTwb) {
+			saveOldPos();
+			odoPos = getNextTrackingPos(trackingQueue);
+			if (odoPos[2] < 0) return failureProc(lightInformer);
+			correctPosition();
+			DEBUG_MSG("Position of marker " << markerID << ": " << odoPos[0] << "/" << odoPos[1] << ", " << odoPos[2]);
+			choreo = loadChoreo(choreoName, odoPos[0], odoPos[1]);
+		} else {
+			// reset odometry
+			odoPos[0] = 0;
+			odoPos[1] = 0;
+			odoPos[2] = 0;
+			types::position pos_t;
+			pos_t.x = (int)(odoPos[0]*TO_MICRO);
+			pos_t.y = (int)(odoPos[1]*TO_MICRO);
+			pos_t.f_z = (int)(odoPos[2]*TO_MICRO);
+			myCAN.setOdometry(pos_t);
+			choreo = loadChoreo(choreoName);
+		}
 		INFO_MSG("");
 		string frontPart = " => Start choreo '" + choreoName + "': ";
 		if (choreo.empty()) {
@@ -819,12 +948,6 @@ int main(int argc, char **argv) {
 		} else {
 			INFO_MSG(frontPart << choreo.size() << " steps");
 		}
-
-		// reset odometry
-		odoPos.x = 0;
-		odoPos.y = 0;
-		odoPos.f_z = 0;
-		myCAN.setOdometry(odoPos);
 
 		// wait for choreo to begin
 		setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,255,0), 600);
@@ -836,30 +959,90 @@ int main(int argc, char **argv) {
 		while (!amiroQueue->empty()) {
 			amiroQueue->pop(0);
 		}
-		setSpeeds(0.08, 0, myCAN);
-		usleep(1500000);
-		setSpeeds(-0.08, 0, myCAN);
-		usleep(1500000);
-		setSpeeds(0, 0, myCAN);
 
 		// perform the choreo
-		for (ChoreoStep cs : choreo) {
+		doChoreo = true;
+		pauseChoreo = false;
+		correctChoreo = false;
+		stepNumber = 0;
+		while (doChoreo && stepNumber < choreo.size()) {
+			if (correctChoreo) {
+				pauseChoreo = false;
+				correctChoreo = false;
+				boost::shared_ptr<twbTracking::proto::PoseList> poses(new twbTracking::proto::PoseList);
+				if (fakeCorrection) {
+					fakeCorrection = false;
+					twbTracking::proto::Pose *pose1 = poses->add_pose();
+					twbTracking::proto::Pose *pose2 = poses->add_pose();
+					twbTracking::proto::Pose *pose3 = poses->add_pose();
+					twbTracking::proto::Translation *trans1 = pose1->mutable_translation();
+					twbTracking::proto::Translation *trans2 = pose2->mutable_translation();
+					twbTracking::proto::Translation *trans3 = pose3->mutable_translation();
+					twbTracking::proto::Rotation *rot1 = pose1->mutable_rotation();
+					twbTracking::proto::Rotation *rot2 = pose2->mutable_rotation();
+					twbTracking::proto::Rotation *rot3 = pose3->mutable_rotation();
+					trans1->set_x(odoPos[0]);
+					trans1->set_y(odoPos[1] - 0.3);
+					trans1->set_z(0.0);
+					rot1->set_x(0.0);
+					rot1->set_y(0.0);
+					rot1->set_z(0.0);
+					trans2->set_x(odoPos[0]);
+					trans2->set_y(odoPos[1] + 0.3);
+					trans2->set_z(0.0);
+					rot2->set_x(0.0);
+					rot2->set_y(0.0);
+					rot2->set_z(180.0);
+					trans3->set_x(odoPos[0]);
+					trans3->set_y(odoPos[1]);
+					trans3->set_z(0.0);
+					rot3->set_x(0.0);
+					rot3->set_y(0.0);
+					rot3->set_z(odoPos[3]);
+				} else {
+					poses = boost::static_pointer_cast<twbTracking::proto::PoseList>(choreoCorrectionQueue->pop());
+				}
+				choreo = insertPoseListIntoChoreo(choreo, stepNumber, poses);
+			}
+				
 
-			float moveDirX = cs.position[0];
-			float moveDirY = cs.position[1];
-			float goalAngle = cs.position[2];
+			if (pauseChoreo) {
+				choreoSleep_ms(100, commandQueue, choreoCorrectionQueue);
+				continue;
+			}
+
+			// load choreo step
+			ChoreoStep cs = choreo[stepNumber];
+
 			// get current position
 			if (useTwb) {
 				saveOldPos();
 				odoPos = getNextTrackingPos(trackingQueue);
-				if (odoPos.f_z < 0) return failureProc(lightInformer);
+				if (odoPos[2] < 0) return failureProc(lightInformer);
 				correctPosition();
-				DEBUG_MSG("Position of marker " << markerID << ": " << odoPos.x << "/" << odoPos.y << ", " << odoPos.f_z);
+				DEBUG_MSG("Position of marker " << markerID << ": " << odoPos[0] << "/" << odoPos[1] << ", " << odoPos[2]);
 			}
-			if (!relativePosition) {
-				moveDirX -= (float)(odoPos.x)*MICRO_TO;
-				moveDirY -= (float)(odoPos.y)*MICRO_TO;
-			}
+
+			// send goal position via RSB
+			boost::shared_ptr<twbTracking::proto::Object> goalObject(new twbTracking::proto::Object);
+			goalObject->set_id(amiroID);
+			goalObject->set_type(twbTracking::proto::ArMarker);
+			goalObject->set_unit(twbTracking::proto::Millimeter);
+			twbTracking::proto::Pose *objPos = goalObject->mutable_position();
+			twbTracking::proto::Translation *objTrans = objPos->mutable_translation();
+			objTrans->set_x(cs.position[0]);
+			objTrans->set_y(cs.position[1]);
+			objTrans->set_z(0.0);
+			twbTracking::proto::Rotation *objRot = objPos->mutable_rotation();
+			objRot->set_x(0.0);
+			objRot->set_y(0.0);
+			objRot->set_z(cs.position[2]);
+			goalInformer->publish(goalObject);			
+
+			// get relative distances and goal angle
+			float moveDirX = cs.position[0] - odoPos[0];
+			float moveDirY = cs.position[1] - odoPos[1];
+			float goalAngle = cs.position[2];
 
 			// set lights
 			setLightsVec(lightInformer, LightModel::LightType::SINGLE_SHINE, cs.lights, 0);
@@ -874,7 +1057,7 @@ int main(int argc, char **argv) {
 				if (vm.count("verbose")) {
 					DEBUG_MSG("------------------------------------------------------------");
 					// print the CAN values to output
-					DEBUG_MSG("own position: " << (odoPos.x*MICRO_TO) << "/" << (odoPos.y*MICRO_TO) << ", " << (odoPos.f_z*MICRO_TO));
+					DEBUG_MSG("own position: " << odoPos[0] << "/" << odoPos[1] << ", " << odoPos[2]);
 					DEBUG_MSG("goal position: " << cs.position[0] << "/" << cs.position[1]);
 					DEBUG_MSG("v: " << v << " m/s");
 					DEBUG_MSG("w: " << w << " rad/s");
@@ -888,39 +1071,20 @@ int main(int argc, char **argv) {
 				}
 
 				// set position
-				if (relativePosition) {
-					odoPos.x += (int)(cs.position[0] * TO_MICRO);
-					odoPos.y += (int)(cs.position[1] * TO_MICRO);
-				} else {
-					odoPos.x = (int)(cs.position[0] * TO_MICRO);
-					odoPos.y = (int)(cs.position[1] * TO_MICRO);
-				}
-				odoPos.f_z = odoPos.f_z + angle*TO_MICRO;
-				myCAN.setOdometry(odoPos);
+				types::position pos_t;
+				pos_t.x = (int)(cs.position[0] * TO_MICRO);
+				pos_t.y = (int)(cs.position[1] * TO_MICRO);
+				pos_t.f_z = (int)(odoPos[2]*TO_MICRO + angle*TO_MICRO);
+				myCAN.setOdometry(pos_t);
 
 			} else if (useTwb) {
-				types::position goalPos;
-				goalPos.x = odoPos.x + moveDirX*TO_MICRO;
-				goalPos.y = odoPos.y + moveDirY*TO_MICRO;
+				position_t goalPos;
+				goalPos[0] = odoPos[0] + moveDirX;
+				goalPos[1] = odoPos[1] + moveDirY;
 				float angleToGoal = normAngle(atan2(moveDirY, moveDirX));
 
-				// set start orientation of direct movement
-				while (cs.directMovement && fabs(angleDiff(odoPos.f_z*MICRO_TO, angleToGoal)) > trackingAngleVar) {
-					if (angleDiff(odoPos.f_z*MICRO_TO, goalAngle) < 0) {
-						setSpeeds(0, -turnSpeed, myCAN);
-					} else {
-						setSpeeds(0, turnSpeed, myCAN);
-					}
-					INFO_MSG(" -> Turning (" << (angleDiff(odoPos.f_z*MICRO_TO, goalAngle)*180.0/M_PI) << "° left)");
-					usleep(100000);
-					saveOldPos();
-					odoPos = getNextTrackingPos(trackingQueue);
-					if (odoPos.f_z < 0) return failureProc(lightInformer);
-					correctPosition();
-				}
-
 				// move to position
-				while (abs(moveDirX) > trackingVariance || abs(moveDirY) > trackingVariance) {
+				while (doChoreo && !pauseChoreo && (abs(moveDirX) > trackingVariance || abs(moveDirY) > trackingVariance)) {
 					// calculate speeds
 					float v, w, time, dist, angle;
 					trackingSpeeds(odoPos, moveDirX, moveDirY, cs.directMovement, v, w);
@@ -930,40 +1094,48 @@ int main(int argc, char **argv) {
 					if (vm.count("verbose")) {
 						DEBUG_MSG("------------------------------------------------------------");
 						// print the CAN values to output
-						DEBUG_MSG("own position: " << (odoPos.x*MICRO_TO) << "/" << (odoPos.y*MICRO_TO) << ", " << (odoPos.f_z*MICRO_TO));
-						DEBUG_MSG("goal position: " << (goalPos.x*MICRO_TO) << "/" << (goalPos.y*MICRO_TO));
+						DEBUG_MSG("own position: " << odoPos[0] << "/" << odoPos[1] << ", " << odoPos[2]);
+						DEBUG_MSG("goal position: " << goalPos[0] << "/" << goalPos[1]);
 						DEBUG_MSG("v: " << v << " m/s");
 						DEBUG_MSG("w: " << w << " rad/s");
 						DEBUG_MSG("time: " << time << " s");
 					}
 
+					// sleep 100 ms
+					choreoSleep_ms(100, commandQueue, choreoCorrectionQueue);
+
+					// get new position
 					saveOldPos();
 					odoPos = getNextTrackingPos(trackingQueue);
-					if (odoPos.f_z < 0) return failureProc(lightInformer);
+					if (odoPos[2] < 0) return failureProc(lightInformer);
 					correctPosition();
-					moveDirX = (goalPos.x - odoPos.x)*MICRO_TO;
-					moveDirY = (goalPos.y - odoPos.y)*MICRO_TO;
-
-					// sleep 100 ms
-					usleep(100000);
+					moveDirX = goalPos[0] - odoPos[0];
+					moveDirY = goalPos[1] - odoPos[1];
 				}
 
 				// set final orientation
-				while (cs.directMovement && fabs(angleDiff(odoPos.f_z*MICRO_TO, goalAngle)) > trackingAngleVar) {
-					if (angleDiff(odoPos.f_z*MICRO_TO, goalAngle) < 0) {
+				while (doChoreo && !pauseChoreo && cs.directMovement && fabs(angleDiff(odoPos[2], goalAngle)) > trackingAngleVar) {
+					if (angleDiff(odoPos[2], goalAngle) < 0) {
 						setSpeeds(0, -turnSpeed, myCAN);
 					} else {
 						setSpeeds(0, turnSpeed, myCAN);
 					}
-					INFO_MSG(" -> Turning (" << (angleDiff(odoPos.f_z*MICRO_TO, goalAngle)*180.0/M_PI) << "° left)");
-					usleep(100000);
+					INFO_MSG(" -> Turning (" << (angleDiff(odoPos[2], goalAngle)*180.0/M_PI) << "° left)");
+
+					// sleep for 100 ms
+					choreoSleep_ms(100, commandQueue, choreoCorrectionQueue);
+
+					// get next position
 					odoPos = getNextTrackingPos(trackingQueue);
-					if (odoPos.f_z < 0) return failureProc(lightInformer);
+					if (odoPos[2] < 0) return failureProc(lightInformer);
 				}
 			}
 
 
-			if (cs.braking) {
+			// step is done, so rise the step number
+			if (doChoreo && !pauseChoreo) stepNumber++;
+			// wait for others
+			if (doChoreo && !pauseChoreo && cs.braking) {
 				// stop motors
 				setSpeeds(0, 0, myCAN);
 
@@ -974,7 +1146,7 @@ int main(int argc, char **argv) {
 
 				// Check for all ready amiros
 				if (vm.count("verbose")) DEBUG_MSG("List of AMiRos which are already finished:");
-				while (!amiroQueue->empty()) {
+				while (doChoreo && !amiroQueue->empty()) {
 					EventPtr event = amiroQueue->pop(0);
 					std::string inputName = *static_pointer_cast<std::string>(event->getData());
 					bool isIn = false;
@@ -991,7 +1163,7 @@ int main(int argc, char **argv) {
 						if (vm.count("verbose")) DEBUG_MSG(" -> Ready AMiRo: '" << inputName.c_str() << "'");
 					}
 				}
-				usleep (100000);
+				choreoSleep_ms(100, commandQueue, choreoCorrectionQueue);
 
 				// check for rest (and own)
 				bool ownNameReceived = false;
@@ -1000,13 +1172,13 @@ int main(int argc, char **argv) {
 				int publishCounter = 5;
 				// set lights
 				setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,255,0), 600);
-				while (!ownNameReceived || !allOthersReceived) {
+				while (doChoreo && (!ownNameReceived || !allOthersReceived)) {
 					// Send own name
 					boost::shared_ptr<std::string> StringPtr(new std::string(amiroName));
 					amiroInformer->publish(StringPtr);
 
 					// check for rest
-					while (!amiroQueue->empty()) {
+					while (doChoreo && !amiroQueue->empty()) {
 						EventPtr event = amiroQueue->pop(0);
 						std::string inputName = *static_pointer_cast<std::string>(event->getData());
 						if (amiroName != inputName) {
@@ -1042,7 +1214,7 @@ int main(int argc, char **argv) {
 					}
 
 					// wait for 300 ms
-					usleep(300000);
+					choreoSleep_ms(300, commandQueue, choreoCorrectionQueue);
 				}
 				// Clear amiro queue
 				while (!amiroQueue->empty()) {
@@ -1061,8 +1233,13 @@ int main(int argc, char **argv) {
 				while (!amiroQueue->empty()) {
 					amiroQueue->pop(0);
 				}
-			} else {
+			} else if (doChoreo) {
 				if (vm.count("verbose")) DEBUG_MSG("No brake, continue ...");
+			}
+			
+			if (pauseChoreo) {
+				setSpeeds(0, 0, myCAN);
+				setLights(lightInformer, LightModel::LightType::SINGLE_SHINE, amiro::Color(255,0,0), 0);
 			}
 		}
 
@@ -1072,6 +1249,10 @@ int main(int argc, char **argv) {
 		// rest print
 		if (vm.count("verbose")) {
 			DEBUG_MSG("------------------------------------------------------------");
+		}
+
+		if (!doChoreo) {
+			INFO_MSG("The choreo has been stopped!");
 		}
 
 		// set lights
