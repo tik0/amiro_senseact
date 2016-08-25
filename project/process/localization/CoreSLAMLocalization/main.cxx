@@ -900,6 +900,7 @@ int main(int argc, const char **argv){
   std::string mapAsImageOutScope = "/CoreSLAMLocalization/image";
   std::string saveMapInScope = "/saveMap";
   std::string setPositionScope = "/setPosition";
+  bool setPositionUseVec = false;
   std::string positionOutScope = "/position";
   std::string pathOutScope = "/path";
   std::string sendMapSwitchScope = "/sendMap";
@@ -937,6 +938,7 @@ int main(int argc, const char **argv){
     ("offsetY", po::value < float > (&offset.y),"offset y (mm)")
     ("offsetTheta", po::value < float > (&offset.theta),"offset theta (mm)")
     ("setPositionScope", po::value < std::string > (&setPositionScope), "Scope for receiving a new position")
+    ("setPositionUseVec", po::bool_switch(&setPositionUseVec), "If given it's assumed that received positions are of type vector<float> (instead of rst::geometry::Pose).")
     ("positionOutScope", po::value < std::string > (&positionOutScope), "Scope for publishing current position")
     ("pathOutScope", po::value < std::string > (&pathOutScope), "Scope for publishing navigation path")
     ("sigma_xy_new_position", po::value < double > (&sigma_xy_new_position), "XY uncertainty for marcov localization after new position was set (mm)")
@@ -1105,8 +1107,13 @@ int main(int argc, const char **argv){
 
   // Listener for setting re-init
   rsb::ListenerPtr setPositionListener = factory.createListener(setPositionScope, tmpPartConf);
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>> >setPositionQueueVec(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<float>>>(1));
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>> >setPositionQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
-  setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(setPositionQueue)));
+  if (setPositionUseVec) {
+    setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<float>>(setPositionQueueVec)));
+  } else {
+    setPositionListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::geometry::Pose>(setPositionQueue)));
+  }
 
   rsb::ListenerPtr targetPoseListener = factory.createListener(targetPoseInScope, tmpPartConf);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>> >targetPoseQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::geometry::Pose>>(1));
@@ -1179,12 +1186,23 @@ int main(int argc, const char **argv){
         saveMapAsPGM(&ts_map_, path);
     }
 
-    if (!setPositionQueue->empty()) {
+    if (!setPositionQueue->empty() || !setPositionQueueVec->empty()) {
         INFO_MSG("Received setPosition request");
-        boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(setPositionQueue->pop());
-        DEBUG_MSG("New position is: " << newPosition->DebugString());
 
-        state_.position = convertRSBPoseToTsPose(newPosition);
+        if (setPositionUseVec) {
+            boost::shared_ptr< std::vector<float> > newPosition = boost::static_pointer_cast< std::vector<float> >(setPositionQueueVec->pop());
+            DEBUG_MSG("New position is: " << *newPosition);
+            // Convert from debug map pixel to tiny slam position
+            state_.position.x = newPosition->at(0) * (ts_map_.size / (float)debugImageSize.width) * delta_ * METERS_TO_MM;
+            state_.position.y = newPosition->at(1) * (ts_map_.size / (float)debugImageSize.height) * delta_ * METERS_TO_MM;
+            state_.position.theta = newPosition->at(2) * 180.0f / M_PI;
+        } else {
+            boost::shared_ptr< rst::geometry::Pose > newPosition = boost::static_pointer_cast< rst::geometry::Pose >(setPositionQueue->pop());
+            DEBUG_MSG("New position is: " << newPosition->DebugString());
+
+            state_.position = convertRSBPoseToTsPose(newPosition);
+        }
+
         DEBUG_MSG("translated to ts_position: " << state_.position.x << " " << state_.position.y << " " << state_.position.theta);
         std::ofstream f;
         f.open("currentPose.txt");
