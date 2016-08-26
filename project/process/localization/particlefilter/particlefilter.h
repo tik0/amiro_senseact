@@ -106,8 +106,6 @@ private:
      *
      */
 
-    // angle of vector from old odometry to new odometry
-    float drivingDirection;
     // angle from old odometry theta to driving direction
     float phi1;
     // angle from driving direction to new new odometry theta

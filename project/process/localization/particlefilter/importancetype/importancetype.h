@@ -25,6 +25,15 @@ public:
     inline virtual float aggregateScanImportance() = 0;
 
     /**
+     * @brief sigma for the gaussian:
+     * https://www.hokuyo-aut.jp/02sensor/07scanner/urg_04lx.html
+     * "Accuracy 60 to 1,000mm : ±10mm, 1,000 to 4,095mm : 1% of measurement"
+     *
+     * 4m * 0.01 = 0.04m
+     */
+    float sigma = 1.0f;
+
+    /**
      * @brief normalizeImportance to [0; 1]
      * @param sample_set
      */

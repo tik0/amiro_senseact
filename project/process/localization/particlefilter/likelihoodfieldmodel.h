@@ -109,6 +109,7 @@ public:
 //        INFO_MSG("importance time: " << importanceTime);
 //        INFO_MSG("total time: " << totalTime);
 //        INFO_MSG("==============");
+
     }
 
     void normalizeWeights(sample_set_t *sampleSet)
@@ -116,8 +117,9 @@ public:
         importanceType.normalizeImportance(sampleSet);
     }
 
-private:
     T importanceType;
+
+private:
 
     Map *map;
     float *distanceToObstacle;
@@ -146,7 +148,7 @@ private:
         DEBUG_MSG("Inserted all occupied cells in the index (" << rtree.size() << ")");
 
         for (int row = 0; row < map->rows; ++row) {
-            DEBUG_MSG("progress: " << (row) / (float)(map->rows));
+            //DEBUG_MSG("progress: " << (row) / (float)(map->rows));
             for (int col = 0; col < map->cols; ++col) {
                 //DEBUG_MSG("row: " << row << " col: " <<
 

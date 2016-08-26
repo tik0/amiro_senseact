@@ -36,7 +36,7 @@
 #include "raycastingmodel.h"
 #include "likelihoodfieldmodel.h"
 
-#include "importancetype/multiplygaussians.h"
+#include "importancetype/addgaussians.h"
 
 cv::Mat3b visualize(Map &map, ParticleFilter &particlefilter, bool visualizeImportance, float scale) {
     INFO_MSG("Preparing visualization");
@@ -44,6 +44,7 @@ cv::Mat3b visualize(Map &map, ParticleFilter &particlefilter, bool visualizeImpo
     // convert to RGB
     cv::Mat3b vis(map.size(), CV_8UC3);
     cv::cvtColor(map, vis, CV_GRAY2RGB, 3);
+
     // resize
     cv::resize(vis, vis, cv::Size(map.size().width * scale, map.size().height * scale));
 
@@ -128,6 +129,7 @@ int main(int argc, const char **argv) {
     float newSampleProb = 0.1f;
     float maxFrequency = 10.0f;
     bool flip = false;
+    float sigma = 1.0f;
 
     namespace po = boost::program_options;
 
@@ -145,7 +147,8 @@ int main(int argc, const char **argv) {
             ("kldsampling", "Switches on KLD sampling.")
             ("newSampleProb", po::value < float > (&newSampleProb)->default_value(newSampleProb), "Probability for generating a new sample (instead of roulette wheel selection)")
             ("beamskip", po::value < int > (&beamskip)->default_value(beamskip), "Take every n-th beam into account when calculating importance factor")
-            ("maxFrequency", po::value < float > (&maxFrequency)->default_value(maxFrequency), "Maximum frequency at which new positon is published (1/s)");
+            ("maxFrequency", po::value < float > (&maxFrequency)->default_value(maxFrequency), "Maximum frequency at which new positon is published (1/s)")
+            ("sigma", po::value< float > (&sigma)->default_value(sigma), "Sigma for the gaussians used for the beam noise.");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -214,6 +217,7 @@ int main(int argc, const char **argv) {
 
     // Informer for map
     rsb::Informer<std::string>::Ptr debugImageInformer = factory.createInformer<std::string>(debugImageOutScope);
+
     // Informer for current pose estimate
     poseInformer = factory.createInformer<rst::geometry::PoseEuler>(poseEstimateOutScope);
 
@@ -242,7 +246,8 @@ int main(int argc, const char **argv) {
 
     // Finally set up the particle filter
     //RayCastingModel sensorModel(&map);
-    LikelihoodFieldModel<MultiplyGaussians> sensorModel(&map);
+    LikelihoodFieldModel<AddGaussians> sensorModel(&map);
+    sensorModel.importanceType.sigma = sigma;
     ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip);
 
     /*
@@ -255,6 +260,7 @@ int main(int argc, const char **argv) {
     bool visualizeImportance = true;
     int height = min(map.size().height, 700);
     float scale = (float)height / map.size().height;
+
     while (rsc::misc::lastArrivedSignal() == rsc::misc::NO_SIGNAL && running) {
         boost::uint64_t loopStart = rsc::misc::currentTimeMillis();
 

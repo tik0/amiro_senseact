@@ -14,6 +14,7 @@ private:
      */
     float exponent = 0.0f;
 
+public:
     /**
      * @brief sigma for the gaussian:
      * https://www.hokuyo-aut.jp/02sensor/07scanner/urg_04lx.html
@@ -21,9 +22,8 @@ private:
      *
      * 4m * 0.01 = 0.04m
      */
-    const float sigma = 2.0f;
+    float sigma = 2.0f;
 
-public:
     inline void addBeamDistance(float distance) final
     {
         // importance *= exp( - pow(d / sigma, 2) );

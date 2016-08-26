@@ -44,8 +44,10 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     // pre-compute cos/sin for laser beams
     float angle = scanConfig.scan_angle_start();
     float increment = scanConfig.scan_angle_increment();
+
+    // fix swapped readings
     if (scanConfig.scan_angle_start() > scanConfig.scan_angle_end()) {
-        increment = -increment;
+        angle = scanConfig.scan_angle_end();
     }
 
     scan_cos = new float[scanConfig.scan_values_size()];
