@@ -202,10 +202,6 @@ position_t readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, 
 	pos[0] = pose2D.translation().x()*meterPerPixel;
 	pos[1] = pose2D.translation().y()*meterPerPixel;
 	pos[2] = normAngle(pose2D.rotation().z()*M_PI/180.0);
-	DEBUG_MSG("New position:");
-	DEBUG_MSG("    x: " << pos[0]);
-	DEBUG_MSG("    y: " << pos[1]);
-	DEBUG_MSG("    Ø: " << pos[2]);
 	return pos;
 }
 
@@ -283,8 +279,6 @@ void trackingSpeeds(position_t curPos, float relDistx, float relDisty, bool dire
 	float distDir = sqrt(relDistx*relDistx + relDisty*relDisty);
 	float angleDist = atan2(relDisty, relDistx);
 	float angleDir = angleDiff(actAngle, angleDist);
-
-	DEBUG_MSG("Calculated speeds:");
 
 	if (angleDir == 0.0) {
 		v = driveSpeed; // m/s
@@ -546,16 +540,16 @@ void choreoSleep_ms(int sleep_ms, boost::shared_ptr<rsc::threading::Synchronized
 		correctChoreo = true;
 		fakeCorrection = true;
 		pauseChoreo = true;
-		INFO_MSG("*** !!! Fake correction received !!! ***");
 	}
 	if (!choreoCorrectionQueue->empty()) {
 		correctChoreo = true;
 		pauseChoreo = true;
-		INFO_MSG("*** !!! Correction received !!! ***");
 	}
 }
 
 Choreo insertPoseListIntoChoreo(Choreo choreo, int curStepNo, boost::shared_ptr<twbTracking::proto::PoseList> poses) {
+	INFO_MSG("");
+	INFO_MSG("Correcting Choreo:")
 	// transform new positions to choreo steps
 	Choreo includedChoreo;
 	for (int i=0; i<poses->pose_size(); i++) {
@@ -578,9 +572,9 @@ Choreo insertPoseListIntoChoreo(Choreo choreo, int curStepNo, boost::shared_ptr<
 	}
 
 	// print choreo before combination
-	INFO_MSG("Choreo steps before:");
+	INFO_MSG(" -> Steps before:");
 	for (int i=0; i<choreo.size(); i++) {
-		INFO_MSG(" " << (i+1) << ". " << choreo[i].position[0] << "/" << choreo[i].position[1]);
+		INFO_MSG("     " << (i+1) << ". " << choreo[i].position[0] << "/" << choreo[i].position[1]);
 	}
 
 	// combine choreos
@@ -593,9 +587,9 @@ Choreo insertPoseListIntoChoreo(Choreo choreo, int curStepNo, boost::shared_ptr<
 	choreo.insert(choreo.end(), choreo2.begin(), choreo2.end());
 
 	// print choreo after combination
-	INFO_MSG("Choreo steps now:");
+	INFO_MSG(" -> Steps now:");
 	for (int i=0; i<choreo.size(); i++) {
-		INFO_MSG(" " << (i+1) << ". " << choreo[i].position[0] << "/" << choreo[i].position[1]);
+		INFO_MSG("     " << (i+1) << ". " << choreo[i].position[0] << "/" << choreo[i].position[1]);
 	}
 
 	return choreo;
@@ -926,7 +920,6 @@ int main(int argc, char **argv) {
 			odoPos = getNextTrackingPos(trackingQueue);
 			if (odoPos[2] < 0) return failureProc(lightInformer);
 			correctPosition();
-			DEBUG_MSG("Position of marker " << markerID << ": " << odoPos[0] << "/" << odoPos[1] << ", " << odoPos[2]);
 			choreo = loadChoreo(choreoName, odoPos[0], odoPos[1]);
 		} else {
 			// reset odometry
@@ -1020,14 +1013,13 @@ int main(int argc, char **argv) {
 				odoPos = getNextTrackingPos(trackingQueue);
 				if (odoPos[2] < 0) return failureProc(lightInformer);
 				correctPosition();
-				DEBUG_MSG("Position of marker " << markerID << ": " << odoPos[0] << "/" << odoPos[1] << ", " << odoPos[2]);
 			}
 
 			// send goal position via RSB
 			boost::shared_ptr<twbTracking::proto::Object> goalObject(new twbTracking::proto::Object);
 			goalObject->set_id(amiroID);
 			goalObject->set_type(twbTracking::proto::ArMarker);
-			goalObject->set_unit(twbTracking::proto::Millimeter);
+			goalObject->set_unit(twbTracking::proto::Meter);
 			twbTracking::proto::Pose *objPos = goalObject->mutable_position();
 			twbTracking::proto::Translation *objTrans = objPos->mutable_translation();
 			objTrans->set_x(cs.position[0]);
@@ -1037,7 +1029,7 @@ int main(int argc, char **argv) {
 			objRot->set_x(0.0);
 			objRot->set_y(0.0);
 			objRot->set_z(cs.position[2]);
-			goalInformer->publish(goalObject);			
+			goalInformer->publish(goalObject);	
 
 			// get relative distances and goal angle
 			float moveDirX = cs.position[0] - odoPos[0];
@@ -1120,7 +1112,6 @@ int main(int argc, char **argv) {
 					} else {
 						setSpeeds(0, turnSpeed, myCAN);
 					}
-					INFO_MSG(" -> Turning (" << (angleDiff(odoPos[2], goalAngle)*180.0/M_PI) << "° left)");
 
 					// sleep for 100 ms
 					choreoSleep_ms(100, commandQueue, choreoCorrectionQueue);
