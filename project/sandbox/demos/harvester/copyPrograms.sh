@@ -21,6 +21,7 @@ done
 
 # Copy run and stop scripts
 sshpass -p ${PASS} scp run.sh root@${IP}:~/${NAME}
+sshpass -p ${PASS} scp runCorrection.sh root@${IP}:~/${NAME}
 sshpass -p ${PASS} scp stop.sh root@${IP}:~/${NAME}
 
 # Copy commands
