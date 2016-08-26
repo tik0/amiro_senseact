@@ -131,6 +131,7 @@ int main(int argc, const char **argv) {
     bool flip = false;
     float sigma = 1.0f;
     std::vector<float> initialPose;
+    float samplingStdDev = 0.01f;
 
     namespace po = boost::program_options;
 
@@ -150,7 +151,8 @@ int main(int argc, const char **argv) {
             ("beamskip", po::value < int > (&beamskip)->default_value(beamskip), "Take every n-th beam into account when calculating importance factor")
             ("maxFrequency", po::value < float > (&maxFrequency)->default_value(maxFrequency), "Maximum frequency at which new positon is published (1/s)")
             ("sigma", po::value< float > (&sigma)->default_value(sigma), "Sigma for the gaussians used for the beam noise.")
-            ("initialPose", po::value< std::vector<float> >(&initialPose)->multitoken(), "Initial pose, when no pose is given, randomly distributed samples are used. (m, m, rad)");
+            ("initialPose", po::value< std::vector<float> >(&initialPose)->multitoken(), "Initial pose, when no pose is given, randomly distributed samples are used. (m, m, rad)")
+            ("samplingStdDev", po::value< float >(&samplingStdDev)->default_value(samplingStdDev), "Standard deviation in the sampling step.");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -272,7 +274,7 @@ int main(int argc, const char **argv) {
     //RayCastingModel sensorModel(&map);
     LikelihoodFieldModel<AddGaussians> sensorModel(&map);
     sensorModel.importanceType.sigma = sigma;
-    ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip, sampleSet);
+    ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip, sampleSet, samplingStdDev);
 
     /*
      * Main loop

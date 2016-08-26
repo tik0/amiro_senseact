@@ -15,7 +15,7 @@ using namespace std;
 
 #include <rsc/misc/langutils.h>
 
-ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling, int beamskip, sample_set_t *sampleSet)
+ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling, int beamskip, sample_set_t *sampleSet, float samplingStdDev)
 {
     this->maxSampleCount = maxSampleCount;
     this->height = map->size().height;
@@ -70,7 +70,7 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
 
     srand(time(NULL));
     this->rng = std::subtract_with_carry_engine<uint_fast32_t, 24, 10, 24>(time(NULL));
-    samplingDistribution = std::normal_distribution<float>(0.0f, 0.05f);
+    samplingDistribution = std::normal_distribution<float>(0.0f, samplingStdDev);
 
     if (this->doKLDSampling) {
         nbBinsY = ceil((map->rows * map->meterPerCell) / binSizeY);

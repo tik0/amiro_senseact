@@ -26,7 +26,7 @@ public:
      * @param odom The initial odometry data used to form odometry deltas.
      * @param map A openCV mat to represent to map.
      */
-    ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling = false, int beamskip = 1, sample_set_t *sampleSet = NULL);
+    ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling = false, int beamskip = 1, sample_set_t *sampleSet = NULL, float samplingStdDev = 0.01f);
     ~ParticleFilter();
 
     /**
