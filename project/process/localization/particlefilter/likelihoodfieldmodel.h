@@ -46,6 +46,13 @@ public:
 
     void computeWeight(sample_t &sample, laserscan_t &scan)
     {
+        int idxx = map->poseToIndex(sample.pose.x);
+        int idxy = map->poseToIndex(sample.pose.y);
+
+        if (!map->isValid(idxx, idxy) || map->isOccupied(idxx, idxy)) {
+            sample.importance = 0;
+            return;
+        }
 //        boost::uint64_t totalStartTime = rsc::misc::currentTimeMicros();
 
         float pose_cos = cos(sample.pose.theta);
