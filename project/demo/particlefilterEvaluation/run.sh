@@ -67,21 +67,6 @@ PARTICLEFILTER_INITIAL_X="2.271910101"
 PARTICLEFILTER_INITIAL_Y="1.328089881"
 PARTICLEFILTER_INITIAL_THETA="1.597391654"
 
-# start particle filter
-./particlefilter \
-  --lidarInScope "$lidarscope" --odomInScope "$odomscope" --poseEstimateOutScope "$posescope" \
-  --sampleCount 500 \
-  --newSampleProb 0 \
-  --beamskip 1 \
-  --debugImageOutScope /image \
-  --initialPose "$PARTICLEFILTER_INITIAL_X" "$PARTICLEFILTER_INITIAL_Y" "$PARTICLEFILTER_INITIAL_THETA" \
-  --pathToMap ./visualizationTwb_screenshot_24.08.2016-flip.png --meterPerPixel 0.006741573 \
-#  --pathToMap ./twb-2016-08-23-D.png --meterPerPixel 0.01 \
-
-
-./stop.sh
-exit 1
-
 # now everything is setup and we can start with the evaluation
 iterations=20
 
@@ -103,6 +88,7 @@ navigationParameters="--yawTolerance 0.1 --xyTolerance 0.03 --sleepTime 200"
 for i in `seq $iterations`; do
     # stop old localization
     killall CoreSLAMLocalization
+    killall particlefilter
 
     # first drive to the starting position by TWB tracking
     ./driveWaypoints --trackingId "$trackingId" --motorCmdOutScope "$motorCmdScope" --motorCommand setTargetSpeed \
@@ -114,20 +100,31 @@ for i in `seq $iterations`; do
 
     # stop old localization and reset odom
     killall CoreSLAMLocalization
+    killall particlefilter
     killall sendOdometryProtoPose
 
     # shortly wait here
-    sleep 5
+    sleep 1
 
     # start the localization
     ./sendOdometryProtoPose --outscope "$odomscope" --resetodom true > /dev/null 2> /dev/null &
-    ./CoreSLAMLocalization \
-        --odominscope "$odomscope" --lidarinscope "$lidarscope" \
-        --delta 0.006741573 --loadMapFromImage ./visualizationTwb_screenshot_24.08.2016-flip.png \
-        --sigma_xy 10 --sigma_theta 0.05 --sigma_xy_new_position 100 --sigma_theta_new_position 5 \
-        --senImage 1 --mapAsImageOutScope /image --setPositionScope "/thisonedoesnotexist" \
-        --positionOutScope "$posescope" --publishPoseEuler \
-        --initialX "$CORESLAM_INITIAL_X" --initialY "$CORESLAM_INITIAL_Y" --initialTheta "$CORESLAM_INITIAL_THETA" &
+    #./CoreSLAMLocalization \
+    #    --odominscope "$odomscope" --lidarinscope "$lidarscope" \
+    #    --delta 0.006741573 --loadMapFromImage ./visualizationTwb_screenshot_24.08.2016-flip.png \
+    #    --sigma_xy 10 --sigma_theta 0.05 --sigma_xy_new_position 100 --sigma_theta_new_position 5 \
+    #    --senImage 1 --mapAsImageOutScope /image --setPositionScope "/thisonedoesnotexist" \
+    #    --positionOutScope "$posescope" --publishPoseEuler \
+    #    --initialX "$CORESLAM_INITIAL_X" --initialY "$CORESLAM_INITIAL_Y" --initialTheta "$CORESLAM_INITIAL_THETA" &
+
+    ./particlefilter \
+        --lidarInScope "$lidarscope" --odomInScope "$odomscope" --poseEstimateOutScope "$posescope" \
+        --sampleCount 200 \
+        --newSampleProb 0 \
+        --beamskip 1 \
+        --debugImageOutScope /image \
+        --sigma 0.1 --samplingStdDev 0.01 \
+        --initialPose "$PARTICLEFILTER_INITIAL_X" "$PARTICLEFILTER_INITIAL_Y" "$PARTICLEFILTER_INITIAL_THETA" \
+        --pathToMap ./visualizationTwb_screenshot_24.08.2016-flip.png --meterPerPixel 0.006741573  &
 
     echo "started localization"
 
@@ -136,12 +133,12 @@ for i in `seq $iterations`; do
 
     # then drive a rectangle
     ./driveWaypoints --poseInScope "$posescope" --motorCmdOutScope "$motorCmdScope" --motorCommand setTargetSpeed \
-        --poseLog "./coreslam-iteration-$i.log" \
+        --poseLog "./particlefilter-iteration-$i.log" \
         $navigationParameters \
         $WAYPOINTS --relative
 
     # wait briefly to signal that this iteration is finished
-    sleep 5
+    sleep 1
 
     echo "iteration $i done"
 done
