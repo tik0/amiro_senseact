@@ -13,4 +13,5 @@ package twbTracking.proto;
  enum Unit {
  	Pixel = 0;
  	Millimeter = 1;
+ 	Meter = 2;
  }
