@@ -130,6 +130,7 @@ int main(int argc, const char **argv) {
     float maxFrequency = 10.0f;
     bool flip = false;
     float sigma = 1.0f;
+    std::vector<float> initialPose;
 
     namespace po = boost::program_options;
 
@@ -148,7 +149,8 @@ int main(int argc, const char **argv) {
             ("newSampleProb", po::value < float > (&newSampleProb)->default_value(newSampleProb), "Probability for generating a new sample (instead of roulette wheel selection)")
             ("beamskip", po::value < int > (&beamskip)->default_value(beamskip), "Take every n-th beam into account when calculating importance factor")
             ("maxFrequency", po::value < float > (&maxFrequency)->default_value(maxFrequency), "Maximum frequency at which new positon is published (1/s)")
-            ("sigma", po::value< float > (&sigma)->default_value(sigma), "Sigma for the gaussians used for the beam noise.");
+            ("sigma", po::value< float > (&sigma)->default_value(sigma), "Sigma for the gaussians used for the beam noise.")
+            ("initialPose", po::value< std::vector<float> >(&initialPose)->multitoken(), "Initial pose, when no pose is given, randomly distributed samples are used. (m, m, rad)");
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -185,6 +187,28 @@ int main(int argc, const char **argv) {
     if (vm.count("debugImageOutScope")) {
         INFO_MSG("Sending debug image on scope: " << debugImageOutScope);
         sendDebugImage = true;
+    }
+
+    // maybe create a initial sample set?
+    sample_set_t *sampleSet = NULL;
+    if (vm.count("initialPose") && initialPose.size() == 3) {
+        INFO_MSG("Using initial pose " << initialPose.at(0) << "," << initialPose.at(1) << "," << initialPose.at(2));
+        sample_t initialSample;
+        initialSample.importance = 1;
+        initialSample.pose.x = initialPose.at(0);
+        initialSample.pose.y = initialPose.at(1);
+        initialSample.pose.theta = initialPose.at(2);
+
+        sampleSet = new sample_set_t;
+        sampleSet->size = sampleCount;
+        sampleSet->totalWeight = 1;
+        sampleSet->samples = new sample_t[sampleCount];
+        sampleSet->samples[0] = initialSample;
+
+        for (size_t i = 1; i < sampleCount; i++) {
+            sampleSet->samples[i].importance = 0;
+            sampleSet->samples[i].pose = initialSample.pose;
+        }
     }
 
     /*
@@ -248,7 +272,7 @@ int main(int argc, const char **argv) {
     //RayCastingModel sensorModel(&map);
     LikelihoodFieldModel<AddGaussians> sensorModel(&map);
     sensorModel.importanceType.sigma = sigma;
-    ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip);
+    ParticleFilter particlefilter(sampleCount, *odomPtr, *scanPtr, &map, &sensorModel, newSampleProb, doKLDSampling, beamskip, sampleSet);
 
     /*
      * Main loop

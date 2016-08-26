@@ -53,16 +53,6 @@ is_spread_running() {
 #./actTargetPosition --inscope "$motorCmdScope" &
 ./actAmiroMotor --inscope "$motorCmdScope"  > /dev/null 2> /dev/null &
 
-# start particle filter
-#./particlefilter \
-#  --lidarInScope "$lidarscope" --odomInScope "$odomscope" --poseEstimateOutScope "$posescope" \
-#  --sampleCount 10 \
-#  --newSampleProb 0 \
-#  --beamskip 2 \
-#  --debugImageOutScope /image \
-#  --pathToMap ./twb-2016-08-23-D.png --meterPerPixel 0.01 \
-  #--pathToMap ./visualizationTwb_screenshot_24.08.2016-flip.png --meterPerPixel 0.006741573 \
-
 # in TWB coordinates
 START_POSITION="-1.01784 -1.88727 1.597391654" # 91.5238 <- degrees
 
@@ -72,6 +62,25 @@ START_POSITION="-1.01784 -1.88727 1.597391654" # 91.5238 <- degrees
 CORESLAM_INITIAL_X="2271.910101"
 CORESLAM_INITIAL_Y="1328.089881"
 CORESLAM_INITIAL_THETA="91.5238"
+
+PARTICLEFILTER_INITIAL_X="2.271910101"
+PARTICLEFILTER_INITIAL_Y="1.328089881"
+PARTICLEFILTER_INITIAL_THETA="1.597391654"
+
+# start particle filter
+./particlefilter \
+  --lidarInScope "$lidarscope" --odomInScope "$odomscope" --poseEstimateOutScope "$posescope" \
+  --sampleCount 500 \
+  --newSampleProb 0 \
+  --beamskip 1 \
+  --debugImageOutScope /image \
+  --initialPose "$PARTICLEFILTER_INITIAL_X" "$PARTICLEFILTER_INITIAL_Y" "$PARTICLEFILTER_INITIAL_THETA" \
+  --pathToMap ./visualizationTwb_screenshot_24.08.2016-flip.png --meterPerPixel 0.006741573 \
+#  --pathToMap ./twb-2016-08-23-D.png --meterPerPixel 0.01 \
+
+
+./stop.sh
+exit 1
 
 # now everything is setup and we can start with the evaluation
 iterations=20

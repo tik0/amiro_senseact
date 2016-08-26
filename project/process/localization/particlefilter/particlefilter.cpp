@@ -15,7 +15,7 @@ using namespace std;
 
 #include <rsc/misc/langutils.h>
 
-ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling, int beamskip)
+ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, const rst::vision::LocatedLaserScan &scanConfig, Map *map, SensorModel *sensorModel, float newSampleProb, bool doKLDSampling, int beamskip, sample_set_t *sampleSet)
 {
     this->maxSampleCount = maxSampleCount;
     this->height = map->size().height;
@@ -26,10 +26,16 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     this->doKLDSampling = doKLDSampling;
     this->beamskip = beamskip;
 
-    sampleSet = new sample_set_t;
-    sampleSet->size = 0;
-    sampleSet->samples = new sample_t[maxSampleCount];
-    sampleSet->totalWeight = 0.0f;
+    if (sampleSet == NULL) {
+        this->sampleSet = new sample_set_t;
+        this->sampleSet->size = 0;
+        this->sampleSet->samples = new sample_t[maxSampleCount];
+        this->sampleSet->totalWeight = 0.0f;
+
+        initSamples();
+    } else {
+        this->sampleSet = sampleSet;
+    }
 
     newSampleSet = new sample_set_t;
     newSampleSet->size = 0;
@@ -65,8 +71,6 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     srand(time(NULL));
     this->rng = std::subtract_with_carry_engine<uint_fast32_t, 24, 10, 24>(time(NULL));
     samplingDistribution = std::normal_distribution<float>(0.0f, 0.05f);
-
-    initSamples();
 
     if (this->doKLDSampling) {
         nbBinsY = ceil((map->rows * map->meterPerCell) / binSizeY);
