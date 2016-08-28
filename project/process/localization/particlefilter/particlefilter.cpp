@@ -25,6 +25,7 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
     this->newSampleProb = newSampleProb;
     this->doKLDSampling = doKLDSampling;
     this->beamskip = beamskip;
+    this->map = map;
 
     if (sampleSet == NULL) {
         this->sampleSet = new sample_set_t;
@@ -63,8 +64,6 @@ ParticleFilter::ParticleFilter(size_t maxSampleCount, rst::geometry::Pose odom, 
         scan_cos[i] = cos(angle);
         scan_sin[i] = sin(angle);
     }
-
-    this->map = map;
 
     cumulative = new float[maxSampleCount];
 
