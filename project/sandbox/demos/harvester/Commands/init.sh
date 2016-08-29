@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rsb-sendcpp0.11 /harvesters/command init
+rsb-sendcpp0.13 /harvesters/command init
 
 
 

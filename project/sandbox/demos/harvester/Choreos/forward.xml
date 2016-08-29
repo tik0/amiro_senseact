@@ -2,7 +2,7 @@
 <choreo>
   <choreoStep>
     <brake>1</brake>
-    <posx>500000</posx>
+    <posx>1500000</posx>
     <posy>0</posy>
     <postheta>0</postheta>
     <direct>1</direct>

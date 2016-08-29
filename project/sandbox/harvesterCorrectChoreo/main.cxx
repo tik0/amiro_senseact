@@ -73,8 +73,8 @@ int amiroID = 0;
 
 // scopenames for rsb
 std::string trackingInscope = "/tracking/merger";
-std::string choreoOutscope = "/harvester/choreocorrection";
-std::string goalInscope = "/amiro/goal";
+std::string choreoOutscope = "/harvesters/choreocorrection";
+std::string goalInscope = "/harvesters/goal";
 
 // global positions
 typedef std::array<float,3> position_t;
@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("amiroID,a", po::value<int>(&amiroID), "ID of the AMiRo, which has to be unique! Flag must be set!")
-			("markerId,m", po::value<int>(&markerID), "ID of the marker for robot detection (has to be set if tracking navigation is activated).")
+			("markerId,m", po::value<int>(&markerID), "ID of the marker for robot detection. Flag must be set!")
 			("trackingIn", po::value<std::string>(&trackingInscope), "Tracking inscope.")
 			("goalIn", po::value<std::string>(&goalInscope), "Goal position inscope.")
 			("choreoOut", po::value<std::string>(&choreoOutscope), "Choreography correction outscope.");
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (!vm.count("markerId")) {
-		std::cout << "The navigation by TWB is actived. Please set the marker ID!\nPlease check the options.\n\n" << options << "\n";
+		std::cout << "Please set the marker ID!\nPlease check the options.\n\n" << options << "\n";
 		exit(1);
 	}
 
@@ -329,6 +329,7 @@ int main(int argc, char **argv) {
 
 		// calculate correction
 		boost::shared_ptr<twbTracking::proto::PoseList> poses(new twbTracking::proto::PoseList);
+		poses->set_id(amiroID);
 		twbTracking::proto::Pose *pose1 = poses->add_pose();
 		twbTracking::proto::Pose *pose2 = poses->add_pose();
 		twbTracking::proto::Pose *pose3 = poses->add_pose();

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rsb-sendcpp0.11 /harvesters/command stop
+rsb-sendcpp0.13 /harvesters/command stop
 
 
 
