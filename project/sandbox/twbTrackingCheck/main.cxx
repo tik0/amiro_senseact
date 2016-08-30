@@ -54,6 +54,9 @@ using namespace rsb;
 
 #include <Types.h>
 
+#include <twb/TwbTracking.h>
+
+
 // unit calculations
 #define TO_MICRO 1000000
 #define MICRO_TO 0.000001
@@ -73,13 +76,6 @@ bool specificMarker = false;
 bool showVar = false;
 
 
-
-float normAngle(float angle) {
-	float normed = fmod(angle, 2.0*M_PI);
-	if (normed < 0) normed += 2.0*M_PI;
-	return normed;
-}
-
 float angleDiff(float angle1, float angle2) {
 	float diff = fmod(angle1-angle2+M_PI, 2.0*M_PI);
 	if (diff > M_PI) {
@@ -87,92 +83,6 @@ float angleDiff(float angle1, float angle2) {
 	}
 	return diff;
 }
-
-
-types::position readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
-	twbTracking::proto::Pose pose2D;
-	for (int i = 0; i < data->object_size(); i++) {
-		if (trackingMarkerID == data->object(i).id()) {
-			pose2D = data->object(i).position();
-			break;
-		}
-	}
-	types::position pos;
-	pos.x = pose2D.translation().x()*meterPerPixel*TO_MICRO;
-	pos.y = pose2D.translation().y()*meterPerPixel*TO_MICRO;
-	pos.f_z = (int)(normAngle(pose2D.rotation().z()*M_PI/180.0)*180.0/M_PI*TO_MICRO);
-	return pos;
-}
-
-
-bool isBeingTracked(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingID) {
-	bool isIn = false;
-	for (int i = 0; i < data->object_size(); i++) {
-		if (trackingID == data->object(i).id()) {
-			if (data->object(i).position().translation().x() != 0 && data->object(i).position().translation().y() != 0) {
-				isIn = true;
-			}
-			break;
-		}
-	}
-	return isIn;
-}
-
-types::position getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
-	boost::shared_ptr<twbTracking::proto::ObjectList> data;
-	int restTime = TRACKING_TIMEOUT * 1000; // ms
-	do {
-		if (!trackingQueue->empty()) {
-			data = boost::static_pointer_cast<twbTracking::proto::ObjectList>(trackingQueue->pop());
-			if (isBeingTracked(data, markerID)) {
-				break;
-			}
-		} else if (restTime <= 0) {
-			types::position errorPos;
-			errorPos.x = 0;
-			errorPos.y = 0;
-			errorPos.f_z = -1;
-			ERROR_MSG("Marker could not be detected in the last " << TRACKING_TIMEOUT << " seconds!");
-			return errorPos;
-		} else {
-			// sleep for 10 ms
-			usleep(10000);
-			restTime -= 10;
-		}
-	} while (true);
-	return readTracking(data, markerID);
-}
-
-std::vector<types::position> getNextTrackingPoses(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
-	boost::shared_ptr<twbTracking::proto::ObjectList> data;
-	int restTime = TRACKING_TIMEOUT * 1000; // ms
-	do {
-		if (!trackingQueue->empty()) {
-			data = boost::static_pointer_cast<twbTracking::proto::ObjectList>(trackingQueue->pop());
-			break;
-		} else if (restTime <= 0) {
-			std::vector<types::position> positions;
-			types::position errorPos;
-			errorPos.x = 0;
-			errorPos.y = 0;
-			errorPos.f_z = -1;
-			positions.push_back(errorPos);
-			ERROR_MSG("There wasn't any tracking data in the last " << TRACKING_TIMEOUT << " seconds!");
-			return positions;
-		} else {
-			// sleep for 10 ms
-			usleep(10000);
-			restTime -= 10;
-		}
-	} while (true);
-	std::vector<types::position> positions;
-	for (int i = 0; i < data->object_size(); i++) {
-		types::position objPos = readTracking(data, data->object(i).id());
-		positions.push_back(objPos);
-	}
-	return positions;
-}
-
 
 int main(int argc, char **argv) {
 	// Handle program options
@@ -195,17 +105,6 @@ int main(int argc, char **argv) {
 
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
-
-/*	if (!vm.count("markerId") && !vm.count("mmp")) {
-		std::cout << "Please set the marker ID and the meter per pixel factor!\nPlease check the options.\n\n" << options << "\n";
-		exit(1);
-	} else if (!vm.count("markerId")) {
-		std::cout << "Please set the marker ID!\nPlease check the options.\n\n" << options << "\n";
-		exit(1);
-	} else if (!vm.count("mmp")) {
-		std::cout << "Please set the meter per pixel factor!\nPlease check the options.\n\n" << options << "\n";
-		exit(1);
-	}*/
 
 	specificMarker = vm.count("markerId");
 	showVar = vm.count("var");
@@ -265,11 +164,11 @@ int main(int argc, char **argv) {
 
 	while(true) {
 		if (specificMarker) {
-			types::position pos = getNextTrackingPos(trackingQueue);
-			if (pos.f_z < 0) return EXIT_FAILURE;
-			float posX = pos.x*MICRO_TO;
-			float posY = pos.y*MICRO_TO;
-			float posT = pos.f_z*MICRO_TO;
+			twbTracking::TrackingObject trObj = twbTracking::getNextTrackingObject(trackingQueue, markerID);
+			if (twbTracking::isErrorTracking(trObj)) return EXIT_FAILURE;
+			float posX = trObj.pos[0];
+			float posY = trObj.pos[1];
+			float posT = trObj.pos[2];
 
 			INFO_MSG("Current Position:");
 			if (showVar) {
@@ -304,7 +203,14 @@ int main(int argc, char **argv) {
 				INFO_MSG(" Ø: " << posT << "°");
 			}
 		} else {
-			break;
+			std::vector<twbTracking::TrackingObject> positions = twbTracking::getNextTrackingObjects(trackingQueue);
+			if (positions.size() > 0) {
+				if (twbTracking::isErrorTracking(positions[0])) return EXIT_FAILURE;
+				INFO_MSG("Current positions:");
+				for (int i=0; i<positions.size(); i++) {
+					INFO_MSG(" " << positions[i].id << ": " << positions[i].pos[0] << "/" << positions[i].pos[1] << " m, " << positions[i].pos[2] << "°");
+				}
+			}
 		}
 
 		usleep(500000);

@@ -1,115 +1,27 @@
-====== Harvester Choreo ======
+====== Harvester Correct Choreo ======
 
-This program performs a choreography on the AMiRo as an Harvester movement. For this purpose a xml file, that defines the choreography, is parsed. Additionally several robots can communicate and cooperate with each other and adapt their movements.
+This program sends a choreo correction to a choreo executing robot.
 
-===== Harvest Procedure =====
+===== Basic Procedure =====
 
-At first the robots have to know of each other, so they are publishing their names and saving the names of the others. If they have recognized each other, the user can send the command 'init'.
+The program just corrects one specific robot. The robot ID and the marker ID of the demanded robot have to be given as parameters. The tool has to be started before the robots start their choreographies.
 
-Now they are waiting for the start command. In this moment, the choreography can be changed. By sending the command 'start', all robots will start the chosen choreography. After that, the robots are waiting for the start command again.
+Each time, the key "enter" is pressed, the tool will save the current goal position via the Goals Scope and the tracking position via the Tracking Data Scope of the robot and calculates a specific movement parallel to the y-axis. Via the Choreo Correction Scope the new positions will be sent to the demanded robot.
 
-By giving the command 'stop', the robots will exit the application. If they are harvesting, the command will be executed afterwards.
-
-By using the delay parameters of the application, the robots can be given start delays as real harvesters depending on their given ID:
-
-^ Name ^ Parameter ^ Default Value ^ Description ^
-| Choreo Delay | choreoDelay | 2000 ms | Delay between receiving the start command and starting the choreography. |
-| Step Delay   | stepDelay   | 1000 ms | Delay between receiving the last finish recognition of a robot and starting the ID delay. |
-| ID Delay     | idDelay     | 1000 ms | Delay between step delay and continuing with the next step (multiplied with robot ID). |
+Notice: The new positions are absolute ones. The robot can drive to them directly without any additional position calculation.
 
 ===== RSB Scopes =====
 
 ^ Scope Name ^ Default Scope ^ Scope Type ^ Description ^
-| Choreo            | /harvesters/choreo    | String | Input Scope for choreo file names. |
-| Commands          | /harvesters/command   | String | Input Scope for receiving commands. |
-| AMiRo cooperation | /harvesters/harvester | String | Scope for cooperating with other AMiRos. |
-
-===== Structure of the xml files =====
-
-The filename of a choreography has to be a xml file.
-
-==== XML Parts ====
-
-^ XML Part ^ Description ^
-| choreo | Includes the hole Choreo (includes choreoSteps or/and choreoincludes). |
-| choreoStep | This is one Step of the Choreo containing x-y-position, light configuration and braking flak. |
-| posx | X coordinate of the position (relative or absolute), which should be driven to (in micro meters). |
-| posy | Y coordinate of the position (relative or absolute), which should be driven to (in micro meters). |
-| brake | Flag, if the robot shall stop and wait for the others after this step (integer of [0,1]). |
-| l<id> | Color of the LED with given id (id as integer of [0,7], color as integer of [0,255] for blue, green, red). It can be overwritten by 'la' |
-| la | Color for all LEDs (color as integer of [0,255] for blue, green, red). It overwrittes 'l<id>' |
-
-The position can be relative or absolute (equal for all choreos!), which can be set in the application parameters.
-
-==== Example (with relative positions) ====
-
-<code>
-<!--<?xml version="1.0"> -->
-<choreo>
-  <choreoStep>
-    <brake>0</brake>
-    <posx>500000</posx>
-    <posy>0</posy>
-<!-- blue,green,red -->
-    <l0>255,0,0</l0>
-    <l1>255,0,0</l1>
-    <l2>255,0,0</l2>
-    <l3>255,0,0</l3>
-    <l4>255,0,0</l4>
-    <l5>255,0,0</l5>
-    <l6>255,0,0</l6>
-    <l7>255,0,0</l7>
-  </choreoStep>
-  <choreoStep>
-    <brake>1</brake>
-    <posx>500000</posx>
-    <posy>250000</posy>
-<!-- blue,green,red -->
-    <la>0,255,0</la>
-  </choreoStep>
-  <choreoStep>
-    <brake>0</brake>
-    <posx>0</posx>
-    <posy>250000</posy>
-<!-- blue,green,red -->
-    <la>0,0,255</la>
-  </choreoStep>
-  <choreoStep>
-    <brake>1</brake>
-    <posx>0</posx>
-    <posy>500000</posy>
-<!-- blue,green,red -->
-    <la>0,255,0</la>
-  </choreoStep>
-  <choreoStep>
-    <brake>0</brake>
-    <posx>500000</posx>
-    <posy>500000</posy>
-<!-- blue,green,red -->
-    <la>255,0,0</la>
-  </choreoStep>
-  <choreoStep>
-    <brake>1</brake>
-    <posx>500000</posx>
-    <posy>250000</posy>
-<!-- blue,green,red -->
-    <la>0,255,0</la>
-  </choreoStep>
-  <choreoinclude>
-    <choreopart>harvestinclude.xml</choreopart>
-  </choreoinclude>
-</choreo>
-</code>
+| Goals             | /harvesters/goal             | Object     | Inscope for receiving goal position of the current steps. |
+| Tracking Data     | /tracking/merger             | ObjectList | Inscope for tracking data. |
+| Choreo Correction | /harvesters/choreocorrection | PoseList   | Outscope for sending choreo correction. |
 
 ===== Parameters =====
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
-| verbose, v        | -       | -                  | Print values that are published via CAN. |
-| amiroID, a        | Integer | NOT GIVEN          | ID of the AMiRo, which has to be unique! Flag must be set! |
-| choreoIn          | String  | /harvesters/choreo | Choreography inscope. |
-| choreoname, c     | String  | testChoreo.xml     | Initial Choreography name. |
-| choreoRelative, r | -       | -                  | Flag if the positions in the choreo are relative. |
-| printChoreo, p    | -       | -                  | Prints the loaded steps of the choreo. |
-| choreoDelay       | Integer | 2000               | Delay between receiving the start command via RSB and starting the choreography in ms. |
-| stepDelay         | Integer | 1000               | Delay of the brake between two steps of the choreography in ms. |
-| idDelay           | Integer | 1000               | Delay between the AMiRo starts in ms. |
+| amiroID,a  | Integer | NOT GIVEN                    | ID of the AMiRo, which has to be unique! Flag must be set! |
+| markerId,m | Integer | NOT GIVEN                    | ID of the marker for robot detection. Flag must be set! |
+| trackingIn | String  | /tracking/merger             | Tracking inscope. |
+| goalIn     | String  | /harvesters/goal             | Goal position inscope. |
+| choreoOut  | String  | /harvesters/choreocorrection | Choreography correction outscope. |

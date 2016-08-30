@@ -4,21 +4,32 @@ This demo contains the program for performing a choreography on the AMiRo as an 
 
 For detailed application and procedure information, please check the [[sandbox:harvesterChoreo:start|harvesterChoreo documentation]].
 
+Additionally choreo corrections can be sent. Please check the [[sandbox:harvesterCorrectChoreo:start|harvesterCorrectChoreo documentation]] for more details.
+
 ===== Run the Demo =====
 
   - ''. ./build.sh .''
   - ''./copyPrograms.sh <ip address>''
-  - ''./run.sh <ID>'' on the AMiRo
+  - ''./run.sh <robot ID> <marker ID>'' on the AMiRo
   - If every AMiRo is running:
     - Change to command directory on one AMiRo: ''cd commands/''
     - If they recognized each other: ''init.sh''
-    - If they shall start choreo: ''start.sh''
+    - If they shall start the choreo: ''start.sh''
+    - If they shall break the choreo: ''break.sh''
+    - If the choreos are broken and shall be continued: ''start.sh''
+    - If they shall stop the choreo (or stop program): ''stop.sh''
   - ''./stop.sh'' on the AMiRo for stopping
 
-One could use ''rsb-loggercpp0.11 / --style monitor'' to inspect the communication
+One could use ''rsb-loggercpp0.13 --style monitor /'' to inspect the communication
+
+===== Do Choreo Correction =====
+
+After executing the run script on the AMiRo, run ''runCorrection.sh <robot ID> <marker ID>'' in a different console. By hitting the enter key, the robot will be given choreo corrections.
 
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[sandbox:harvesterChoreo:start|harvesterChoreo]] | Program for harvester movement. |
-| [[tools:robotTools:stopAMiRo:start|stopAMiRo]] | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[sandbox:harvesterChoreo:start|harvesterChoreo]]               | Program for harvester movement. |
+| [[sandbox:harvesterCorrectChoreo:start|harvesterCorrectChoreo]] | Program for correcting the choreography. |
+| [[act:setLights:start|setLights]]                               | Program for setting the lights. |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]]                  | Program for stopping the AMiRo (stopping motors and resetting lights). |

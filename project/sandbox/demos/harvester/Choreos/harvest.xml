@@ -1,8 +1,5 @@
 <!--<?xml version="1.0"> -->
 <choreo>
-  <!--choreoinclude>
-    <choreopart>starting.xml</choreopart>
-  </choreoinclude-->
   <choreoinclude>
     <choreopart>forward.xml</choreopart>
   </choreoinclude>

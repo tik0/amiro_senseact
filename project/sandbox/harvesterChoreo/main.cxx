@@ -119,19 +119,21 @@ std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
 std::string trackingInscope = "/tracking/merger";
-std::string choreoCorrectionInscope = "/harvester/choreocorrection";
-std::string goalScope = "/amiro/goal";
+std::string choreoCorrectionInscope = "/harvesters/choreocorrection";
+std::string goalScope = "/harvesters/goal";
 
 // global positions
 position_t odoPos;
 position_t oldPos;
 
 // global variables
+int amiroID = 0;
 bool doChoreo = false;
 bool pauseChoreo = false;
 bool correctChoreo = false;
 bool fakeCorrection = false;
 int stepNumber = 0;
+boost::shared_ptr<twbTracking::proto::PoseList> poses_include;
 
 float normAngle(float angle) {
 	float normed = fmod(angle, 2.0*M_PI);
@@ -542,8 +544,11 @@ void choreoSleep_ms(int sleep_ms, boost::shared_ptr<rsc::threading::Synchronized
 		pauseChoreo = true;
 	}
 	if (!choreoCorrectionQueue->empty()) {
-		correctChoreo = true;
-		pauseChoreo = true;
+		poses_include = boost::static_pointer_cast<twbTracking::proto::PoseList>(choreoCorrectionQueue->pop());
+		if (poses_include->id() == amiroID) {
+			correctChoreo = true;
+			pauseChoreo = true;
+		}
 	}
 }
 
@@ -605,8 +610,6 @@ int main(int argc, char **argv) {
 	// default choreo name
 	std::string choreoName = "testChoreo.xml";
 
-	int amiroID = 0;
-
 	float startX = 0.0, startY = 0.0, startTheta = 0.0;
 
 	// Handle program options
@@ -614,8 +617,13 @@ int main(int argc, char **argv) {
 	options.add_options()("help,h", "Display a help message.")
 			("verbose,v", "Print values that are published via CAN.")
 			("amiroID,a", po::value<int>(&amiroID), "ID of the AMiRo, which has to be unique! Flag must be set!")
-			("lightsOut", po::value<std::string>(&lightOutscope), "Light outscope.")
 			("choreoIn", po::value<std::string>(&choreoInscope), "Choreography inscope.")
+			("commandsIn", po::value<std::string>(&commandInscope), "Commands inscope.")
+			("choreoCorrectionIn", po::value<std::string>(&choreoCorrectionInscope), "Choreo Correction inscope.")
+			("amiroScope", po::value<std::string>(&amiroScope), "AMiRo Scope.")
+			("goalOut", po::value<std::string>(&goalScope), "Goal outscope.")
+			("trackingIn", po::value<std::string>(&trackingInscope), "Tracking inscope.")
+			("lightsOut", po::value<std::string>(&lightOutscope), "Light outscope.")
 			("choreoname,c", po::value<std::string>(&choreoName), "Initial Choreography name.")
 			("printChoreo,p", "Prints the loaded steps of the choreo.")
 			("startX", po::value<float>(&startX), "Optional start position on x-axis in meters.")
@@ -993,7 +1001,8 @@ int main(int argc, char **argv) {
 					rot3->set_y(0.0);
 					rot3->set_z(odoPos[3]);
 				} else {
-					poses = boost::static_pointer_cast<twbTracking::proto::PoseList>(choreoCorrectionQueue->pop());
+//					poses = boost::static_pointer_cast<twbTracking::proto::PoseList>(choreoCorrectionQueue->pop());
+					poses = poses_include;
 				}
 				choreo = insertPoseListIntoChoreo(choreo, stepNumber, poses);
 			}
