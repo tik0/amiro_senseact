@@ -60,15 +60,10 @@ using namespace rsb;
 // unit calculations
 #define TO_MICRO 1000000
 #define MICRO_TO 0.000001
-#define TRACKING_TIMEOUT 5 // s
 
 // constants
 int markerID = -1;
 float meterPerPixel = 1.0; // m/pixel
-
-
-// scopenames for rsb
-std::string trackingInscope = "/tracking/merger";
 
 
 // flags
@@ -89,7 +84,6 @@ int main(int argc, char **argv) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("markerId,i", po::value<int>(&markerID), "ID of the marker for robot detection (if not given, all detected IDs will be shown).")
-			("mmp,m", po::value<float>(&meterPerPixel), "Meter per pixel of the robot detection in meters (default 1.0).")
 			("var,v", "Flag, if the variance of all the data of a specific marker shall be shown.");
 
 	// allow to give the value as a positional argument
@@ -107,6 +101,11 @@ int main(int argc, char **argv) {
 	po::notify(vm);
 
 	specificMarker = vm.count("markerId");
+	if (specificMarker && markerID < 0) {
+		std::cout << "The marker ID has to be 0 or greater!\nPlease check the options.\n\n" << options << "\n";
+		exit(1);
+	}
+
 	showVar = vm.count("var");
 
 	if (showVar && !specificMarker) {
@@ -121,40 +120,12 @@ int main(int argc, char **argv) {
 
 	// ------------ Converters ----------------------
 
-	// Register new converter for ObjectList
-	rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>::Ptr converterObjectList(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>);
-	rsb::converter::converterRepository<std::string>()->registerConverter(converterObjectList);	
-
-	// ------------ ExtSpread Config ----------------
-
-	// CREATE A CONFIG TO COMMUNICATE WITH ALPIA.TECHFAK.UNI-BIELEFELD
-	// Get the global participant config as a template
-	rsb::ParticipantConfig trackingPartConf = factory.getDefaultParticipantConfig(); {
-		// disable socket transport
-		rsc::runtime::Properties trackingPropSocket  = trackingPartConf.mutableTransport("socket").getOptions();
-		trackingPropSocket["enabled"] = boost::any(std::string("0"));
-
-		// Get the options for spread transport, because we want to change them
-		rsc::runtime::Properties trackingPropSpread  = trackingPartConf.mutableTransport("spread").getOptions();
-
-		// enable socket transport
-		trackingPropSpread["enabled"] = boost::any(std::string("1"));
-
-		// Change the config
-		trackingPropSpread["host"] = boost::any(std::string("alpia.techfak.uni-bielefeld.de"));
-
-		// Change the Port
-		trackingPropSpread["port"] = boost::any(std::string("4803"));
-
-		// Write the tranport properties back to the participant config
-		trackingPartConf.mutableTransport("socket").setOptions(trackingPropSocket);
-		trackingPartConf.mutableTransport("spread").setOptions(trackingPropSpread);
-	}
+	twbTracking::registerTracking();
 
 	// ------------ Listener ---------------------
 
 	// prepare rsb listener for tracking data
-	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, trackingPartConf);
+	rsb::ListenerPtr trackingListener = factory.createListener(twbTracking::getTrackingScope(), twbTracking::getTrackingRSBConfig());
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::ObjectList>(trackingQueue)));
 
@@ -165,10 +136,13 @@ int main(int argc, char **argv) {
 	while(true) {
 		if (specificMarker) {
 			twbTracking::TrackingObject trObj = twbTracking::getNextTrackingObject(trackingQueue, markerID);
-			if (twbTracking::isErrorTracking(trObj)) return EXIT_FAILURE;
-			float posX = trObj.pos[0];
-			float posY = trObj.pos[1];
-			float posT = trObj.pos[2];
+			if (twbTracking::isErrorTracking(trObj)) {
+				ERROR_MSG("The marker " << markerID << " could not be tracked for the last " << twbTracking::TRACKING_TIMEOUT << " milliseconds!");
+				return EXIT_FAILURE;
+			}
+			float posX = trObj.pos.x;
+			float posY = trObj.pos.y;
+			float posT = trObj.pos.theta;
 
 			INFO_MSG("Current Position:");
 			if (showVar) {
@@ -186,8 +160,8 @@ int main(int argc, char **argv) {
 					if (posY < yMinVar) yMinVar = posY;
 					if (posX > xMaxVar) xMaxVar = posX;
 					if (posY > yMaxVar) yMaxVar = posY;
-					float angDiff = angleDiff(tOri*M_PI/180.0, posT*M_PI/180.0) * 180.0/M_PI;
-					if (fabs(angDiff) < 90.0) {
+					float angDiff = angleDiff(tOri, posT);
+					if (fabs(angDiff) < M_PI/2.0) {
 						if (angDiff < tMinVar) tMinVar = angDiff;
 						if (angDiff > tMaxVar) tMaxVar = angDiff;
 					}
@@ -196,19 +170,22 @@ int main(int argc, char **argv) {
 				float maxAngle = tOri+tMaxVar;
 				INFO_MSG(" x: " << posX << " m (" << xMinVar << " m <-> " << xMaxVar << " m, " << (xMaxVar-xMinVar) << " m)");
 				INFO_MSG(" y: " << posY << " m (" << yMinVar << " m <-> " << yMaxVar << " m, " << (yMaxVar-yMinVar) << " m)");
-				INFO_MSG(" Ø: " << posT << "° (" << maxAngle << "° <-> " << minAngle << "°, " << (maxAngle-minAngle) << "°)");
+				INFO_MSG(" Ø: " << (posT*180.0/M_PI) << "° (" << (maxAngle*180.0/M_PI) << "° <-> " << (minAngle*180.0/M_PI) << "°, " << ((maxAngle-minAngle)*180.0/M_PI) << "°)");
 			} else {
 				INFO_MSG(" x: " << posX << " m");
 				INFO_MSG(" y: " << posY << " m");
-				INFO_MSG(" Ø: " << posT << "°");
+				INFO_MSG(" Ø: " << (posT*180.0/M_PI) << "°");
 			}
 		} else {
 			std::vector<twbTracking::TrackingObject> positions = twbTracking::getNextTrackingObjects(trackingQueue);
 			if (positions.size() > 0) {
-				if (twbTracking::isErrorTracking(positions[0])) return EXIT_FAILURE;
+				if (twbTracking::isErrorTracking(positions[0])) {
+					ERROR_MSG("There wasn't any tracking data for the last " << twbTracking::TRACKING_TIMEOUT << " milliseconds!");
+					return EXIT_FAILURE;
+				}
 				INFO_MSG("Current positions:");
 				for (int i=0; i<positions.size(); i++) {
-					INFO_MSG(" " << positions[i].id << ": " << positions[i].pos[0] << "/" << positions[i].pos[1] << " m, " << positions[i].pos[2] << "°");
+					INFO_MSG(" " << positions[i].id << ": " << positions[i].pos.x << "/" << positions[i].pos.y << " m, " << (positions[i].pos.theta*180.0/M_PI) << "°");
 				}
 			}
 		}
