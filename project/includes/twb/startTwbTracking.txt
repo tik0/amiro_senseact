@@ -48,8 +48,8 @@ An example for using this tracking functions is the [[sandbox:twbTrackingCheck:s
 For calculating the correct positions, there are some constants defined:
 
 ^ Name ^ Value ^ Description ^
-| TRACKING_TO_METERS  | 1      | Translates the coordinates to meter. |
+| TRACKING_TO_METER  | 1      | Translates the coordinates to meter. |
 | TRACKING_TO_RAD     | pi/180 | Translates the input angle to rad. |
 | TRACKING_ANGLE_NORM | 2*pi   | Maximum angle (used for angle normalization). |
 
-The values are set to the current values, which are send by the tracking server. If there are any changes (or special wishes) the constants can be changed.
+The values are set to the current values, which are sent by the tracking server. If there are any changes (or special wishes) the constants can be changed.

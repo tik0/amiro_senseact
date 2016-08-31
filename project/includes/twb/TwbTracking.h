@@ -44,7 +44,7 @@ namespace twbTracking {
 	static const uint32_t TRACKING_TIMEOUT = 3000;
 
 	/** \brief Constant for the translation of the distance to meter */
-	static const float TRACKING_TO_METERS = 1.0;
+	static const float TRACKING_TO_METER = 1.0;
 
 	/** \brief Constant for the translation of the angle to rad */
 	static const float TRACKING_TO_RAD = M_PI/180.0;
@@ -82,8 +82,8 @@ namespace twbTracking {
 		if (found) {
 			TrackingObject obj;
 			obj.id = trackingMarkerID;
-			obj.pos.x = pose2D.translation().x()*TRACKING_TO_METERS;
-			obj.pos.y = pose2D.translation().y()*TRACKING_TO_METERS;
+			obj.pos.x = pose2D.translation().x()*TRACKING_TO_METER;
+			obj.pos.y = pose2D.translation().y()*TRACKING_TO_METER;
 			float angle = pose2D.rotation().z()*TRACKING_TO_RAD;
 			angle = fmod(angle, TRACKING_ANGLE_NORM);
 			if (angle < 0) angle += TRACKING_ANGLE_NORM;
