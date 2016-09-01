@@ -182,6 +182,8 @@ int main(int argc, char **argv) {
 				for (int i=0; i<positions.size(); i++) {
 					INFO_MSG(" " << positions[i].id << ": " << positions[i].pos.x << "/" << positions[i].pos.y << " m, " << (positions[i].pos.theta*180.0/M_PI) << "°");
 				}
+			} else {
+				WARNING_MSG("List is empty!");
 			}
 		}
 
