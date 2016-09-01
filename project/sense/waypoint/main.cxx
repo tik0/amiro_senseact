@@ -44,6 +44,7 @@ int main(int argc, const char **argv) {
 	float diffThreshold = 0.3;
 
     int scanStartIndex = 0, scanEndIndex = -1;
+    int consecutiveRaysThreshold = 0;
 
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")("lidarinscope", po::value<std::string>(&lidarInScope),
@@ -54,7 +55,8 @@ int main(int argc, const char **argv) {
 			po::value<float>(&range), "Range of detection in m")("diffThreshold", po::value<float>(&diffThreshold),
             "Difference threshold in m")
             ("scanStartIndex", po::value<int>(&scanStartIndex))
-            ("scanEndIndex", po::value<int>(&scanEndIndex));
+            ("scanEndIndex", po::value<int>(&scanEndIndex))
+            ("consecutiveRaysThreshold", po::value<int>(&consecutiveRaysThreshold));
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -125,6 +127,7 @@ int main(int argc, const char **argv) {
 					}
 				}
 				// filter initial scan
+                // remove outliers
                 for (int i = scanStartIndex + 1; i < scanEndIndex - 1; ++i) {
 					initscan.set_scan_values(i,
 							min(initscan_raw.scan_values(i - 1),
@@ -133,6 +136,10 @@ int main(int argc, const char **argv) {
 						initscan.set_scan_values(i, 0);
 					}
 				}
+
+                for (int i = scanStartIndex; i < scanEndIndex; ++i) {
+                    DEBUG_MSG("init " << i << ": " << initscan.scan_values(i));
+                }
 			}
 		} else {
 			if (!commandQueue->empty()) {
@@ -152,16 +159,30 @@ int main(int argc, const char **argv) {
 
 		// check if the waypoint is triggered
 		bool triggered_new = false;
+        int consecutive_ray_count = 0;
         for (int i = scanStartIndex + 1; i < scanEndIndex - 1; ++i) {
 			if ((scan.scan_values(i) > scan.scan_values_min() && initscan.scan_values(i) > initscan.scan_values_min()
-					&& scan.scan_values(i) < range && initscan.scan_values(i) - scan.scan_values(i) > diffThreshold)
+                    && scan.scan_values(i) < range && initscan.scan_values(i) - scan.scan_values(i) > diffThreshold && scan.scan_values(i) < range)
 					|| (initscan.scan_values(i) < initscan.scan_values_min()
 							&& scan.scan_values(i) > scan.scan_values_min() && scan.scan_values(i) < range)) {
-				//DEBUG_MSG(abs(scan.scan_values(i) - initscan.scan_values(i)));
-				triggered_new = true;
-				break;
-			}
+                //DEBUG_MSG(i << " " << initscan.scan_values(i) << " " <<scan.scan_values(i) << " " << (initscan.scan_values(i) - scan.scan_values(i)));
+                consecutive_ray_count++;
+            } else {
+                if (consecutive_ray_count > consecutiveRaysThreshold) {
+                    triggered_new = true;
+                    break;
+                } else {
+                    consecutive_ray_count = 0;
+                }
+            }
 		}
+
+        DEBUG_MSG("consecutive: " << consecutive_ray_count);
+
+        if (consecutive_ray_count > consecutiveRaysThreshold) {
+            triggered_new = true;
+        }
+
 		// send update state
 		if (triggered_new) {
 			stateInformer->publish(Informer<string>::DataPtr(new string("entered")));
