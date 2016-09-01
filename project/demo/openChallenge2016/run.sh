@@ -53,18 +53,19 @@ fi
 # waypoint program from 'project/sandbox/waypoint/'
 #./waypoint --lidarinscope /lidar --range 1.5 --removeLessThan 9 --splitConnected 0.06 &
 # 818 - 409
+sleep 1 # sleep so we don't get old laser values
 ./waypoint --lidarinscope /lidar --range 1.5 --scanStartIndex 390 --scanEndIndex 420 -s &
 
 # start state machine
-poseXThresholds="20.5
-24"
+poseXThresholds="14.4
+15.7"
 poseXThreshold="$(echo "$poseXThresholds" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 ./final2016 --id ${ID} --poseScope /amiro${ID}/pose --poseXThreshold $poseXThreshold &
 
 ./sendOdometryProtoPose --resetodom true -o /odom &
 
 # start follower
-./follow_LaserScanner -l /lidar --forwardSpeed 800 --forwardMinSpeed 400 --followMinDist 400 --followDistSlowingDown 400 --followMinBackDist 200 --maxRange 1500 &
+./follow_LaserScanner -l /lidar &
 
 # 0 1
 # 2 3
@@ -76,6 +77,9 @@ initialPoses="33749.9 17848.6 -90
 initialPoses="19205.7 14267.7 45
 22195.6 14475.4 -90
 31262.3 17543.2 180"
+
+initialPoses="13443.8 11059.1 -91
+14555.9 10000.7 39.8219"
 
 initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 initialX="$(echo "$initialPose" | cut -d\  -f 1)"
@@ -105,12 +109,12 @@ targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
   --remotePort 4823 \
   --senImage 0 \
   --delta 0.05 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
-  --loadMapFromImage ./data/Leipzig_Arena_A.pgm --flipHorizontal true \
+  --loadMapFromImage ./data/clf_final.pgm --flipHorizontal true \
   --erosionRadius 0.35 \
   --initialX $initialX --initialY $initialY --initialTheta $initialTheta \
   --targetPose "$targetPose" \
   --precomputeOccupancyMap true \
-  --targetSpeed0 0 --targetSpeed1 1.5 &
+  --targetSpeed0 0 --targetSpeed1 1.5 > /dev/null &
 
 ./actEmergencyStop --lidarinscope /lidar --cntMax 15 --distance 0.25 --delay 10 --switchinscope /following > /dev/null &
 
