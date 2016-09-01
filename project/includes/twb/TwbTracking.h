@@ -16,7 +16,7 @@
 #include <types/shapes.pb.h>
 #include <types/vertex.pb.h>
 
-namespace twbTracking {
+namespace twbTrackingProcess {
 
 	/** \brief Tracking Position, including
 	  *  - x: x-coordinate of position (Float) [meter]

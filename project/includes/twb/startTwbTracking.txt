@@ -6,7 +6,7 @@ In the following chapters the usage is descriped. For an example, please have a 
 
 ===== Incomming and Return Values =====
 
-The incomming value of the tracking tool via RSB is ''ObjectList''. Its defined in the ''loc.proto'' in the [[includes:types:start.txt|types folder]].
+The incomming value of the tracking tool via RSB is ''ObjectList''. Its defined in the ''loc.proto'' in the [[includes:types:start|types folder]].
 
 The return value of the tracking function is the ''TrackingObject'', which contains the marker ID as an Integer and the position as ''TrackingPos''. ''TrackingPos'' includes the three float values ''x'' (x-coordinate in meter), ''y'' (y-Coordinate in meter) and ''theta'' (angle position in rad).
 

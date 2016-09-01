@@ -14,14 +14,14 @@ Notice: The new positions are absolute ones. The robot can drive to them directl
 
 ^ Scope Name ^ Default Scope ^ Scope Type ^ Description ^
 | Goals             | /harvesters/goal             | Object     | Inscope for receiving goal position of the current steps. |
-| Tracking Data     | /tracking/merger             | ObjectList | Inscope for tracking data. |
 | Choreo Correction | /harvesters/choreocorrection | PoseList   | Outscope for sending choreo correction. |
+
+The tracking scope will be automatically loaded from the [[includes:twb:startTwbTracking|TWB Tracking Module]].
 
 ===== Parameters =====
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
 | amiroID,a  | Integer | NOT GIVEN                    | ID of the AMiRo, which has to be unique! Flag must be set! |
 | markerId,m | Integer | NOT GIVEN                    | ID of the marker for robot detection. Flag must be set! |
-| trackingIn | String  | /tracking/merger             | Tracking inscope. |
 | goalIn     | String  | /harvesters/goal             | Goal position inscope. |
 | choreoOut  | String  | /harvesters/choreocorrection | Choreography correction outscope. |

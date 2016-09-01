@@ -59,14 +59,12 @@ using namespace muroxConverter;
 #include <actModels/lightModel.h>
 
 #include "choreo.h"
+#include <twb/TwbTracking.h>
 #include <Types.h>
 
 // unit calculations
-#define TO_MILLI 1000.0
 #define TO_MICRO 1000000.0
-#define MILLI_TO 0.001
 #define MICRO_TO 0.000001
-#define TRACKING_TIMEOUT 5 // s
 
 // xml constants
 std::string XMLMainName = "choreo";
@@ -118,7 +116,6 @@ std::string lightOutscope = "/amiro/lights";
 std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
-std::string trackingInscope = "/tracking/merger";
 std::string choreoCorrectionInscope = "/harvesters/choreocorrection";
 std::string goalScope = "/harvesters/goal";
 
@@ -192,58 +189,16 @@ float angleDiff(float angle1, float angle2) {
 	return direction*diff;
 }
 
-position_t readTracking(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingMarkerID) {
-	twbTracking::proto::Pose pose2D;
-	for (int i = 0; i < data->object_size(); i++) {
-		if (trackingMarkerID == data->object(i).id()) {
-			pose2D = data->object(i).position();
-			break;
-		}
-	}
+position_t toOwnPos(twbTrackingProcess::TrackingObject trackingObject) {
 	position_t pos;
-	pos[0] = pose2D.translation().x()*meterPerPixel;
-	pos[1] = pose2D.translation().y()*meterPerPixel;
-	pos[2] = normAngle(pose2D.rotation().z()*M_PI/180.0);
-	return pos;
-}
-
-
-bool isBeingTracked(boost::shared_ptr<twbTracking::proto::ObjectList> data, int trackingID) {
-	bool isIn = false;
-	for (int i = 0; i < data->object_size(); i++) {
-		if (trackingID == data->object(i).id()) {
-			if (data->object(i).position().translation().x() != 0 && data->object(i).position().translation().y() != 0) {
-				isIn = true;
-			}
-			break;
-		}
+	pos[0] = trackingObject.pos.x;
+	pos[1] = trackingObject.pos.y;
+	if (twbTrackingProcess::isErrorTracking(trackingObject)) {
+		pos[2] = -1;
+	} else {
+		pos[2] = trackingObject.pos.theta;
 	}
-	return isIn;
-}
-
-position_t getNextTrackingPos(boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>> trackingQueue) {
-	boost::shared_ptr<twbTracking::proto::ObjectList> data;
-	int restTime = TRACKING_TIMEOUT * 1000; // ms
-	do {
-		if (!trackingQueue->empty()) {
-			data = boost::static_pointer_cast<twbTracking::proto::ObjectList>(trackingQueue->pop());
-			if (isBeingTracked(data, markerID)) {
-				break;
-			}
-		} else if (restTime <= 0) {
-			position_t errorPos;
-			errorPos[0] = 0;
-			errorPos[1] = 0;
-			errorPos[2] = -1;
-			ERROR_MSG("Marker " << markerID << " could not be detected in the last " << TRACKING_TIMEOUT << " seconds!");
-			return errorPos;
-		} else {
-			// sleep for 10 ms
-			usleep(10000);
-			restTime -= 10;
-		}
-	} while (true);
-	return readTracking(data, markerID);
+	return pos;
 }
 
 void calcSpeeds(position_t curPos, float relDistx, float relDisty, float &v, float &w, float &time, float &dist, float &angle) {
@@ -498,6 +453,7 @@ void setLightsVec(rsb::Informer< std::vector<int> >::Ptr informer, int lightType
 int failureProc(rsb::Informer< std::vector<int> >::Ptr lightInformer) {
 	setSpeeds(0, 0, myCAN);
 	setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,0,0), 600);
+	ERROR_MSG("The marker " << markerID << " couldn't be detected for " << twbTrackingProcess::TRACKING_TIMEOUT << " milliseconds!");
 	return EXIT_FAILURE;
 }
 
@@ -622,7 +578,6 @@ int main(int argc, char **argv) {
 			("choreoCorrectionIn", po::value<std::string>(&choreoCorrectionInscope), "Choreo Correction inscope.")
 			("amiroScope", po::value<std::string>(&amiroScope), "AMiRo Scope.")
 			("goalOut", po::value<std::string>(&goalScope), "Goal outscope.")
-			("trackingIn", po::value<std::string>(&trackingInscope), "Tracking inscope.")
 			("lightsOut", po::value<std::string>(&lightOutscope), "Light outscope.")
 			("choreoname,c", po::value<std::string>(&choreoName), "Initial Choreography name.")
 			("printChoreo,p", "Prints the loaded steps of the choreo.")
@@ -709,8 +664,7 @@ int main(int argc, char **argv) {
 	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
 
-	rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>::Ptr converterObjectList(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::ObjectList>);
-	rsb::converter::converterRepository<std::string>()->registerConverter(converterObjectList);
+	twbTrackingProcess::registerTracking();
 
 	rsb::converter::ProtocolBufferConverter<twbTracking::proto::Object>::Ptr converterObject(new rsb::converter::ProtocolBufferConverter<twbTracking::proto::Object>);
 	rsb::converter::converterRepository<std::string>()->registerConverter(converterObject);
@@ -747,28 +701,6 @@ int main(int argc, char **argv) {
 		tmpPartConf.mutableTransport("spread").setOptions(tmpPropSpread);
 	}
 
-	rsb::ParticipantConfig trackingPartConf = factory.getDefaultParticipantConfig(); {
-		// disable socket transport
-		rsc::runtime::Properties trackingPropSocket  = trackingPartConf.mutableTransport("socket").getOptions();
-		trackingPropSocket["enabled"] = boost::any(std::string("0"));
-
-		// Get the options for spread transport, because we want to change them
-		rsc::runtime::Properties trackingPropSpread  = trackingPartConf.mutableTransport("spread").getOptions();
-
-		// enable socket transport
-		trackingPropSpread["enabled"] = boost::any(std::string("1"));
-
-		// Change the config
-		trackingPropSpread["host"] = boost::any(std::string("alpia.techfak.uni-bielefeld.de"));
-
-		// Change the Port
-		trackingPropSpread["port"] = boost::any(std::string("4803"));
-
-		// Write the tranport properties back to the participant config
-		trackingPartConf.mutableTransport("socket").setOptions(trackingPropSocket);
-		trackingPartConf.mutableTransport("spread").setOptions(trackingPropSpread);
-	}
-
 	// ------------ Listener ---------------------
 
 	// prepare RSB listener for choreos
@@ -789,7 +721,7 @@ int main(int argc, char **argv) {
 	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(commandQueue)));
 
 	// prepare rsb listener for tracking data
-	rsb::ListenerPtr trackingListener = factory.createListener(trackingInscope, trackingPartConf);
+	rsb::ListenerPtr trackingListener = factory.createListener(twbTrackingProcess::getTrackingScope(), twbTrackingProcess::getTrackingRSBConfig());
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::ObjectList>(trackingQueue)));
 
@@ -925,7 +857,7 @@ int main(int argc, char **argv) {
 			choreo = loadChoreo(choreoName, startX, startY, startTheta);
 		} else if (useTwb) {
 			saveOldPos();
-			odoPos = getNextTrackingPos(trackingQueue);
+			odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
 			if (odoPos[2] < 0) return failureProc(lightInformer);
 			correctPosition();
 			choreo = loadChoreo(choreoName, odoPos[0], odoPos[1]);
@@ -1019,7 +951,7 @@ int main(int argc, char **argv) {
 			// get current position
 			if (useTwb) {
 				saveOldPos();
-				odoPos = getNextTrackingPos(trackingQueue);
+				odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
 				if (odoPos[2] < 0) return failureProc(lightInformer);
 				correctPosition();
 			}
@@ -1107,7 +1039,7 @@ int main(int argc, char **argv) {
 
 					// get new position
 					saveOldPos();
-					odoPos = getNextTrackingPos(trackingQueue);
+					odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
 					if (odoPos[2] < 0) return failureProc(lightInformer);
 					correctPosition();
 					moveDirX = goalPos[0] - odoPos[0];
@@ -1126,7 +1058,7 @@ int main(int argc, char **argv) {
 					choreoSleep_ms(100, commandQueue, choreoCorrectionQueue);
 
 					// get next position
-					odoPos = getNextTrackingPos(trackingQueue);
+					odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
 					if (odoPos[2] < 0) return failureProc(lightInformer);
 				}
 			}

@@ -56,11 +56,6 @@ using namespace rsb;
 
 #include <twb/TwbTracking.h>
 
-
-// unit calculations
-#define TO_MICRO 1000000
-#define MICRO_TO 0.000001
-
 // constants
 int markerID = -1;
 float meterPerPixel = 1.0; // m/pixel
@@ -120,12 +115,12 @@ int main(int argc, char **argv) {
 
 	// ------------ Converters ----------------------
 
-	twbTracking::registerTracking();
+	twbTrackingProcess::registerTracking();
 
 	// ------------ Listener ---------------------
 
 	// prepare rsb listener for tracking data
-	rsb::ListenerPtr trackingListener = factory.createListener(twbTracking::getTrackingScope(), twbTracking::getTrackingRSBConfig());
+	rsb::ListenerPtr trackingListener = factory.createListener(twbTrackingProcess::getTrackingScope(), twbTrackingProcess::getTrackingRSBConfig());
 	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>>trackingQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<twbTracking::proto::ObjectList>>(1));
 	trackingListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<twbTracking::proto::ObjectList>(trackingQueue)));
 
@@ -135,9 +130,9 @@ int main(int argc, char **argv) {
 
 	while(true) {
 		if (specificMarker) {
-			twbTracking::TrackingObject trObj = twbTracking::getNextTrackingObject(trackingQueue, markerID);
-			if (twbTracking::isErrorTracking(trObj)) {
-				ERROR_MSG("The marker " << markerID << " could not be tracked for the last " << twbTracking::TRACKING_TIMEOUT << " milliseconds!");
+			twbTrackingProcess::TrackingObject trObj = twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID);
+			if (twbTrackingProcess::isErrorTracking(trObj)) {
+				ERROR_MSG("The marker " << markerID << " could not be tracked for the last " << twbTrackingProcess::TRACKING_TIMEOUT << " milliseconds!");
 				return EXIT_FAILURE;
 			}
 			float posX = trObj.pos.x;
@@ -177,10 +172,10 @@ int main(int argc, char **argv) {
 				INFO_MSG(" Ø: " << (posT*180.0/M_PI) << "°");
 			}
 		} else {
-			std::vector<twbTracking::TrackingObject> positions = twbTracking::getNextTrackingObjects(trackingQueue);
+			std::vector<twbTrackingProcess::TrackingObject> positions = twbTrackingProcess::getNextTrackingObjects(trackingQueue);
 			if (positions.size() > 0) {
-				if (twbTracking::isErrorTracking(positions[0])) {
-					ERROR_MSG("There wasn't any tracking data for the last " << twbTracking::TRACKING_TIMEOUT << " milliseconds!");
+				if (twbTrackingProcess::isErrorTracking(positions[0])) {
+					ERROR_MSG("There wasn't any tracking data for the last " << twbTrackingProcess::TRACKING_TIMEOUT << " milliseconds!");
 					return EXIT_FAILURE;
 				}
 				INFO_MSG("Current positions:");

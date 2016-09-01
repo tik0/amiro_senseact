@@ -12,8 +12,7 @@ If there wasn't any tracking data (or if there wasn't tracking data containing t
 
 ===== RSB Scopes =====
 
-^ Scope Name ^ Default Scope ^ Scope Type ^ Description ^
-| Tracking | /tracking/merger | ObjectList | Input Scope for tracking data. |
+The tracking scope will be automatically loaded from the [[includes:twb:startTwbTracking|TWB Tracking Module]].
 
 ===== Parameters =====
 
