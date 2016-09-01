@@ -632,9 +632,9 @@ int processSM(void) {
         informerRemoteWaypoint->publish(tmp);
 
         // stop waypoint and start following
-//        informerWaypoint->publish(signal_stop);
-//        informerFollowing->publish(signal_init);
-//        set_state_following();
+        informerWaypoint->publish(signal_stop);
+        informerFollowing->publish(signal_init);
+        set_state_following();
 
       } else if (bGotFromWaypoint_left && personEntered) {
         DEBUG_MSG("Switched to left in waypoint!");
