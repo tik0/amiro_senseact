@@ -9,8 +9,11 @@ Additionally choreo corrections can be sent. Please check the [[sandbox:harveste
 ===== Run the Demo =====
 
   - ''. ./build.sh .''
+  - ''./copySpecific.sh <ip address>'' (only once!)*
   - ''./copyPrograms.sh <ip address>''
-  - ''./run.sh <robot ID> <marker ID>'' on the AMiRo
+  - Change to AMiRo console
+  - Modify the parameters in ''runAMiRo.sh'' (robot ID, marker ID, positions, etc.) on every robot!
+  - ''./runAMiRo.sh'' on the AMiRo
   - If every AMiRo is running:
     - Change to command directory on one AMiRo: ''cd commands/''
     - If they recognized each other: ''init.sh''
@@ -21,6 +24,8 @@ Additionally choreo corrections can be sent. Please check the [[sandbox:harveste
   - ''./stop.sh'' on the AMiRo for stopping
 
 One could use ''rsb-loggercpp0.13 --style monitor /'' to inspect the communication
+
+*) This has to be done only once for every robot. The copied files are modified on every robot.
 
 ===== Do Choreo Correction =====
 

@@ -32,6 +32,6 @@ sshpass -p ${PASS} scp Choreos/*.xml root@${IP}:~/${NAME}
 
 # Copy config
 sshpass -p ${PASS} scp rsb.conf root@${IP}:~/${NAME}
-sshpass -p ${PASS} scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread root@${IP}:~/${NAME}
+sshpass -p ${PASS} scp ${MUROX_INCLUDE_DIRS}/extspread/amirospread_10.0.0 root@${IP}:~/${NAME}/amirospread
 
 echo "Copying finished"

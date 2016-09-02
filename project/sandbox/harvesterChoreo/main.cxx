@@ -96,13 +96,14 @@ ControllerAreaNetwork myCAN;
 // constants
 float driveSpeed = 0.1; // m/s
 float turnSpeed = M_PI/6.0; // rad/s
+float turnMax = M_PI/3.0; // rad/s
 int timebuffer = (int)(0.125 * TO_MICRO); // us
 std::string amiroName = "amiro0";
 int markerID = 0;
 float meterPerPixel = 1.0; // m/pixel
-float trackingVariance = 0.005; // m
+float trackingVariance = 0.02; // m
 float trackingAngleVar = 4.0 * M_PI/180.0; // rad
-float drivingMaxAngle = 20.0 * M_PI/180.0; // rad
+float drivingMaxAngle = 10.0 * M_PI/180.0; // rad
 
 // Flags
 bool printChoreo = false;
@@ -265,7 +266,7 @@ void trackingSpeeds(position_t curPos, float relDistx, float relDisty, bool dire
 		if (directly) {
 			moveAngle *= 2.0;
 		} else {
-			moveAngle *= 1.1;
+			moveAngle *= 1.5;
 		}
 
 		float time = moveDist/driveSpeed; // s
@@ -274,6 +275,14 @@ void trackingSpeeds(position_t curPos, float relDistx, float relDisty, bool dire
 			w = moveAngle/time; // rad/s
 		} else {
 			w = 0.0; // rad/s
+		}
+		if (w > turnMax) {
+			w = turnSpeed;
+			v = 0.0;
+		}
+		if (w < -turnMax) {
+			w = -turnSpeed;
+			v = 0.0;
 		}
 	}
 }
@@ -1157,16 +1166,22 @@ int main(int argc, char **argv) {
 				setLights(lightInformer, LightModel::LightType::SINGLE_SHINE, amiro::Color(255,255,0), 0);
 
 				// to continue just wait until deadline
-				if (vm.count("verbose")) DEBUG_MSG("All are finished. Waiting ...");
-				boost::this_thread::sleep_until(*startSystemTime);
-				if (vm.count("verbose")) DEBUG_MSG("Continue choreo ...");
+				if (stepNumber < choreo.size()) {
+					if (vm.count("verbose")) DEBUG_MSG("All are finished. Waiting ...");
+					boost::this_thread::sleep_until(*startSystemTime);
+					if (vm.count("verbose")) DEBUG_MSG("Continue choreo ...");
+				} else {
+					if (vm.count("verbose")) DEBUG_MSG("All are finished.");
+				}
 
 				// Clear amiro queue again (there have been messages again)
 				while (!amiroQueue->empty()) {
 					amiroQueue->pop(0);
 				}
-			} else if (doChoreo) {
+			} else if (doChoreo && stepNumber < choreo.size()) {
 				if (vm.count("verbose")) DEBUG_MSG("No brake, continue ...");
+			} else if (doChoreo) {
+				if (vm.count("verbose")) DEBUG_MSG("No brake.");
 			}
 			
 			if (pauseChoreo) {

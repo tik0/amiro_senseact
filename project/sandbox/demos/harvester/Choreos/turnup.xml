@@ -3,7 +3,7 @@
   <choreoStep>
     <brake>0</brake>
     <posx>0</posx>
-    <posy>500000</posy>
+    <posy>650000</posy>
     <postheta>180000000</postheta>
     <direct>0</direct>
 <!-- blue,green,red -->
