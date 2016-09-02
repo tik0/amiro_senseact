@@ -10,7 +10,7 @@ Now they are waiting for the start command. In this moment, the choreography can
 
 Each robot does its choreo steps on its own. But if a step has a brake (have a look into the XML description), the robot waits until every robot reaches a brake. Afterwards they all continue based on their time delays.
 
-If a robot doesn't get any tracking data for 5 seconds, it will automatically stop. The robot just continues by restarting the program! If other robots are waiting for it, there isn't any chance to continue with their choreos. The program has to be restarted for all robots due to the initialization at the very beginning.
+If a robot doesn't get any tracking data in a specific time (defined by the [[includes:twb:startTwbTracking|Tracking Module]]), it will automatically stop. The robot just continues by restarting the program! If other robots are waiting for it, there isn't any chance to continue with their choreos. The program has to be restarted for all robots due to the initialization at the very beginning.
 
 By giving the command 'stop' via the Commands Scope, the robots will stop the choreography or (in waiting state) exit the application.
 
@@ -28,6 +28,8 @@ While executing a choreography, the robots are able to correct their choreograph
 In this case it is nessecary to send a list of new positions (with the suited robot ID) via the Choreo Correction Scope. The demanded robot will immediately stop its current step and include the new positions as steps, which have to be executed before the current one. The execution starts directly.
 
 It is important, that the new positions have to be absolute positions (in contrast to the positions in the XML files of the choreographies, which have to be relative). The robot will drive directly to the position (as nearly straight line) and without a brake at the end.
+
+For exampe the [[sandbox:harvesterCorrectChoreo:start|Harvester Correction Choreo Tool]] sends choreo corrections as a demonstration of this flexibility.
 
 ===== RSB Scopes =====
 

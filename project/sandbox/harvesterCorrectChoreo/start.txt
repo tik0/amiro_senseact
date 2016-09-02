@@ -1,6 +1,6 @@
 ====== Harvester Correct Choreo ======
 
-This program sends a choreo correction to a choreo executing robot.
+This program sends a choreo correction to a choreo executing robot, which uses the [[sandbox:harvesterChoreo:start|Harvester Choreo Tool]].
 
 ===== Basic Procedure =====
 
