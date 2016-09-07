@@ -27,21 +27,41 @@ wait_for_port()
 	done
 }
 
+start_spread()
+{
+	# try to start spread 10 times
+	for i in $(seq 10); do
+		spread $@ &
+		PID=$!
+		sleep 1
+
+		# check if it is running
+		if ps -o pid= | grep -q "^ *$PID$"; then
+			echo "spread $@ started successfully (try #$i)"
+			return 0
+		else
+			echo "spread $@ not running (try #$i)"
+		fi
+	done
+
+	echo "could not start spread"
+	exit 1
+}
+
 cpufreq-set -g performance
 
 # local spread
 wait_for_port 4803
-spread &
+start_spread
 
 # external spread
 wait_for_port 4823
-spread -c amirospread &
-sleep 7
+start_spread -c amirospread
 
 # sensing lidar from 'project/sense/senseHokuyo/'
 if [ -e /dev/ttyACM0 ]; then
 	echo "Assuming Hokuyo laser scanner"
-	./senseHokuyo -d /dev/ttyACM0 -o /lidar &
+	./senseHokuyo -d /dev/ttyACM0 -o /lidar > /dev/null &
 else
 	echo "Assuming SICK laser scanner"
 	./senseSickTim -o /lidar > /dev/null &
@@ -54,18 +74,28 @@ fi
 #./waypoint --lidarinscope /lidar --range 1.5 --removeLessThan 9 --splitConnected 0.06 &
 # 818 - 409
 sleep 1 # sleep so we don't get old laser values
-./waypoint --lidarinscope /lidar --range 1.5 --scanStartIndex 390 --scanEndIndex 420 -s &
+./waypoint --lidarinscope /lidar --range 1.5 --scanStartIndex 390 --scanEndIndex 420 -s > /dev/null &
 
 # start state machine
 poseXThresholds="14.4
 15.7"
 poseXThreshold="$(echo "$poseXThresholds" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
-./final2016 --id ${ID} --poseScope /amiro${ID}/pose --poseXThreshold $poseXThreshold &
+./final2016 --id ${ID} --poseScope /amiro${ID}/pose --poseXThreshold $poseXThreshold > /dev/null &
 
-./sendOdometryProtoPose --resetodom true -o /odom &
+./sendOdometryProtoPose --resetodom true -o /odom > /dev/null &
 
 # start follower
-./follow_LaserScanner -l /lidar &
+# default values:
+# followMinDist: 300 mm
+# followMinBackDist: 200 mm
+# followDistSlowingDown: 200 mm
+# forwardSpeed: 500 mm/s
+# forwardMinSpeed: 150 mm/s
+# turningSpeed: 100 mrad/s
+# turnCorrectSpeed: 60 mrad/s
+# maxRange: 2000 mm
+# rotationTolarence: PI/36 ~= 5°
+./follow_LaserScanner -l /lidar --forwardSpeed 800 --forwardMinSpeed 400 --followMinDist 400 --followDistSlowingDown 400 --followMinBackDist 200 --maxRange 1500 &
 
 # 0 1
 # 2 3
@@ -78,7 +108,7 @@ initialPoses="19205.7 14267.7 45
 22195.6 14475.4 -90
 31262.3 17543.2 180"
 
-initialPoses="13443.8 11059.1 -91
+initialPoses="13443.8 11059.1 -46
 14555.9 10000.7 39.8219"
 
 initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
@@ -118,9 +148,9 @@ targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 
 ./actEmergencyStop --lidarinscope /lidar --cntMax 15 --distance 0.25 --delay 10 --switchinscope /following > /dev/null &
 
-./actTargetPosition --inscope /targetPositions &
+./actTargetPosition --inscope /targetPositions > /dev/null &
 
-./actAmiroMotor &
+./actAmiroMotor > /dev/null &
 
 wait
 cpufreq-set -g ondemand
