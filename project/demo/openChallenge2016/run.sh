@@ -77,7 +77,7 @@ sleep 1 # sleep so we don't get old laser values
 ./waypoint --lidarinscope /lidar --range 1.5 --scanStartIndex 390 --scanEndIndex 420 -s > /dev/null &
 
 # start state machine
-poseXThresholds="14.4
+poseXThresholds="13.85
 15.7"
 poseXThreshold="$(echo "$poseXThresholds" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 ./final2016 --id ${ID} --poseScope /amiro${ID}/pose --poseXThreshold $poseXThreshold > /dev/null &
@@ -95,7 +95,7 @@ poseXThreshold="$(echo "$poseXThresholds" | head -n $((${ID} + 1 % 4)) | tail -n
 # turnCorrectSpeed: 60 mrad/s
 # maxRange: 2000 mm
 # rotationTolarence: PI/36 ~= 5°
-./follow_LaserScanner -l /lidar --forwardSpeed 800 --forwardMinSpeed 400 --followMinDist 400 --followDistSlowingDown 400 --followMinBackDist 200 --maxRange 1500 &
+./follow_LaserScanner -l /lidar --forwardSpeed 800 --forwardMinSpeed 400 --followMinDist 400 --followDistSlowingDown 400 --followMinBackDist 200 --maxRange 1500 --turningSpeed 50 --maxAngle 180 &
 
 # 0 1
 # 2 3
@@ -109,7 +109,7 @@ initialPoses="19205.7 14267.7 45
 31262.3 17543.2 180"
 
 initialPoses="13443.8 11059.1 -46
-14555.9 10000.7 39.8219"
+14855.9 10300.7 39.8219"
 
 initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 initialX="$(echo "$initialPose" | cut -d\  -f 1)"
