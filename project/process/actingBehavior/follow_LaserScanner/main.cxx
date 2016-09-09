@@ -85,6 +85,7 @@ int turningSpeed = 100; // mradian/s
 int turnCorrectSpeed = 60; //mradian/s
 float rotationTolarence = M_PI/36.0; // rad
 int maxRange = 2000; // mm
+int maxAngle = 360; // degree
 
 
 void motorActionMilli(int speed, int turn) {
@@ -134,8 +135,15 @@ void calculateDrivingBehavior(ts_sensor_data_t &scan) {
     endLaser = laserCount-1;
   }
 
+  float sa = 0.0;
+  float ea = (float)(laserCount*laserAngleDist);
+  if (endAngle-startAngle > (float)(maxAngle*M_PI/180.0)) {
+    float angleDiff = (endAngle-startAngle) - (float)(maxAngle*M_PI/180.0);
+    sa += angleDiff/2.0;
+    ea -= angleDiff/2.0;
+  }
   for (int laser=startLaser; laser <= endLaser; laser++) {
-    if ((shortId < 0 || scan.d[laser] < shortDist) && scan.d[laser] > minValueScan) {
+    if ((shortId < 0 || scan.d[laser] < shortDist) && scan.d[laser] > minValueScan && (float)(laser*laserAngleDiff) >= sa && (float)(laser*laserAngleDiff) <= ea) {
       shortId = laser;
       shortDist = scan.d[laser];
     }
@@ -211,6 +219,7 @@ int main(int argc, const char **argv){
     ("turningSpeed", po::value < int > (&turningSpeed), "")
     ("turnCorrectSpeed", po::value < int > (&turnCorrectSpeed), "")
     ("maxRange", po::value < int > (&maxRange), "")
+    ("maxAngle", po::value < int > (&maxAngle), "Maximum angle the following behavior shall be focus on in degrees (default: 360°).")
     ("rotationTolarence", po::value < float > (&rotationTolarence), "");
 
   // allow to give the value as a positional argument
