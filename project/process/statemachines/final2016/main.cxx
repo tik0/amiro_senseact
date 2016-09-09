@@ -110,6 +110,7 @@ int move_follow = 0;
 
 
 float poseXThreshold = 0;
+bool followPerson = true;
 
 // IR triggering related
 float irDetectionDist = 0.01; // m
@@ -633,8 +634,10 @@ int processSM(void) {
 
         // stop waypoint and start following
         informerWaypoint->publish(signal_stop);
-        informerFollowing->publish(signal_init);
-        set_state_following();
+        if (followPerson) {
+          informerFollowing->publish(signal_init);
+          set_state_following();
+        }
 
       } else if (bGotFromWaypoint_left && personEntered) {
         DEBUG_MSG("Switched to left in waypoint!");
@@ -644,13 +647,17 @@ int processSM(void) {
 
         // stop waypoint and start following
         informerWaypoint->publish(signal_stop);
-        informerFollowing->publish(signal_init);
-        set_state_following();
+        if (followPerson) {
+          informerFollowing->publish(signal_init);
+          set_state_following();
+        }
 
       } else if (bGotFromTobi_initfollowing) {
         informerWaypoint->publish(signal_stop);
-        informerFollowing->publish(signal_init);
-        set_state_following();
+        if (followPerson) {
+          informerFollowing->publish(signal_init);
+          set_state_following();
+        }
       } else if (bGotFromTobi_turn) {
         informerWaypoint->publish(signal_stop);
         set_state_turn();
@@ -664,6 +671,9 @@ int processSM(void) {
     case homing:
         // got a response from CoreSLAM, it must have reached the home position
         if (!queueHomingAnswer->empty()) {
+            // only follow the person once
+            followPerson = false;
+
             boost::shared_ptr<std::string> response = queueHomingAnswer->pop();
             if ((*response).compare("done") == 0) {
                 //set_state_stopped();
@@ -678,8 +688,10 @@ int processSM(void) {
         informerWaypoint->publish(signal_init);
         set_state_waypoint();
       } else if (bGotFromTobi_initfollowing) {
-        informerFollowing->publish(signal_init);
-        set_state_following();
+        if (followPerson) {
+          informerFollowing->publish(signal_init);
+          set_state_following();
+        }
       } else if (bGotFromTobi_turn) {
         set_state_turn();
       } else if (bGotFromTobi_homing || gotFromIRhoming) {
