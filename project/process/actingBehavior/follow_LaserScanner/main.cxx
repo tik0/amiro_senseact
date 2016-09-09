@@ -143,7 +143,7 @@ void calculateDrivingBehavior(ts_sensor_data_t &scan) {
     ea -= angleDiff/2.0;
   }
   for (int laser=startLaser; laser <= endLaser; laser++) {
-    if ((shortId < 0 || scan.d[laser] < shortDist) && scan.d[laser] > minValueScan && (float)(laser*laserAngleDiff) >= sa && (float)(laser*laserAngleDiff) <= ea) {
+    if ((shortId < 0 || scan.d[laser] < shortDist) && scan.d[laser] > minValueScan && (float)(laser*laserAngleDist) >= sa && (float)(laser*laserAngleDist) <= ea) {
       shortId = laser;
       shortDist = scan.d[laser];
     }
