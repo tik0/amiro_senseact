@@ -9,6 +9,7 @@ killall -9 waypoint
 
 # kill all sensing programs
 killall -9 senseHokuyo
+killall -9 senseSickTim
 killall -9 senseCamJpg
 
 # kill the webserver

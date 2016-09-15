@@ -24,6 +24,9 @@ sleep 5
 v4l2-ctl -d/dev/v4l-subdev8 --set-ctrl=vertical_flip=1
 ./senseCamJpg -d /dev/video6 -o /cam &
 
+#sensing lidar from 'project/sense/senseSickTim/'
+#./senseSickTim -o /lidar &
+
 # sensing lidar from 'project/sense/senseHokuyo/'
 ./senseHokuyo -d /dev/ttyACM0 -o /lidar &
 
