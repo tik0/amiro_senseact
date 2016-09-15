@@ -10,7 +10,7 @@ Now they are waiting for the start command. In this moment, the choreography can
 
 Each robot does its choreo steps on its own. But if a step has a brake (have a look into the XML description), the robot waits until every robot reaches a brake. Afterwards they all continue based on their time delays.
 
-If a robot doesn't get any tracking data in a specific time (defined by the [[includes:twb:startTwbTracking|Tracking Module]]), it will automatically stop. The robot just continues by restarting the program! If other robots are waiting for it, there isn't any chance to continue with their choreos. The program has to be restarted for all robots due to the initialization at the very beginning.
+If a robot doesn't get any tracking data in a specific time (defined by the [[includes:twb:startTwbTracking|Tracking Module]]), it will automatically stop and inform the other robots. The robot only continues by restarting the program! If other robots are waiting for it, they will get a logout from the stopped robot and will continue without it. If the stopped robot shall be reintegrated, the program has to be restarted for all robots due to the initialization at the very beginning.
 
 By giving the command 'stop' via the Commands Scope, the robots will stop the choreography or (in waiting state) exit the application.
 
@@ -38,6 +38,7 @@ For exampe the [[sandbox:harvesterCorrectChoreo:start|Harvester Correction Chore
 | Commands          | /harvesters/command          | String         | Input Scope for receiving commands. |
 | Choreo Correction | /harvesters/choreocorrection | PoseList       | Input Scope for choreo corrections. |
 | AMiRo Cooperation | /harvesters/harvester        | String         | Scope for cooperating with other AMiRos. |
+| AMiRo Logout      | /harvesters/logout           | String         | Scope for logouts, if a robot doesn't get any tracking data anymore. |
 | Goals             | /harvesters/goal             | Object         | Output Scope for goal position information of one choreo step. |
 | Lights            | /amiro/lights                | Integer Vector | Output Scope for light information. |
 
@@ -145,6 +146,7 @@ In this example the robot drives (more or less) an oval, which will not be close
 | commandsIn         | String  | /harvesters/command          | Commands inscope. |
 | choreoCorrectionIn | String  | /harvesters/choreocorrection | Choreo Correction inscope. |
 | amiroScope         | String  | /harvesters/harvester        | AMiRo Scope. |
+| logoutScope        | String  | /harvesters/logout           | AMiRo Logout Scope. |
 | goalOut            | String  | /harvesters/goal             | Goal outscope. |
 | lightsOut          | String  | /amiro/lights                | Light outscope. |
 | choreoname, c      | String  | testChoreo.xml               | Initial Choreography name. |

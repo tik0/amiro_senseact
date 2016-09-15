@@ -117,6 +117,7 @@ std::string lightOutscope = "/amiro/lights";
 std::string choreoInscope = "/harvesters/choreo";
 std::string commandInscope = "/harvesters/command";
 std::string amiroScope = "/harvesters/harvester";
+std::string amiroLogoutScope = "/harvesters/logout";
 std::string choreoCorrectionInscope = "/harvesters/choreocorrection";
 std::string goalScope = "/harvesters/goal";
 
@@ -459,9 +460,11 @@ void setLightsVec(rsb::Informer< std::vector<int> >::Ptr informer, int lightType
 	informer->publish(commandVector);
 }
 
-int failureProc(rsb::Informer< std::vector<int> >::Ptr lightInformer) {
+int failureProc(rsb::Informer< std::vector<int> >::Ptr lightInformer, rsb::Informer<std::string>::Ptr amiroLogoutInformer) {
 	setSpeeds(0, 0, myCAN);
 	setLights(lightInformer, LightModel::LightType::SINGLE_WARNING, amiro::Color(255,0,0), 600);
+	boost::shared_ptr<std::string> StringPtr(new std::string(amiroName));
+	amiroLogoutInformer->publish(StringPtr);
 	ERROR_MSG("The marker " << markerID << " couldn't be detected for " << twbTrackingProcess::TRACKING_TIMEOUT << " milliseconds!");
 	return EXIT_FAILURE;
 }
@@ -586,6 +589,7 @@ int main(int argc, char **argv) {
 			("commandsIn", po::value<std::string>(&commandInscope), "Commands inscope.")
 			("choreoCorrectionIn", po::value<std::string>(&choreoCorrectionInscope), "Choreo Correction inscope.")
 			("amiroScope", po::value<std::string>(&amiroScope), "AMiRo Scope.")
+			("logoutScope", po::value<std::string>(&amiroLogoutScope), "AMiRo Logout Scope.")
 			("goalOut", po::value<std::string>(&goalScope), "Goal outscope.")
 			("lightsOut", po::value<std::string>(&lightOutscope), "Light outscope.")
 			("choreoname,c", po::value<std::string>(&choreoName), "Initial Choreography name.")
@@ -740,10 +744,19 @@ int main(int argc, char **argv) {
 			new rsc::threading::SynchronizedQueue<EventPtr>(50));
 	amiroListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(amiroQueue)));
 
+	// prepare RSB listener for amiro logouts
+	rsb::ListenerPtr amiroLogoutListener = factory.createListener(amiroLogoutScope, tmpPartConf);
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<EventPtr>> amiroLogoutQueue(
+			new rsc::threading::SynchronizedQueue<EventPtr>(50));
+	amiroLogoutListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(amiroLogoutQueue)));
+
 	// ------------ Informer -----------------
 
 	// prepare RSB informer for amiros
 	rsb::Informer<std::string>::Ptr amiroInformer = factory.createInformer<std::string> (amiroScope, tmpPartConf);
+
+	// prepare RSB informer for amiro logouts
+	rsb::Informer<std::string>::Ptr amiroLogoutInformer = factory.createInformer<std::string> (amiroLogoutScope, tmpPartConf);
 
 	// prepare RSB informer for goal position publication
 	rsb::Informer<twbTracking::proto::Object>::Ptr goalInformer = factory.createInformer<twbTracking::proto::Object> (goalScope, tmpPartConf);
@@ -867,7 +880,7 @@ int main(int argc, char **argv) {
 		} else if (useTwb) {
 			saveOldPos();
 			odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
-			if (odoPos[2] < 0) return failureProc(lightInformer);
+			if (odoPos[2] < 0) return failureProc(lightInformer, amiroLogoutInformer);
 			correctPosition();
 			choreo = loadChoreo(choreoName, odoPos[0], odoPos[1]);
 		} else {
@@ -961,7 +974,7 @@ int main(int argc, char **argv) {
 			if (useTwb) {
 				saveOldPos();
 				odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
-				if (odoPos[2] < 0) return failureProc(lightInformer);
+				if (odoPos[2] < 0) return failureProc(lightInformer, amiroLogoutInformer);
 				correctPosition();
 			}
 
@@ -1049,7 +1062,7 @@ int main(int argc, char **argv) {
 					// get new position
 					saveOldPos();
 					odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
-					if (odoPos[2] < 0) return failureProc(lightInformer);
+					if (odoPos[2] < 0) return failureProc(lightInformer, amiroLogoutInformer);
 					correctPosition();
 					moveDirX = goalPos[0] - odoPos[0];
 					moveDirY = goalPos[1] - odoPos[1];
@@ -1068,7 +1081,7 @@ int main(int argc, char **argv) {
 
 					// get next position
 					odoPos = toOwnPos(twbTrackingProcess::getNextTrackingObject(trackingQueue, markerID));
-					if (odoPos[2] < 0) return failureProc(lightInformer);
+					if (odoPos[2] < 0) return failureProc(lightInformer, amiroLogoutInformer);
 				}
 			}
 
@@ -1088,7 +1101,7 @@ int main(int argc, char **argv) {
 				// Check for all ready amiros
 				if (vm.count("verbose")) DEBUG_MSG("List of AMiRos which are already finished:");
 				while (doChoreo && !amiroQueue->empty()) {
-					EventPtr event = amiroQueue->pop(0);
+					EventPtr event = amiroQueue->pop();
 					std::string inputName = *static_pointer_cast<std::string>(event->getData());
 					bool isIn = false;
 					int id = -1;
@@ -1102,6 +1115,32 @@ int main(int argc, char **argv) {
 					if (isIn && !amiroCheck[id]) {
 						amiroCheck[id] = true;
 						if (vm.count("verbose")) DEBUG_MSG(" -> Ready AMiRo: '" << inputName.c_str() << "'");
+					}
+				}
+				while (doChoreo && !amiroLogoutQueue->empty()) {
+					EventPtr event = amiroLogoutQueue->pop();
+					std::string inputName = *static_pointer_cast<std::string>(event->getData());
+					bool isIn = false;
+					int id = -1;
+					for (int i=0; i<amiros.size(); i++) {
+						if (amiros[i] == inputName) {
+							isIn = true;
+							id = i;
+							break;
+						}
+					}
+					if (isIn) {
+						int newIdx = 0;
+						std::vector<std::string> newAmiros;
+						for (int curIdx=0; curIdx<amiros.size(); curIdx++) {
+							if (amiros[curIdx] != inputName) {
+								newAmiros.push_back(amiros[curIdx]);
+								amiroCheck[newIdx] = amiroCheck[curIdx];
+								newIdx++;
+							}
+						}
+						amiros = newAmiros;
+						WARNING_MSG("AMiRo Logout: '" << inputName.c_str() << "'");
 					}
 				}
 				choreoSleep_ms(100, commandQueue, choreoCorrectionQueue);
@@ -1120,7 +1159,7 @@ int main(int argc, char **argv) {
 
 					// check for rest
 					while (doChoreo && !amiroQueue->empty()) {
-						EventPtr event = amiroQueue->pop(0);
+						EventPtr event = amiroQueue->pop();
 						std::string inputName = *static_pointer_cast<std::string>(event->getData());
 						if (amiroName != inputName) {
 							bool isIn = false;
@@ -1145,6 +1184,32 @@ int main(int argc, char **argv) {
 							startSystemTime = new system_clock::time_point(microseconds(event->getMetaData().getReceiveTime()) + milliseconds(delayS));
 						}
 					}
+					while (doChoreo && !amiroLogoutQueue->empty()) {
+						EventPtr event = amiroLogoutQueue->pop();
+						std::string inputName = *static_pointer_cast<std::string>(event->getData());
+						bool isIn = false;
+						int id = -1;
+						for (int i=0; i<amiros.size(); i++) {
+							if (amiros[i] == inputName) {
+								isIn = true;
+								id = i;
+								break;
+							}
+						}
+						if (isIn) {
+							int newIdx = 0;
+							std::vector<std::string> newAmiros;
+							for (int curIdx=0; curIdx<amiros.size(); curIdx++) {
+								if (amiros[curIdx] != inputName) {
+									newAmiros.push_back(amiros[curIdx]);
+									amiroCheck[newIdx] = amiroCheck[curIdx];
+									newIdx++;
+								}
+							}
+							amiros = newAmiros;
+							WARNING_MSG("AMiRo Logout: '" << inputName.c_str() << "'");
+						}
+					}
 
 					allOthersReceived = true;
 					for (int i=0; i<amiros.size(); i++) {
@@ -1159,7 +1224,7 @@ int main(int argc, char **argv) {
 				}
 				// Clear amiro queue
 				while (!amiroQueue->empty()) {
-					amiroQueue->pop(0);
+					amiroQueue->pop();
 				}
 
 				// Set LEDs
