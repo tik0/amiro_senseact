@@ -77,8 +77,9 @@ sleep 1 # sleep so we don't get old laser values
 ./waypoint --lidarinscope /lidar --range 1.5 --scanStartIndex 390 --scanEndIndex 420 -s > /dev/null &
 
 # start state machine
-poseXThresholds="13.85
-15.7"
+poseXThresholds="17.5
+19"
+
 poseXThreshold="$(echo "$poseXThresholds" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 ./final2016 --id ${ID} --poseScope /amiro${ID}/pose --poseXThreshold $poseXThreshold > /dev/null &
 
@@ -98,18 +99,8 @@ poseXThreshold="$(echo "$poseXThresholds" | head -n $((${ID} + 1 % 4)) | tail -n
 ./follow_LaserScanner -l /lidar --forwardSpeed 800 --forwardMinSpeed 400 --followMinDist 400 --followDistSlowingDown 400 --followMinBackDist 200 --maxRange 1500 --turningSpeed 50 --maxAngle 180 &
 
 # 0 1
-# 2 3
-initialPoses="33749.9 17848.6 -90
-33250.2 17848.6 -90
-33743.3 18348.3 -90
-33250.2 18348.3 -90"
-
-initialPoses="19205.7 14267.7 45
-22195.6 14475.4 -90
-31262.3 17543.2 180"
-
-initialPoses="13443.8 11059.1 -46
-14855.9 10300.7 39.8219"
+initialPoses="16467.2 18082.7 45
+17677.1 19037.1 -45"
 
 initialPose="$(echo "$initialPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
 initialX="$(echo "$initialPose" | cut -d\  -f 1)"
@@ -139,7 +130,7 @@ targetPose="$(echo "$targetPoses" | head -n $((${ID} + 1 % 4)) | tail -n 1)"
   --remotePort 4823 \
   --senImage 0 \
   --delta 0.05 --sigma_xy 10 --sigma_xy_new_position 100 --sigma_theta 0.1 --sigma_theta_new_position 0.15  --doMapUpdate false \
-  --loadMapFromImage ./data/clf_final.pgm --flipHorizontal true \
+  --loadMapFromImage ./data/homecomingCitec.pgm --flipHorizontal true \
   --erosionRadius 0.35 \
   --initialX $initialX --initialY $initialY --initialTheta $initialTheta \
   --targetPose "$targetPose" \
