@@ -2,7 +2,7 @@
 
 The TWB tracking consists of 4 cameras, which are tracking markers. The merged positions are given via RSB.
 
-In the following chapters the usage is descriped. For an example, please have a look into the [[sandbox:twbTrackingCheck:start|twbTrackingCheck tool]].
+In the following chapters the usage is descriped. For an example, please have a look into the [[tools:robotTools:twbTrackingCheck:start|twbTrackingCheck tool]].
 
 ===== Incomming and Return Values =====
 
@@ -41,7 +41,7 @@ The difference between the functions ''getNextTrackingObject'' and ''getNextTrac
 
 The function ''getNextTrackingObjects'' waits for any tracking data and returns a ''std::vector'' containing ''TrackingObjects'' for each tracked marker. It doesn't check for a specific marker. If there wasn't any tracking data within the time defined by ''TRACKING_TIMEOUT'', it returns a ''std::vector'' containing the error tracking object only.
 
-An example for using this tracking functions is the [[sandbox:twbTrackingCheck:start|twbTrackingCheck tool]].
+An example for using this tracking functions is the [[tools:robotTools:twbTrackingCheck:start|twbTrackingCheck tool]].
 
 ===== Additional Constants =====
 
