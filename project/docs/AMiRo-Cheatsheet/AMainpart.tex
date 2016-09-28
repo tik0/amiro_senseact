@@ -557,26 +557,37 @@ The second way is to use the \setlightsnameI\ tool in \setlightspathI. It listen
 \begin{tabular}{l|l}
 {\bf Lighting Type} & {\bf Description} \\
 \hline
-{\tt INIT}        & Sets the initial colors. \\
+{\tt SINGLE\_INIT}        & Sets the initial colors. \\
 \hline
-{\tt SHINE}       & Sets the given colors and lets it just shine. \\
+{\tt SINGLE\_SHINE}       & Sets the given colors and lets it just shine. \\
 \hline
-{\tt BLINK}       & Sets the given colors and blinks with all LEDs turned on or off. \\
+{\tt SINGLE\_BLINK}       & Sets the given colors and blinks with all LEDs turned on \\
+                          & or off. \\
 \hline
-{\tt WARNING}     & Sets the given colors and blinks with always the left or right half \\
-                  & turned on or off. \\
+{\tt SINGLE\_WARNING}     & Sets the given colors and blinks with always the left or \\
+                          & right half turned on or off. \\
 \hline
-{\tt CROSSED}     & Sets the given colors and blinks with only 4 crossed LEDs at once \\
-                  & turned on. \\
+{\tt SINGLE\_CROSSED}     & Sets the given colors and blinks with only 4 crossed LEDs \\
+                          & at once turned on. \\
 \hline
-{\tt CIRCLELEFT}  & Sets the given colors and lets circle two LEDs turned on to the \\
-                  & left (counter clockwise). \\
+{\tt SINGLE\_CIRCLELEFT}  & Sets the given colors and lets circle two LEDs turned on \\
+                          & to the left (counter clockwise). \\
 \hline
-{\tt CIRCLERIGHT} & Sets the given colors and lets circle two LEDs turned on to the \\
-                  & right (clockwise) \\
+{\tt SINGLE\_CIRCLERIGHT} & Sets the given colors and lets circle two LEDs turned on \\
+                          & to the right (clockwise) \\
+\hline
+{\tt CHANGE\_INIT}        & Changes the colors without turning off the LEDs. The color \\
+                          & set equals the initial colors. \\
+\hline
+{\tt CHANGE\_SHINE}       & Changes the given colors without turning off the LEDs. \\
+\hline
+{\tt CHANGE\_BLINK}       & Changes the given colors and blinks with all LEDs turnes on \\
+                          & or off. \\
 \end{tabular}
 
 \bigskip
 
-Please use the {\it LightType} enumeration in the {\it LightModel.h} in {\it project/includes/actModels/}. As an example code the tool {\it sendLights} in {\it project/tools/examples/} shows, how to use the {\it LightModel.h} and how to generate and send the light command to the \setlightsnameI\ tool.
+If the suffix {\tt SHINE} is used, then there can be given 1 color for all LEDs or 8 colors for each LED. While the chosen action the color of a single LED won't change. If the suffix {\tt CHANGE} is used, then there can be given many colors. In this case all LEDs will have the same color at the same time. The colors of every LED will change with each step of the chosen action.
+
+Please use the {\it LightType} enumeration in the {\it LightModel.h} in {\it project/includes/actModels/}. There can be also find a more detailed documentation of the {\it LightType} in the file {\it startLightModel.txt}. As an example code the tool {\it sendLights} in {\it project/tools/examples/} shows, how to use the {\it LightModel.h} and how to generate and send the light command to the \setlightsnameI\ tool.
 
