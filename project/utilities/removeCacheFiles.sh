@@ -40,19 +40,22 @@ fi
 
 # Define command
 if $forcerm; then
-  rmpath="rm -f *"
+  rmpath="rm -f "
 else
-  rmpath="rm -i *"
+  rmpath="rm -i "
 fi
-nextDepth="/*"
-fileend="~"
+nextDepth="*/"
+fileend1="*~"
+fileend2=".*~"
 
 # Move to project directory
 cd $startDirectory
 
 # Remove all cache files
 for depth in {1..10}; do
-  curcom=$(echo "${rmpath}${fileend}")
+  curcom=$(echo "${rmpath}${fileend1}")
+  $($curcom)
+  curcom=$(echo "${rmpath}${fileend2}")
   $($curcom)
   rmpath=$(echo "${rmpath}${nextDepth}")
 done
