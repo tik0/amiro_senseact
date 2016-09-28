@@ -65,8 +65,8 @@ int amiroID = 0;
 
 
 // scopenames for rsb
-std::string choreoOutscope = "/harvesters/choreocorrection";
-std::string goalInscope = "/harvesters/goal";
+std::string choreoOutscope = "/twbchoreo/choreocorrection";
+std::string goalInscope = "/twbchoreo/goal";
 
 // global positions
 typedef std::array<float,3> position_t;

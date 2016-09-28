@@ -114,12 +114,12 @@ bool startPosition = false;
 
 // scopenames for rsb
 std::string lightOutscope = "/amiro/lights";
-std::string choreoInscope = "/harvesters/choreo";
-std::string commandInscope = "/harvesters/command";
-std::string amiroScope = "/harvesters/harvester";
-std::string amiroLogoutScope = "/harvesters/logout";
-std::string choreoCorrectionInscope = "/harvesters/choreocorrection";
-std::string goalScope = "/harvesters/goal";
+std::string choreoInscope = "/twbchoreo/choreo";
+std::string commandInscope = "/twbchoreo/command";
+std::string amiroScope = "/twbchoreo/amiros";
+std::string amiroLogoutScope = "/twbchoreo/logout";
+std::string choreoCorrectionInscope = "/twbchoreo/choreocorrection";
+std::string goalScope = "/twbchoreo/goal";
 
 // global positions
 position_t odoPos;
@@ -664,7 +664,7 @@ int main(int argc, char **argv) {
 	printChoreo = vm.count("printChoreo");
 
 
-	INFO_MSG("Start harvester algorithm with name '" << amiroName << "'.");
+	INFO_MSG("Start TWB choreo algorithm with name '" << amiroName << "'.");
 
 	// +++++ RSB Initalization +++++
 
@@ -861,7 +861,7 @@ int main(int argc, char **argv) {
 			} else if (commandId == cmd_stop) {
 				exitProg = true;
 				INFO_MSG("");
-				INFO_MSG("Exit Harvester ...");
+				INFO_MSG("Exit TWB Choreo Tool ...");
 				break;
 			}
 			

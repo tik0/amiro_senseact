@@ -1,6 +1,6 @@
-====== Harvester Correct Choreo ======
+====== TWB Choreo Correction ======
 
-This program sends a choreo correction to a choreo executing robot, which uses the [[sandbox:harvesterChoreo:start|Harvester Choreo Tool]].
+This program sends a choreo correction to a choreo executing robot, which uses the [[process:actingBehavior:twbChoreo:twbChoreo:start|TWB Choreo Tool]].
 
 ===== Basic Procedure =====
 
@@ -13,15 +13,15 @@ Notice: The new positions are absolute ones. The robot can drive to them directl
 ===== RSB Scopes =====
 
 ^ Scope Name ^ Default Scope ^ Scope Type ^ Description ^
-| Goals             | /harvesters/goal             | Object     | Inscope for receiving goal position of the current steps. |
-| Choreo Correction | /harvesters/choreocorrection | PoseList   | Outscope for sending choreo correction. |
+| Goals             | /twbchoreo/goal             | Object     | Inscope for receiving goal position of the current steps. |
+| Choreo Correction | /twbchoreo/choreocorrection | PoseList   | Outscope for sending choreo correction. |
 
 The tracking scope will be automatically loaded from the [[includes:twb:startTwbTracking|TWB Tracking Module]].
 
 ===== Parameters =====
 
 ^ Parameter ^ Type ^ Default Value ^ Description ^
-| amiroID,a  | Integer | NOT GIVEN                    | ID of the AMiRo, which has to be unique! Flag must be set! |
-| markerId,m | Integer | NOT GIVEN                    | ID of the marker for robot detection. Flag must be set! |
-| goalIn     | String  | /harvesters/goal             | Goal position inscope. |
-| choreoOut  | String  | /harvesters/choreocorrection | Choreography correction outscope. |
+| amiroID,a  | Integer | NOT GIVEN                   | ID of the AMiRo, which has to be unique! Flag must be set! |
+| markerId,m | Integer | NOT GIVEN                   | ID of the marker for robot detection. Flag must be set! |
+| goalIn     | String  | /twbchoreo/goal             | Goal position inscope. |
+| choreoOut  | String  | /twbchoreo/choreocorrection | Choreography correction outscope. |
