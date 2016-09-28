@@ -1,10 +1,10 @@
 ====== Building the Harvester Choreo ======
 
-This demo contains the program for performing a choreography on the AMiRo as an Harvester movement. For this purpose a xml file, that defines the choreography, is parsed. Additionally several robots can communicate and cooperate with each other and adapt their movements.
+This demo contains the program for performing a choreography on the AMiRo. For this purpose a xml file, that defines the choreography, is parsed. Additionally several robots can communicate and cooperate with each other and adapt their movements.
 
-For detailed application and procedure information, please check the [[process:actingBehavior:twbChoreo:twbChoreo:start|harvesterChoreo documentation]].
+For detailed application and procedure information, please check the [[process:actingBehavior:twbChoreo:twbChoreo:start|TWB Choreo documentation]].
 
-Additionally choreo corrections can be sent. Please check the [[process:actingBehavior:twbChoreo:twbChoreoCorrection:start|harvesterCorrectChoreo documentation]] for more details.
+Additionally choreo corrections can be sent. Please check the [[process:actingBehavior:twbChoreo:twbChoreoCorrection:start|Choreo Correction documentation]] for more details.
 
 ===== Run the Demo =====
 
@@ -34,7 +34,7 @@ After executing the run script on the AMiRo, run ''runCorrection.sh <robot ID> <
 ===== Included Programs =====
 
 ^ Program ^ Description ^
-| [[process:actingBehavior:twbChoreo:twbChoreo:start|harvesterChoreo]]               | Program for harvester movement. |
-| [[process:actingBehavior:twbChoreo:twbChoreoCorrection:start|harvesterCorrectChoreo]] | Program for correcting the choreography. |
-| [[act:setLights:start|setLights]]                               | Program for setting the lights. |
-| [[tools:robotTools:stopAMiRo:start|stopAMiRo]]                  | Program for stopping the AMiRo (stopping motors and resetting lights). |
+| [[process:actingBehavior:twbChoreo:twbChoreo:start|twbChoreo]]                     | Program for choreography execution. |
+| [[process:actingBehavior:twbChoreo:twbChoreoCorrection:start|twbChoreoCorrection]] | Program for correcting the choreography. |
+| [[act:setLights:start|setLights]]                                                  | Program for setting the lights. |
+| [[tools:robotTools:stopAMiRo:start|stopAMiRo]]                                     | Program for stopping the AMiRo (stopping motors and resetting lights). |
