@@ -566,7 +566,7 @@ enum states {
   localization
 };
 
-static states slamState = idle;
+static states slamState = slam;
 
 std::string statesString[NUM_STATES] {
   "idle",
