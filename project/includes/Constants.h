@@ -51,6 +51,9 @@ namespace CAN {
   const uint32_t LIGHT_RING_ID             = 3;
   const uint32_t COGNITION                 = 4;
 
+  inline constexpr uint32_t MAGNETOMETER_ID(uint8_t axis) {return 0x54 | ((axis) & 0x03);}        
+  const uint32_t GYROSCOPE_ID              = 0x58;
+
   const uint32_t PROXIMITY_FLOOR_ID        = 0x51;
   const uint32_t ODOMETRY_ID               = 0x50;
   const uint32_t BRIGHTNESS_ID             = 0x40;

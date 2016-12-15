@@ -169,7 +169,7 @@ class ControllerAreaNetwork {
     /* Listen to the socket */
     const int nbytes = read(s, &frame, sizeof(frame));
     /* Process the data */
-     if (nbytes != 8) {
+     if (nbytes > 0) {
        memcpy(&v, &(frame.data[0]), 4);
        memcpy(&w, &(frame.data[4]), 4);
      } else {
@@ -196,8 +196,9 @@ class ControllerAreaNetwork {
 
     /* Listen to the socket */
     const int nbytes = read(s, &frame, sizeof(frame));
+    //std::cout << "nbytes Floor Value: " << nbytes <<  std::endl;
     /* Process the data */
-     if (nbytes != 8) {
+     if (nbytes > 0) {
        memcpy(&proximityValues[0], &(frame.data[0]), 2);  // Front right
        memcpy(&proximityValues[1], &(frame.data[2]), 2);  // Wheel right
        memcpy(&proximityValues[2], &(frame.data[4]), 2);  // Wheel left
@@ -228,7 +229,7 @@ class ControllerAreaNetwork {
 
     for (int sensorIdx = 0; sensorIdx < 8; ++sensorIdx) {
       const int nbytes = read(s, &frame, sizeof(frame));
-       if (nbytes != 2) {
+       if (nbytes > 0) {
          int index = decodeDeviceId(&frame) & 0x7;
          memcpy(&proximityValues[index], &(frame.data[0]), 2);
        } else {
@@ -241,6 +242,71 @@ class ControllerAreaNetwork {
 
     return returnValue;
   }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  int getMagnetometerValue(std::vector<int32_t> &magnetometerValues) {
+
+    int returnValue = 0;
+    struct can_filter rfilter[3];
+
+    /* Set the filter for the message */
+    for (int axis = 0; axis < 3; ++axis ) {
+      rfilter[axis].can_id   = ((CAN::MAGNETOMETER_ID(axis) & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::DI_WHEEL_DRIVE_ID;
+      rfilter[axis].can_mask = CAN_SFF_MASK;
+    }
+
+    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
+
+    for (int axis = 0; axis < 3; ++axis) {
+      const int nbytes = read(s, &frame, sizeof(frame));
+       if (nbytes > 0) {
+         int index = decodeDeviceId(&frame) & 0x3;
+         memcpy(&magnetometerValues[index], &(frame.data[0]), 4);
+       } else {
+         returnValue = -1;
+       }
+    }
+
+    /* Disable all incomming frames */
+    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+
+    return returnValue;
+  }
+
+  int getGyroscopeValue(std::vector<int16_t> &gyroscopeValues) {
+
+    int returnValue = 0;
+    struct can_filter rfilter[1];
+
+    /* Set the filter for the message */
+    //rfilter[0].can_id   = getCanFilter(CAN::GYROSCOPE_ID, CAN::DI_WHEEL_DRIVE_ID);
+    rfilter[0].can_id   = ((CAN::GYROSCOPE_ID & CAN::DEVICE_ID_MASK) << CAN::DEVICE_ID_SHIFT) | CAN::DI_WHEEL_DRIVE_ID;
+    rfilter[0].can_mask = CAN_SFF_MASK;
+
+    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
+
+    /* Listen to the socket */
+    //std::cout << "Hasen sind toll" <<  std::endl;
+    const int nbytes = read(s, &frame, sizeof(frame));
+    //std::cout << "nbytes Gyro Value: " << nbytes <<  std::endl;
+    /* Process the data */
+     if (nbytes > 0) {
+       memcpy(&gyroscopeValues[0], &(frame.data[0]), 2); 
+       memcpy(&gyroscopeValues[1], &(frame.data[2]), 2);  
+       memcpy(&gyroscopeValues[2], &(frame.data[4]), 2);  
+     } else {
+       returnValue = -1;
+     }
+
+    /* Disable all incomming frames */
+    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+
+    return returnValue;
+
+  }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   void broadcastShutdown() {
       this->frame.can_id = 0;
