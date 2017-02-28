@@ -16,3 +16,6 @@
 [submodule "project/includes/libs/CoreSLAM"]
 	path = project/includes/libs/CoreSLAM
 	url = https://github.com/tik0/CoreSLAM.git
+[submodule "project/ros/src/ros_astra_camera"]
+	path = project/ros/src/ros_astra_camera
+	url = https://github.com/orbbec/ros_astra_camera.git
