@@ -33,13 +33,18 @@ then
     echo -e "\e[42mChopping out old MuRoX definition in ${_file}\e[0m"
     head -n`expr $_line_start - 1` $_file > $_tmp
     tail -n`expr $_lines - $_line_end` $_file >> $_tmp
+    _replace_old_definition="1"
 else
     echo -e "\e[42mNo old MuRoX definition found in ${_file}\e[0m"
     cp $_file $_tmp
+    _replace_old_definition="0"
 fi
 
 # Set the MuRoX defines
 echo -e "\e[42mInit the utilities for global usage in bash\e[0m"
+if [ $_replace_old_definition == "0" ]; then
+  echo -e "\n" >> "$_tmp"
+fi
 echo "${_start}" >> "$_tmp"
 echo "export PATH=${PWD}:\$PATH" >> "$_tmp"
 echo -e "\e[42mSet environment variables with MUROX_ prefix\e[0m"
@@ -48,11 +53,14 @@ cd ../..
 echo "export MUROX_ENV=${PWD}" | tee -a "$_tmp"
 echo "export MUROX_DOKU=${PWD}/dokuwiki" | tee -a "$_tmp"
 echo "export MUROX_PROJECT=${PWD}/project" | tee -a "$_tmp"
+echo "export MUROX_ROS=${PWD}/project/ros" | tee -a "$_tmp"
 echo "export MUROX_INCLUDE_DIRS=${PWD}/project/includes" | tee -a "$_tmp"
 echo "export MUROX_CMAKE_MODULES=${PWD}/project/utilities/cmake" | tee -a "$_tmp"
+echo "export MUROX_CXX_FLAGS='-std=c++0x'" | tee -a "$_tmp"
 echo -e "\e[42mSet environment variables with for GAZEBO\e[0m"
 echo "export GAZEBO_MODEL_PATH=${PWD}/project/simulation/models:${GAZEBO_MODEL_PATH}" | tee -a "$_tmp"
 echo "export GAZEBO_PLUGIN_PATH=${PWD}/project/simulation/gazebo_rsb_pkgs/gazebo_plugins:${GAZEBO_PLUGIN_PATH}" | tee -a "$_tmp"
+echo "source \${MUROX_ROS}/devel/setup.bash" | tee -a "$_tmp"
 echo "${_end}" >> "$_tmp"
 
 # Replace and cleanup the old file
