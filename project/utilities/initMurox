@@ -1,8 +1,23 @@
 #!/bin/bash
 
+# Add content of a variable to a double period seperated list and return the list
+# Call: NEW_PATH=$(add_variable_to_list PATH /new/path)
+function add_variable_to_list {
+  _add="1"
+  _list_name=${1}
+  _content=${2}
+for line in $(echo ${!_list_name} | tr ":" "\n"); do if [[ ${line} == ${_content} ]];then _add="0";break;fi;done
+if [[ $_add == "1" ]]; then
+  _list=${_content}:\$${_list_name}
+else
+  _list=\$${!_list_name}
+fi
+echo ${_list}
+}
+
 echo -e "\e[44mMake shure you run this command in the utilities folder\e[0m"
 
-_file="${HOME}/.bashrc"
+_file="$(readlink -f ${HOME}/.bashrc)"
 _tmp="${HOME}/.tmp"
 
 # Define some start and end quotes for detecting the MuRoX defines
@@ -46,7 +61,7 @@ if [ $_replace_old_definition == "0" ]; then
   echo -e "\n" >> "$_tmp"
 fi
 echo "${_start}" >> "$_tmp"
-echo "export PATH=${PWD}:\$PATH" >> "$_tmp"
+echo "export PATH=$(add_variable_to_list PATH ${PWD})" | tee -a "$_tmp"
 echo -e "\e[42mSet environment variables with MUROX_ prefix\e[0m"
 # Go to folder murox_dev and set the environment variables
 cd ../..
@@ -58,9 +73,12 @@ echo "export MUROX_INCLUDE_DIRS=${PWD}/project/includes" | tee -a "$_tmp"
 echo "export MUROX_CMAKE_MODULES=${PWD}/project/utilities/cmake" | tee -a "$_tmp"
 echo "export MUROX_CXX_FLAGS='-std=c++0x'" | tee -a "$_tmp"
 echo -e "\e[42mSet environment variables with for GAZEBO\e[0m"
-echo "export GAZEBO_MODEL_PATH=${PWD}/project/simulation/models:${GAZEBO_MODEL_PATH}" | tee -a "$_tmp"
-echo "export GAZEBO_PLUGIN_PATH=${PWD}/project/simulation/gazebo_rsb_pkgs/gazebo_plugins:${GAZEBO_PLUGIN_PATH}" | tee -a "$_tmp"
+echo "export GAZEBO_MODEL_PATH=$(add_variable_to_list GAZEBO_MODEL_PATH ${MUROX_ROS}/src)" | tee -a "$_tmp"
+# echo "export GAZEBO_PLUGIN_PATH=${PWD}/project/simulation/gazebo_rsb_pkgs/gazebo_plugins:${GAZEBO_PLUGIN_PATH}" | tee -a "$_tmp"
 echo "source \${MUROX_ROS}/devel/setup.bash" | tee -a "$_tmp"
+echo -e "\e[42mSet helpful aliases\e[0m"
+echo 'alias ros="cd ${MUROX_ROS} && source devel/setup.bash"' | tee -a "$_tmp"
+echo 'alias murox="cd ${MUROX_PROJECT}"' | tee -a "$_tmp"
 echo "${_end}" >> "$_tmp"
 
 # Replace and cleanup the old file
