@@ -1,0 +1,48 @@
+package rst.claas;
+
+import "rst/geometry/PoseEuler.proto";
+
+option java_outer_classname = "rsmType";
+
+/**
+ * Raw sensor model as a grid representation
+ *
+ * @author Timo Korthals <tkorthals@cor-lab.uni-bielefeld.de>
+ */
+message rsm {
+
+    /**
+     * Values in the grid
+     */
+    repeated float map = 1;
+
+    /**
+     * Number of rows
+     */
+    required int32 rows = 2;
+
+    /**
+     * Number of cols
+     */
+    required int32 cols = 3;
+
+    /**
+     * Origin of the map in the corresponding frame
+     */
+    required geometry.PoseEuler origin = 4;
+
+    /**
+     * Meter per grid tile
+     */
+    required float resolution = 5;
+
+    /**
+     * Unit of data in map
+     */
+    optional string unit = 6;
+
+    /**
+     * Related frame
+     */
+    optional string frame_id = 7;
+}

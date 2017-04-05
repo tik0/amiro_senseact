@@ -1,0 +1,9 @@
+float64 azimuthCorrection
+float64 verticalCorrection
+float64 distanceCorrection
+float64 verticalOffsetCorrection
+float64 horizontalOffsetCorrection
+float64 sinVertCorrection
+float64 cosVertCorrection
+float64 sinVertOffsetCorrection
+float64 cosVertOffsetCorrection

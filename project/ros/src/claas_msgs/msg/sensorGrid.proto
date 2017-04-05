@@ -1,0 +1,37 @@
+package rst.claas;
+
+import "rst/geometry/PoseEuler.proto";
+
+option java_outer_classname = "sensorGridType";
+
+/**
+ * A request structure for a ism or rsm as primitive
+ *
+ * @author Timo Korthals <tkorthals@cor-lab.uni-bielefeld.de>
+ */
+message sensorGrid {
+
+    /**
+     * The odometry.
+     */
+    required geometry.PoseEuler globalOdometry = 1;
+
+    /**
+     * The origin of the sensor frame relative to the machine origin.
+     */
+    required geometry.PoseEuler sensorFrame = 2;
+
+    /**
+     * The map data, in row-major order.
+     *
+     * Occupancy probabilities are unsigned float in the range
+     * [0,1]. Unknown is 0.5.
+     */
+    repeated float map = 3;
+
+    /**
+     * Related frame
+     */
+    optional string frame_id = 4;
+
+}
