@@ -91,7 +91,7 @@ static std::string mapScopes[mappingLayers::NUM_MAPS];
   static std::string currentTileTfName(""), lastTileTfName("");
   static std::string topicMap, topicLaser, tileOriginTfPrefix, tileOriginTfSufixForRoiOrigin, currentTfNameTopic, worldLink;
   static double idleStartupTime_s;
-  static float resolution = mapping::discreteResolution;
+  static double resolution = double(mapping::discreteResolution);
   static float maxOccupancyUpdateCertainty = mapping::ogm::maxOccupancyUpdateCertainty;
   static float maxDistanceInsertion = std::min(mapping::roi::width, mapping::roi::height);
   static float max_x = mapping::roi::xMax;
@@ -294,7 +294,7 @@ void mapRefreshAndStorage(const std::shared_ptr<std::map<std::string, mrpt::maps
           << "Format_" << format << "_"
           << "Unit_" << formatUnitString << "_"
           << "LayerIdx_" << mapIdx << "_"
-          << "GridRes_" << int(resolution_meterPerTile * geometry::millimeterPerMeter) <<  "mm_"
+          << "GridRes_" << int(resolution_meterPerTile * double(geometry::millimeterPerMeter)) <<  "mm_"
           << "X_" << transformRoiInWorld.getOrigin().x() << "m_"
           << "Y_" << transformRoiInWorld.getOrigin().y() << "m_"
           << "Z_" << transformRoiInWorld.getOrigin().z() << "m_"
@@ -1308,7 +1308,124 @@ void tfTileNameHandler(const std_msgs::String nameMsg) {
 
 }
 
+#include <nav_msgs/GridCells.h>
+#include <sensor_msgs/PointCloud2.h>
 
+void formatAndSendGrid(std::vector<std::string> &list,
+                       std::string &frame,
+                       const std::shared_ptr<std::map<std::string, mrpt::maps::COccupancyGridMap2D*>> mapStack,
+                       ros::NodeHandle &n,
+                       const std::shared_ptr<tf::Pose> tfPose = NULL,
+                       std::string topicSufixGrid = "/grid",
+                       std::string topicSufixPointCloud = "/pointCloud") {
+  const char fName[] = "formatAndSendGrid";
+  const float gridSpacing_m = 0.01;
+  const float minDrawOccupancyUpdateCertainty = 0.6;
+
+  // Sanity checks
+  if (frame.empty()) {
+      ROS_WARN("%s: formatAndSendGrid: frame is empty", fName);
+      return;
+  } else if (!mapStack) {
+      ROS_WARN("%s: mapStack pointer is empty", fName);
+      return;
+  }
+  if (list.empty()) {
+      ROS_WARN_ONCE("%s: list is empty -> sending all maps", fName);
+  }
+
+  // Initialize the iterator and decide which one to use
+  // If the list is empty, process the whole map stack, otherwise
+  // send the content defined in list
+  std::map<std::string, mrpt::maps::COccupancyGridMap2D*>::iterator mapIt;
+  std::vector<std::string>::iterator listIt;
+  int idxIt = 0;
+  if (list.size() > 0) {
+      listIt = list.begin();
+  }
+  if (mapStack->size() > 0) {
+      mapIt = mapStack->begin();
+  } else {
+      ROS_WARN("%s: mapStack is empty", fName);
+      return;
+  }
+
+  // Allocate the maximal size for the points to send
+  std::vector<geometry_msgs::Point> points(mapIt->second->getSizeY() * mapIt->second->getSizeX());
+
+  while (true) {
+      // Check if we have to work with the list iterator, if not ...
+      if (list.size() > 0) {
+          if (listIt == list.end()) {
+              break;
+          }
+          mapIt = mapStack->find(*listIt);
+          if (mapIt == mapStack->end()) {
+              ROS_WARN("%s: No entry for '%s'", fName,  listIt->c_str());
+              continue;
+          } else if (mapIt->second == NULL) {
+              ROS_WARN("%s: Map pointer for '%s' is empty", fName, listIt->c_str());
+              continue;
+          }
+          ++listIt;
+      } else { // ... just process the full map stack
+          if (idxIt > 0) {
+              ++mapIt;
+          } // else, it is the first round
+          if(mapIt == mapStack->end()) {
+              break;
+          }
+      }
+
+      // Check for publisher and advertise one, if missing
+      static std::map<std::string, ros::Publisher> mapPublisher;
+      auto publisherIt = mapPublisher.find(mapIt->first);
+      if (publisherIt == mapPublisher.end()) {
+          ROS_INFO("%s: Advertise map publisher with topic %s", fName, mapIt->first.c_str());
+          mapPublisher.insert(
+                    std::pair<std::string,ros::Publisher>(mapIt->first,
+                                                          n.advertise<nav_msgs::GridCells>(mapIt->first + topicSufixGrid, 1)) );
+          publisherIt = --mapPublisher.end();
+      }
+
+      // Format the map
+      tf::Point pointTf;
+      geometry_msgs::Point pointMsg;
+      nav_msgs::GridCells msg;
+      msg.cell_height = resolution;
+      msg.cell_width = resolution;
+      auto pointsIt = points.begin();
+      for (int idy = 0; idy < mapIt->second->getSizeY(); ++idy) {
+        for (int idx = 0; idx < mapIt->second->getSizeX(); ++idx) {
+            // We get values from 0 .. 100
+            if (mapIt->second->getCell(idx, idy) >=  minDrawOccupancyUpdateCertainty) {
+              pointTf[0] = (float(idx) * resolution);
+              pointTf[1] = (float(idy) * resolution);
+              pointTf[2] = float(idxIt) * gridSpacing_m;  // Overlay each layer by some distance
+
+              if (tfPose) {  // Check for transformation
+                  pointTf = *tfPose * pointTf;
+              }
+              tf::pointTFToMsg(pointTf, pointMsg);
+              *pointsIt = pointMsg;
+              if (pointsIt != points.end()) {
+                  ++pointsIt;
+              }
+            }
+        }
+      }
+      msg.cells.assign(points.begin(), pointsIt);
+
+      // Publish the map
+      msg.header.frame_id = frame;
+      msg.header.stamp = ros::Time::now();
+      publisherIt->second.publish(msg);
+
+      ++idxIt;
+  }
+
+
+}
 
 int main(int argc, char **argv){
 
@@ -1319,14 +1436,14 @@ int main(int argc, char **argv){
   n.param<std::string>("tile_origin_tf_prefix", tileOriginTfPrefix, "map_base_link_");
   n.param<std::string>("tile_origin_tf_sufix_for_roi_origin", tileOriginTfSufixForRoiOrigin, machine::frames::names::ROI_ORIGIN);
   n.param<std::string>("current_tf_name_topic", currentTfNameTopic, "/currentTfTile");
-  n.param<std::string>("world_link", worldLink, "odom");
+  n.param<std::string>("world_link", worldLink, "odom"); // Frame to which the maps are stored
   n.param<double>("idle_startup_time", idleStartupTime_s, -1.0); // Wait before mapping (< 0 to disable)
 
   n.param<int>("debug", debug, 0); // Enable debug outputs
   std::string debugTopic;
   n.param<std::string>("debug_topic", debugTopic, "/amiro2/ism/cam"); // The topic of the fused map to show via opencv
   n.param<int>("test", doTest, 0); // Enable testing
-  n.param<float>("resolution", resolution, mapping::discreteResolution); // Resolution of map in meter/cell
+  n.param<double>("resolution", resolution, double(mapping::discreteResolution)); // Resolution of map in meter/cell
   n.param<float>("max_occupancy_update_certainty", maxOccupancyUpdateCertainty, 0); // Maximum update uncertainty
   n.param<float>("max_distance_insertion", maxDistanceInsertion, 0); // Maximum distance insertion
   n.param<float>("max_x_m", max_x, mapping::roi::xMax); // Maxmium value of x in meter
@@ -1436,6 +1553,13 @@ int main(int argc, char **argv){
         } catch (...) {
             ROS_DEBUG("Debug visualization: No such topic in currentMapStack");
         }
+
+        // Publish the maps
+        std::vector<std::string> foo;
+//        tf::Vector3 trans = tf::Vector3(tfScalar(-(max_x - min_x)/2.0f), tfScalar(-(max_y - min_y)/2.0f), tfScalar(0.0f));
+//        std::shared_ptr<tf::Pose> poseOffset = std::shared_ptr<tf::Pose>(new tf::Pose(tf::Quaternion(0,0,0,1), trans));
+        std::string reference = currentTileTfName + tileOriginTfSufixForRoiOrigin;
+        formatAndSendGrid(foo, reference, currentMapStack, n);
       }
 
       // Add new subscribers

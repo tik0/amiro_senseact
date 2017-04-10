@@ -22,3 +22,6 @@
 [submodule "project/simulation/gazebo_models"]
 	path = project/simulation/gazebo_models
 	url = https://github.com/jexner/gazebo_models.git
+[submodule "project/ros/src/amiro_robot"]
+	path = project/ros/src/amiro_robot
+	url = https://github.com/tik0/amiro_robot.git
