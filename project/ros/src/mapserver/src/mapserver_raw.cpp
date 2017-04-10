@@ -631,16 +631,17 @@ void tfTileNameHandler(const std_msgs::String nameMsg) {
 void showRpc() {
     if (debug) {
         ROS_INFO("DEBUG: Show the requests");
-        if(mapStackStatisticDebug.empty() || mapStackStatisticDebug.empty()) {
-            ROS_ERROR("mapStackStatistic is empty");
+        if(mapStackStatisticDebug.empty() || mapStackStatisticRequestDebug.empty()) {
+            ROS_ERROR("mapStackStatistic is empty: \n",
+                      " mapStackStatisticRequestDebug.empty(): %d\n",
+                      " mapStackStatisticDebug.empty(): %d\n",
+                      mapStackStatisticDebug.empty(), mapStackStatisticRequestDebug.empty());
             return;
         }
         cv::Mat mapStackStatisticRequestDebugTmp, mapStackStatisticDebugTmp;
         mtxShowRpc.lock();
             mapStackStatisticRequestDebug.copyTo(mapStackStatisticRequestDebugTmp);
             mapStackStatisticDebug.copyTo(mapStackStatisticDebugTmp);
-            mapStackStatisticDebugTmp.release();
-            mapStackStatisticRequestDebugTmp.release();
             cv::RotatedRect rectTmp = rect;
         mtxShowRpc.unlock();
 
@@ -764,7 +765,7 @@ int main(int argc, char **argv)
       showRpc();
       _rate.sleep();
   }
-
+  spinner.stop();
   delete listenerTf;
 
   return 0;
