@@ -15,29 +15,10 @@
 #include <ros/console.h>
 #include <sensor_msgs/LaserScan.h>
 #include <laser_geometry/laser_geometry.h>
-
-// Do we need this?
 #include <nav_msgs/OccupancyGrid.h>
-#include <std_msgs/String.h>
-#include <geometry_msgs/PoseArray.h>
-#include <geometry_msgs/Point.h>
-#include <rosgraph_msgs/Log.h>
 #include <tf/transform_listener.h>
-#include <tf_conversions/tf_eigen.h>
-#include <rosapi/Topics.h>
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/Point.h>
-#include <std_msgs/String.h>
-#include <geometry_msgs/PointStamped.h>
-#include <tf/transform_broadcaster.h>
-#include <ros/duration.h>
 
 ros::Publisher publisher, publisherDebug;
-
-// OpenCV
-//#include <opencv2/opencv.hpp>
-//#include <opencv2/highgui/highgui.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>  // resize
 
 // Stdandard libraries
 #include <mutex>          // std::mutex
@@ -51,13 +32,6 @@ ros::Publisher publisher, publisherDebug;
 #include <map>
 #include <memory>
 
-// Boost
-#include <boost/thread.hpp>
-#include <boost/program_options.hpp>
-#include <boost/shared_ptr.hpp>
-
-#include <utils.h>
-
 static std::string inputTopic, outputTopic, baseFrameId, outputTopicDebug;
 static signed char lower_boundary_schar, upper_boundary_schar;
 static double lower_boundary, upper_boundary, fuzzyIntersection_m, fuzzyUpperLimit_m, fuzzyScale;
@@ -69,9 +43,6 @@ static double resolution, width, depth;
 static nav_msgs::OccupancyGrid msgOgm;
 
 tf::TransformListener *listenerTf;
-
-static const cv::Size2i imageSize(800,800);
-cv::Mat img(imageSize.height,imageSize.width, CV_8UC3);
 
 void callback(const sensor_msgs::LaserScan::ConstPtr &msg) {
 
@@ -115,7 +86,7 @@ void callback(const sensor_msgs::LaserScan::ConstPtr &msg) {
           const double x_m = (it->x + width / 2.0);
           const double y_m = (it->y + depth / 2.0);
           const std::size_t idx = std::size_t(x_m / resolution) +  std::size_t(y_m / resolution) * msgOgm.info.width;
-          ROS_DEBUG("(x_m, y_m) -> (idx, idy, index): (%f, %f) -> (%d, %d, %d)", x_m, y_m, std::size_t(x_m / resolution), std::size_t(y_m / resolution), idx);
+          ROS_DEBUG("(x_m, y_m) -> (idx, idy, index): (%f, %f) -> (%d, %d, %d)", x_m, y_m, int(x_m / resolution), int(y_m / resolution), int(idx));
           if (idx < msgOgm.data.size()) {
               msgOgm.data.at(idx) = ogmVal;
           } else {
@@ -170,10 +141,6 @@ int main(int argc, char **argv){
   spinner.start();
   ros::Rate rate(5);
   while (ros::ok()) {
-      if (debug) {
-        cv::imshow("test", img);
-        cv::waitKey(1);
-      }
       rate.sleep();
   }
   delete listenerTf;

@@ -204,9 +204,18 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 add_executable(ism_plane_detection
-  src/main.cpp)
+  src/plane_detector.cpp)
 
 target_link_libraries(ism_plane_detection
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+add_executable(ism_edge_detection
+  src/edge_detector.cpp)
+
+target_link_libraries(ism_edge_detection
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
