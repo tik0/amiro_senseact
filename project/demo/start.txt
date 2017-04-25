@@ -1,4 +1,0 @@
-The **demo** folder contains working demos which work with the MuRoX environment.
-Please use the [[start?do=index|Sitemap]] for a complete overview.
-
-{{ :demo:demo.png?300 |}}

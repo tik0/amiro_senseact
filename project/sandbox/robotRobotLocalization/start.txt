@@ -1,3 +1,0 @@
-====== Robot Robot Localization ======
-
-One robot tries to localize the other.

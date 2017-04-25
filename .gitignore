@@ -36,3 +36,11 @@ build
 # Backupfiles
 *backup*
 *Backup*
+
+# QT Creator Files
+murox_senseact.config
+murox_senseact.creator
+murox_senseact.files
+murox_senseact.includes
+murox_senseact.creator.user
+*.autosave

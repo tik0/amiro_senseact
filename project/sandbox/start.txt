@@ -1,4 +1,0 @@
-The **sandbox** folder contains alpha versions of programs for working with the MuRoX environment.
-Please use the [[start?do=index|Sitemap]] for a complete overview.
-
-{{ :sandbox:sandbox.png?300 |}}
