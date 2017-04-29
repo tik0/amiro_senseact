@@ -1,0 +1,25 @@
+# CMake files
+CMakeCache.txt
+*.cmake
+CMakeFiles
+Makefile
+build
+*.ninja*
+
+/devel/.built_by
+/devel/.catkin
+/devel/.rosinstall
+
+build/
+bin/
+lib/
+msg_gen/
+srv_gen/
+msg/*Action.msg
+msg/*ActionFeedback.msg
+msg/*ActionGoal.msg
+msg/*ActionResult.msg
+msg/*Feedback.msg
+msg/*Goal.msg
+msg/*Result.msg
+msg/_*.py

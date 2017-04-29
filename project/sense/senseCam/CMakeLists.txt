@@ -59,5 +59,9 @@ target_link_libraries (
     ${OPENCV_LIBRARIES}
 )
 
-# Additional compiler flags
-ADD_DEFINITIONS (-Wno-deprecated-declarations -O2)
+# Special flags for RST
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
+
+# Set compiler flags as you like
+SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
+SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )

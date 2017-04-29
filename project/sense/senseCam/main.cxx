@@ -30,7 +30,7 @@ using namespace boost;
 using namespace std;
 //using namespace cv;
 using namespace rsb;
-using namespace muroxConverter; // The namespace for the own converters
+// using namespace muroxConverter; // The namespace for the own converters
 using namespace rsb::converter;
 
 static std::string g_sOutScope = "/image";
@@ -69,15 +69,16 @@ int main(int argc, char **argv) {
 //	shared_ptr<MatConverter> converter(new MatConverter());
 //	converterRepository<std::string>()->registerConverter(converter);
 
-	// Register new converter for std::vector<int>
-	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::Image> >
-		converter(new rsb::converter::ProtocolBufferConverter<rst::vision::Image>());
-		rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+	// Register new converter for std::vector<rst::vision::Image>
+//	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::Image> >
+//		converter(new rsb::converter::ProtocolBufferConverter<rst::vision::Image>());
+//		rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+
 
 	rsb::Factory &factory = rsb::getFactory();
 
 	// Create the informer
-	Informer<rst::vision::Image>::Ptr informer = getFactory().createInformer<cv::Mat> (Scope(g_sOutScope));
+	Informer<rst::vision::Image>::Ptr informer = factory.createInformer<rst::vision::Image> (Scope(g_sOutScope));
 //	Informer<cv::Mat>::Ptr informer = getFactory().createInformer<cv::Mat> (Scope(g_sOutScope));
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -105,9 +106,9 @@ int main(int argc, char **argv) {
 		// Save the actual picture to the frame object
 		cam >> frame;
 		boost::shared_ptr<rst::vision::Image> avatarImage(new rst::vision::Image());
-		avatarImage->set_data(frame.data);
-		avatarImage->set_width(frame.width);
-		avatarImage->set_height(frame.height);
+		avatarImage->set_width(frame.size().width);
+		avatarImage->set_height(frame.size().height);
+		avatarImage->set_data( reinterpret_cast<char *>(frame.data)); // conversion from uchar*  char*
 		// Send the data.
 		informer->publish(avatarImage);
 	}
