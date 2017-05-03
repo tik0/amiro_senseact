@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
 	sensor_msgs
+	cv_bridge
+	image_transport
 )
 
 find_package(PkgConfig)
@@ -18,6 +20,7 @@ pkg_check_modules(RSB rsb0.16)
 pkg_check_modules(RSC rsc0.16)
 pkg_check_modules(RST rst0.16)
 pkg_check_modules(PROTOBUF protobuf)
+pkg_check_modules(OPENCV opencv)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -125,9 +128,9 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${RSB_INCLUDE_DIRS}
-  ${RSC_INCLUDE_DIRS}
   ${RST_INCLUDE_DIRS}
   ${PROTOBUF_INCLUDE_DIRS}
+	${OPENCV_INCLUDE_DIRS}
   )
 
 ## Declare a C++ library
@@ -194,6 +197,11 @@ include_directories(
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
+LINK_DIRECTORIES (
+    ${RSB_LIBRARY_DIRS}
+    ${RSC_LIBRARY_DIRS}
+    ${OPENCV_LIBRARY_DIRS}
+)
 
 add_executable(rstVisionImageToRosSensormsgsImage
 	src/rstVisionImageToRosSensormsgsImage.cpp
@@ -202,9 +210,9 @@ add_executable(rstVisionImageToRosSensormsgsImage
 target_link_libraries(rstVisionImageToRosSensormsgsImage
 	${catkin_LIBRARIES}
 	${RSB_LIBRARIES}
-	${RSC_LIBRARIES}
 	${RST_LIBRARIES}
 	${PROTOBUF_LIBRARIES}
+	${OPENCV_LIBRARIES}
 )
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})

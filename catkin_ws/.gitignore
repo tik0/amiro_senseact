@@ -6,9 +6,13 @@ Makefile
 build
 *.ninja*
 
-/devel/.built_by
-/devel/.catkin
-/devel/.rosinstall
+
+devel/_setup_util.py
+devel/setup.sh
+devel/setup.zsh
+devel/.built_by
+devel/.catkin
+devel/.rosinstall
 
 build/
 bin/
@@ -23,3 +27,7 @@ msg/*Feedback.msg
 msg/*Goal.msg
 msg/*Result.msg
 msg/_*.py
+
+
+#Custom Logger Script
+mylogger.sh

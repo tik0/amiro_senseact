@@ -36,7 +36,7 @@ include_directories(
 SET (SOURCE main.cxx)
 
 # Add sources to build
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
+# INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
 
 LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}

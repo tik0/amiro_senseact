@@ -6,6 +6,9 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
+// ROS - OpenCV Bridge
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 
 // RSB
 #include <rsb/Factory.h>
@@ -19,7 +22,11 @@
 // RST
 #include <rst/vision/Image.pb.h>
 
-#include "Constants.hpp";
+//OpenCv
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#include "Constants.hpp"
 
 using namespace std;
 
@@ -28,7 +35,8 @@ const string rsbListenerScope = constants::rsbImageScope;
 
 // ROS Publish Topic
 const string rosPublishTopic = constants::rosImageTopic;
-ros::Publisher rosPublisher;
+// ros::Publisher rosPublisher;
+image_transport::Publisher imagePublisher;
 
 // program name
 const string programName = "rstVisionImageToRosSensormsgsImage";
@@ -46,18 +54,17 @@ void processImage(rsb::EventPtr event) {
   }
 
   boost::shared_ptr<rst::vision::Image> image = boost::static_pointer_cast<rst::vision::Image>(event->getData());
-  sensor_msgs::Image Image_msg;
 
-  Image_msg.header.stamp = ros::Time::now();
-  Image_msg.header.frame_id = frameID;
-
-	Image_msg.height = image->height();
-	Image_msg.width = image->width();
-	Image_msg.encoding = sensor_msgs::image_encodings::TYPE_8UC3;
-	// Image_msg.data = image->data();
-
+	cv::Mat img;
+	img.create(image->height(), image->width(), CV_8UC3);
+	img.data =  const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(&image->data()[0]));  // conversion from string to  const uchar*
+	cv_bridge::CvImage cvImage;
+	cvImage.header.stamp = ros::Time::now();
+	cvImage.header.frame_id = frameID;
+	cvImage.encoding = sensor_msgs::image_encodings::BGR8;
+	cvImage.image = img;
   // publish ROS message
-  rosPublisher.publish(Image_msg);
+  imagePublisher.publish(cvImage.toImageMsg());
 }
 
 int main(int argc, char *argv[]) {
@@ -66,7 +73,9 @@ int main(int argc, char *argv[]) {
 	// Init ROS
 	ros::init(argc, argv, programName);
   ros::NodeHandle node;
-  rosPublisher = node.advertise<sensor_msgs::Image>(rosPublishTopic, 1);
+  // imagePublisher = node.advertise(rosPublishTopic, 1);
+  image_transport::ImageTransport imageTransport(node);
+	imagePublisher = imageTransport.advertise(rosPublishTopic, 1);
 
 	// Create RSB factory
   #if RSB_VERSION_NUMERIC<1200
@@ -74,6 +83,10 @@ int main(int argc, char *argv[]) {
   #else
     rsb::Factory& factory = rsb::getFactory();
   #endif
+
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::Image> >
+		converter(new rsb::converter::ProtocolBufferConverter<rst::vision::Image>());
+		rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB listener
   rsb::ListenerPtr imageListener = factory.createListener(rsbListenerScope);

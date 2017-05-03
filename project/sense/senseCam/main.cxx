@@ -1,6 +1,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <converter/matConverter/matConverter.hpp>
+// #include <converter/matConverter/matConverter.hpp>
 
 #include <boost/shared_ptr.hpp>
 #include <rsb/Factory.h>
@@ -70,9 +70,9 @@ int main(int argc, char **argv) {
 //	converterRepository<std::string>()->registerConverter(converter);
 
 	// Register new converter for std::vector<rst::vision::Image>
-//	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::Image> >
-//		converter(new rsb::converter::ProtocolBufferConverter<rst::vision::Image>());
-//		rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::Image> >
+		converter(new rsb::converter::ProtocolBufferConverter<rst::vision::Image>());
+		rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
 
 	rsb::Factory &factory = rsb::getFactory();
@@ -85,13 +85,13 @@ int main(int argc, char **argv) {
 
 	// Creating the cam object
 	cv::VideoCapture cam;
-	//int ex = static_cast<int>(cam.get(CV_CAP_PROP_FOURCC));
-	//Size S = Size((int) cam.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
-	//							(int) cam.get(CV_CAP_PROP_FRAME_HEIGHT));
-	////Transform from int to char via Bitwise operators
-	//char EXT[] = {(char)(ex & 0XFF),(char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24),0};
-	//INFO_MSG("Input frame resolution: Width=" << S.width << "  Height=" << S.height)
-	//INFO_MSG("Get video frame with following FOURCC code: " << EXT )
+	// int ex = static_cast<int>(cam.get(CV_CAP_PROP_FOURCC));
+	// cv::Size S = cv::Size((int) cam.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
+	// 							(int) cam.get(CV_CAP_PROP_FRAME_HEIGHT));
+	// ////Transform from int to char via Bitwise operators
+	// char EXT[] = {(char)(ex & 0XFF),(char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24),0};
+	// INFO_MSG("Input frame resolution: Width=" << S.width << "  Height=" << S.height)
+	// INFO_MSG("Get video frame with following FOURCC code: " << EXT )
 
 	cam.set(CV_CAP_PROP_CONVERT_RGB, static_cast<double>(0));
 
@@ -105,10 +105,15 @@ int main(int argc, char **argv) {
 	while ( true/* TODO in rsb0.12 rsc::misc::lastArrivedSignal() == rsc::misc::Signal::NO_SIGNAL*/) {
 		// Save the actual picture to the frame object
 		cam >> frame;
+#ifndef NDEBUG
+		cv::imshow("frame", frame);
+		cv::waitKey(1);
+#endif
 		boost::shared_ptr<rst::vision::Image> avatarImage(new rst::vision::Image());
 		avatarImage->set_width(frame.size().width);
 		avatarImage->set_height(frame.size().height);
-		avatarImage->set_data( reinterpret_cast<char *>(frame.data)); // conversion from uchar*  char*
+		avatarImage->set_data(reinterpret_cast<char *>(frame.data)); // conversion from uchar* tp char*
+
 		// Send the data.
 		informer->publish(avatarImage);
 	}
