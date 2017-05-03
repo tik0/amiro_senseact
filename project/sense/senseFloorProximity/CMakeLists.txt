@@ -29,9 +29,9 @@ include_directories(
 )
 
 # Add folders to build and run CMakeLists.txt in it
-if (NOT TARGET vecIntConverter)
-    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-endif()
+#if (NOT TARGET vecIntConverter)
+#    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+#endif()
 
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
@@ -53,7 +53,7 @@ target_link_libraries (
     boost_thread
     boost_signals
     # -- Own libraries
-    vecIntConverter
+    #vecIntConverter
 )
 
 

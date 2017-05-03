@@ -25,14 +25,14 @@
 #include <rst/generic/Value.pb.h>
 
 // Include own converter
-#include <converter/vecIntConverter/main.hpp>
+//#include <converter/vecIntConverter/main.hpp>
 
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
 
 using namespace std;
-using namespace muroxConverter;
+//using namespace muroxConverter;
 
 int main(int argc, char **argv) {
 
@@ -64,8 +64,11 @@ int main(int argc, char **argv) {
 	po::notify(vm);
 
 	// Register new converter for std::vector<int>
-	boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
-	converterRepository<std::string>()->registerConverter(converter);
+	//boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
+	//converterRepository<std::string>()->registerConverter(converter);
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
+			converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
 	// Prepare RSB informer
 	rsb::Factory& factory = rsb::getFactory();
@@ -79,12 +82,13 @@ int main(int argc, char **argv) {
 
 	while (true) {
 		// Read the proximity data
-		if (CAN.getProximityFloorValue(floorProxValues) == 0) {
+		//if (CAN.getProximityFloorValue(floorProxValues) == 0) {
+		if (true){
 			// Datastructure for the RSB messages
 			rsb::Informer<rst::generic::Value>::DataPtr floorProxData(new rst::generic::Value);
 			floorProxData->set_type(rst::generic::Value::ARRAY);
 			for (uint i=0; i<floorProxValues.size(); i++){
-				rst::generic::Value* newValue =floorProxData->add_array();
+				rst::generic::Value* newValue = floorProxData->add_array();
 				newValue->set_type(rst::generic::Value::INT);
 				newValue->set_int_(floorProxValues[i]);
 			}
@@ -96,16 +100,16 @@ int main(int argc, char **argv) {
 			if (vm.count("verbose")) {
 				boost::shared_ptr<std::vector<int> > floorProxDataPrint = boost::shared_ptr<std::vector<int> >(
 				new std::vector<int>(floorProxValues.begin(), floorProxValues.end()));
-				for (int i : *floorProxDataPrint) {
-					cout << i << " ";
+				for (int i=0; i<floorProxValues.size(); i++) {
+					cout << floorProxValues[i] << " ";
 				}
 				cout << endl;
 			}
-
 			// Sleep for a while
 			boost::this_thread::sleep(boost::posix_time::milliseconds(rsbPeriod));
-		} else
+		} else {
 			WARNING_MSG("Reading floor proximity data from CAN failed.");
+		}
 	}
 
 	return EXIT_SUCCESS;
