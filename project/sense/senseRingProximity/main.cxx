@@ -21,11 +21,14 @@
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
+#include <rst/generic/Value.pb.h>
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/QueuePushHandler.h>
+#include <rst/generic/Value.pb.h>
 
 // Include own converter
-#include <converter/vecIntConverter/main.hpp>
+//#include <converter/vecIntConverter/main.hpp>
 
 #include <stdint.h>  // int32
 #include <string>
@@ -33,7 +36,7 @@
 #include <ControllerAreaNetwork.h>
 
 using namespace std;
-using namespace muroxConverter;
+//using namespace muroxConverter;
 
 #define SENSOR_COUNT 8
 
@@ -134,19 +137,34 @@ bool loadIrConfig(std::string configPath, bool isObstacleConfig) {
   return false;
 }
 
+void fillValueArrayWithValues(rsb::Informer<rst::generic::Value>::DataPtr value, std::vector<uint16_t> data){
+	(value)->clear_array();
+	for (int i=0; i<data.size(); i++){
+		rst::generic::Value* newV = (value)->add_array();
+		newV->set_type(rst::generic::Value::INT);
+		newV->set_int_(data[i]);
+	}
+}
+
 void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGround, uint32_t rsbPeriod, bool print, bool noObstacleValues, bool noEdgeValues) {
 
   rsb::Factory& factory = rsb::getFactory();
 
   // Register new converter for std::vector<int>
-  boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
-  converterRepository<std::string>()->registerConverter(converter);
+	//boost::shared_ptr<vecIntConverter> converter(new vecIntConverter());
+	//converterRepository<std::string>()->registerConverter(converter);
+	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
+			converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+	rsb::converter::converterRepository<std::string>()->registerConverter(converter);
   
   // Prepare RSB informer
-  rsb::Informer< std::vector<int> >::Ptr informerOriginalValues = factory.createInformer< std::vector<int> > (rsbOutScopeOriginal);
-  rsb::Informer< std::vector<int> >::Ptr informerObstacleValues = factory.createInformer< std::vector<int> > (rsbOutScopeObstacle);
-  rsb::Informer< std::vector<int> >::Ptr informerGroundValues = factory.createInformer< std::vector<int> > (rsbOutScopeGround);
+	//rsb::Informer< std::vector<int> >::Ptr informerOriginalValues = factory.createInformer< std::vector<int> > (rsbOutScopeOriginal);
+	//rsb::Informer< std::vector<int> >::Ptr informerObstacleValues = factory.createInformer< std::vector<int> > (rsbOutScopeObstacle);
+	//rsb::Informer< std::vector<int> >::Ptr informerGroundValues = factory.createInformer< std::vector<int> > (rsbOutScopeGround);
   rsb::Informer<std::string>::Ptr informerCommandResponse = factory.createInformer<std::string> (rsbOutScopeNewConfigRes);
+	rsb::Informer< rst::generic::Value >::Ptr informerOriginalValues = factory.createInformer< rst::generic::Value > (rsbOutScopeOriginal);
+	rsb::Informer< rst::generic::Value >::Ptr informerObstacleValues = factory.createInformer< rst::generic::Value > (rsbOutScopeObstacle);
+	rsb::Informer< rst::generic::Value >::Ptr informerGroundValues = factory.createInformer< rst::generic::Value > (rsbOutScopeGround);
 
   // Create and start the command listener
   rsb::ListenerPtr listener = factory.createListener(rsbInScopeNewConfig);
@@ -163,20 +181,27 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
   std::vector<uint16_t> groundValuesFac(8,0);
 
   // Datastructure for the RSB messages
-  boost::shared_ptr< std::vector<int> > vecDataOriginal;
-  boost::shared_ptr< std::vector<int> > vecDataObstacle;
-  boost::shared_ptr< std::vector<int> > vecDataGround;
+	//boost::shared_ptr< std::vector<int> > vecDataOriginal;
+	//boost::shared_ptr< std::vector<int> > vecDataObstacle;
+	//boost::shared_ptr< std::vector<int> > vecDataGround;
+	rsb::Informer<rst::generic::Value>::DataPtr vecDataOriginal(new rst::generic::Value);
+	vecDataOriginal->set_type(rst::generic::Value::ARRAY);
+	rsb::Informer<rst::generic::Value>::DataPtr vecDataObstacle(new rst::generic::Value);
+	vecDataObstacle->set_type(rst::generic::Value::ARRAY);
+	rsb::Informer<rst::generic::Value>::DataPtr vecDataGround(new rst::generic::Value);
+	vecDataGround->set_type(rst::generic::Value::ARRAY);
 
   int fail = 1;
-  uint8_t sensorIdx = 0;
-  for(;;) {
+	uint8_t sensorIdx = 0;
+
+	while(true) {
     // Read the proximity data
-    fail = CAN.getProximityRingValue(proximityRingValue);
-
-    // Convert for RSB message
-    vecDataOriginal = boost::shared_ptr<std::vector<int> >(new std::vector<int>(proximityRingValue.begin(),proximityRingValue.end()));
-
+		fail = CAN.getProximityRingValue(proximityRingValue);
     if (fail == 0) {
+			// Convert for RSB message
+			//vecDataOriginal = boost::shared_ptr<std::vector<int> >(new std::vector<int>(proximityRingValue.begin(),proximityRingValue.end()));
+			fillValueArrayWithValues(vecDataOriginal,proximityRingValue);
+
       // claculate offsets in proximity values
       for (sensorIdx = 0; sensorIdx < 8; sensorIdx++) {
 
@@ -189,7 +214,8 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
           }
 
           // Convert for RSB message
-          vecDataObstacle = boost::shared_ptr<std::vector<int> >(new std::vector<int>(obstacleValues.begin(),obstacleValues.end()));
+					//vecDataObstacle = boost::shared_ptr<std::vector<int> >(new std::vector<int>(obstacleValues.begin(),obstacleValues.end()));
+					fillValueArrayWithValues(vecDataObstacle,obstacleValues);
         }
 
         if (!noEdgeValues) {
@@ -204,7 +230,8 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
           groundValuesFac[sensorIdx] = (uint16_t)(((float)groundValues[sensorIdx]) / ((float)(GROUND_OFFSETS[sensorIdx] - AIR_OFFSETS[sensorIdx])) * 10000.0);
 
           // Convert for RSB message
-          vecDataGround = boost::shared_ptr<std::vector<int> >(new std::vector<int>(groundValuesFac.begin(),groundValuesFac.end()));
+					//vecDataGround = boost::shared_ptr<std::vector<int> >(new std::vector<int>(groundValuesFac.begin(),groundValuesFac.end()));
+					fillValueArrayWithValues(vecDataGround,groundValues);
         }
 
       }
@@ -259,13 +286,11 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
 
 }
 
-
-
 int main(int argc, char **argv) {
 
   // Handle program options
   namespace po = boost::program_options;
-  uint32_t rsbPeriod = 0;
+	uint32_t rsbPeriod = 10000;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
@@ -276,7 +301,7 @@ int main(int argc, char **argv) {
     ("outscopeResponse,r", po::value<std::string> (&rsbOutScopeNewConfigRes), "Scope for sending command response.")
     ("period,t", po::value<uint32_t> (&rsbPeriod), "Update interval in milliseconds (0 for maximum rate).")
     ("print,p", "Prints read proximity values in the console.")
-    ("loadOffsetFile,l", po::value<std::string> (&irObstacleOffsetFile), "File name for the obstacle offsets (on deafult: /root/initial/irConfig.conf).")
+		("loadOffsetFile,l", po::value<std::string> (&irObstacleOffsetFile), "File name for the obstacle offsets (on deafult: /root/initial/irConfig.conf).")
     ("noObstacleValues", "Flag, if the obstacle values for the obstacle model shouldn't be sent.")
     ("noEdgeValues", "Flag, if the edge values for the edge model shouldn't be sent.");
 
@@ -312,8 +337,8 @@ int main(int argc, char **argv) {
   INFO_MSG("");
 
   // loading configurations
-  loadIrConfig(irObstacleOffsetFile, true);
-  loadIrConfig(irAirOffsetFile, false);
+	loadIrConfig(irObstacleOffsetFile, true);
+	loadIrConfig(irAirOffsetFile, false);
   
   // loop
   justReadValues(rsbOutScopeObstacle, rsbOutScopeGround, rsbPeriod, vm.count("print"), vm.count("noObstacleValues"), vm.count("noEdgeValues"));
