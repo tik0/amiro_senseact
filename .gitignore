@@ -44,3 +44,7 @@ murox_senseact.files
 murox_senseact.includes
 murox_senseact.creator.user
 *.autosave
+
+#Catkin-Workspace
+catkin_ws/devel/_setup_util.py
+catkin_ws/devel/setup.sh

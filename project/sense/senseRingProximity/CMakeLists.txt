@@ -6,8 +6,10 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RSB rsb0.16)
+pkg_check_modules(RSC rsc0.16)
+pkg_check_modules(PROTOBUF protobuf)
+pkg_check_modules(RST rstsandbox0.16)
 pkg_check_modules(OPENCV opencv)
 
 # Get modules
@@ -20,8 +22,12 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 # Set the include pathe
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
-    ${RSC_INCLUDE_DIRS}                                             # RSC
+    ${RSC_INCLUDE_DIRS}
+     # RSC                                            
+    ${RST_INCLUDE_DIRS}
+     # RST
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
+    ${PROTOBUF_INCLUDE_DIRS}                                        # Protobuffer
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     ${GXX_INCLUDES}
@@ -29,9 +35,9 @@ include_directories(
 )
 
 # Add folders to build and run CMakeLists.txt in it
-if (NOT TARGET vecIntConverter)
-    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-endif()
+#if (NOT TARGET vecIntConverter)
+#   add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+#endif()
 
 # Define the source
 SET (SOURCE main.cxx)
@@ -51,11 +57,19 @@ target_link_libraries (
     ${RSC_LIBRARIES}
     ${Boost_LIBRARIES}
     ${OPENCV_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${RSTSANDBOX_LIBRARIES}
     jpeg
     # -- Own libraries
-    vecIntConverter
+    #vecIntConverter
 )
 
 # Additional compiler flags
 #ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11 -Wcpp)
 ADD_DEFINITIONS (-Wno-deprecated-declarations -O3 -std=c++11)
+# Special flags for RST
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
+
+# Set compiler flags as you like
+#SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
+#SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )

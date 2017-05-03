@@ -10,8 +10,10 @@ project ("${PROJECT_NAME}")
 # Read the pkg-config modules
 find_package(PkgConfig)
 
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(RSB rsb0.16)
+pkg_check_modules(RSC rsc0.16)
+pkg_check_modules(PROTOBUF protobuf)
+pkg_check_modules(RST rstsandbox0.16)
 
 # Set the include pathe
 include_directories(
@@ -27,9 +29,9 @@ include_directories(
 )
 
 # Add folders to build and run CMakeLists.txt in it
-if (NOT TARGET vecIntConverter)
-    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-endif()
+#if (NOT TARGET vecIntConverter)
+#    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+#endif()
 
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
@@ -51,7 +53,7 @@ target_link_libraries (
     boost_thread
     boost_signals
     # -- Own libraries
-    vecIntConverter
+    #vecIntConverter
 )
 
 
@@ -59,3 +61,10 @@ SET (
     CMAKE_CXX_FLAGS
     "-Wno-deprecated-declarations -O2 -std=c++11"
 )
+
+# Special flags for RST
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
+
+# Set compiler flags as you like
+#SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
+#SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )
