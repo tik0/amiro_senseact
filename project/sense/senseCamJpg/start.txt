@@ -1,5 +1,0 @@
-====== senseCamJpg ======
-
-This is a camera driver which greps the given camera device over the OpenCV interface.
-Every single frame is published as a compressed JPEG image via a given scope.
-See the demo [[demo:cameraJpeg:start|Sending and displaying of camera images]] for a hands-on.

@@ -13,12 +13,13 @@ find_package(catkin REQUIRED COMPONENTS
 	sensor_msgs
 	cv_bridge
 	image_transport
+	compressed_image_transport
 )
 
 find_package(PkgConfig)
 pkg_check_modules(RSB rsb0.16)
 pkg_check_modules(RSC rsc0.16)
-pkg_check_modules(RST rst0.16)
+FIND_PACKAGE(RST 0.16 REQUIRED COMPONENTS sandbox)
 pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(OPENCV opencv)
 
@@ -207,13 +208,29 @@ add_executable(rstVisionImageToRosSensormsgsImage
 	src/rstVisionImageToRosSensormsgsImage.cpp
 	src/Constants.hpp
 )
+
 target_link_libraries(rstVisionImageToRosSensormsgsImage
 	${catkin_LIBRARIES}
 	${RSB_LIBRARIES}
 	${RST_LIBRARIES}
+	${RSTSANDBOX_LIBRARIES}
 	${PROTOBUF_LIBRARIES}
 	${OPENCV_LIBRARIES}
 )
+#
+# add_executable(rstVisionEncodedImageToRosSensormsgsCompressedImage
+# 	src/rstVisionEncodedImageToRosSensormsgsCompressedImage.cpp
+# 	src/Constants.hpp
+# )
+#
+# target_link_libraries(rstVisionEncodedImageToRosSensormsgsCompressedImage
+# 	${catkin_LIBRARIES}
+# 	${RSB_LIBRARIES}
+# 	${RST_LIBRARIES}
+# 	${RSTSANDBOX_LIBRARIES}
+# 	${PROTOBUF_LIBRARIES}
+# 	${OPENCV_LIBRARIES}
+# )
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 

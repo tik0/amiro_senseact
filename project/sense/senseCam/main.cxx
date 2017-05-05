@@ -18,6 +18,9 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 //Prototypes
 #include <rst/vision/Image.pb.h>
+#ifndef RST_013_USED
+	#include <rst/vision/EncodedImage.pb.h>
+#endif
 
 #define INFO_MSG_
 // #define DEBUG_MSG_
@@ -35,6 +38,7 @@ using namespace rsb::converter;
 
 static std::string g_sOutScope = "/image";
 static int g_iDevice = 0;
+static int imageCompression = 0;
 
 int main(int argc, char **argv) {
 
@@ -43,7 +47,8 @@ int main(int argc, char **argv) {
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("outscope,o", po::value < std::string > (&g_sOutScope),"Scope for sending images.")
-			("device,d", po::value < int > (&g_iDevice),"Number of device.");
+			("device,d", po::value < int > (&g_iDevice),"Number of device.")
+			("imageCompression,c", po::value < int > (&imageCompression)->default_value(imageCompression),"Toggle image compression.");
 
 	// allow to give the value as a positional argument
 	po::positional_options_description p;
@@ -62,6 +67,7 @@ int main(int argc, char **argv) {
 
 	INFO_MSG( "Scope: " << g_sOutScope)
 	INFO_MSG( "Device: " << g_iDevice)
+	INFO_MSG( "Imagecompression " << imageCompression)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 //	Register our converter within the collection of converters for
@@ -70,15 +76,34 @@ int main(int argc, char **argv) {
 //	converterRepository<std::string>()->registerConverter(converter);
 
 	// Register new converter for std::vector<rst::vision::Image>
-	boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::Image> >
-		converter(new rsb::converter::ProtocolBufferConverter<rst::vision::Image>());
-		rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
 
 	rsb::Factory &factory = rsb::getFactory();
-
+	Informer<rst::vision::Image>::Ptr informer;
+	#ifdef RST_013_USED
+		Informer<std::string>::Ptr informerCompressed;
+	#else
+		Informer<rst::vision::EncodedImage>::Ptr informerCompressed;
+	#endif
 	// Create the informer
-	Informer<rst::vision::Image>::Ptr informer = factory.createInformer<rst::vision::Image> (Scope(g_sOutScope));
+	if(imageCompression) {
+		#ifdef RST_013_USED
+			// boost::shared_ptr< rsb::converter::ProtocolBufferConverter<std::string> >
+			// 	converter(new rsb::converter::ProtocolBufferConverter<std::string>());
+			// 	rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+			informerCompressed = factory.createInformer<std::string> (Scope(g_sOutScope));
+		#else
+			boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::EncodedImage> >
+				converter(new rsb::converter::ProtocolBufferConverter<rst::vision::EncodedImage>());
+				rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+				informerCompressed = factory.createInformer<rst::vision::EncodedImage> (Scope(g_sOutScope));
+		#endif
+	} else {
+		boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::Image> >
+			converter(new rsb::converter::ProtocolBufferConverter<rst::vision::Image>());
+			rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+		informer = factory.createInformer<rst::vision::Image> (Scope(g_sOutScope));
+	}
 //	Informer<cv::Mat>::Ptr informer = getFactory().createInformer<cv::Mat> (Scope(g_sOutScope));
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -101,26 +126,48 @@ int main(int argc, char **argv) {
 //	shared_ptr<cv::Mat> frame(new cv::Mat);
 	cv::Mat frame;
 
+	// stuff for compression
+	std::vector<unsigned char> buff;
+	std::vector<int> param(2);
+	param[0] = cv::IMWRITE_JPEG_QUALITY;
+	param[1] = 80; //default(95) 0-100
+
 	// Process the cam forever
-	while ( true/* TODO in rsb0.12 rsc::misc::lastArrivedSignal() == rsc::misc::Signal::NO_SIGNAL*/) {
+	while ( true) {
 		// Save the actual picture to the frame object
 		cam >> frame;
-#ifndef NDEBUG
-		cv::imshow("frame", frame);
-		cv::waitKey(1);
-#endif
-		boost::shared_ptr<rst::vision::Image> avatarImage(new rst::vision::Image());
-		avatarImage->set_width(frame.size().width);
-		avatarImage->set_height(frame.size().height);
-		avatarImage->set_data(reinterpret_cast<char *>(frame.data)); // conversion from uchar* tp char*
+		#ifndef NDEBUG
+			cv::imshow("frame", frame);
+			cv::waitKey(1);
+		#endif
+		if(imageCompression) {
+			cv::imencode(".jpg", frame, buff, param);
+			#ifdef RST_013_USED
+				boost::shared_ptr<std::string> frameJpg(new std::string(buff.begin(), buff.end()));
+				informerCompressed->publish(frameJpg);
+				INFO_MSG("Compressed Image published")
+			#else
+				boost::shared_ptr<rst::vision::EncodedImage> encodedImage(new rst::vision::EncodedImage());
+				encodedImage->set_encoding(rst::vision::EncodedImage::JPG);
+				encodedImage->set_data(std::string(reinterpret_cast<const char*>(&buff[0]), buff.size()));
+				informerCompressed->publish(encodedImage);
+				INFO_MSG("Encoded Image published")
 
-		// Send the data.
-		informer->publish(avatarImage);
+			#endif
+		} else {
+			boost::shared_ptr<rst::vision::Image> image(new rst::vision::Image());
+			image->set_width(frame.size().width);
+			image->set_height(frame.size().height);
+			image->set_data(reinterpret_cast<char *>(frame.data)); // conversion from uchar* tp char*
+			// Send the data.
+			informer->publish(image);
+			INFO_MSG("Image published")
+		}
 	}
 
 	// Free the cam
 	cam.release();
 
-	return 0/* TODO in rsb0.12 rsc::misc::lastArrivedSignal()*/;
+	return 0;
 
 }

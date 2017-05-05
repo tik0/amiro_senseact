@@ -3,15 +3,24 @@ cmake_minimum_required (VERSION 2.6)
 # Set the project name to the name of the folder
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
+ADD_DEFINITIONS(-DRST_013_USED)
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb0.16)
-pkg_check_modules(RSC rsc0.16)
-pkg_check_modules(RST rst0.16)
 pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(OPENCV opencv)
-
+if ($ENV{ARCH} MATCHES "arm")
+	pkg_check_modules(RSB rsb0.13)
+	pkg_check_modules(RSC rsc0.13)
+	pkg_check_modules(RST rstsandbox0.13)
+	ADD_DEFINITIONS(-DRST_013_USED)
+else()
+	pkg_check_modules(RSB rsb0.16)
+	pkg_check_modules(RSC rsc0.16)
+	pkg_check_modules(RST rstsandbox0.16)
+endif()
+pkg_check_modules(PROTOBUF protobuf)
+pkg_check_modules(OPENCV opencv)
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system)
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
