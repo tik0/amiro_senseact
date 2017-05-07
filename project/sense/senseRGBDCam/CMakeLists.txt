@@ -6,11 +6,19 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
+if ($ENV{ARCH} MATCHES "arm")
+	pkg_check_modules(RSB rsb0.13)
+	pkg_check_modules(RSC rsc0.13)
+	pkg_check_modules(RST rstsandbox0.13)
+	ADD_DEFINITIONS(-DRST_013_USED)
+else()
+	pkg_check_modules(RSB rsb0.16)
+	pkg_check_modules(RSC rsc0.16)
+	pkg_check_modules(RST rstsandbox0.16)
+endif()
 pkg_check_modules(OPENCV opencv)
 pkg_check_modules(EIGEN eigen3)
-pkg_check_modules(OPENNI2 OpenNI2 )
+pkg_check_modules(OPENNI2 OpenNI2)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system chrono filesystem thread)
@@ -25,7 +33,6 @@ include_directories(
     ${RSC_INCLUDE_DIRS}                                             # RSC
     ${RST_INCLUDE_DIRS}                                             # RST
     ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
-    ${OpenCV_INCLUDE_DIRS}
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
     ${GXX_INCLUDES}
@@ -54,13 +61,14 @@ target_link_libraries (
     ${RST_LIBRARIES}
     ${Boost_LIBRARIES}
     ${OPENCV_LIBRARIES}
-    ${OpenCV_LIBRARIES}
     ${OPENNI2_LIBRARIES}
     jpeg
 )
 
-# Additional compiler flags
-SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O3 -ffast-math -funsafe-math-optimizations")
+# Special flags for RST
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
-SET ( CMAKE_BUILD_TYPE Release )
+# Set compiler flags as you like
+SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
+SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )
 #ADD_DEFINITIONS (-DCMAKE_BUILD_TYPE=Release -Wno-deprecated-declarations -O3)

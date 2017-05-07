@@ -35,7 +35,3 @@ All four scripts are sending a fused image of the RGB or IR image and the depth 
 | sendImage, s     | -       | -             | Flag if the image shall be converted to OpenCV and send via RSB. |
 | printInfo, p     | -       | -             | Flag if just the camera infos shall be printed. The tool closes afterwards. |
 | debugImage, i    | -       | -             | Flag if over the RGB scope the RGB image and depth image shall be send in one image. |
-
-
-
-

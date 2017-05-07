@@ -16,7 +16,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/nonfree/nonfree.hpp>
+
+#ifdef RST_013_USED
+	#include <opencv2/nonfree/nonfree.hpp>
+#else
+	#include <opencv2/xfeatures2d.hpp>
+#endif
 //#include <converter/iplImageConverter/IplImageConverter.h>
 
 #include <boost/shared_ptr.hpp>
@@ -76,7 +81,7 @@ int main(int argc, char **argv) {
 	int depthMode = -1;
 	int irMode = -1;
 	unsigned int period = 10; // ms
-	
+
 	po::options_description options("Allowed options");
 	options.add_options()("help,h", "Display a help message.")
 			("RGBOutscope,r", po::value < std::string > (&rgbScope),"Scope for sending RGB image.")
@@ -104,22 +109,22 @@ int main(int argc, char **argv) {
 	}
 	// afterwards, let program options handle argument errors
 	po::notify(vm);
-	
+
 	sendImage = vm.count("sendImage");
 	justPrint = vm.count("printInfo");
 	debugImage = vm.count("debugImage");
 	showIR = vm.count("showIR");
-	
+
 	if (!showIR && rgbMode >= 0) INFO_MSG("Mode of RGB Image will be set to " << rgbMode);
 	if (showIR && irMode >= 0) INFO_MSG("Mode of IR Image will be set to " << irMode);
 	if (depthMode >= 0) INFO_MSG("Mode of Depth Image will be set to " << depthMode);
-	
+
 	std::string rgbName = "RGB";
 	if (showIR) {
 		rgbName = "IR";
 		rgbMode = irMode;
 	}
-	
+
 	// Initialize clock
 	system_clock::time_point systime1, systime2;
 	milliseconds mstime;
@@ -133,7 +138,7 @@ int main(int argc, char **argv) {
 	// +++++ RSB Initialization +++++
 
 	rsb::Factory &factory = rsb::getFactory();
-	
+
 	INFO_MSG("RSB Scopes:");
 	INFO_MSG(" -> sending images:     " << rgbScope);
 	INFO_MSG(" -> sending laser data: " << depthScope);
@@ -159,7 +164,7 @@ int main(int argc, char **argv) {
 	VideoFrameRef rgbImage, depthImage;
 	VideoStream rgbStream, depthStream;
 	Device device;
-	
+
 	Mat rgbMat, depthMat;
 
 	// Compress data
@@ -173,7 +178,7 @@ int main(int argc, char **argv) {
 		ERROR_MSG("Initialize failed: " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
-	
+
 	DEBUG_MSG("Open device");
 	// open device and start stream
 	respON = device.open(ANY_DEVICE);
@@ -214,7 +219,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	
+
 	// get depth stream
 	const SensorInfo* depthinfo = device.getSensorInfo(SENSOR_DEPTH);
 	if (depthinfo != NULL) {
@@ -238,7 +243,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	
+
 	// start streams
 	respON = rgbStream.start();
 	if (respON != STATUS_OK) {
@@ -265,21 +270,21 @@ int main(int argc, char **argv) {
 		ERROR_MSG("Wait for depth stream failed (timeout is "  << SAMPLE_READ_WAIT_TIMEOUT << " ms): " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
-	
+
 	// read first image
 	respON = rgbStream.readFrame(&rgbImage);
 	if (respON != STATUS_OK) {
 		ERROR_MSG("Read " << rgbName << " image failed: " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
-	
+
 	// read first scan
 	respON = depthStream.readFrame(&depthImage);
 	if (respON != STATUS_OK) {
 		ERROR_MSG("Read depth image failed: " << OpenNI::getExtendedError());
 		return EXIT_FAILURE;
 	}
-	
+
 	if (justPrint) {
 		int imageHeight = rgbImage.getHeight();
 		int imageWidth = rgbImage.getWidth();
@@ -318,25 +323,25 @@ int main(int argc, char **argv) {
 			// Convert to cv::Mat
 			if (vm.count("printTime")) systime1 = system_clock::now();
 			if (vm.count("printTime")) DEBUG_MSG("Conversion: Transform OpenNI to OpenCV");
-			
+
 			const openni::RGB888Pixel* rgbBuffer = (const openni::RGB888Pixel*)rgbImage.getData();
 			rgbMat.create(rgbImage.getHeight(), rgbImage.getWidth(), CV_8UC3);
 			memcpy(rgbMat.data, rgbBuffer, 3*rgbImage.getHeight()*rgbImage.getWidth()*sizeof(uint8_t));
-			
+
 			const openni::DepthPixel* depthBuffer = (const openni::DepthPixel*)depthImage.getData();
 			Mat depthdata(depthImage.getHeight(), depthImage.getWidth(), CV_16UC1);
 			memcpy(depthdata.data, depthBuffer, depthImage.getHeight()*depthImage.getWidth()*sizeof(uint16_t));
-						
+
 			if (vm.count("printTime")) systime2 = system_clock::now();
 			if (vm.count("printTime")) mstime = duration_cast<milliseconds>(systime2-systime1);
 			if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
-			
+
 			if (vm.count("printTime")) systime1 = system_clock::now();
 			if (vm.count("printTime")) DEBUG_MSG("Conversion: Convert to correctly flipped " << rgbName << " images");
-			
+
 			cvtColor(rgbMat, rgbMat, CV_BGR2RGB);
 			flip(rgbMat, rgbMat, 1);
-			
+
 			Mat depthDataImage1C;
 			minMaxLoc(depthdata, &minVal, &maxVal);
 			alpha = 255.0 / maxVal;
@@ -344,7 +349,7 @@ int main(int argc, char **argv) {
 			depthdata.convertTo(depthDataImage1C, CV_8UC1, alpha, beta);
 			cvtColor(depthDataImage1C, depthMat, CV_GRAY2RGB);
 			flip(depthMat, depthMat, 1);
-			
+
 			if (vm.count("printTime")) systime2 = system_clock::now();
 			if (vm.count("printTime")) mstime = duration_cast<milliseconds>(systime2-systime1);
 			if (vm.count("printTime")) DEBUG_MSG(" -> " << mstime.count() << " ms");
@@ -360,14 +365,14 @@ int main(int argc, char **argv) {
 				rgbMat.copyTo(part[0]);
 				depthMat.copyTo(part[1]);
 				imencode(".jpg", publicMat, bufRgb, compression_params);
-				shared_ptr< std::string > rgbFrameJpg(new std::string(bufRgb.begin(), bufRgb.end()));
+				::boost::shared_ptr< std::string > rgbFrameJpg(new std::string(bufRgb.begin(), bufRgb.end()));
 				RGBInformer->publish(rgbFrameJpg);
 			} else {
 				imencode(".jpg", rgbMat, bufRgb, compression_params);
 				imencode(".jpg", depthMat, bufDepth, compression_params);
-				shared_ptr< std::string > rgbFrameJpg(new std::string(bufRgb.begin(), bufRgb.end()));
+				::boost::shared_ptr< std::string > rgbFrameJpg(new std::string(bufRgb.begin(), bufRgb.end()));
 				RGBInformer->publish(rgbFrameJpg);
-				shared_ptr< std::string > depthFrameJpg(new std::string(bufDepth.begin(), bufDepth.end()));
+				::boost::shared_ptr< std::string > depthFrameJpg(new std::string(bufDepth.begin(), bufDepth.end()));
 				DepthInformer->publish(depthFrameJpg);
 			}
 		}
@@ -377,12 +382,12 @@ int main(int argc, char **argv) {
 
 		usleep(period*1000);
 	}
-	
+
 	rgbStream.stop();
 	rgbStream.destroy();
 	depthStream.stop();
 	depthStream.destroy();
-	
+
 	device.close();
 	OpenNI::shutdown();
 
