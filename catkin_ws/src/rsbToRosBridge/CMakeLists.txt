@@ -10,6 +10,7 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  sai_msgs
 	sensor_msgs
 	cv_bridge
 	image_transport
@@ -233,6 +234,9 @@ target_link_libraries(rstVisionImageToRosSensormsgsImage
 # )
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
+
+
+add_dependencies(rstVisionImageToRosSensormsgsImage sai_msgs_gencpp)
 
 #############
 ## Testing ##
