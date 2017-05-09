@@ -25,3 +25,5 @@ msg/_*.py
 
 #Custom Logger Script
 mylogger.sh
+
+rsb.conf

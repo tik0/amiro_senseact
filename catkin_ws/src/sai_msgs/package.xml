@@ -5,6 +5,8 @@
   <description>The sai_msgs package</description>
 
   <maintainer email="tkorthals@cit-ec.uni-bielefeld.de">tkorthals</maintainer>
+  <maintainer email="drudolph@techfak.uni-bielefeld.de">Daniel Rudolph</maintainer>
+  <maintainer email="jhomburg@techfak.uni-bielefeld.de">Jonas Homburg</maintainer>
 
 
   <license>TODO</license>

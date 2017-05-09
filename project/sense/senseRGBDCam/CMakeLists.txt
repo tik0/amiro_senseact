@@ -7,14 +7,16 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 # Read the pkg-config modules
 find_package(PkgConfig)
 if ($ENV{ARCH} MATCHES "arm")
-	pkg_check_modules(RSB rsb0.13)
-	pkg_check_modules(RSC rsc0.13)
-	pkg_check_modules(RST rstsandbox0.13)
-	ADD_DEFINITIONS(-DRST_013_USED)
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION_ARM})
+  if($ENV{MUROX_RSB_VERSION_ARM} LESS 0.14)
+    ADD_DEFINITIONS(-DRST_013_USED)
+  endif()
 else()
-	pkg_check_modules(RSB rsb0.16)
-	pkg_check_modules(RSC rsc0.16)
-	pkg_check_modules(RST rstsandbox0.16)
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION})
 endif()
 pkg_check_modules(OPENCV opencv)
 pkg_check_modules(EIGEN eigen3)
@@ -29,40 +31,40 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Set the include pathe
 include_directories(
-    ${RSB_INCLUDE_DIRS}                                             # RSB
-    ${RSC_INCLUDE_DIRS}                                             # RSC
-    ${RST_INCLUDE_DIRS}                                             # RST
-    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
-    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
-    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-    ${GXX_INCLUDES}
-    ${Boost_INCLUDE_DIR}
-    ${EIGEN_INCLUDE_DIRS}
-    ${OPENNI2_INCLUDE_DIRS}
+  ${RSB_INCLUDE_DIRS}                                             # RSB
+  ${RSC_INCLUDE_DIRS}                                             # RSC
+  ${RST_INCLUDE_DIRS}                                             # RST
+  ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
+  "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
+  "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
+  ${GXX_INCLUDES}
+  ${Boost_INCLUDE_DIR}
+  ${EIGEN_INCLUDE_DIRS}
+  ${OPENNI2_INCLUDE_DIRS}
 )
 
 # Define the source
 SET (SOURCE main.cxx)
 
 LINK_DIRECTORIES (
-    ${RSB_LIBRARY_DIRS}
-    ${RSC_LIBRARY_DIRS}
-    ${OPENCV_LIBRARY_DIRS}
-    ${OPENNI2_LIBRARY_DIRS}
+  ${RSB_LIBRARY_DIRS}
+  ${RSC_LIBRARY_DIRS}
+  ${OPENCV_LIBRARY_DIRS}
+  ${OPENNI2_LIBRARY_DIRS}
 )
 
 # add the executable
 add_executable ("${PROJECT_NAME}" ${SOURCE})
 
 target_link_libraries (
-    "${PROJECT_NAME}"
-    ${RSB_LIBRARIES}
-    ${RSC_LIBRARIES}
-    ${RST_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${OPENCV_LIBRARIES}
-    ${OPENNI2_LIBRARIES}
-    jpeg
+  "${PROJECT_NAME}"
+  ${RSB_LIBRARIES}
+  ${RSC_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${OPENCV_LIBRARIES}
+  ${OPENNI2_LIBRARIES}
+  jpeg
 )
 
 # Special flags for RST
