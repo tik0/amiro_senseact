@@ -1,6 +1,8 @@
-/**
- * Author: Daniel Rudolph
- */
+// ============================================================================
+// Name        : main.cxx
+// Author      : Daniel Rudolph <drudolph@techfak.uni-bielefeld.de>
+// Description : Recieve images via rsb and publish them via ros.
+// ============================================================================
 
 // ROS
 #include <ros/ros.h>
@@ -31,11 +33,11 @@
 using namespace std;
 
 // RSB Listener Scope
-static string rsbListenerScope = "/image";
+static string rsbListenerScope;
 
 // ROS Publish Topic
-static string rosPublishImageTopic = "/image";
-static string rosPublishCompressedImageTopic = "/image/compressed";
+static string rosPublishImageTopic;
+static string rosPublishCompressedImageTopic;
 
 // ros::Publisher rosPublisher;
 static image_transport::Publisher imagePublisher;
@@ -44,8 +46,14 @@ static ros::Publisher compressedImagePublisher;
 // program name
 const string programName = "rst_vision_image_to_ros_sensormsgs_image";
 
+static const string rstVisionImage = "rst::vision::Image";
+static const string rstVisionEncodedImage = "rst::vision::EncodedImage";
+static const string rsbWireSchema = "rsb.wire-schema";
+static const string utf8String = "utf-8-string";
+static const string cxx11String = "std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >";
+
 void processImage(rsb::EventPtr event) {
-  if (event->getType() == "rst::vision::Image") {
+  if (event->getType() == rstVisionImage) {
     boost::shared_ptr<rst::vision::Image> image = boost::static_pointer_cast<rst::vision::Image>(event->getData());
     cv::Mat img;
     img.create(image->height(), image->width(), CV_8UC3);
@@ -57,24 +65,28 @@ void processImage(rsb::EventPtr event) {
     cvImage.image = img;
     // publish ROS message
     imagePublisher.publish(cvImage.toImageMsg());
-  } else if (event->getType() == "rst::vision::EncodedImage" || event->getMetaData().getUserInfo("rsb.wire-schema") == "utf-8-string") {
+  } else if (event->getType() == rstVisionEncodedImage || event->getMetaData().hasUserInfo(rsbWireSchema) || event->getType() == cxx11String ) {
     sensor_msgs::CompressedImage compressedImage;
     boost::shared_ptr<rst::vision::EncodedImage> encodedImage;
     boost::shared_ptr<std::string> stringImage;
-    if (event->getType() == "rst::vision::EncodedImage") {
+    bool doPublish = false;
+    if (event->getType() == rstVisionEncodedImage) {
       encodedImage = boost::static_pointer_cast<rst::vision::EncodedImage>(event->getData());
       std::vector<unsigned char> data(encodedImage->data().begin(), encodedImage->data().end());
       compressedImage.data = data;
-    }
-    if (event->getMetaData().getUserInfo("rsb.wire-schema") == "utf-8-string") {
+      doPublish = true;
+    } else if (event->getType() == cxx11String || event->getMetaData().getUserInfo(rsbWireSchema) == utf8String) {
       stringImage = boost::static_pointer_cast<std::string>(event->getData());
       std::vector<unsigned char> data(stringImage->begin(), stringImage->end());
       compressedImage.data = data;
+      doPublish = true;
     }
-    compressedImage.header.stamp    = ros::Time::now();
-    compressedImage.header.frame_id = event->getScope().toString();
-    compressedImage.format = "jpeg";
-    compressedImagePublisher.publish(compressedImage);
+    if(doPublish) {
+      compressedImage.header.stamp    = ros::Time::now();
+      compressedImage.header.frame_id = event->getScope().toString();
+      compressedImage.format = "jpeg";
+      compressedImagePublisher.publish(compressedImage);
+    }
   }
 } // processImage
 
@@ -84,10 +96,16 @@ int main(int argc, char * argv[]) {
   // Init ROS
   ros::init(argc, argv, programName);
   ros::NodeHandle node;
+  ros::NodeHandle private_nh("~");
 
-  if (node.getParam("rsbListenerScope", rsbListenerScope)) ROS_INFO("Got param rsbListenerScope: %s", rsbListenerScope.c_str());
-  if (node.getParam("rosPublishImageTopic", rosPublishImageTopic)) ROS_INFO("Got param rosPublishImageTopic: %s", rosPublishImageTopic.c_str());
-  if (node.getParam("rosPublishCompressedImageTopic", rosPublishCompressedImageTopic)) ROS_INFO("Got param rosPublishCompressedImageTopic: %s", rosPublishCompressedImageTopic.c_str());
+  private_nh.param<string>("rsbListenerScope", rsbListenerScope, "/image");
+  private_nh.param<string>("rosPublishImageTopic", rosPublishImageTopic, "/image");
+  private_nh.param<string>("rosPublishCompressedImageTopic", rosPublishCompressedImageTopic, "/image/compressed");
+
+  ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
+  ROS_INFO("rosPublishImageTopic: %s", rosPublishImageTopic.c_str());
+  ROS_INFO("rosPublishCompressedImageTopic: %s", rosPublishCompressedImageTopic.c_str());
+
   image_transport::ImageTransport imageTransport(node);
   imagePublisher = imageTransport.advertise(rosPublishImageTopic, 1);
   compressedImagePublisher = node.advertise<sensor_msgs::CompressedImage>(rosPublishCompressedImageTopic, 1);
@@ -109,4 +127,4 @@ int main(int argc, char * argv[]) {
   ros::spin();
 
   return 0;
-}
+} // main

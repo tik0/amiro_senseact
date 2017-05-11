@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.6)
 # Set the project name to the name of the folder
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
-# ADD_DEFINITIONS(-DRST_013_USED)
+ADD_DEFINITIONS(-DRST_013_USED)
 
 # Read the pkg-config modules
 find_package(PkgConfig)

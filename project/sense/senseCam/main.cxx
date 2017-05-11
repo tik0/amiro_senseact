@@ -67,7 +67,7 @@ int main(int argc, char ** argv) {
 
   INFO_MSG("Scope: " << g_sOutScope)
   INFO_MSG("Device: " << g_iDevice)
-  INFO_MSG("compression " << compression)
+  INFO_MSG("compression " << compressionValue)
 
   if(compressionValue > 0)
     imageCompression = 1;
