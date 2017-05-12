@@ -6,14 +6,18 @@ message (STATUS "Set PROJECT_NAME to ${PROJECT_NAME}")
 
 project ("${PROJECT_NAME}")
 
-
 # Read the pkg-config modules
 find_package(PkgConfig)
-
-pkg_check_modules(RSB rsb0.16)
-pkg_check_modules(RSC rsc0.16)
 pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.16)
+if ($ENV{ARCH} MATCHES "arm")
+    pkg_check_modules(RSB rsb0.13)
+    pkg_check_modules(RSC rsc0.13)
+    pkg_check_modules(RST rstsandbox0.13)
+else()
+    pkg_check_modules(RSB rsb0.16)
+    pkg_check_modules(RSC rsc0.16)
+    pkg_check_modules(RST rstsandbox0.16)
+endif()
 
 # Set the include pathe
 include_directories(

@@ -215,6 +215,17 @@ target_link_libraries(rstVisionImageToRosSensormsgsImage
 	${OPENCV_LIBRARIES}
 )
 
+add_executable(rstFloorProximityValueToRosIntArray
+  src/rstFloorProximityValueToRosIntArray.cpp
+  src/Constants.hpp
+)
+target_link_libraries(rstFloorProximityValueToRosIntArray
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+)
+
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
 #############
