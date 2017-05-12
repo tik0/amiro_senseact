@@ -3,8 +3,9 @@
 
 #include <sick_tim/SickTimConfig.h>
 // RST Proto types
-#include <types/LocatedLaserScan.pb.h>
-#include <rst/geometry/Pose.pb.h>
+#include <rst/vision/LaserScan.pb.h>
+// #include <types/LocatedLaserScan.pb.h>
+// #include <rst/geometry/Pose.pb.h>
 
 namespace sick_tim
 {
@@ -23,7 +24,7 @@ public:
   virtual ~AbstractParser();
 
   virtual int parse_datagram(char* datagram, size_t datagram_length, SickTimConfig &config,
-                             rst::vision::LocatedLaserScan &msg) = 0;
+                             rst::vision::LaserScan &msg) = 0;
 };
 
 } /* namespace sick_tim */

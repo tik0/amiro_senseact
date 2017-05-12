@@ -14,14 +14,18 @@ SickTimCommon::SickTimCommon(AbstractParser* parser, std::string rsboutscope) :
   rsb::Factory &nh_ = rsb::getFactory();
 
   // Register converter
-  boost::shared_ptr< rsb::converter::ProtocolBufferConverter< rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+  // boost::shared_ptr< rsb::converter::ProtocolBufferConverter< rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+  // rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter< rst::vision::LaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan >());
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
 
   // scan publisher
-  pub_ = nh_.createInformer<rst::vision::LocatedLaserScan>(rsboutscope);
+  pub_ = nh_.createInformer<rst::vision::LaserScan>(rsboutscope);
+  // pub_ = nh_.createInformer<rst::vision::LocatedLaserScan>(rsboutscope);
 
   // Allocate memory for the message
-  msg_ptr = boost::shared_ptr<rst::vision::LocatedLaserScan>(new rst::vision::LocatedLaserScan);
+  // msg_ptr = boost::shared_ptr<rst::vision::LocatedLaserScan>(new rst::vision::LocatedLaserScan);
+  msg_ptr = boost::shared_ptr<rst::vision::LaserScan>(new rst::vision::LaserScan);
 }
 
 int SickTimCommon::stop_scanner()

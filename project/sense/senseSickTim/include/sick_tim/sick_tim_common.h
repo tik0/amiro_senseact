@@ -54,7 +54,8 @@ protected:
 
 private:
   // RSB
-  rsb::Informer<rst::vision::LocatedLaserScan>::Ptr pub_;
+  // rsb::Informer<rst::vision::LocatedLaserScan>::Ptr pub_;
+  rsb::Informer<rst::vision::LaserScan>::Ptr pub_;
 
   // Diagnostics
   double expectedFrequency_;
@@ -66,7 +67,8 @@ private:
   AbstractParser* parser_;
 
   // Message
-  boost::shared_ptr<rst::vision::LocatedLaserScan> msg_ptr;
+  // boost::shared_ptr<rst::vision::LocatedLaserScan> msg_ptr;
+  boost::shared_ptr<rst::vision::LaserScan> msg_ptr;
 };
 
 } /* namespace sick_tim */

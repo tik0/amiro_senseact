@@ -1,8 +1,10 @@
 #include <sick_tim/sick_tim551_2050001_parser.h>
 
 // RST Proto types
-#include <types/LocatedLaserScan.pb.h>
-#include <rst/geometry/Pose.pb.h>
+// #include <types/LocatedLaserScan.pb.h>
+// #include <rst/geometry/Pose.pb.h>
+#include <rst/vision/LaserScan.pb.h>
+
 
 namespace sick_tim
 {
@@ -20,7 +22,7 @@ SickTim5512050001Parser::~SickTim5512050001Parser()
 }
 
 int SickTim5512050001Parser::parse_datagram(char* datagram, size_t datagram_length, SickTimConfig &config,
-                                            rst::vision::LocatedLaserScan &msg)
+                                            rst::vision::LaserScan &msg)
 {
   static const size_t HEADER_FIELDS = 33;
   char* cur_field;
@@ -164,36 +166,37 @@ int SickTim5512050001Parser::parse_datagram(char* datagram, size_t datagram_leng
   // 23: Starting angle (FFF92230)
   int starting_angle = -1;
   sscanf(fields[23], "%x", &starting_angle);
-  msg.set_scan_angle_start((starting_angle / 10000.0) / 180.0 * M_PI - M_PI / 2);
-  printf("starting_angle: %d, angle_min: %f\n", starting_angle, msg.scan_angle_start());
+  // msg.set_scan_angle_start((starting_angle / 10000.0) / 180.0 * M_PI - M_PI / 2);
+  // printf("starting_angle: %d, angle_min: %f\n", starting_angle, msg.scan_angle_start());
 
   // 24: Angular step width (2710)
   unsigned short angular_step_width = -1;
   sscanf(fields[24], "%hx", &angular_step_width);
-  msg.set_scan_angle_increment((angular_step_width / 10000.0) / 180.0 * M_PI);
-  msg.set_scan_angle_end(msg.scan_angle_start() + (number_of_data - 1) * msg.scan_angle_increment());
+  float angular_step_width_radiant = (angular_step_width / 10000.0) / 180.0 * M_PI;
+  // msg.set_scan_angle_increment((angular_step_width / 10000.0) / 180.0 * M_PI);
+  // msg.set_scan_angle_end(msg.scan_angle_start() + (number_of_data - 1) * msg.scan_angle_increment());
 
   // 25: Number of data (<= 10F)
   // This is already determined above in number_of_data
 
   // adjust angle_min to min_ang config param
   int index_min = 0;
-  while (msg.scan_angle_increment() + msg.scan_angle_start() < config.min_ang)
-  {
-    msg.set_scan_angle_start(msg.scan_angle_start() + msg.scan_angle_increment());
-    index_min++;
-  }
-
-  // adjust angle_max to max_ang config param
+  // while (msg.scan_angle_increment() + msg.scan_angle_start() < config.min_ang)
+  // {
+  //   msg.set_scan_angle_start(msg.scan_angle_start() + msg.scan_angle_increment());
+  //   index_min++;
+  // }
+  //
+  // // adjust angle_max to max_ang config param
   int index_max = number_of_data - 1;
-  while (msg.scan_angle_end() - msg.scan_angle_increment() > config.max_ang)
-  {
-    msg.set_scan_angle_end(msg.scan_angle_end() - msg.scan_angle_increment());
-    index_max--;
-  }
-
-  printf("index_min: %d, index_max: %d\n", index_min, index_max);
-  printf("angular_step_width: %d, angle_increment: %f, angle_max: %f\n", angular_step_width, msg.scan_angle_increment(), msg.scan_angle_start());
+  // while (msg.scan_angle_end() - msg.scan_angle_increment() > config.max_ang)
+  // {
+  //   msg.set_scan_angle_end(msg.scan_angle_end() - msg.scan_angle_increment());
+  //   index_max--;
+  // }
+  //
+  // printf("index_min: %d, index_max: %d\n", index_min, index_max);
+  // printf("angular_step_width: %d, angle_increment: %f, angle_max: %f\n", angular_step_width, msg.scan_angle_increment(), msg.scan_angle_start());
 
   // 26..26 + n - 1: Data_1 .. Data_n
   const int num_samples = index_max - index_min + 1;
@@ -204,12 +207,13 @@ int SickTim5512050001Parser::parse_datagram(char* datagram, size_t datagram_leng
   while (num_samples < msg.scan_values_size()) {
     msg.mutable_scan_values()->RemoveLast();
   }
-  printf("Alloc: num_samples: %d, msg.scan_values_size(): %d\n", num_samples, msg.scan_values_size());
+   printf("Alloc: num_samples: %d, msg.scan_values_size(): %d\n", num_samples, msg.scan_values_size());
   for (int j = index_min; j <= index_max; ++j)
   {
     unsigned short range;
     sscanf(fields[j + 26], "%hx", &range);
-    msg.mutable_scan_values()->Set(j - index_min, range / 1000.0);
+    msg.set_scan_values(j - index_min, range / 1000.0);
+    // msg.mutable_scan_values()->Set(j - index_min, range / 1000.0);
   }
 
   // 26 + n: RSSI data included
@@ -219,9 +223,9 @@ int SickTim5512050001Parser::parse_datagram(char* datagram, size_t datagram_leng
   //   count - 3 .. count - 1 = unknown (but seems to be 0 always)
   //   <ETX> (\x03)
 
-  msg.set_scan_values_min(override_range_min_);
-  msg.set_scan_values_max(override_range_max_);
-  msg.set_scan_angle((msg.scan_values_size()-1) * msg.scan_angle_increment());
+  // msg.set_scan_values_min(override_range_min_);
+  // msg.set_scan_values_max(override_range_max_);
+  msg.set_scan_angle((msg.scan_values_size()-1) * angular_step_width_radiant);
 
   // ----- adjust start time
   // - last scan point = now  ==>  first scan point = now - number_of_data * time increment

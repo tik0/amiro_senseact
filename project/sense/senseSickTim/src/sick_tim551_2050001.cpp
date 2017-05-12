@@ -7,6 +7,7 @@
 #include <rsb/converter/Repository.h>
 #include <rsc/misc/SignalWaiter.h>
 #include <boost/program_options.hpp>
+#include <iostream>
 //#include <converter/vecIntConverter/main.hpp>
 
 int main(int argc, char **argv)
@@ -17,20 +18,20 @@ int main(int argc, char **argv)
 
   std::string port = "2112";
   int timelimit = 5;
-  float range_min = 0.05f;
-  float range_max = 25.0f;  // TIM 571
+  // float range_min = 0.05f;
+  // float range_max = 25.0f;  // TIM 571
   float time_increment = -1.0f;
   std::string rsbOutScope = "/AMiRo/lidar";
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
     ("outscope,o", po::value < std::string > (&rsbOutScope), "Scope sending the LIDAR data")
-    ("time_increment", po::value < float > (&time_increment), "Time increment between scans")
-    ("range_max", po::value < float > (&range_max), "Maximal distance to be detected")
-    ("range_min", po::value < float > (&range_min), "Minimal distance to be detected")
     ("timelimit", po::value < int > (&timelimit), "Timelimit for LIDAR beeing idle")
+    ("time_increment", po::value < float > (&time_increment), "Time increment between scans")
     ("port", po::value < std::string > (&port), "Port for TCP operation");
 
+    // ("range_max", po::value < float > (&range_max), "Maximal distance to be detected")
+    // ("range_min", po::value < float > (&range_min), "Minimal distance to be detected")
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

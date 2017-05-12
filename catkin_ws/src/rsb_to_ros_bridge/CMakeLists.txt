@@ -55,6 +55,18 @@ target_link_libraries(rst_vision_image_to_ros_sensormsgs_image
   ${OPENCV_LIBRARIES}
 )
 
+add_executable(rst_vision_laserscan_to_ros_sensormsgs_Laserscan
+  src/rst_vision_laserscan_to_ros_sensormsgs_Laserscan.cpp
+)
+
+target_link_libraries(rst_vision_laserscan_to_ros_sensormsgs_Laserscan
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+)
+
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
 add_dependencies(rst_vision_image_to_ros_sensormsgs_image sai_msgs_gencpp)
