@@ -1,5 +1,0 @@
-====== senseCamV4l ======
-
-This is a camera driver which greps the given camera device over the native v4l2 drivers.
-Every single frame is published via a given scope.
-See the demo [[demo:cameraJpeg:start|Sending and displaying of camera images]] for a similar setup, but for displaying the frames of this application, you need to start [[tools:hmi:showCam:start|showCam]].
