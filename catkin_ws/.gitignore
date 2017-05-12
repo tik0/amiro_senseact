@@ -5,17 +5,11 @@ CMakeFiles
 Makefile
 build
 *.ninja*
-
-
-devel/_setup_util.py
-devel/setup.sh
-devel/setup.zsh
-devel/.built_by
-devel/.catkin
-devel/.rosinstall
+.catkin_workspace
 
 build/
 bin/
+devel/
 lib/
 msg_gen/
 srv_gen/
@@ -31,3 +25,5 @@ msg/_*.py
 
 #Custom Logger Script
 mylogger.sh
+
+rsb.conf

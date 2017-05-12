@@ -66,6 +66,8 @@ echo -e "\e[42mSet environment variables with MUROX_ prefix\e[0m"
 # Go to folder murox_dev and set the environment variables
 cd ../..
 echo "export MUROX_ENV=${PWD}" | tee -a "$_tmp"
+echo "export MUROX_RSB_VERSION_ARM=0.13" | tee -a "$_tmp"
+echo "export MUROX_RSB_VERSION=0.16" | tee -a "$_tmp"
 echo "export MUROX_DOKU=${PWD}/dokuwiki" | tee -a "$_tmp"
 echo "export MUROX_PROJECT=${PWD}/project" | tee -a "$_tmp"
 echo "export MUROX_ROS=${PWD}/project/ros" | tee -a "$_tmp"
