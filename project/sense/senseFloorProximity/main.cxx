@@ -82,8 +82,11 @@ int main(int argc, char **argv) {
 
 	while (true) {
 		// Read the proximity data
-		//if (CAN.getProximityFloorValue(floorProxValues) == 0) {
+#ifdef NDEBUG
+		if (CAN.getProximityFloorValue(floorProxValues) == 0) {
+#else
 		if (true){
+#endif
 			// Datastructure for the RSB messages
 			rsb::Informer<rst::generic::Value>::DataPtr floorProxData(new rst::generic::Value);
 			floorProxData->set_type(rst::generic::Value::ARRAY);
