@@ -65,8 +65,22 @@ target_link_libraries(rst_vision_laserscan_to_ros_sensormsgs_Laserscan
   ${RST_LIBRARIES}
   ${RSTSANDBOX_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
+  ${OPENCV_LIBRARIES}
+)
+
+add_executable(rst_value_array_to_ros_int_array
+  src/rst_value_array_to_ros_int_array.cpp
+)
+
+target_link_libraries(rst_value_array_to_ros_int_array
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
 )
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
 add_dependencies(rst_vision_image_to_ros_sensormsgs_image sai_msgs_gencpp)
+add_dependencies(rst_value_array_to_ros_int_array sai_msgs_gencpp)

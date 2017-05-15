@@ -197,7 +197,11 @@ void justReadValues(std::string rsbOutScopeObstacle, std::string rsbOutScopeGrou
 	while(true) {
     // Read the proximity data
 		fail = CAN.getProximityRingValue(proximityRingValue);
-    if (fail == 0) {
+#ifdef NDEBUG
+		if (fail == 0) {
+#else
+		if (true){
+#endif
 			// Convert for RSB message
 			//vecDataOriginal = boost::shared_ptr<std::vector<int> >(new std::vector<int>(proximityRingValue.begin(),proximityRingValue.end()));
 			fillValueArrayWithValues(vecDataOriginal,proximityRingValue);
@@ -290,7 +294,7 @@ int main(int argc, char **argv) {
 
   // Handle program options
   namespace po = boost::program_options;
-	uint32_t rsbPeriod = 10000;
+	uint32_t rsbPeriod = 0;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
