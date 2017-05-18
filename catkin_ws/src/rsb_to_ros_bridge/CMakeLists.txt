@@ -80,6 +80,18 @@ target_link_libraries(rst_value_array_to_ros_int_array
   ${PROTOBUF_LIBRARIES}
 )
 
+add_executable(rst_pose_to_ros_posestamped
+  src/rst_pose_to_ros_posestamped.cpp
+)
+
+target_link_libraries(rst_pose_to_ros_posestamped
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+)
+
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
 add_dependencies(rst_vision_image_to_ros_sensormsgs_image sai_msgs_gencpp)
