@@ -1,6 +1,8 @@
-/**
- * Author: Jonas D. Homburg
- */
+// ============================================================================
+// Name        : rst_value_array_to_ros_int_array.cpp
+// Author      : Jonas Dominik Homburg <jhomburg@techfak.uni-bielefeld.de>
+// Description : Recieve int32_t array as Value via rsb and publish them via ros.
+// ============================================================================
 
 // ROS
 #include <ros/ros.h>
@@ -89,9 +91,9 @@ int main(int argc, char *argv[]) {
   ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
   private_nh.param<string>("rosPublishProximityTopic", rosPublishProximityTopic, "/prox");
   ROS_INFO("rosPublishTopic: %s", rosPublishProximityTopic.c_str());
-  
+
   floorProxPub = node.advertise<sai_msgs::Int32MultiArrayStamped>(rosPublishProximityTopic, 1);
-  
+
   rsb::Factory& factory = rsb::getFactory();
 
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
