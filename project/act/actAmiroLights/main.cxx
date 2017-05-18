@@ -4,6 +4,7 @@
 // Description : Receives command for setting the lights.
 //               The structure (L:Brightness, R0: Red LED 0, G0: Green LED 0, B0: Blue LED 0):
 //               R0G0B0R1G1B1R2G2B2R3G3B3R4G4B4R5G5B5R6G6B6R7G7B7L
+// Edited by   : jhomburg <jhomburg@techfak.uni-bielefeld.de>
 //============================================================================
 
 // #define INFO_MSG_
@@ -18,47 +19,68 @@
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <rsb/filter/OriginFilter.h>
+//#include <rsb/filter/OriginFilter.h>
 #include <rsb/Informer.h>
 #include <rsb/Factory.h>
 #include <rsb/Event.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
 
-// Include own converter
-#include <converter/vecIntConverter/main.hpp>
+// RST
+#include <rst/generic/Value.pb.h>
 
 #include <ControllerAreaNetwork.h>
 
 using namespace std;
-using namespace muroxConverter;
 
-static int g_red = 0;
-static int g_green = 0;
-static int g_blue = 0;
+// static int g_red = 0;
+// static int g_green = 0;
+// static int g_blue = 0;
 
-void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
-  
+void setLightRing(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
+
+  // Convert message to std::vector<int>
+  std::vector<int> lv(0,0);
+  if (event->getType() != "rst::generic::Value"){
+    return;
+  }
+
   // Get the message
-  boost::shared_ptr<std::vector<int> > message = boost::static_pointer_cast<std::vector<int> >(event->getData());
-  
+  boost::shared_ptr<rst::generic::Value > message = boost::static_pointer_cast<rst::generic::Value >(event->getData());
+  if (message->type() != rst::generic::Value::ARRAY){
+    return;
+  }
+  int size = message->array_size();
+  rst::generic::Value entry;
+  for (int i=0; i<size; i++){
+    entry=message->array(i);
+    if (entry.type()!=rst::generic::Value::INT){
+      return;
+    }
+    lv.push_back(entry.int_());
+  }
+  if (lv.size()<25){
+    return;
+  }
+
   // Set the colors
    for (int ledIdx = 0; ledIdx < 8 ; ++ledIdx) {
-     INFO_MSG( "Set LED " << ledIdx << " to r: " << message->at(ledIdx * 3) << " g: " << message->at(ledIdx * 3 + 1) << " b: " << message->at(ledIdx * 3 + 2) )
-     CAN.setLightColor(ledIdx, amiro::Color(message->at(ledIdx * 3),message->at(ledIdx * 3 + 1),message->at(ledIdx * 3 + 2)));
+     INFO_MSG( "Set LED " << ledIdx << " to r: " << lv.at(ledIdx * 3) << " g: " << lv.at(ledIdx * 3 + 1) << " b: " << lv.at(ledIdx * 3 + 2) )
+     CAN.setLightColor(ledIdx, amiro::Color(lv.at(ledIdx * 3),lv.at(ledIdx * 3 + 1),lv.at(ledIdx * 3 + 2)));
    }
-  
+
   // Set the brightness
-  INFO_MSG( "Set LED brightness: " << message->at(24) )
-  CAN.setLightBrightness(message->at(24));
+  INFO_MSG( "Set LED brightness: " << lv.at(24) )
+  CAN.setLightBrightness(lv.at(24));
 }
 
 
 int main (int argc, const char **argv){
- 
+
   // Handle program options
   namespace po = boost::program_options;
-  
+
   std::string rsbInScope = "/lights";
 
   po::options_description options("Allowed options");
@@ -83,20 +105,21 @@ int main (int argc, const char **argv){
 
   // Create the CAN interface
   ControllerAreaNetwork CAN;
-  
+
   // Get the RSB factory
   rsb::Factory& factory = rsb::getFactory();
 
   // Register new converter for std::vector<int>
-  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
-  converterRepository<std::string>()->registerConverter(converterVecInt);
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
+    converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB reader
-  ReaderPtr reader = factory.createReader(rsbInScope);
+  rsb::ReaderPtr reader = factory.createReader(rsbInScope);
 
   for(;;) {
     // Wait for the message
-    sendMotorCmd(reader->read(), CAN);
+    setLightRing(reader->read(), CAN);
   }
 
   return EXIT_SUCCESS;
