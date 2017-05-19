@@ -52,7 +52,9 @@ void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
     }
     mv.push_back(entry.int_());
   }
-
+  if (mv.size()<2){
+    return;
+  }
   // Set the motor speed
   // Velocity send in µm/s
   // Angular velocity send in µrad/s

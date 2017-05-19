@@ -1,0 +1,4 @@
+ros_int_multiarray_rst_value_array debug for actAmiroLight:
+rostopic pub -r 1 /lights sai_msgs/Int32MultiArrayStamped '{data: {data: [255,0,0,0,255,0,0,0,255,255,127,0,255,255,0,127,0,127,0,127,127,255,255,255,75]}}'
+ros_int_multiarray_rst_value_array debug for actAmiroMotor:
+rostopic pub -r 1 
