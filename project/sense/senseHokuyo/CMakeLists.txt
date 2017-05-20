@@ -21,11 +21,20 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
-pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.13)
 pkg_check_modules(EIGEN eigen3)
+pkg_check_modules(PROTOBUF protobuf)
+if ($ENV{ARCH} MATCHES "arm")
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION_ARM})
+  if($ENV{MUROX_RSB_VERSION_ARM} LESS 0.14)
+    ADD_DEFINITIONS(-DRST_013_USED)
+  endif()
+else()
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION})
+endif()
 
 # Set the include pathe
 include_directories(BEFORE SYSTEM ${RST_INCLUDE_DIRS})
@@ -54,7 +63,8 @@ LINK_DIRECTORIES (
 )
 
 # add the executable
-add_executable ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
+add_executable ("${PROJECT_NAME}" ${SOURCE})
+# add_executable ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 
 target_link_libraries (
     "${PROJECT_NAME}"
@@ -71,4 +81,4 @@ ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
 # Set compiler flags as you like
 SET ( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-deprecated-declarations -O0 -g -Wno-write-strings -std=c++11" )
-SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" ) 
+SET ( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11" )

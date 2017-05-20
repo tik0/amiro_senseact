@@ -1,5 +1,5 @@
 /*
- * Takes one image out of NI and calculates the closest distance for every column, to simulate a laserscan over the whole image 
+ * Takes one image out of NI and calculates the closest distance for every column, to simulate a laserscan over the whole image
  * Note: It works because of assumption/fact that the ground plane can not be seen directly from the height of AMiRo in Orbbec Camera
  * To start the program run:  sudo ./<name> -d 1000
  * spread should be running for RSB
@@ -10,7 +10,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <converter/iplImageConverter/IplImageConverter.h>
+// #include <converter/iplImageConverter/IplImageConverter.h>
 
 #include <boost/shared_ptr.hpp>
 #include <rsb/Factory.h>
@@ -28,8 +28,9 @@
 // RST
 #include <rsb/converter/ProtocolBufferConverter.h>
 // RST Proto types
-#include <types/LocatedLaserScan.pb.h>
-#include <rst/geometry/Pose.pb.h>
+// #include <types/LocatedLaserScan.pb.h>
+// #include <rst/geometry/Pose.pb.h>
+#include <rst/vision/LaserScan.pb.h>
 
 // For program options
 #include <boost/program_options.hpp>
@@ -51,13 +52,13 @@ using namespace cv;
 using namespace rsb;
 using namespace rsb::converter;
 using namespace openni;
-using namespace rst::converters::opencv;
+// using namespace rst::converters::opencv;
 
 class ReadData: public rsc::threading::PeriodicTask {
 public:
 
-    ReadData(rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation,
-             rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informerLaserSim,
+    ReadData(rsb::Informer<rst::vision::LaserScan>::DataPtr laserScanSimulation,
+             rsb::Informer<rst::vision::LaserScan>::Ptr informerLaserSim,
              bool justCenter,
              const unsigned int& ms = 1000) :
              rsc::threading::PeriodicTask(ms) {
@@ -68,7 +69,7 @@ public:
       this->laserScanSimulation = laserScanSimulation ; this->informerLaserSim = informerLaserSim;
 
       this->justCenter = justCenter;
-      
+
       //initialize depthstream
       rc = OpenNI::initialize();
       if (rc != STATUS_OK)
@@ -83,7 +84,7 @@ public:
         printf("Couldn't open device\n%s\n", OpenNI::getExtendedError());
         isValid = false;
       }
-      
+
       if (device.getSensorInfo(SENSOR_DEPTH) != NULL)
       {
         rc = depth.create(device, SENSOR_DEPTH);
@@ -100,7 +101,7 @@ public:
         printf("Couldn't start the depth stream\n%s\n", OpenNI::getExtendedError());
         isValid = false;
       }
-      
+
       VideoStream* pStreamTemp = &depth;
       int changedStreamDummy;
       rc = OpenNI::waitForAnyStream(&pStreamTemp, 1, &changedStreamDummy, SAMPLE_READ_WAIT_TIMEOUT);
@@ -131,21 +132,21 @@ public:
 
         this->degreePerPixelH = this->fovH/((float) this->frameWidth);
         this->degreePerPixelV = this->fovV/((float) this->frameHeight);
-        const float ORBBEC_ASTRA_S_MIN_RANGE = 0.2; // meter
-        const float ORBBEC_ASTRA_S_MAX_RANGE = 5.8; // meter
+        // const float ORBBEC_ASTRA_S_MIN_RANGE = 0.2; // meter
+        // const float ORBBEC_ASTRA_S_MAX_RANGE = 5.8; // meter
 
         const int scanSkip=1;
         //const double radPerStep = (360.0 /*°*/ / 1024.0 /*Steps*/) * (M_PI /*rad*/ / 180.0f /*°*/);
-        const double radPerStep = (degreePerPixelH) * (M_PI /*rad*/ / 180.0f /*°*/);
+        // const double radPerStep = (degreePerPixelH) * (M_PI /*rad*/ / 180.0f /*°*/);
         const double radPerSkipStep = (degreePerPixelH) * (M_PI /*rad*/ / 180.0f /*°*/) * scanSkip;
-        const double startAngle =  -(this->fovH/2) * M_PI / 180.0f;
-        const double endAngle =  (this->fovH/2) * M_PI / 180.0f;
+        // const double startAngle =  -(this->fovH/2) * M_PI / 180.0f;
+        // const double endAngle =  (this->fovH/2) * M_PI / 180.0f;
         this->laserScanSimulation->set_scan_angle(this->fovH - radPerSkipStep);
-        this->laserScanSimulation->set_scan_angle_start(startAngle); //- radPerSkipStep / 2.0f);
-        this->laserScanSimulation->set_scan_angle_end(endAngle);//  + radPerSkipStep / 2.0f);
-        this->laserScanSimulation->set_scan_values_min(ORBBEC_ASTRA_S_MIN_RANGE);
-        this->laserScanSimulation->set_scan_values_max(ORBBEC_ASTRA_S_MAX_RANGE);
-        this->laserScanSimulation->set_scan_angle_increment(radPerSkipStep);
+        // this->laserScanSimulation->set_scan_angle_start(startAngle); //- radPerSkipStep / 2.0f);
+        // this->laserScanSimulation->set_scan_angle_end(endAngle);//  + radPerSkipStep / 2.0f);
+        // this->laserScanSimulation->set_scan_values_min(ORBBEC_ASTRA_S_MIN_RANGE);
+        // this->laserScanSimulation->set_scan_values_max(ORBBEC_ASTRA_S_MAX_RANGE);
+        // this->laserScanSimulation->set_scan_angle_increment(radPerSkipStep);
 
         // Reserve data
         this->laserScanSimulation->mutable_scan_values()->Reserve(this->frameWidth);
@@ -214,14 +215,14 @@ public:
 //          float angle = pixelFromCenter*this->degreePerPixelH;
 //          INFO_MSG( "Laser: " << angle <<  " : "<< minDist  << " : " << width << " : " <<height << " " << this->fovH );
 //        }
-      }  
+      }
     }
 
 
 private:
-    rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informerLaserSim;
-    rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation;
-    
+    rsb::Informer<rst::vision::LaserScan>::Ptr informerLaserSim;
+    rsb::Informer<rst::vision::LaserScan>::DataPtr laserScanSimulation;
+
     DepthPixel* pDepth = NULL;
     VideoFrameRef frame;
     Status rc;
@@ -248,7 +249,7 @@ int main(int argc, char **argv) {
     namespace po = boost::program_options;
     std::string outScope = "/lidar";
     std::size_t intervalMs = 1000;
-   
+
     po::options_description options("Allowed options");
     options.add_options()("help,h", "Display a help message.")
             ("outscope,o", po::value < std::string > (&outScope),"Scope for sending lidar data")
@@ -269,13 +270,13 @@ int main(int argc, char **argv) {
     po::notify(vm);
 
     rsb::Factory &factory = rsb::getFactory();
-    
-    // Register 
-    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+
+    // Register
+    boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan >());
     rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
     // Create the informer
-    rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informerLaserSim = factory.createInformer<rst::vision::LocatedLaserScan> (outScope);
-    rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScanSimulation(new rst::vision::LocatedLaserScan);
+    rsb::Informer<rst::vision::LaserScan>::Ptr informerLaserSim = factory.createInformer<rst::vision::LaserScan> (outScope);
+    rsb::Informer<rst::vision::LaserScan>::DataPtr laserScanSimulation(new rst::vision::LaserScan);
 
     rsc::threading::ThreadedTaskExecutor exec;
     exec.schedule( rsc::threading::TaskPtr( new ReadData( laserScanSimulation, informerLaserSim, vm.count("justCenter"), intervalMs ) ) );

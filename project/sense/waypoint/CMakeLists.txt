@@ -10,43 +10,22 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
 # Get the compiler specific includes and store them in GXX_INCLUDES
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
-if ("$ENV{ARCH}" MATCHES arm)
-
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-# pkg_check_modules(RSB rsb0.13)
-# pkg_check_modules(RSC rsc0.13)
 pkg_check_modules(PROTOBUF protobuf)
-# pkg_check_modules(RST rstsandbox0.13)
 pkg_check_modules(OpenCV opencv)
-#pkg_check_modules(EIGEN eigen3)
-#FIND_PACKAGE(OpenCV REQUIRED)
-#FIND_PACKAGE(RSB REQUIRED)
-#FIND_PACKAGE(RSC REQUIRED)
-#FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
-#    pkg_check_modules(OPENCV OpenCV)
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
-pkg_check_modules(RST rst0.13)
-pkg_check_modules(RSTSANDBOX rstsandbox0.13)
-
-else("$ENV{ARCH}" MATCHES arm)
-
-# Read the pkg-config modules
-FIND_PACKAGE(PkgConfig)
-# pkg_check_modules(RSB rsb0.13)
-# pkg_check_modules(RSC rsc0.13)
-pkg_check_modules(PROTOBUF protobuf)
-# pkg_check_modules(RST rstsandbox0.13)
-pkg_check_modules(OpenCV opencv)
-#pkg_check_modules(EIGEN eigen2)
-#FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(RSB REQUIRED)
-FIND_PACKAGE(RSC REQUIRED)
-FIND_PACKAGE(RST REQUIRED COMPONENTS sandbox)
-endif("$ENV{ARCH}" MATCHES arm)
-#INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
-
+if ($ENV{ARCH} MATCHES "arm")
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION_ARM})
+  if($ENV{MUROX_RSB_VERSION_ARM} LESS 0.14)
+    ADD_DEFINITIONS(-DRST_013_USED)
+  endif()
+else()
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION})
+endif()
 # Set the include pathe
 include_directories(BEFORE SYSTEM ${RST_INCLUDE_DIRS})
 
@@ -68,7 +47,8 @@ include_directories(
 SET (SOURCE main.cxx)
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE}  $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc  $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc  )
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})
+# ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE}  $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc  $ENV{MUROX_INCLUDE_DIRS}/types/twbTracking.pb.cc  )
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 

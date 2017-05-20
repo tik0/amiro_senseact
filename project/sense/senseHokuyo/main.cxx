@@ -15,8 +15,9 @@
 
 // RST Proto types
 // #include <rst0.11/stable/rst/vision/LaserScan.pb.h>
-#include <types/LocatedLaserScan.pb.h>
-#include <rst/geometry/Pose.pb.h>
+// #include <types/LocatedLaserScan.pb.h>
+// #include <rst/geometry/Pose.pb.h>
+#include <rst/vision/LaserScan.pb.h>
 
 // For program options
 #include <boost/program_options.hpp>
@@ -77,17 +78,8 @@ int main(int argc, char **argv) {
             ("scanStart,s", po::value < int > (&scanStart),"Index where to start of the scan (e.g. Min 44)")
             ("scanEnd,e", po::value < int > (&scanEnd),"Index where to end of the scan (e.g. Max 725)")
             ("test", po::value < bool > (&doTest),"Performing test without any RSB interaction")
-            ("scanSkip,k", po::value < int > (&scanSkip),"this is so-called 'cluster count', however special values \
-of this variable also let request Intensity and AGC values \
-from URG-04LX. (see the intensity mode manual and Hokuyo.hh).\
-If the scanner is 04LX and the scan name is not \
-'range', then this skip value will be overwritten with the appropriate \
-value in order to request the special scan.\
-See call to getScanTypeAndSkipFromName() below")
-            ("encoding", po::value < int > (&encoding),"[2 | 3] \
-2 or 3 char encoding. 04LX supports both, but 30LX only 3-char\
-2-char encoding reduces range to 4meters, but improves data\
-transfer rates over standard serial port");
+            ("encoding", po::value < int > (&encoding),"[2 | 3] 2 or 3 char encoding. 04LX supports both, but 30LX only 3-char 2-char encoding reduces range to 4meters, but improves data transfer rates over standard serial port");
+            // ("scanSkip,k", po::value < int > (&scanSkip),"this is so-called 'cluster count', however special values of this variable also let request Intensity and AGC values from URG-04LX. (see the intensity mode manual and Hokuyo.hh). If the scanner is 04LX and the scan name is not 'range', then this skip value will be overwritten with the appropriate value in order to request the special scan. See call to getScanTypeAndSkipFromName() below")
 
     // allow to give the value as a positional argument
     po::positional_options_description p;
@@ -119,38 +111,37 @@ transfer rates over standard serial port");
     }
 
     INFO_MSG("")
-    
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+  // boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+  // rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan >());
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
 
-#if RSB_VERSION_NUMERIC<1200
-  rsb::Factory& factory = rsb::Factory::getInstance();
-#else
   rsb::Factory& factory = rsb::getFactory();
-#endif
-
   // Create the informer
-  rsb::Informer<rst::vision::LocatedLaserScan>::Ptr informer = factory.createInformer<rst::vision::LocatedLaserScan> (outScope);
-  rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScan(new rst::vision::LocatedLaserScan);
+  rsb::Informer<rst::vision::LaserScan>::Ptr informer = factory.createInformer<rst::vision::LaserScan> (outScope);
+  boost::shared_ptr<rst::vision::LaserScan> laserScan(new rst::vision::LaserScan());
+  // rsb::Informer<rst::vision::LocatedLaserScan>::DataPtr laserScan(new rst::vision::LocatedLaserScan);
 
 
-  const double radPerStep = (360.0 /*°*/ / 1024.0 /*Steps*/) * (M_PI /*rad*/ / 180.0f /*°*/);
-  const double radPerSkipStep = (360.0 /*°*/ / 1024.0 /*Steps*/) * (M_PI /*rad*/ / 180.0f /*°*/) * scanSkip;
-  const double startAngle =  120.0 * M_PI / 180.0;
+  // const double radPerStep = (360.0 /*°*/ / 1024.0 /*Steps*/) * (M_PI /*rad*/ / 180.0f /*°*/);
+  // const double radPerSkipStep = (360.0 /*°*/ / 1024.0 /*Steps*/) * (M_PI /*rad*/ / 180.0f /*°*/) * scanSkip;
+  // const double startAngle =  120.0 * M_PI / 180.0;
 //   const double endAngle   = -120 * M_PI / 180;
-  if (scanSkip == 1) {
-    laserScan->set_scan_angle(radPerStep * (scanEnd - scanStart + 1));
-    laserScan->set_scan_angle_start(startAngle - radPerStep * (scanStart - scanStartMin));
-    laserScan->set_scan_angle_end(startAngle - radPerStep * (scanEnd - scanStartMin));
-  } else {
-    laserScan->set_scan_angle(radPerStep * (scanEnd - scanStart + 1) - radPerSkipStep);
-    laserScan->set_scan_angle_start(startAngle - radPerStep * (scanStart - scanStartMin) - radPerSkipStep / 2.0f);
-    laserScan->set_scan_angle_end(startAngle - radPerStep * (scanEnd - scanStartMin) + radPerSkipStep / 2.0f);
-  }
-  laserScan->set_scan_values_min(0.02); // From Hokuyo URG04 manual
-  laserScan->set_scan_values_max(4.0); // From Hokuyo URG04 manual
-  laserScan->set_scan_angle_increment(radPerSkipStep);
+  // if (scanSkip == 1) {
+  //   laserScan->set_scan_angle(radPerStep * (scanEnd - scanStart + 1));
+  //   laserScan->set_scan_angle_start(startAngle - radPerStep * (scanStart - scanStartMin));
+  //   laserScan->set_scan_angle_end(startAngle - radPerStep * (scanEnd - scanStartMin));
+  // } else {
+  //   laserScan->set_scan_angle(radPerStep * (scanEnd - scanStart + 1) - radPerSkipStep);
+  //   laserScan->set_scan_angle_start(startAngle - radPerStep * (scanStart - scanStartMin) - radPerSkipStep / 2.0f);
+  //   laserScan->set_scan_angle_end(startAngle - radPerStep * (scanEnd - scanStartMin) + radPerSkipStep / 2.0f);
+  // }
+  // laserScan->set_scan_values_min(0.02); // From Hokuyo URG04 manual
+  // laserScan->set_scan_values_max(4.0); // From Hokuyo URG04 manual
+  // laserScan->set_scan_angle_increment(radPerSkipStep);
+  laserScan->set_scan_angle(3.98); // From Hokuyo URG04 manual, min=0.02 and max=4.0
 
   int n_data_expected = ceil((static_cast<float>(scanEnd - scanStart + 1) / static_cast<float>(scanSkip)));
 

@@ -39,7 +39,7 @@ using namespace rsb::converter;
 static std::string g_sOutScope = "/image";
 static int g_iDevice        = 0;
 static int imageCompression = 0;
-static int compressionValue = 0;
+static int compressionValue = -1;
 
 int main(int argc, char ** argv) {
   namespace po = boost::program_options;
@@ -48,7 +48,7 @@ int main(int argc, char ** argv) {
   options.add_options() ("help,h", "Display a help message.")
     ("outscope,o", po::value<std::string>(&g_sOutScope), "Scope for sending images via RSB.")
     ("device,d", po::value<int>(&g_iDevice), "Number of device /dev/video#.")
-    ("compression,c", po::value<int>(&compressionValue)->default_value(compressionValue), "Enable image compression with value betweeen 1-100.");
+    ("compression,c", po::value<int>(&compressionValue)->default_value(compressionValue), "Enable image compression with value betweeen 0-100.");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;
@@ -69,7 +69,7 @@ int main(int argc, char ** argv) {
   INFO_MSG("Device: " << g_iDevice)
   INFO_MSG("compression " << compressionValue)
 
-  if(compressionValue > 0)
+  if(compressionValue >= 0)
     imageCompression = 1;
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -6,20 +6,22 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 find_package(PkgConfig)
-if ("$ENV{ARCH}" MATCHES arm)
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
-pkg_check_modules(RST rstsandbox0.13)
-pkg_check_modules(OPENCV opencv)
-else ()
-find_package(RSB)
-find_package(RSC)
-find_package(RST COMPONENTS sandbox)
-find_package(protobuf)
-endif ()
+if ($ENV{ARCH} MATCHES "arm")
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION_ARM})
+  if($ENV{MUROX_RSB_VERSION_ARM} LESS 0.14)
+    ADD_DEFINITIONS(-DRST_013_USED)
+  endif()
+else()
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION})
+endif()
 pkg_check_modules(EIGEN eigen3)
 pkg_check_modules(OPENNI2 OpenNI2 )
 pkg_check_modules(PROTOBUF protobuf)
+pkg_check_modules(OPENCV opencv)
 
 if ("$ENV{ARCH}" MATCHES arm)
 else ()
@@ -64,10 +66,11 @@ endif ()
 MESSAGE(STATUS "OPENNI2_INCLUDE_DIRS  : ${OPENNI2_INCLUDE_DIRS}")
 
 # Define the source
-SET (SOURCE main.cxx $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
+SET (SOURCE main.cxx)
+# SET (SOURCE main.cxx $ENV{MUROX_INCLUDE_DIRS}/types/LocatedLaserScan.pb.cc)
 
 # Add sources to build
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/iplImageConverterSource.cmake")
+# INCLUDE("$ENV{MUROX_CMAKE_MODULES}/iplImageConverterSource.cmake")
 
 LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}

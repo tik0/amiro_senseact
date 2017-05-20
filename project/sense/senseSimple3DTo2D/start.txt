@@ -1,4 +1,0 @@
-====== senseSimple3DTo2D ======
-
-This is a simple laser scanner immitation for a RGBD camera.
-The resolution and other configurations need to be set via ''/usr/lib/OpenNI2/Drivers/orbbec.ini''.

@@ -22,7 +22,8 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // RST Proto types
-#include <types/LocatedLaserScan.pb.h>
+#include <rst/vision/LaserScan.pb.h>
+// #include <types/LaserScan.pb.h>
 
 // RSC
 #include <rsc/misc/SignalWaiter.h>
@@ -74,15 +75,15 @@ int main(int argc, const char **argv){
 
 
   rsb::Factory& factory = rsb::getFactory();
-  
-  // Register 
-  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LocatedLaserScan >());
+
+  // Register
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan > > scanConverter(new rsb::converter::ProtocolBufferConverter<rst::vision::LaserScan >());
   rsb::converter::converterRepository<std::string>()->registerConverter(scanConverter);
 
   // Prepare RSB listener for incomming lidar scans
   rsb::ListenerPtr lidarListener = factory.createListener(lidarInScope);
-  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LocatedLaserScan>>(1));
-  lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LocatedLaserScan>(lidarQueue)));
+  boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LaserScan>>>lidarQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::vision::LaserScan>>(1));
+  lidarListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::vision::LaserScan>(lidarQueue)));
 
   rsb::ListenerPtr switchListener = factory.createListener(switchInScope);
   boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>>switchQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::string>>(1));
@@ -97,7 +98,7 @@ int main(int argc, const char **argv){
   // Create the CAN interface
   ControllerAreaNetwork CAN;
 
-  boost::shared_ptr<rst::vision::LocatedLaserScan> scan;
+  boost::shared_ptr<rst::vision::LaserScan> scan;
   bool doHalt = false;
   delay_us = delay_ms * 1e3;
   enum state {

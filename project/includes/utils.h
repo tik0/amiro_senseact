@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <chrono>  // c++11
 #include <Constants.h>
-using namespace claas::constants;
-using namespace claas::constants::mappingLayers;
-namespace claasNumeric = claas::constants::numeric;
+// using namespace claas::constants;
+// using namespace claas::constants::mappingLayers;
+// namespace claasNumeric = claas::constants::numeric;
 
 namespace utils
 {
@@ -480,10 +480,10 @@ void constrainRectToImageBounds(cv::Mat img,cv::Rect& rect){
   }
   if(rect.x+rect.width>img.cols){
     rect.width=img.cols-rect.x;
-  }  
+  }
   if(rect.y+rect.height>img.rows){
     rect.height=img.rows-rect.y;
-  }  
+  }
 }
 
 
@@ -534,15 +534,15 @@ cv::RotatedRect cutView(const cv::Mat &src, cv::Mat &dst, const double srcResolu
   const double rectCenterY_px = utils::eigen::getYTranslation<double>(rectCenter_roiOrigin) / srcResolution;
   // Get the requested view
   rectView = cv::RotatedRect(cv::Point2f(rectCenterX_px, rectCenterY_px), cv::Size2f(w_px,h_px), angle_rad * rad2deg /*- (M_PI / 2.0f * rad2deg)*/);
-  
+
   cv::Mat srcConverted;
   src.convertTo(srcConverted, targetFormat == src.type() ? int(-1) : targetFormat);
-  
+
    // crop to roi
   cv::Rect boundingRect=rectView.boundingRect();
   constrainRectToImageBounds(srcConverted,boundingRect);
   cv::Mat croppedROI=srcConverted(boundingRect);
-  
+
   // perform the affine transformation
   cv::Scalar boarderExtrapolationScalar;
   switch (src.type()) {
@@ -555,16 +555,16 @@ cv::RotatedRect cutView(const cv::Mat &src, cv::Mat &dst, const double srcResolu
   }
   // get angle and size from the bounding box
   float angle = rectView.angle;
-  
+
   cv::Point2f center((float)rectView.center.x-boundingRect.x,(float)rectView.center.y-boundingRect.y);
-  
+
   cv::Mat warpM = cv::getRotationMatrix2D(center, angle, 1.0);
-  
+
   cv::Rect dstSize = cv::Rect(0,0,w_px,h_px);
   // adjust transformation matrix
   warpM.at<double>(0,2) += dstSize.width/2.0 - center.x;
   warpM.at<double>(1,2) += dstSize.height/2.0 - center.y;
-  
+
   cv::warpAffine(croppedROI, dst, warpM, dstSize.size(), cv::INTER_NEAREST, cv::BORDER_CONSTANT, boarderExtrapolationScalar);
 
   return rectView;

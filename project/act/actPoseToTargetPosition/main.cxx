@@ -33,6 +33,8 @@
 
 #include <ControllerAreaNetwork.h>
 
+#include <Eigen/Geometry>
+
 #include <utils.h>
 
 using namespace std;
@@ -61,7 +63,7 @@ void sendTargetPosition(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   // 3. Turn to the target pose (R - angle of T in the origin)
   Eigen::Quaternion< double > q(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
   Eigen::Matrix<double,3,1> rpy;
-  ::conversion::quaternion2euler(&q, &rpy);
+  utils::conversion::quaternion2euler(&q, &rpy);
   const double yaw_rad = rpy(2);
   const double targetRotation_rad = yaw_rad - angT_rad;
 
@@ -97,8 +99,8 @@ int main (int argc, const char **argv){
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
         ("inscope,i", po::value < std::string > (&rsbInScope), "Scope for receiving target positions")
-        ("outscope,i", po::value < std::string > (&sSuccessScope), "Scope for success reply")
-        ("outscopeContent,i", po::value < std::string > (&sSuccessContent), "Content of success reply");
+        ("outscope,o", po::value < std::string > (&sSuccessScope), "Scope for success reply")
+        ("outscopeContent,c", po::value < std::string > (&sSuccessContent), "Content of success reply");
 
   // allow to give the value as a positional argument
   po::positional_options_description p;

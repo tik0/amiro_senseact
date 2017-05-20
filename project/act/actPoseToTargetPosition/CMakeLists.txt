@@ -12,20 +12,21 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
+pkg_check_modules(EIGEN eigen3)
+pkg_check_modules(PROTOBUF protobuf)
 
-if ("$ENV{ARCH}" MATCHES arm)
-  pkg_check_modules(RSB rsb0.11)
-  pkg_check_modules(RSC rsc0.11)
-  pkg_check_modules(PROTOBUF protobuf)
-  pkg_check_modules(RST rstsandbox0.11)
-  pkg_check_modules(EIGEN eigen3)
-else("$ENV{ARCH}" MATCHES arm)
-  find_package(RSB REQUIRED)
-  find_package(RSC REQUIRED)
-  find_package(RST COMPONENTS sandbox)
-  find_package(Protobuf REQUIRED)
-  find_package(Eigen3 REQUIRED)
-endif("$ENV{ARCH}" MATCHES arm)
+if ($ENV{ARCH} MATCHES "arm")
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION_ARM})
+  if($ENV{MUROX_RSB_VERSION_ARM} LESS 0.14)
+    ADD_DEFINITIONS(-DRST_013_USED)
+  endif()
+else()
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION})
+endif()
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
@@ -47,7 +48,8 @@ include_directories(include
 SET (SOURCE main.cxx)
 
 # add the executable
-ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
+ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})
+# ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE} $ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc $ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc)
 
 MESSAGE(INFO ${Boost_LIBRARIES})
 

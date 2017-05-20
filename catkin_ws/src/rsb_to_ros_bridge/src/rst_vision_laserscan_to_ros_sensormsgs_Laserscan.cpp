@@ -40,13 +40,12 @@ void processLaserScan(rsb::EventPtr event) {
   if (event->getType() == rstLaserScan) {
     boost::shared_ptr<rst::vision::LaserScan> rsbLaserScan = boost::static_pointer_cast<rst::vision::LaserScan>(event->getData());
     sensor_msgs::LaserScan rosLaserScan;
-    // rosLaserScan.header.stamp    = event->getMetaData().getCreationTime();
-    // cout << event->getMetaData() << endl;
-    rosLaserScan.header.frame_id = event->getScope().toString();
+    rosLaserScan.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
+    rosLaserScan.header.frame_id   = event->getScope().toString();
 
-    rosLaserScan.angle_min = 0;
-    rosLaserScan.angle_max = rsbLaserScan->scan_angle();
-    rosLaserScan.angle_increment =  rsbLaserScan->scan_angle() / rsbLaserScan->scan_values().size();
+    rosLaserScan.angle_min       = 0;
+    rosLaserScan.angle_max       = rsbLaserScan->scan_angle();
+    rosLaserScan.angle_increment = rsbLaserScan->scan_angle() / rsbLaserScan->scan_values().size();
     // rosLaserScan.time_increment
     // rosLaserScan.scan_time
     // rosLaserScan.intensities
@@ -57,8 +56,8 @@ void processLaserScan(rsb::EventPtr event) {
     for (int i = 0; i < rsbLaserScan->scan_values().size(); i++) {
       float value = rsbLaserScan->scan_values(i);
       rosLaserScan.ranges[i] = value;
-      if(rosLaserScan.range_min > value) rosLaserScan.range_min = value;
-      if(rosLaserScan.range_max < value) rosLaserScan.range_max = value;
+      rosLaserScan.range_min = min(value, rosLaserScan.range_min);
+      rosLaserScan.range_max = max(value, rosLaserScan.range_max);
     }
     // cout << "min value: " << rosLaserScan.range_min << " max value: " << rosLaserScan.range_max << "angle incre: " << rosLaserScan.angle_increment <<  endl;
     // publish ROS message

@@ -1,3 +1,0 @@
-====== senseHokuyo ======
-
-This is a Hokuyo rsb informer.

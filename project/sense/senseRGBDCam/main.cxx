@@ -161,7 +161,7 @@ int main(int argc, char ** argv) {
   VideoStream rgbStream, depthStream;
   Device device;
 
-  Mat rgbMat, depthMat;
+  cv::Mat rgbMat, depthMat;
 
   // Compress data
   vector<int> compression_params;

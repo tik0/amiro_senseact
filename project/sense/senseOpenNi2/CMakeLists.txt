@@ -3,7 +3,6 @@ cmake_minimum_required (VERSION 2.6)
 # Set the project name to the name of the folder
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
-ADD_DEFINITIONS(-DRST_013_USED)
 
 # Read the pkg-config modules
 find_package(PkgConfig)
@@ -19,8 +18,10 @@ else()
   pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
   pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION})
 endif()
-pkg_check_modules(PROTOBUF protobuf)
 pkg_check_modules(OPENCV opencv)
+pkg_check_modules(EIGEN eigen3)
+pkg_check_modules(OPENNI2 OpenNI2)
+
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system)
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/findPackageBoost.cmake")
@@ -30,27 +31,29 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 
 # Set the include pathe
 include_directories(
-  ${RSB_INCLUDE_DIRS}                                             # RSB
-  ${RSC_INCLUDE_DIRS}                                             # RSC
-  ${RST_INCLUDE_DIRS}                                             # RSC
-  ${PROTOBUF_INCLUDE_DIRS}                                        # Protobuffer
-  ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
-  "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
-  "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
-  ${GXX_INCLUDES}
-  ${Boost_INCLUDE_DIR}
+    ${RSB_INCLUDE_DIRS}                                             # RSB
+    ${RSC_INCLUDE_DIRS}                                             # RSC
+    ${RST_INCLUDE_DIRS}                                             # RST
+    ${OPENCV_INCLUDE_DIRS}                                          # OpenCV
+    "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
+    "${CMAKE_CURRENT_BINARY_DIR}"                                   # add the binary tree to the search path for include files
+    ${GXX_INCLUDES}
+    ${Boost_INCLUDE_DIR}
+    ${EIGEN_INCLUDE_DIRS}
+    ${OPENNI2_INCLUDE_DIRS}
 )
 
 # Define the source
 SET (SOURCE main.cxx)
 
 # Add sources to build
-# INCLUDE("$ENV{MUROX_CMAKE_MODULES}/matConverterSource.cmake")
+# INCLUDE("$ENV{MUROX_CMAKE_MODULES}/iplImageConverterSource.cmake")
 
 LINK_DIRECTORIES (
-  ${RSB_LIBRARY_DIRS}
-  ${RSC_LIBRARY_DIRS}
-  ${OPENCV_LIBRARY_DIRS}
+    ${RSB_LIBRARY_DIRS}
+    ${RSC_LIBRARY_DIRS}
+    ${OPENCV_LIBRARY_DIRS}
+    ${OPENNI2_LIBRARY_DIRS}
 )
 
 message(status OPENCV_LIBRARY_DIRS: ${OPENCV_LIBRARY_DIRS})
@@ -59,13 +62,13 @@ message(status OPENCV_LIBRARY_DIRS: ${OPENCV_LIBRARY_DIRS})
 add_executable ("${PROJECT_NAME}" ${SOURCE})
 
 target_link_libraries (
-  "${PROJECT_NAME}"
-  ${RSB_LIBRARIES}
-  ${RSC_LIBRARIES}
-  ${RST_LIBRARIES}
-  ${PROTOBUF_LIBRARIES}
-  ${Boost_LIBRARIES}
-  ${OPENCV_LIBRARIES}
+    "${PROJECT_NAME}"
+    ${RSB_LIBRARIES}
+    ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${OPENCV_LIBRARIES}
+    ${OPENNI2_LIBRARIES}
 )
 
 # Special flags for RST
