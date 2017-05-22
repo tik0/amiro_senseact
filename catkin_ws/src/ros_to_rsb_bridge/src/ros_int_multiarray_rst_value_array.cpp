@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   private_nh.param<string>("rosListenerTopic", rosListenerTopic, "/motor");
   ROS_INFO("rosListenerTopic: %s", rosListenerTopic.c_str());
-  private_nh.param<string>("rsbPublishScope", rsbPublishScope, "/motor/03");
+  private_nh.param<string>("rsbPublishScope", rsbPublishScope, "/motor");
   ROS_INFO("rsbPublishScope: %s", rsbPublishScope.c_str());
 
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
