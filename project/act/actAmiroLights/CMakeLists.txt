@@ -5,8 +5,16 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
+pkg_check_modules(PROTOBUF protobuf)
+if ($ENV{ARCH} MATCHES "arm")
+    pkg_check_modules(RSB rsb0.13)
+    pkg_check_modules(RSC rsc0.13)
+    pkg_check_modules(RST rstsandbox0.13)
+else()
+    pkg_check_modules(RSB rsb0.16)
+    pkg_check_modules(RSC rsc0.16)
+    pkg_check_modules(RST rstsandbox0.16)
+endif()
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)
@@ -19,6 +27,9 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
+    ${RST_INCLUDE_DIRS}                                             # RST
+    ${RST_INCLUDE_DIRS}                                             # RST
+    ${PROTOBUF_INCLUDE_DIRS}                                        # Protobuffer
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
     ${GXX_INCLUDES}
@@ -29,7 +40,6 @@ include_directories(
 SET (SOURCE main.cxx)
 
 # Add sources to build
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecIntConverterSource.cmake")
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/colorSource.cmake")
 
 # add the executable
@@ -39,8 +49,11 @@ TARGET_LINK_LIBRARIES (
     "${PROJECT_NAME}"
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
+    ${RST_LIBRARIES}
+    ${RSTSANDBOX_LIBRARIES}
     ${Boost_LIBRARIES}
 )
 
 # Additional compiler flags
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
+#ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})

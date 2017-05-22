@@ -5,6 +5,7 @@
 // Description : Send controls to the motor of AMiRo
 //               Velocity are received in mm/s via RSB
 //               Angular velocity are received in °/s via RSB
+// Edited by   : jhomburg <jhomburg@techfak.uni-bielefeld.de>
 //============================================================================
 
 #include <MSG.h>
@@ -19,23 +20,46 @@
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
 #include <rsc/misc/SignalWaiter.h>
-#include <converter/vecIntConverter/main.hpp>
+#include <rsb/converter/ProtocolBufferConverter.h>
+
+// RST
+#include <rst/generic/Value.pb.h>
 
 #include <ControllerAreaNetwork.h>
 
 using namespace std;
-using namespace muroxConverter;
+
 
 void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
-  
+  //Check if event is from type value
+  if (event->getType() != "rst::generic::Value"){
+    return;
+  }
   // Get the message
-  boost::shared_ptr<std::vector<int> > message = boost::static_pointer_cast<std::vector<int> >(event->getData());
-  
+  boost::shared_ptr<rst::generic::Value> message = boost::static_pointer_cast<rst::generic::Value >(event->getData());
+  //Check if message is from type array
+  if(message->type()!=rst::generic::Value::ARRAY){
+    return;
+  }
+
+  //parse array
+  std::vector<int> mv(0,0);
+  rst::generic::Value entry;
+  for (int i=0;i<message->array_size();i++){
+    entry=message->array(i);
+    if (entry.type()!=rst::generic::Value::INT){
+      return;
+    }
+    mv.push_back(entry.int_());
+  }
+  if (mv.size()<2){
+    return;
+  }
   // Set the motor speed
   // Velocity send in µm/s
   // Angular velocity send in µrad/s
-  CAN.setTargetSpeed(int(message->at(0)), int(message->at(1)));
-  DEBUG_MSG( "v: " << message->at(0) << "w: " << message->at(1))
+  CAN.setTargetSpeed(mv.at(0), mv.at(1));
+  DEBUG_MSG( "v: " << mv.at(0) << "w: " << mv.at(1))
 }
 
 static std::string rsbInScope = "/motor";
@@ -46,7 +70,7 @@ static bool sendStaticVelocitiesOnce = false;
 static int sendStaticVelocitiesPeriod_us = 100 /*ms*/ * 1e3;
 
 int main (int argc, const char **argv){
- 
+
   // Handle program options
   namespace po = boost::program_options;
 
@@ -98,11 +122,12 @@ int main (int argc, const char **argv){
   rsb::Factory& factory = rsb::getFactory();
 
   // Register new converter for std::vector<int>
-  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
-  converterRepository<std::string>()->registerConverter(converterVecInt);
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
+    converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB reader
-  ReaderPtr reader = factory.createReader(rsbInScope);
+  rsb::ReaderPtr reader = factory.createReader(rsbInScope);
 
   while (rsc::misc::lastArrivedSignal() != rsc::misc::INTERRUPT_REQUESTED && rsc::misc::lastArrivedSignal() != rsc::misc::TERMINATE_REQUESTED) {
           // Wait for the message

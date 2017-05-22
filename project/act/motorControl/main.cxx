@@ -3,7 +3,8 @@
 // Author      : tkorthals <tkorthals@cit-ec.uni-bielefeld.de>
 // Description : Send controls to the motor of AMiRo
 //               Velocity are received in mm/s via RSB
-//               Angular velocity are received in ��/s via RSB
+//               Angular velocity are received in °/s via RSB
+// Edited by   : jhomburg <jhomburg@techfak.uni-bielefeld.de>
 //============================================================================
 
 #define INFO_MSG_
@@ -25,9 +26,10 @@
 #include <rsb/MetaData.h>
 #include <rsb/Handler.h>
 #include <rsb/converter/Repository.h>
+#include <rsb/converter/ProtocolBufferConverter.h>
 
 // Include own converter
-#include <converter/vecIntConverter/main.hpp>
+//#include <converter/vecIntConverter/main.hpp>
 
 #include <stdint.h>  // int32
 
@@ -37,8 +39,11 @@
 #include <rsc/threading/SynchronizedQueue.h>
 #include <rsb/util/EventQueuePushHandler.h>
 
+//RST
+#include <rst/generic/Value.pb.h>
+
 using namespace std;
-using namespace muroxConverter;
+//using namespace muroxConverter;
 
 struct MotorCmd {
 	bool valid;
@@ -79,11 +84,25 @@ void printRankedCmdTalbe(string reason) {
 		}
 	}
 }
-#ifdef old
+
 void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
-	boost::shared_ptr<std::vector<int> > motorCmdVec = static_pointer_cast<std::vector<int> >(motorCmdEvent->getData());
-	boost::uint64_t duration = motorCmdVec->at(2);
-	struct MotorCmd newMotorCmd = {true, motorCmdVec->at(0), motorCmdVec->at(1), duration + motorCmdEvent->getMetaData().getReceiveTime()};
+  if (motorCmdEvent->getType()!="rst::generic::Value"){return;}
+  boost::shared_ptr<rst::generic::Value> motorCmdValueArray = boost::static_pointer_cast<rst::generic::Value> (motorCmdEvent->getData());
+  if (motorCmdValueArray->type()!=rst::generic::Value::ARRAY){return;}
+  std::vector<int> motorCmdVec(0,0);
+  rst::generic::Value entry;
+  for (int i=0; i<motorCmdValueArray->array_size();i++){
+    entry=motorCmdValueArray->array(i);
+    if (entry.type()!=rst::generic::Value::INT){return;}
+    motorCmdVec.push_back(entry.int_());
+    //std::cout << entry.int_() << '\n';
+  }
+  if (motorCmdVec.size()<3){cout << "array too short\n"; return;}
+
+#ifdef old
+  //boost::shared_ptr<std::vector<int> > motorCmdVec = static_pointer_cast<std::vector<int> >(motorCmdEvent->getData());
+	boost::uint64_t duration = motorCmdVec.at(2);
+	struct MotorCmd newMotorCmd = {true, motorCmdVec.at(0), motorCmdVec.at(1), duration + motorCmdEvent->getMetaData().getReceiveTime()};
 	string behaviorScope = motorCmdEvent->getScopePtr()->getComponents().back();
 	int idx = (int(behaviorScope[0])-48) * 10 + (int(behaviorScope[1]) - 48);
 	table_mutex.lock();
@@ -92,19 +111,19 @@ void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
 	idxNewCmd = idx;
 	printRankedCmdTalbe("Insertion ");
 	table_mutex.unlock();
-}
 #else
-void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
-	boost::shared_ptr<std::vector<int> > motorCmdVec = static_pointer_cast<std::vector<int> >(motorCmdEvent->getData());
-	boost::uint64_t duration = motorCmdVec->at(2);
-	struct MotorCmd newMotorCmd = {true, motorCmdVec->at(0), motorCmdVec->at(1), duration == 0 ? 1 : duration + motorCmdEvent->getMetaData().getReceiveTime()};
+//void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
+//boost::shared_ptr<std::vector<int> > motorCmdVec = static_pointer_cast<std::vector<int> >(motorCmdEvent->getData());
+	boost::uint64_t duration = motorCmdVec.at(2);
+	struct MotorCmd newMotorCmd = {true, motorCmdVec.at(0), motorCmdVec.at(1), duration == 0 ? 1 : duration + motorCmdEvent->getMetaData().getReceiveTime()};
 	string behaviorScope = motorCmdEvent->getScopePtr()->getComponents().back();
 	int idx = (int(behaviorScope[0])-48) * 10 + (int(behaviorScope[1]) - 48);
+  std::cout << "IDX: " << idx << "duration: " <<newMotorCmd.expiration_time -motorCmdEvent->getMetaData().getReceiveTime()<< '\n';
 	rankedMotorCmdTable[idx] = newMotorCmd;
 	newLowerCmd = idx <= currIdx;
 	idxNewCmd = idx;
-}
 #endif
+}
 
 int main (int argc, const char **argv){
 
@@ -141,8 +160,12 @@ int main (int argc, const char **argv){
   rsb::Factory& factory = rsb::getFactory();
 
   // Register new converter for std::vector<int>
-  boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
-  converterRepository<std::string>()->registerConverter(converterVecInt);
+  //boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+  //converterRepository<std::string>()->registerConverter(converterVecInt);
+
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
+    converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   rsb::ListenerPtr motorCmdListener = factory.createListener(rsbInScope);
 
@@ -213,9 +236,10 @@ int main (int argc, const char **argv){
   while(true) {
 	  ++currIdx;
 	  // Skip cmd if [not valid] or [valid but not valid after update] (additionally some assignments)
-	  if (!rankedMotorCmdTable[currIdx].valid) continue;
+	  if (!rankedMotorCmdTable[currIdx].valid)continue;
 	  if (rankedMotorCmdTable[currIdx].valid = (rankedMotorCmdTable[currIdx].expiration_time > rsc::misc::currentTimeMicros())) {
 		  remainingExecTime = (rankedMotorCmdTable[currIdx].expiration_time - rsc::misc::currentTimeMicros())/1000;
+      cout << remainingExecTime << "\n";
 	  } else {
 		  if (rankedMotorCmdTable[currIdx].expiration_time < 2) { // Special meaning of expiration_time (see below)
 			  rankedMotorCmdTable[currIdx].valid = true;

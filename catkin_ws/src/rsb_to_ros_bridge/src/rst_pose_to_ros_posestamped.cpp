@@ -1,13 +1,12 @@
 // ============================================================================
-// Name        : rst_value_array_to_ros_int_array.cpp
+// Name        : rst_pose_to_ros_posestamped.cpp
 // Author      : Jonas Dominik Homburg <jhomburg@techfak.uni-bielefeld.de>
 // Description : Recieve int32_t array as Value via rsb and publish them via ros.
 // ============================================================================
 
 // ROS
 #include <ros/ros.h>
-#include <std_msgs/UInt16MultiArray.h>
-#include <sai_msgs/Int32MultiArrayStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 
 // RSB
 #include <rsb/Factory.h>
@@ -19,7 +18,7 @@
 #include <rsb/converter/ProtocolBufferConverter.h>
 
 // RST
-#include <rst/generic/Value.pb.h>
+#include <rst/geometry/Pose.pb.h>
 
 using namespace std;
 
@@ -27,22 +26,38 @@ using namespace std;
 string rsbListenerScope;
 
 // ROS Publish Topic
-string rosPublishProximityTopic;
+string rosPublishPoseStamped;
 
-ros::Publisher floorProxPub;
+ros::Publisher rosPosePub;
 
 // program name
-const string programName = "rst_value_array_to_ros_int_array";
+const string programName = "rst_pose_to_ros_posestamped";
 
 
 
-void processValueArray(rsb::EventPtr event) {
-  if (event->getType() != "rst::generic::Value"){
+void processRstMessage(rsb::EventPtr event) {
+  if (event->getType() != "rst::geometry::Pose"){
     return;
   }
 
-  boost::shared_ptr<rst::generic::Value> value = boost::static_pointer_cast<rst::generic::Value>(event->getData());
-  if (value->type() != rst::generic::Value::ARRAY){
+  boost::shared_ptr<rst::geometry::Pose> value = boost::static_pointer_cast<rst::geometry::Pose>(event->getData());
+  rst::geometry::Translation t=value->translation();
+  rst::geometry::Rotation r=value->rotation();
+
+  geometry_msgs::PoseStamped pS;
+  pS.pose.orientation.x=(double)r.qx();
+  pS.pose.orientation.y=(double)r.qy();
+  pS.pose.orientation.z=(double)r.qz();
+  pS.pose.orientation.w=(double)r.qw();
+  pS.pose.position.x=(double)t.x();
+  pS.pose.position.y=(double)t.y();
+  pS.pose.position.z=(double)t.z();
+  pS.header.stamp.nsec=event->getMetaData().getCreateTime()*1000;
+  pS.header.frame_id=event->getScope().toString();
+
+  rosPosePub.publish(pS);
+
+  /*if (value->type() != rst::generic::Value::ARRAY){
     return;
   }
 
@@ -76,7 +91,7 @@ void processValueArray(rsb::EventPtr event) {
   proxMsg.header.stamp.nsec=event->getMetaData().getCreateTime()*1000;
   proxMsg.header.frame_id=event->getScope().toString();
 
-  floorProxPub.publish(proxMsg);
+  floorProxPub.publish(proxMsg);*/
 }
 
 int main(int argc, char *argv[]) {
@@ -87,22 +102,22 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle node;
   ros::NodeHandle private_nh("~");
 
-  private_nh.param<string>("rsbListenerScope", rsbListenerScope, "/rir_prox/original");
+  private_nh.param<string>("rsbListenerScope", rsbListenerScope, "/prox");
   ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
-  private_nh.param<string>("rosPublishProximityTopic", rosPublishProximityTopic, "/prox");
-  ROS_INFO("rosPublishTopic: %s", rosPublishProximityTopic.c_str());
+  private_nh.param<string>("rosPublishPoseStamped", rosPublishPoseStamped, "/pose");
+  ROS_INFO("rosPublishTopic: %s", rosPublishPoseStamped.c_str());
 
-  floorProxPub = node.advertise<sai_msgs::Int32MultiArrayStamped>(rosPublishProximityTopic, 1);
+  rosPosePub = node.advertise<geometry_msgs::PoseStamped>(rosPublishPoseStamped, 1);
 
   rsb::Factory& factory = rsb::getFactory();
 
-  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
-    converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::geometry::Pose> >
+    converter(new rsb::converter::ProtocolBufferConverter<rst::geometry::Pose>());
     rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB listener
-  rsb::ListenerPtr floorProxListener = factory.createListener(rsbListenerScope);
-  floorProxListener->addHandler(rsb::HandlerPtr(new rsb::EventFunctionHandler(&processValueArray)));
+  rsb::ListenerPtr poseListener = factory.createListener(rsbListenerScope);
+  poseListener->addHandler(rsb::HandlerPtr(new rsb::EventFunctionHandler(&processRstMessage)));
 
   ros::spin();
 

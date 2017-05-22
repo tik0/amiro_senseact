@@ -6,11 +6,17 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.16)
-pkg_check_modules(RSC rsc0.16)
 pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(RST rstsandbox0.16)
 pkg_check_modules(EIGEN eigen3)
+if ($ENV{ARCH} MATCHES "arm")
+    pkg_check_modules(RSB rsb0.13)
+    pkg_check_modules(RSC rsc0.13)
+    pkg_check_modules(RST rstsandbox0.13)
+else()
+    pkg_check_modules(RSB rsb0.16)
+    pkg_check_modules(RSC rsc0.16)
+    pkg_check_modules(RST rstsandbox0.16)
+endif()
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)
