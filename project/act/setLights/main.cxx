@@ -35,8 +35,9 @@
 #include <rsb/MetaData.h>
 #include <rsb/util/QueuePushHandler.h>
 
-#include <converter/vecIntConverter/main.hpp>
-using namespace muroxConverter;
+#//include <converter/vecIntConverter/main.hpp>
+//using namespace muroxConverter;
+#include <rst/generic/Value.pb.h>
 
 using namespace std;
 
@@ -97,7 +98,7 @@ bool exitProg = false;
 
 
 // method prototypes
-bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer<std::string>::Ptr recInformer);
+bool getCommand(boost::shared_ptr<rst::generic::Value> commandValueArray, rsb::Informer<std::string>::Ptr recInformer);
 void setColor(bool colorChanged, int counter10ms, int colorCounter, ControllerAreaNetwork &myCAN);
 bool sameColors(amiro::Color c1, amiro::Color c2);
 
@@ -143,15 +144,19 @@ int main(int argc, char **argv) {
 	// ------------ Converters ----------------------
 
 	// Register new converter for std::vector<int>
-	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
-	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+//	boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
+//	rsb::converter::converterRepository<std::string>()->registerConverter(converterVecInt);
+boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
+  converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
 	// ------------ Listener ----------------------
 
 	// prepare RSB listener for commands
 	rsb::ListenerPtr commandListener = factory.createListener(commandInscope, extspreadconfig);
-	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
-	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<std::vector<int>>(commandQueue)));
+  //boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>> >commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<std::vector<int>>>(1));
+	boost::shared_ptr<rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::generic::Value>> >commandQueue(new rsc::threading::SynchronizedQueue<boost::shared_ptr<rst::generic::Value>>(1));
+	commandListener->addHandler(rsb::HandlerPtr(new rsb::util::QueuePushHandler<rst::generic::Value>(commandQueue)));
 
 	// ------------ Informer -----------------------
 
@@ -162,9 +167,9 @@ int main(int argc, char **argv) {
 
 	// Init the CAN interface
 	ControllerAreaNetwork myCAN;
-	boost::shared_ptr<std::vector<int>> commandVector;
+	boost::shared_ptr<rst::generic::Value> commandVector;
 	int timeCounter = 0;
-	int changeColorCounter = 0;
+	uint changeColorCounter = 0;
 	bool colorChanged = false;
 	setColor(true, timeCounter, changeColorCounter, myCAN);
 
@@ -174,7 +179,7 @@ int main(int argc, char **argv) {
 		// check for new color input
 		colorChanged = false;
 		if (!commandQueue->empty()) {
-			commandVector = boost::static_pointer_cast<std::vector<int> >(commandQueue->pop());
+			commandVector = boost::static_pointer_cast<rst::generic::Value >(commandQueue->pop());
 			colorChanged = getCommand(commandVector, recInformer);
 		}
 		if (colorChanged) {
@@ -197,7 +202,7 @@ int main(int argc, char **argv) {
 		usleep(10000);
 	}
 
-	for (int led=0; led<8; led++) {
+	for (uint led=0; led<8; led++) {
 		myCAN.setLightColor(led, LightModel::initColors[led]);
 	}
 
@@ -211,18 +216,39 @@ bool sameColors(amiro::Color c1, amiro::Color c2) {
 	return c1.getRed() == c2.getRed() && c1.getGreen() == c2.getGreen() && c1.getBlue() == c2.getBlue();
 }
 
-bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer<std::string>::Ptr recInformer) {
+bool getCommand(boost::shared_ptr<rst::generic::Value> commandValueArray, rsb::Informer<std::string>::Ptr recInformer) {
 	DEBUG_MSG("New command received");
+  if (commandValueArray->type()!=rst::generic::Value::ARRAY){
+    boost::shared_ptr<std::string> StringPtr(new std::string(REC_ERROR
+    ));
+    recInformer->publish(StringPtr);
+    WARNING_MSG("Invalid color command!");
+    return false;
+  }
+  std::vector<int> commandVector(0,0);
+  rst::generic::Value entry;
+  for (int i=0;i<commandValueArray->array_size();i++){
+    entry=commandValueArray->array(i);
+    if (entry.type()!=rst::generic::Value::INT){
+      boost::shared_ptr<std::string> StringPtr(new std::string(REC_ERROR
+      ));
+      recInformer->publish(StringPtr);
+      WARNING_MSG("Invalid color command!");
+      return false;
+    }
+    commandVector.push_back(entry.int_());
+  }
+
 	// check if vector has correct length
-	if (commandVector->size() >= 2) {
-		int commandSize = commandVector->size();
+	if (commandVector.size() >= 2) {
+		int commandSize = commandVector.size();
 		bool error = false;
 		bool colorChanged = false;
-		int commandType = commandVector->at(0);
+		int commandType = commandVector.at(0);
 		bool commandTypeInit = (commandType == LightModel::LightType::SINGLE_INIT) || (commandType == LightModel::LightType::CHANGE_INIT);
 		bool lightTypeChange = LightModel::lightTypeIsChange(commandType);
 		std::vector<amiro::Color> colors;
-		int periodTime = commandVector->at(commandSize-1);
+		int periodTime = commandVector.at(commandSize-1);
 		if (periodTime < 0) periodTime = 0;
 		if ((LightModel::lightTypeIsKnown(commandType))
 		 || (lightTypeChange && (commandSize-2) % 3 == 0)
@@ -232,7 +258,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 			// check if everything negative
 			bool allNegative = true;
 			for (int c=0; c<commandSize; c++) {
-				if (commandVector->at(c) >= 0) {
+				if (commandVector.at(c) >= 0) {
 					allNegative = false;
 					break;
 				}
@@ -245,7 +271,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 			// load colors
 			int colorCount = (commandSize-2)/3;
 			if (commandTypeInit) {
-				for (int led=0; led<8; led++) {
+				for (uint led=0; led<8; led++) {
 					amiro::Color color((int)(LightModel::initColors[led].getRed()), (int)(LightModel::initColors[led].getGreen()), (int)(LightModel::initColors[led].getBlue()));
 					colors.push_back(color);
 				}
@@ -257,13 +283,13 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 
 				return false;
 			} else if (!lightTypeChange && colorCount == 1) {
-				amiro::Color color(commandVector->at(1), commandVector->at(2), commandVector->at(3));
-				for (int led=0; led<8; led++) {
+				amiro::Color color(commandVector.at(1), commandVector.at(2), commandVector.at(3));
+				for (uint led=0; led<8; led++) {
 					colors.push_back(color);
 				}
 			} else {
 				for (int led=0; led<colorCount; led++) {
-					amiro::Color color(commandVector->at(led*3+1), commandVector->at(led*3+2), commandVector->at(led*3+3));
+					amiro::Color color(commandVector.at(led*3+1), commandVector.at(led*3+2), commandVector.at(led*3+3));
 					colors.push_back(color);
 				}
 			}
@@ -279,7 +305,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 			// check if the color(s), lighting type or period time have been changed
 			colorChanged = (singleColor && lightTypeChange) || (!singleColor && !lightTypeChange) || commandType != commandTypeSet || periodTime != periodTimeSet;
 			if (!colorChanged && colors.size() == colorsSet.size()) {
-				for (int led=0; led<colors.size(); led++) {
+				for (uint led=0; led<colors.size(); led++) {
 					if (colors[led].getRed() != colorsSet[led].getRed() || colors[led].getGreen() != colorsSet[led].getGreen() || colors[led].getBlue() != colorsSet[led].getBlue()) {
 						colorChanged = true;
 						break;
@@ -289,7 +315,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 				colorChanged = true;
 			}
 		}
-					
+
 		// only set everything new, if there is a change
 		if (colorChanged) {
 			init = false;
@@ -311,7 +337,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 				case LightModel::LightType::CHANGE_INIT: init = true; singleColor = false; break;
 				case LightModel::LightType::CHANGE_SHINE: shine = true; singleColor = false; break;
 				case LightModel::LightType::CHANGE_BLINK: blinking = true; singleColor = false; break;
-				default: WARNING_MSG("Lighting type '" << commandType << "' is unknown!"); error = true; break; 
+				default: WARNING_MSG("Lighting type '" << commandType << "' is unknown!"); error = true; break;
 			}
 			if (error) {
 				// command was unknown, switch back everything
@@ -336,7 +362,7 @@ bool getCommand(boost::shared_ptr<std::vector<int>> commandVector, rsb::Informer
 				// save lighting type, colors and period time
 				commandTypeSet = commandType;
 				colorsSet.clear();
-				for (int led=0; led<colors.size(); led++) {
+				for (uint led=0; led<colors.size(); led++) {
 					colorsSet.push_back(colors[led]);
 				}
 				periodTimeSet = periodTime;
@@ -402,7 +428,7 @@ void setColor(bool colorChanged, int counter10ms, int colorCounter, ControllerAr
 	 || ((blinking || blinkWarning || crossed) && counter10ms % steps10msHalf == 0)
 	 || (circleLeft || circleRight)
 	) {
-		for (int led=0; led<8; led++) {
+		for (uint led=0; led<8; led++) {
 			int ledNext = led+1;
 			if (ledNext >= 8) ledNext -= 8;
 

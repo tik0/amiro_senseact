@@ -37,8 +37,6 @@ include_directories(
 # Define the source
 SET (SOURCE main.cxx)
 
-# Add sources to build
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/vecIntConverterSource.cmake")
 
 # add the executable
 ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})

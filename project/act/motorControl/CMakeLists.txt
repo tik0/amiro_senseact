@@ -35,9 +35,9 @@ include_directories(
 
 # Add folders to build and run CMakeLists.txt in it
 
-if (NOT TARGET vecIntConverter)
-    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
-endif()
+#if (NOT TARGET vecIntConverter)
+#    add_subdirectory ($ENV{MUROX_INCLUDE_DIRS}/converter/vecIntConverter lib/vecIntConverter)
+#endif()
 # add the executable
 add_executable ("${PROJECT_NAME}" main.cxx)
 # Link the executable to the library.
@@ -65,5 +65,5 @@ target_link_libraries (
 #    CMAKE_CXX_FLAGS
 #    "-Wno-deprecated-declarations -O2 -std=c++11 -Dold"
 #)
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11 -Dold)
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
 ADD_DEFINITIONS(${RST_CFLAGS})
