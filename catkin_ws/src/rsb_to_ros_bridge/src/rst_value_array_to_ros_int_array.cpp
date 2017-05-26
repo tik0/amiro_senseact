@@ -84,12 +84,11 @@ int main(int argc, char *argv[]) {
 
   // Init ROS
   ros::init(argc, argv, programName);
-  ros::NodeHandle node;
-  ros::NodeHandle private_nh("~");
+  ros::NodeHandle node("~");
 
-  private_nh.param<string>("rsbListenerScope", rsbListenerScope, "/rir_prox/original");
+  node.param<string>("rsbListenerScope", rsbListenerScope, "/rir_prox/original");
   ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
-  private_nh.param<string>("rosPublishProximityTopic", rosPublishProximityTopic, "/prox");
+  node.param<string>("rosPublishProximityTopic", rosPublishProximityTopic, "/prox");
   ROS_INFO("rosPublishTopic: %s", rosPublishProximityTopic.c_str());
 
   floorProxPub = node.advertise<sai_msgs::Int32MultiArrayStamped>(rosPublishProximityTopic, 1);
