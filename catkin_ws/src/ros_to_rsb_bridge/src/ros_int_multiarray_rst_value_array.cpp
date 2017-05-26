@@ -53,13 +53,12 @@ int main(int argc, char *argv[]) {
 
   // Init ROS
   ros::init(argc, argv, programName);
-  ros::NodeHandle node;
-  ros::NodeHandle private_nh("~");
+  ros::NodeHandle node("~");
 
-  private_nh.param<string>("rosListenerTopic", rosListenerTopic, "/motor");
-  ROS_INFO("rosListenerTopic: %s", rosListenerTopic.c_str());
-  private_nh.param<string>("rsbPublishScope", rsbPublishScope, "/motor");
-  ROS_INFO("rsbPublishScope: %s", rsbPublishScope.c_str());
+  node.param<string>("ros_listener_topic", rosListenerTopic, "/motor");
+  ROS_INFO("ros_listener_topic: %s", rosListenerTopic.c_str());
+  node.param<string>("rsb_publish_topic", rsbPublishScope, "/motor");
+  ROS_INFO("rsb_publish_topic: %s", rsbPublishScope.c_str());
 
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
 			converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());

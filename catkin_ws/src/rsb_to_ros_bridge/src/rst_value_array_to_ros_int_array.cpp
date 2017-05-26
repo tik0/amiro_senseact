@@ -86,10 +86,10 @@ int main(int argc, char *argv[]) {
   ros::init(argc, argv, programName);
   ros::NodeHandle node("~");
 
-  node.param<string>("rsbListenerScope", rsbListenerScope, "/rir_prox/original");
-  ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
-  node.param<string>("rosPublishProximityTopic", rosPublishProximityTopic, "/prox");
-  ROS_INFO("rosPublishTopic: %s", rosPublishProximityTopic.c_str());
+  node.param<string>("rsb_listener_scope", rsbListenerScope, "/rir_prox/original");
+  ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
+  node.param<string>("ros_publish_topic", rosPublishProximityTopic, "/prox");
+  ROS_INFO("ros_publish_topic: %s", rosPublishProximityTopic.c_str());
 
   floorProxPub = node.advertise<sai_msgs::Int32MultiArrayStamped>(rosPublishProximityTopic, 1);
 
