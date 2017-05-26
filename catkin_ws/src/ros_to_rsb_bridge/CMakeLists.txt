@@ -8,13 +8,15 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   sai_msgs
+  geometry_msgs
 )
 
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
-pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
-FIND_PACKAGE(RST $ENV{MUROX_RSB_VERSION} REQUIRED COMPONENTS sandbox)
-pkg_check_modules(PROTOBUF protobuf)
+find_package(RSB 0.16 REQUIRED)
+find_package(RSC 0.16 REQUIRED)
+find_package(RST 0.16 REQUIRED COMPONENTS sandbox)
+find_package(Protobuf REQUIRED)
+find_package(OpenCV 3.0 REQUIRED)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -40,6 +42,18 @@ add_executable(ros_int_multiarray_rst_value_array
 )
 
 target_link_libraries(ros_int_multiarray_rst_value_array
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+)
+
+add_executable(ros_geometry_msgs_posestamped_to_rst_geometry_pose
+  src/ros_geometry_msgs_posestamped_to_rst_geometry_pose.cpp
+)
+
+target_link_libraries(ros_geometry_msgs_posestamped_to_rst_geometry_pose
   ${catkin_LIBRARIES}
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
