@@ -15,11 +15,11 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(PkgConfig)
-pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
-pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
-FIND_PACKAGE(RST $ENV{MUROX_RSB_VERSION} REQUIRED COMPONENTS sandbox)
-pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(OPENCV opencv)
+find_package(RSB 0.16 REQUIRED)
+find_package(RSC 0.16 REQUIRED)
+find_package(RST 0.16 REQUIRED COMPONENTS sandbox)
+find_package(Protobuf REQUIRED)
+find_package(OpenCV 3.0 REQUIRED)
 
 catkin_package(
 #  INCLUDE_DIRS include

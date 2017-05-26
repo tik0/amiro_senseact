@@ -51,10 +51,12 @@ int main(int argc, char ** argv) {
 
   static int imageCompression = 0;
   static int compressionValue = -1;
+  static string fileExtention = ".bmp";
 
   po::options_description options("Allowed options");
   options.add_options() ("help,h", "Display a help message.")
     ("outscope,o", po::value<std::string>(&g_sOutScope), "Scope for sending images.")
+    ("image,i", po::value<std::string>(&fileExtention), "asda.")
     ("compression,c", po::value<int>(&compressionValue)->default_value(compressionValue), "Enable image compression with value betweeen 0-100.");
 
   // allow to give the value as a positional argument
@@ -159,7 +161,11 @@ int main(int argc, char ** argv) {
 
   // Allocate a frame object to store the picture
   //  boost::shared_ptr<cv::Mat> frame(new cv::Mat);
-  //
+
+  // cv::VideoCapture capture(CV_CAP_OPENNI);
+  // Mat depthMap;
+  // double minVal, maxVal;
+  // float alpha, beta;
   while (true) {
     int changedStreamDummy;
     VideoStream * pStream = &depth;
@@ -180,7 +186,9 @@ int main(int argc, char ** argv) {
       continue;
     }
 
-    DepthPixel * pDepth = (DepthPixel *) frame.getData();
+    // DepthPixel * pDepth = (DepthPixel *) frame.getData();
+    const openni::DepthPixel * pDepth = (const openni::DepthPixel *) frame.getData();
+    // const uint16_t * pDepth = (const uint16_t *) frame.getData();
     // DepthPixel *pDepth = new DepthPixel[frame.getHeight()*frame.getWidth()];
     // memcpy(pDepth, frame.getData(), frame.getHeight()*frame.getWidth()*sizeof(uint16_t));
 
@@ -190,29 +198,59 @@ int main(int argc, char ** argv) {
     // Convert to an image which can be send via RSB
     // boost::shared_ptr<cv::Mat> imageCv(new cv::Mat(cv::Size(frame.getHeight(), frame.getWidth()), CV_16UC1, (void *) pDepth, cv::Mat::AUTO_STEP));
     // cv::Mat imageCv(new cv::Mat(cv::Size(frame.getHeight(), frame.getWidth()), CV_16UC1, (void *) pDepth, cv::Mat::AUTO_STEP));
-    cv::Mat imageCv(cv::Size(frame.getHeight(), frame.getWidth()), CV_16UC1, pDepth);
+    // cv::Mat imageCv(cv::Size(frame.getHeight(), frame.getWidth()), CV_16U, (void *) pDepth, cv::Mat::AUTO_STEP);
 
-    cout << "channels:" << imageCv.channels() << " type:" << imageCv.type() << endl;
+    // cv::Mat depthMat(cv::Size(frame.getHeight(), frame.getWidth()), CV_16UC1);
+    // memcpy(depthMat.data, pDepth, frame.getHeight() * frame.getWidth() * sizeof(uint16_t));
 
-    // cv::imwrite("bla.jpg", depthMap);
+
+    //marvin stuff
+    // Mat depthDataImage1C;
+    // cv::minMaxLoc(depthMat, &minVal, &maxVal);
+    // alpha = 255.0 / maxVal;
+    // beta  = 255.0 - maxVal * alpha;
+    // depthMat.convertTo(depthDataImage1C, CV_8UC1, alpha, beta);
+    // cv::cvtColor(depthDataImage1C, depthMat, CV_GRAY2RGB);
+    // cv::flip(depthMat, depthMat, 1);
+
+    // cout << depthMat << endl;
+
     //
-    // cv::cvtColor(imageCv, imageCv8UC3, CV_GRAY2RGB);
-    // imageCv.convertTo(imageCv8UC3, CV_8UC3);
-    // imageCv.convertTo(imageCv8UC3, CV_8UC3);
-    //
-    cv::Mat imageCv8UC1;
-    .convertTo(imageCv8UC1, CV_8UC1);
-    cv::Mat imageCv8UC3;
-    cv::cvtColor(imageCv8UC1, imageCv8UC3, CV_GRAY2RGB);
+    // imageCv.convertTo(imageCv, CV_8U);
+
+    // for (int i = 0; i < imageCv.size().height * imageCv.size().width; i++) {
+    //   cout << "a: " << static_cast<uchar>(pDepth[i]) << endl;
+    // }
+    // memmove(imageCv.data, pDepth, frame.getHeight()*frame.getWidth());
+
+    // cout << "channels:" << depthMat.channels() << " type:" << depthMat.type() << endl;
+
+    // cout << "data:" << imageCv << endl;
+    // cout << "data: " << *imageCv.data << endl;
+    // printf("data: %s \n", depthMat.data);
+
+
+    // capture >> depthMap;
+    // capture.grab();
+    // capture.retrieve( depthMap, CV_CAP_OPENNI_DEPTH_MAP );
 
 
     if (imageCompression) {
-      // cv::Mat cImage;
-      // cv::cvtColor(imageCv, cImage, CV_GRAY2RGB);
-      cv::imencode(".jpg", imageCv8UC3, buff, param);
+      cv::Mat depthMat(cv::Size(frame.getHeight(), frame.getWidth()), CV_16UC1);
+      memcpy(depthMat.data, pDepth, frame.getHeight() * frame.getWidth() * sizeof(uint16_t));
+      // cv::Mat depthMat8UC1;
+      // cv::Mat depthMat8UC3;
+      // double minVal, maxVal;
+      // float alpha, beta;
+      // cv::minMaxLoc(depthMat, &minVal, &maxVal);
+      // alpha = 255.0 / maxVal;
+      // beta  = 255.0 - maxVal * alpha;
+      // depthMat.convertTo(depthMat, CV_8UC1, alpha, beta);
+      // cv::cvtColor(depthMat8UC1, depthMat8UC3, CV_GRAY2RGB);
+      cv::imencode(".png", depthMat, buff, param);
       #ifdef RST_013_USED
-      boost::shared_ptr<std::string> frameJpg(new std::string(buff.begin(), buff.end()));
-      informerCompressed->publish(frameJpg);
+      boost::shared_ptr<std::string> framePng(new std::string(buff.begin(), buff.end()));
+      informerCompressed->publish(framePng);
       INFO_MSG("Compressed Image published")
       #else
       boost::shared_ptr<rst::vision::EncodedImage> encodedImage(new rst::vision::EncodedImage());
@@ -223,16 +261,18 @@ int main(int argc, char ** argv) {
       #endif
     } else {
       boost::shared_ptr<rst::vision::Image> rstVisionImage(new rst::vision::Image());
-      rstVisionImage->set_width(imageCv.size().width);
-      rstVisionImage->set_height(imageCv.size().height);
-      rstVisionImage->set_data(reinterpret_cast<char *>(imageCv.data)); // conversion from uchar* tp char*
+      rstVisionImage->set_width(frame.getHeight());
+      rstVisionImage->set_height(frame.getHeight());
+      rstVisionImage->set_data((void*) pDepth, frame.getHeight() * frame.getHeight());
+      // rstVisionImage->set_data(reinterpret_cast<char *>(const_cast<uint16_t*>(pDepth)), frame.getHeight() * frame.getHeight() * sizeof(uint16_t) * 1); // conversion from uchar* tp char*
+      // rstVisionImage->set_data((char *) tempImage->imageData, tempImage->imageSize)
       rstVisionImage->set_channels(1);
       rstVisionImage->set_color_mode(rst::vision::Image::COLOR_GRAYSCALE);
       rstVisionImage->set_depth(rst::vision::Image::DEPTH_16U);
       // Send the data.
       informer->publish(rstVisionImage);
       INFO_MSG("Image published")
-      cout << rstVisionImage->data() << endl;
+      // cout << rstVisionImage->data() << endl;
     }
 
     // boost::shared_ptr<IplImage> sendIplImage(new IplImage(*image));
