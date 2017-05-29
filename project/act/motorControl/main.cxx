@@ -28,9 +28,6 @@
 #include <rsb/converter/Repository.h>
 #include <rsb/converter/ProtocolBufferConverter.h>
 
-// Include own converter
-//#include <converter/vecIntConverter/main.hpp>
-
 #include <stdint.h>  // int32
 
 #include <ControllerAreaNetwork.h>
@@ -43,7 +40,6 @@
 #include <rst/generic/Value.pb.h>
 
 using namespace std;
-//using namespace muroxConverter;
 
 struct MotorCmd {
 	bool valid;
@@ -51,8 +47,6 @@ struct MotorCmd {
 	int angular_vel;
 	boost::uint64_t expiration_time;
 };
-
-//#define old
 
 MotorCmd rankedMotorCmdTable[100];
 int idxNewCmd = 0, currIdx = -1;
@@ -98,22 +92,6 @@ void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
     //std::cout << entry.int_() << '\n';
   }
   if (motorCmdVec.size()<3){cout << "array too short\n"; return;}
-
-#ifdef old
-  //boost::shared_ptr<std::vector<int> > motorCmdVec = static_pointer_cast<std::vector<int> >(motorCmdEvent->getData());
-	boost::uint64_t duration = motorCmdVec.at(2);
-	struct MotorCmd newMotorCmd = {true, motorCmdVec.at(0), motorCmdVec.at(1), duration + motorCmdEvent->getMetaData().getReceiveTime()};
-	string behaviorScope = motorCmdEvent->getScopePtr()->getComponents().back();
-	int idx = (int(behaviorScope[0])-48) * 10 + (int(behaviorScope[1]) - 48);
-	table_mutex.lock();
-	rankedMotorCmdTable[idx] = newMotorCmd;
-	newLowerCmd = idx <= currIdx;
-	idxNewCmd = idx;
-	printRankedCmdTalbe("Insertion ");
-	table_mutex.unlock();
-#else
-//void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
-//boost::shared_ptr<std::vector<int> > motorCmdVec = static_pointer_cast<std::vector<int> >(motorCmdEvent->getData());
 	boost::uint64_t duration = motorCmdVec.at(2);
 	struct MotorCmd newMotorCmd = {true, motorCmdVec.at(0), motorCmdVec.at(1), duration == 0 ? 1 : duration + motorCmdEvent->getMetaData().getReceiveTime()};
 	string behaviorScope = motorCmdEvent->getScopePtr()->getComponents().back();
@@ -122,7 +100,6 @@ void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
 	rankedMotorCmdTable[idx] = newMotorCmd;
 	newLowerCmd = idx <= currIdx;
 	idxNewCmd = idx;
-#endif
 }
 
 int main (int argc, const char **argv){
@@ -131,7 +108,6 @@ int main (int argc, const char **argv){
   namespace po = boost::program_options;
 
   std::string rsbInScope = "/motor";
-  uint32_t rsbPeriod = 0;
 
   po::options_description options("Allowed options");
   options.add_options()("help,h", "Display a help message.")
@@ -159,69 +135,11 @@ int main (int argc, const char **argv){
   // Get the RSB factory
   rsb::Factory& factory = rsb::getFactory();
 
-  // Register new converter for std::vector<int>
-  //boost::shared_ptr<vecIntConverter> converterVecInt(new vecIntConverter());
-  //converterRepository<std::string>()->registerConverter(converterVecInt);
-
   boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
     converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
   rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   rsb::ListenerPtr motorCmdListener = factory.createListener(rsbInScope);
-
-#ifdef old
-
-  motorCmdListener->addHandler(rsb::HandlerPtr(new rsb::EventFunctionHandler(&insertMotorCmdFromEvent)));
-
-  bool cmdInvalid, cmdValid, cmdExpired;
-
-  while (true) {
-	  // Check if cmd is valid
-	  table_mutex.lock();
-	  cmdInvalid = !rankedMotorCmdTable[currIdx].valid;
-	  table_mutex.unlock();
-	  // Skip cmd if not valid
-	  if (!cmdInvalid) {
-		  // Update validity
-		  table_mutex.lock();
-		  cmdValid = !newLowerCmd && rsc::misc::currentTimeMicros() < rankedMotorCmdTable[currIdx].expiration_time;
-		  table_mutex.unlock();
-		  if (cmdValid) {
-			  // Just started with this cmd -> apply it
-			  table_mutex.lock();
-			  CAN.setTargetSpeed(rankedMotorCmdTable[currIdx].forward_vel, rankedMotorCmdTable[currIdx].angular_vel);
-			  printRankedCmdTalbe("New command applied ");
-			  table_mutex.unlock();
-			  // Cmd keeps applied as long as it is not expired
-			  do {
-				  table_mutex.lock();
-				  cmdExpired = newLowerCmd || rsc::misc::currentTimeMicros() > rankedMotorCmdTable[currIdx].expiration_time || rankedMotorCmdTable[currIdx].expiration_time > rsc::misc::currentTimeMicros() + 1000000000;
-				  table_mutex.unlock();
-				  boost::this_thread::sleep(boost::posix_time::milliseconds(rsbPeriod));
-			  } while (!cmdExpired);
-		  }
-		  // If loop aborted because cmd was expired -> set invalid
-		  table_mutex.lock();
-		  if (!newLowerCmd) {
-			  rankedMotorCmdTable[currIdx].valid = false;
-			  printRankedCmdTalbe("Current command expired ");
-		  }
-		  table_mutex.unlock();
-	  }
-	  // If currently active cmd expired -> continue with next one (wrap around)
-	  table_mutex.lock();
-	  currIdx = ++currIdx % 100;
-	  // If execution of current cmd ended because of insertion of new lower level cmd -> jump there
-	  if (newLowerCmd) {
-		  currIdx = idxNewCmd;
-		  newLowerCmd = false;
-	  }
-	  // Current cmd expired and no valid higher level cmd available -> stop movement
-	  if (currIdx == 0)  CAN.setTargetSpeed(0, 0);
-	  table_mutex.unlock();
-  }
-
-#else
 
   boost::shared_ptr<rsc::threading::SynchronizedQueue<rsb::EventPtr> > cmdQueue(new rsc::threading::SynchronizedQueue<rsb::EventPtr>(1));
   motorCmdListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(cmdQueue)));
@@ -272,8 +190,6 @@ int main (int argc, const char **argv){
 	  // -> currIdx not changed and cmd still valid
 	  // -> remaining execution time gets adjusted at beginning of loop
   }
-
-#endif
 
   return EXIT_SUCCESS;
 }
