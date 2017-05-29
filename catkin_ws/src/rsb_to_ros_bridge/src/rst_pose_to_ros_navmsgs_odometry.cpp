@@ -67,8 +67,8 @@ int main(int argc, char * argv[]) {
 
   node.param<string>("rsb_listener_scope", rsbListenerScope, "/pose");
   ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
-  node.param<string>("rsb_publish_topic", rosPublishPoseStamped, "/pose");
-  ROS_INFO("rsb_publish_scope: %s", rosPublishPoseStamped.c_str());
+  node.param<string>("ros_publish_topic", rosPublishPoseStamped, "/pose");
+  ROS_INFO("ros_publish_topic: %s", rosPublishPoseStamped.c_str());
 
   rosPosePub = node.advertise<nav_msgs::Odometry>(rosPublishPoseStamped, 1);
 

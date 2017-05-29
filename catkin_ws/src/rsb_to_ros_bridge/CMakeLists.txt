@@ -34,6 +34,7 @@ include_directories(
   ${RST_INCLUDE_DIRS}
   ${PROTOBUF_INCLUDE_DIRS}
   ${OPENCV_INCLUDE_DIRS}
+  "$ENV{MUROX_PROJECT}/includes"
 )
 
 LINK_DIRECTORIES (
@@ -97,6 +98,24 @@ add_executable(rst_pose_to_ros_navmsgs_odometry
 )
 
 target_link_libraries(rst_pose_to_ros_navmsgs_odometry
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+)
+
+add_executable(rsb_twb_to_ros_navmsgs_odometry
+  src/rsb_twb_to_ros_navmsgs_odometry.cpp
+  $ENV{MUROX_INCLUDE_DIRS}/types/loc.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/enum.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/shapes.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/pose.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/vertex.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/rotation.pb.cc
+)
+
+target_link_libraries(rsb_twb_to_ros_navmsgs_odometry
   ${catkin_LIBRARIES}
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
