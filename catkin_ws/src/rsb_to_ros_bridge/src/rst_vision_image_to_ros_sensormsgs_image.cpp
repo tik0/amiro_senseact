@@ -58,9 +58,7 @@ static const string cxx11String = "std::__cxx11::basic_string<char, std::char_tr
 void processImage(rsb::EventPtr event) {
   if (event->getType() == rstVisionImage) {
     boost::shared_ptr<rst::vision::Image> image = boost::static_pointer_cast<rst::vision::Image>(event->getData());
-    // cv::Mat img;
     cv_bridge::CvImage cvImage;
-    cout << "channels:" << image->channels() << endl;
     int encodingCv;
     std::string encodingCvBridge;
     if (image->depth() == rst::vision::Image::DEPTH_8U && image->channels() == 3) {
@@ -69,36 +67,22 @@ void processImage(rsb::EventPtr event) {
     } else if (image->depth() == rst::vision::Image::DEPTH_8U && image->channels() == 1) {
       encodingCv = CV_8UC1;
       encodingCvBridge = sensor_msgs::image_encodings::MONO8;
-    } else if (image->depth() == rst::vision::Image::DEPTH_16U && image->channels() == 1) {
-      encodingCv = CV_16UC1;
-      encodingCvBridge = sensor_msgs::image_encodings::MONO16;
+    // } else if (image->depth() == rst::vision::Image::DEPTH_16U && image->channels() == 1) {
+    //   encodingCv = CV_16UC1;
+    //   encodingCvBridge = sensor_msgs::image_encodings::MONO16;
     } else {
       ROS_INFO("Image encoding is not known! depth: %i, channel: %i", image->depth(), image->channels());
       return;
     }
-    cout << "debug-1" << endl;
-    // img.create(image->height(), image->width(), encodingCv, cv::Scalar::all(255));
-    // cv::Mat img(image->height(), image->width(), encodingCv, cv::Scalar::all(0));
     void * t = static_cast<void *>(const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(&image->data()[0])));
     cv::Mat img(image->height(), image->width(), encodingCv, t);
-    cout << "debug0" << endl;
-    // img.data = const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(&image->data()[0])); // conversion from string to  const uchar*
-    cout << "encodingCv:" << encodingCv << " encodingCvBridge:" << encodingCvBridge << endl;
-    // cout << img << endl;
-    // cv::imwrite("bla.png", img);
-    cout << "debug1" << endl;
     cvImage.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
-    cout << "debug2" << endl;
     cvImage.header.frame_id = event->getScope().toString();
-    cout << "debug3" << endl;
     cvImage.encoding = encodingCvBridge;
     cvImage.image = img;
-    cout << "debug4" << endl;
     sensor_msgs::ImagePtr msg = cvImage.toImageMsg();
-    cout << "debug5" << endl;
     imagePublisher.publish(msg);
     // imagePublisher.publish(cvImage.toImageMsg());
-    cout << "debug6" << endl;
   } else if (event->getType() == rstVisionEncodedImage || event->getMetaData().hasUserInfo(rsbWireSchema) || event->getType() == cxx11String) {
     sensor_msgs::CompressedImage compressedImage;
     boost::shared_ptr<rst::vision::EncodedImage> encodedImage;
