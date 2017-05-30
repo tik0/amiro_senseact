@@ -49,6 +49,7 @@ void sendTargetPosition(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   const ::rst::geometry::Rotation& rotation = message->rotation();
   const ::rst::geometry::Translation& translation = message->translation();
 
+
   Eigen::Quaternion< double > q(rotation.qw(), rotation.qx(), rotation.qy(), rotation.qz());
   Eigen::Matrix<double,3,1> rpy;
   utils::conversion::quaternion2euler(&q, &rpy);
@@ -59,7 +60,11 @@ void sendTargetPosition(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   robotPosition.z   = static_cast<int>(translation.z() * 1e6);
   robotPosition.f_x = static_cast<int>(rpy(0) * 1e6);
   robotPosition.f_y = static_cast<int>(rpy(1) * 1e6);
-  robotPosition.f_z = static_cast<int>(rpy(2) * 1e6);
+  if(rotation.qz() == -1.0) { // hack because qz == -1 and qz == 1 do the same action but 1 a left rotation and -1 a left rotation.
+    robotPosition.f_z = static_cast<int>(-rpy(2) * 1e6);
+  } else {
+    robotPosition.f_z = static_cast<int>(rpy(2) * 1e6);
+  }
 
   INFO_MSG("x: " << robotPosition.x << "um");
   INFO_MSG("y: " << robotPosition.y << "um");
