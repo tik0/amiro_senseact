@@ -54,8 +54,8 @@ bool newLowerCmd = false;
 std::mutex table_mutex;
 
 void printRankedCmdTalbe(string reason) {
-	cout << "========= " << left << setw(40) << setfill('=') << reason << endl;
-	cout << " Rank | Valid |   Forward   |    Angular   | Remaining time" << endl;
+	INFO_MSG("========= " << left << setw(40) << setfill('=') << reason);
+	INFO_MSG(" Rank | Valid |   Forward   |    Angular   | Remaining time");
 	int maxRow = 5;
 	for(int i = 0; i <= maxRow || i == 99; ++i) {
 		stringstream ssExpirationTime;
@@ -65,15 +65,15 @@ void printRankedCmdTalbe(string reason) {
 			case 1 : ssExpirationTime << 0 << " ms"; break;
 			default: ssExpirationTime << int(rankedMotorCmdTable[i].expiration_time - rsc::misc::currentTimeMicros()) / 1000 << " ms";}
 		} else ssExpirationTime << "expired";
-		cout
-		<< (i == currIdx  ? "->" : "  ")
+		INFO_MSG(
+		   (i == currIdx  ? "->" : "  ")
 		<< " " << (i < 10 ? "0" : "") << i
 		<< " |   " << (rankedMotorCmdTable[i].valid ? 1 : 0)
 		<< "   | " << setw(7) << setfill(' ') << rankedMotorCmdTable[i].forward_vel << "  µm"
 		<< " | " << setw(7) << setfill(' ') << rankedMotorCmdTable[i].angular_vel << " µrad"
-		<< " | " << ssExpirationTime.str() << endl;
+		<< " | " << ssExpirationTime.str());
 		if (i == maxRow) {
-			cout << " ...  |  ...  | ...         | ...          | " << "..." << endl;
+			INFO_MSG(" ...  |  ...  | ...         | ...          | " << "...");
 			i = 98;
 		}
 	}
@@ -89,14 +89,13 @@ void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
     entry=motorCmdValueArray->array(i);
     if (entry.type()!=rst::generic::Value::INT){return;}
     motorCmdVec.push_back(entry.int_());
-    //std::cout << entry.int_() << '\n';
   }
-  if (motorCmdVec.size()<3){cout << "array too short\n"; return;}
+  if (motorCmdVec.size()<3){INFO_MSG("array too short\n"); return;}
 	boost::uint64_t duration = motorCmdVec.at(2);
 	struct MotorCmd newMotorCmd = {true, motorCmdVec.at(0), motorCmdVec.at(1), duration == 0 ? 1 : duration + motorCmdEvent->getMetaData().getReceiveTime()};
 	string behaviorScope = motorCmdEvent->getScopePtr()->getComponents().back();
 	int idx = (int(behaviorScope[0])-48) * 10 + (int(behaviorScope[1]) - 48);
-  std::cout << "IDX: " << idx << "duration: " <<newMotorCmd.expiration_time -motorCmdEvent->getMetaData().getReceiveTime()<< '\n';
+  INFO_MSG("IDX: " << idx << "duration: " <<newMotorCmd.expiration_time -motorCmdEvent->getMetaData().getReceiveTime()<< '\n');
 	rankedMotorCmdTable[idx] = newMotorCmd;
 	newLowerCmd = idx <= currIdx;
 	idxNewCmd = idx;
@@ -140,7 +139,7 @@ int main (int argc, const char **argv){
   rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   rsb::ListenerPtr motorCmdListener = factory.createListener(rsbInScope);
-
+  INFO_MSG("Listening on Scope: "<<rsbInScope<<endl)
   boost::shared_ptr<rsc::threading::SynchronizedQueue<rsb::EventPtr> > cmdQueue(new rsc::threading::SynchronizedQueue<rsb::EventPtr>(1));
   motorCmdListener->addHandler(rsb::HandlerPtr(new rsb::util::EventQueuePushHandler(cmdQueue)));
   rsb::EventPtr newMotorCmdEvent;
@@ -155,9 +154,8 @@ int main (int argc, const char **argv){
 	  ++currIdx;
 	  // Skip cmd if [not valid] or [valid but not valid after update] (additionally some assignments)
 	  if (!rankedMotorCmdTable[currIdx].valid)continue;
-	  if (rankedMotorCmdTable[currIdx].valid = (rankedMotorCmdTable[currIdx].expiration_time > rsc::misc::currentTimeMicros())) {
+	  if ((rankedMotorCmdTable[currIdx].valid = (rankedMotorCmdTable[currIdx].expiration_time > rsc::misc::currentTimeMicros()))) {
 		  remainingExecTime = (rankedMotorCmdTable[currIdx].expiration_time - rsc::misc::currentTimeMicros())/1000;
-      cout << remainingExecTime << "\n";
 	  } else {
 		  if (rankedMotorCmdTable[currIdx].expiration_time < 2) { // Special meaning of expiration_time (see below)
 			  rankedMotorCmdTable[currIdx].valid = true;
