@@ -35,6 +35,8 @@ rsb::Informer<rst::generic::Value>::Ptr informer;
 // program name
 const string programName = "ros_geometry_msgs_twist_to_rst_value_array";
 
+static int durationTime; // [µs]
+
 
 void process(const geometry_msgs::Twist::ConstPtr& msg) {
   rsb::Informer<rst::generic::Value>::DataPtr rsbmsg(new rst::generic::Value);
@@ -53,7 +55,7 @@ void process(const geometry_msgs::Twist::ConstPtr& msg) {
   // duration [µs]
   rst::generic::Value * duration = rsbmsg->add_array();
   duration->set_type(rst::generic::Value::INT);
-  duration->set_int_(0.1 * 1e6);
+  duration->set_int_(durationTime);
 
   informer->publish(rsbmsg);
 }
@@ -65,10 +67,16 @@ int main(int argc, char * argv[]) {
   ros::init(argc, argv, programName);
   ros::NodeHandle node("~");
 
+  int frequency;
+
   node.param<string>("ros_listener_topic", rosListenerTopic, "/teleop_velocity_smoother/raw_cmd_vel");
   ROS_INFO("ros_listener_topic: %s", rosListenerTopic.c_str());
-  node.param<string>("rsb_publish_scope", rsbPublishScope, "/motor");
+  node.param<string>("rsb_publish_scope", rsbPublishScope, "/motor/5");
   ROS_INFO("rsb_publish_scope: %s", rsbPublishScope.c_str());
+  node.param<int>("duration_frequency", frequency, 10);
+  ROS_INFO("frequency: %d", frequency);
+
+  durationTime = 1.0/frequency * 1e6;
 
   boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
   converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
