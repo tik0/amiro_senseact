@@ -1,48 +1,60 @@
 <launch>
+
   <!-- rsb_to_ros_bridge -->
-  <node name="rst_vision_image_to_ros_sensormsgs_image" pkg="rsb_to_ros_bridge" type="rst_vision_image_to_ros_sensormsgs_image" respawn="false" output="screen" cwd="ROS_HOME">
+  <!-- <node name="rst_vision_image_to_ros_sensormsgs_image" pkg="rsb_to_ros_bridge" type="rst_vision_image_to_ros_sensormsgs_image" respawn="false" output="screen" cwd="ROS_HOME">
     <param name="rsb_listener_scope" value="/image/depth"/>
     <param name="ros_publish_image_topic" value="/image"/>
     <param name="ros_publish_Compressed_image_topic" value="/image/compressed"/>
     <param name="image_compression_format" value="jpg"/>
-  </node>
-  <node name="rsb_twb_to_ros_navmsgs_odometry" pkg="rsb_to_ros_bridge" type="rsb_twb_to_ros_navmsgs_odometry" respawn="false" output="screen" cwd="ROS_HOME">
+  </node> -->
+  <!-- <node name="rsb_twb_to_ros_navmsgs_odometry" pkg="rsb_to_ros_bridge" type="rsb_twb_to_ros_navmsgs_odometry" respawn="false" output="screen" cwd="ROS_HOME">
     <param name="rsb_listener_scope" value="/tracking/merger"/>
     <param name="ros_publish_topic" value="/tracking"/>
-  </node>
+  </node> -->
   <node name="rst_pose_to_ros_navmsgs_odometry" pkg="rsb_to_ros_bridge" type="rst_pose_to_ros_navmsgs_odometry" respawn="false" output="screen" cwd="ROS_HOME">
-    <param name="rsb_listener_scope" value="/pose"/>
-    <param name="ros_publish_topic" value="/odom"/>
+    <param name="rsb_listener_scope" value="/amiro1/pose"/>
+    <param name="ros_publish_topic" value="/amiro1/odom"/>
   </node>
-  <node name="rst_pose_to_ros_posestamped" pkg="rsb_to_ros_bridge" type="rst_pose_to_ros_posestamped" respawn="false" output="screen" cwd="ROS_HOME">
+  <!-- <node name="rst_pose_to_ros_posestamped" pkg="rsb_to_ros_bridge" type="rst_pose_to_ros_posestamped" respawn="false" output="screen" cwd="ROS_HOME">
     <param name="rsb_listener_scope" value="/pose"/>
     <param name="ros_publish_topic" value="/pose"/>
-  </node>
-  <node name="rst_value_array_to_ros_int_array" pkg="rsb_to_ros_bridge" type="rst_value_array_to_ros_int_array" respawn="false" output="screen" cwd="ROS_HOME">
+  </node> -->
+  <!-- <node name="rst_value_array_to_ros_int_array" pkg="rsb_to_ros_bridge" type="rst_value_array_to_ros_int_array" respawn="false" output="screen" cwd="ROS_HOME">
     <param name="rsb_listener_scope" value="/rir_prox/original"/>
     <param name="ros_publish_topic" value="/rir_prox"/>
-  </node>
+  </node> -->
   <node name="rst_vision_laserscan_to_ros_sensormsgs_Laserscan" pkg="rsb_to_ros_bridge" type="rst_vision_laserscan_to_ros_sensormsgs_Laserscan" respawn="false" output="screen" cwd="ROS_HOME">
-    <param name="rsb_listener_scope" value="/laserscan"/>
-    <param name="ros_publish_topic" value="/laserscan"/>
+    <param name="rsb_listener_scope" value="/amiro1/laserScan"/>
+    <param name="ros_publish_topic" value="/amiro1/laserScan"/>
   </node>
 
   <!-- ros_to_rsb_bridge -->
-  <node name="ros_geometry_msgs_posestamped_to_rst_geometry_pose" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_posestamped_to_rst_geometry_pose" respawn="false" output="screen" cwd="ROS_HOME">
+  <!-- <node name="ros_geometry_msgs_posestamped_to_rst_geometry_pose" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_posestamped_to_rst_geometry_pose" respawn="false" output="screen" cwd="ROS_HOME">
     <param name="ros_listener_topic" value="/pose"/>
     <param name="rsb_publish_scope" value="/pose"/>
-  </node>
+  </node> -->
   <node name="ros_geometry_msgs_twist_to_rst_value_array" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_twist_to_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME">
     <param name="ros_listener_topic" value="/teleop_velocity_smoother/raw_cmd_vel"/>
     <param name="rsb_publish_scope" value="/motor/5"/>
   </node>
-  <node name="ros_int_multiarray_rst_value_array" pkg="ros_to_rsb_bridge" type="ros_int_multiarray_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME">
+  <!-- <node name="ros_int_multiarray_rst_value_array" pkg="ros_to_rsb_bridge" type="ros_int_multiarray_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME">
     <param name="ros_listener_topic" value="/motor"/>
     <param name="rsb_publish_scope" value="/motor/10"/>
-  </node>
+  </node> -->
 
-  <node name="image_view" pkg="rqt_image_view" type="rqt_image_view"/>
+
+
+
+<!-- tf -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="x y z qx qy qz qw frame_id child_frame_id  period_in_ms" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="amiro1_baselink_map" args="1 1 0 0 0 0 1 map amiro1/base_link 100" />
+  <node pkg="tf" type="static_transform_publisher" name="amiro1_laserscanner_baselink" args="0 0 0.10 0 0 0 1 amiro1/base_link amiro1/laserscan 100" />
+
+
+
+
+  <!-- <node name="image_view" pkg="rqt_image_view" type="rqt_image_view"/> -->
   <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/>
-  <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/>
-  <!-- <node name="rqt_rviz" pkg="rqt_rviz" type="rqt_rviz" /> -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
+  <!-- <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/> -->
 </launch>
