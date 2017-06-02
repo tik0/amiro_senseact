@@ -14,10 +14,12 @@ find_package(catkin REQUIRED COMPONENTS
   compressed_image_transport
 )
 
-find_package(RSB REQUIRED)
-find_package(RSC REQUIRED)
-find_package(RST REQUIRED COMPONENTS sandbox)
-find_package(OpenCV REQUIRED)
+find_package(PkgConfig)
+find_package(RSB 0.16 REQUIRED)
+find_package(RSC 0.16 REQUIRED)
+find_package(RST 0.16 REQUIRED COMPONENTS sandbox)
+find_package(Protobuf REQUIRED)
+find_package(OpenCV 3.0 REQUIRED)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -30,27 +32,29 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${RSB_INCLUDE_DIRS}
   ${RST_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
+  ${PROTOBUF_INCLUDE_DIRS}
+  ${OPENCV_INCLUDE_DIRS}
+  "$ENV{MUROX_PROJECT}/includes"
 )
 
 LINK_DIRECTORIES (
   ${RSB_LIBRARY_DIRS}
   ${RSC_LIBRARY_DIRS}
-  ${OpenCV_LIBRARY_DIRS}
+  ${OPENCV_LIBRARY_DIRS}
 )
 
-# add_executable(rst_vision_image_to_ros_sensormsgs_image
-#   src/rst_vision_image_to_ros_sensormsgs_image.cpp
-#)
+add_executable(rst_vision_image_to_ros_sensormsgs_image
+  src/rst_vision_image_to_ros_sensormsgs_image.cpp
+)
 
-# target_link_libraries(rst_vision_image_to_ros_sensormsgs_image
-#   ${catkin_LIBRARIES}
-#   ${RSB_LIBRARIES}
-#   ${RST_LIBRARIES}
-#   ${RSTSANDBOX_LIBRARIES}
-#   ${PROTOBUF_LIBRARIES}
-#   ${OpenCV_LIBRARIES}
-# )
+target_link_libraries(rst_vision_image_to_ros_sensormsgs_image
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+  ${OPENCV_LIBRARIES}
+)
 
 add_executable(rst_vision_laserscan_to_ros_sensormsgs_Laserscan
   src/rst_vision_laserscan_to_ros_sensormsgs_Laserscan.cpp
@@ -61,7 +65,8 @@ target_link_libraries(rst_vision_laserscan_to_ros_sensormsgs_Laserscan
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
   ${RSTSANDBOX_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+  ${OPENCV_LIBRARIES}
 )
 
 add_executable(rst_value_array_to_ros_int_array
@@ -73,6 +78,7 @@ target_link_libraries(rst_value_array_to_ros_int_array
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
   ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
 )
 
 add_executable(rst_pose_to_ros_posestamped
@@ -84,9 +90,40 @@ target_link_libraries(rst_pose_to_ros_posestamped
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
   ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+)
+
+add_executable(rst_pose_to_ros_navmsgs_odometry
+  src/rst_pose_to_ros_navmsgs_odometry.cpp
+)
+
+target_link_libraries(rst_pose_to_ros_navmsgs_odometry
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
+)
+
+add_executable(rsb_twb_to_ros_navmsgs_odometry
+  src/rsb_twb_to_ros_navmsgs_odometry.cpp
+  $ENV{MUROX_INCLUDE_DIRS}/types/loc.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/enum.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/shapes.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/pose.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/vertex.pb.cc
+  $ENV{MUROX_INCLUDE_DIRS}/types/rotation.pb.cc
+)
+
+target_link_libraries(rsb_twb_to_ros_navmsgs_odometry
+  ${catkin_LIBRARIES}
+  ${RSB_LIBRARIES}
+  ${RST_LIBRARIES}
+  ${RSTSANDBOX_LIBRARIES}
+  ${PROTOBUF_LIBRARIES}
 )
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
-# add_dependencies(rst_vision_image_to_ros_sensormsgs_image sai_msgs_gencpp)
+add_dependencies(rst_vision_image_to_ros_sensormsgs_image sai_msgs_gencpp)
 add_dependencies(rst_value_array_to_ros_int_array sai_msgs_gencpp)

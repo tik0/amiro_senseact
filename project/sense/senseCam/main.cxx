@@ -48,6 +48,7 @@ int main(int argc, char ** argv) {
   options.add_options() ("help,h", "Display a help message.")
     ("outscope,o", po::value<std::string>(&g_sOutScope), "Scope for sending images via RSB.")
     ("device,d", po::value<int>(&g_iDevice), "Number of device /dev/video#.")
+    ("flip,f", "Flag to flip the output image around x and y axis")
     ("compression,c", po::value<int>(&compressionValue)->default_value(compressionValue), "Enable image compression with value betweeen 0-100.");
 
   // allow to give the value as a positional argument
@@ -121,7 +122,8 @@ int main(int argc, char ** argv) {
   // INFO_MSG("Input frame resolution: Width=" << S.width << "  Height=" << S.height)
   // INFO_MSG("Get video frame with following FOURCC code: " << EXT )
 
-  cam.set(CV_CAP_PROP_CONVERT_RGB, static_cast<double>(0));
+  cam.set(CV_CAP_PROP_CONVERT_RGB, static_cast<double>(1));
+  // cam.set(CV_CAP_PROP_FORMAT,CV_8UC3);
 
   // Open the device /dev/video<g_iDevice>
   cam.open(g_iDevice);
@@ -139,6 +141,8 @@ int main(int argc, char ** argv) {
   while (true) {
     // Save the actual picture to the frame object
     cam >> frame;
+    if(vm.count("flip"))
+      cv::flip(frame, frame, -1);
     #ifndef NDEBUG
     cv::imshow("frame", frame);
     cv::waitKey(1);
@@ -160,7 +164,10 @@ int main(int argc, char ** argv) {
       boost::shared_ptr<rst::vision::Image> image(new rst::vision::Image());
       image->set_width(frame.size().width);
       image->set_height(frame.size().height);
-      image->set_data(reinterpret_cast<char *>(frame.data)); // conversion from uchar* tp char*
+      image->set_data_order(rst::vision::Image::DATA_INTERLEAVED);
+      image->set_data((void*)frame.data, frame.size().width * frame.size().width * 3); // conversion from uchar* tp char*
+
+      // image->set_data(reinterpret_cast<char *>(frame.data)); // conversion from uchar* tp char*
       // Send the data.
       informer->publish(image);
       INFO_MSG("Image published")

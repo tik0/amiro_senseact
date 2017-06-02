@@ -29,6 +29,7 @@
 // OpenCv
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 
@@ -46,6 +47,8 @@ static ros::Publisher compressedImagePublisher;
 // program name
 const string programName = "rst_vision_image_to_ros_sensormsgs_image";
 
+static string imageCompressionFormat;
+
 static const string rstVisionImage        = "rst::vision::Image";
 static const string rstVisionEncodedImage = "rst::vision::EncodedImage";
 static const string rsbWireSchema         = "rsb.wire-schema";
@@ -55,37 +58,31 @@ static const string cxx11String = "std::__cxx11::basic_string<char, std::char_tr
 void processImage(rsb::EventPtr event) {
   if (event->getType() == rstVisionImage) {
     boost::shared_ptr<rst::vision::Image> image = boost::static_pointer_cast<rst::vision::Image>(event->getData());
-    cv::Mat img;
     cv_bridge::CvImage cvImage;
-    cout << "channels:" << image->channels() << endl;
+    int encodingCv;
+    std::string encodingCvBridge;
     if (image->depth() == rst::vision::Image::DEPTH_8U && image->channels() == 3) {
-      cout << "8_3" << endl;
-      img.create(image->height(), image->width(), CV_8UC3);
-      cvImage.encoding = sensor_msgs::image_encodings::BGR8;
+      encodingCv = CV_8UC3;
+      encodingCvBridge = sensor_msgs::image_encodings::BGR8;
     } else if (image->depth() == rst::vision::Image::DEPTH_8U && image->channels() == 1) {
-      cout << "8_1" << endl;
-      img.create(image->height(), image->width(), CV_8UC1);
-      cvImage.encoding = sensor_msgs::image_encodings::MONO8;
-    } else if (image->depth() == rst::vision::Image::DEPTH_16U && image->channels() == 1) {
-      cout << "16" << endl;
-      img.create(image->height(), image->width(), CV_16UC1);
-      cvImage.encoding = sensor_msgs::image_encodings::MONO16;
+      encodingCv = CV_8UC1;
+      encodingCvBridge = sensor_msgs::image_encodings::MONO8;
+    // } else if (image->depth() == rst::vision::Image::DEPTH_16U && image->channels() == 1) {
+    //   encodingCv = CV_16UC1;
+    //   encodingCvBridge = sensor_msgs::image_encodings::MONO16;
     } else {
       ROS_INFO("Image encoding is not known! depth: %i, channel: %i", image->depth(), image->channels());
       return;
     }
-
-    img.data = const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(&image->data()[0])); // conversion from string to  const uchar*
-    cout << "debug1" << endl;
+    void * t = static_cast<void *>(const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(&image->data()[0])));
+    cv::Mat img(image->height(), image->width(), encodingCv, t);
     cvImage.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
-    cout << "debug2" << endl;
     cvImage.header.frame_id = event->getScope().toString();
-    cout << "debug3" << endl;
+    cvImage.encoding = encodingCvBridge;
     cvImage.image = img;
-    cout << "debug4" << endl;
-    // publish ROS message
-    imagePublisher.publish(cvImage.toImageMsg());
-    cout << "debug5" << endl;
+    sensor_msgs::ImagePtr msg = cvImage.toImageMsg();
+    imagePublisher.publish(msg);
+    // imagePublisher.publish(cvImage.toImageMsg());
   } else if (event->getType() == rstVisionEncodedImage || event->getMetaData().hasUserInfo(rsbWireSchema) || event->getType() == cxx11String) {
     sensor_msgs::CompressedImage compressedImage;
     boost::shared_ptr<rst::vision::EncodedImage> encodedImage;
@@ -105,7 +102,7 @@ void processImage(rsb::EventPtr event) {
     if (doPublish) {
       compressedImage.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
       compressedImage.header.frame_id   = event->getScope().toString();
-      compressedImage.format = "jpeg";
+      compressedImage.format = imageCompressionFormat;
       compressedImagePublisher.publish(compressedImage);
     }
   }
@@ -116,16 +113,17 @@ int main(int argc, char * argv[]) {
 
   // Init ROS
   ros::init(argc, argv, programName);
-  ros::NodeHandle node;
-  ros::NodeHandle private_nh("~");
+  ros::NodeHandle node("~");
 
-  private_nh.param<string>("rsbListenerScope", rsbListenerScope, "/image");
-  private_nh.param<string>("rosPublishImageTopic", rosPublishImageTopic, "/image");
-  private_nh.param<string>("rosPublishCompressedImageTopic", rosPublishCompressedImageTopic, "/image/compressed");
+  node.param<string>("rsb_listener_scope", rsbListenerScope, "/image");
+  node.param<string>("ros_publish_image_topic", rosPublishImageTopic, "/image");
+  node.param<string>("ros_publish_Compressed_image_topic", rosPublishCompressedImageTopic, "/image/compressed");
+  node.param<string>("image_compression_format", imageCompressionFormat, "jpg");
 
-  ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
-  ROS_INFO("rosPublishImageTopic: %s", rosPublishImageTopic.c_str());
-  ROS_INFO("rosPublishCompressedImageTopic: %s", rosPublishCompressedImageTopic.c_str());
+  ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
+  ROS_INFO("ros_publish_image_topic: %s", rosPublishImageTopic.c_str());
+  ROS_INFO("ros_publish_Compressed_image_topic: %s", rosPublishCompressedImageTopic.c_str());
+  ROS_INFO("image_compression_format: %s", imageCompressionFormat.c_str());
 
   image_transport::ImageTransport imageTransport(node);
   imagePublisher = imageTransport.advertise(rosPublishImageTopic, 1);

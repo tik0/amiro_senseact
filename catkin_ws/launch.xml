@@ -1,7 +1,0 @@
-<launch>
-
-  <node name="rsb_to_ros_bridge" pkg="rsb_to_ros_bridge" type="rst_vision_image_to_ros_sensormsgs_image" respawn="false" output="screen" cwd="ROS_HOME">
-    <param name="rsbListenerScope" value="/image/depth" />
-  </node>
-  <node name="image_view" pkg="rqt_image_view" type="rqt_image_view" />
-</launch>

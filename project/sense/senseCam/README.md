@@ -12,3 +12,4 @@ Paramter
 | outscope, o    | String  | /image        | Scope for sending images via RSB                   |
 | device,d       | Integer | 0             | Number of device /dev/video#                       |
 | compression, c | Integer | 0             | Enable image compression with value betweeen 1-100 |
+| flip, f        | Flag    |               | Flag to flip the output image around x and y axis  | 

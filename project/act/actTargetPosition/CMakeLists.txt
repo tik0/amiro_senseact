@@ -3,22 +3,23 @@ cmake_minimum_required (VERSION 2.6)
 # Set the project name to the name of the folder
 INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setProjectName.cmake")
 
-if("$ENV{ARCH}" MATCHES arm)
 # Read the pkg-config modules
 FIND_PACKAGE(PkgConfig)
-pkg_check_modules(RSB rsb0.13)
-pkg_check_modules(RSC rsc0.13)
-pkg_check_modules(RST rstsandbox0.13)
+pkg_check_modules(EIGEN eigen3)
 pkg_check_modules(PROTOBUF protobuf)
 
-else("$ENV{ARCH}" MATCHES arm)
-
-find_package(RSB REQUIRED)
-find_package(RSC REQUIRED)
-find_package(RST COMPONENTS sandbox)
-find_package(Protobuf REQUIRED)
-
-endif("$ENV{ARCH}" MATCHES arm)
+if ($ENV{ARCH} MATCHES "arm")
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION_ARM})
+  if($ENV{MUROX_RSB_VERSION_ARM} LESS 0.14)
+    ADD_DEFINITIONS(-DRST_013_USED)
+  endif()
+else()
+  pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
+  pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION})
+endif()
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system thread)
@@ -38,10 +39,13 @@ include_directories(
     ${Boost_INCLUDE_DIR}
     ${PROTOBUF_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
+    ${EIGEN_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
 )
 
 # Define the source
-SET (SOURCE main.cxx "$ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc" "$ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc" "$ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc")
+# SET (SOURCE main.cxx "$ENV{MUROX_INCLUDE_DIRS}/types/TargetPoseEuler.pb.cc" "$ENV{MUROX_INCLUDE_DIRS}/types/PoseEuler.pb.cc" "$ENV{MUROX_INCLUDE_DIRS}/types/RotationEuler.pb.cc")
+SET (SOURCE main.cxx)
 
 # add the executable
 ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})

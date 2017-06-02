@@ -10,6 +10,7 @@ if ($ENV{ARCH} MATCHES "arm")
   pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION_ARM})
   pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION_ARM})
   pkg_check_modules(RST rstsandbox$ENV{MUROX_RSB_VERSION_ARM})
+  pkg_check_modules(OPENNI2 OpenNI2)
   if($ENV{MUROX_RSB_VERSION_ARM} LESS 0.14)
     ADD_DEFINITIONS(-DRST_013_USED)
   endif()
@@ -20,7 +21,6 @@ else()
 endif()
 pkg_check_modules(OPENCV opencv)
 pkg_check_modules(EIGEN eigen3)
-pkg_check_modules(OPENNI2 OpenNI2)
 
 # Get modules
 SET (BOOST_COMPONENTS regex date_time program_options system)
@@ -40,8 +40,12 @@ include_directories(
     ${GXX_INCLUDES}
     ${Boost_INCLUDE_DIR}
     ${EIGEN_INCLUDE_DIRS}
-    ${OPENNI2_INCLUDE_DIRS}
 )
+if ($ENV{ARCH} MATCHES "arm")
+  include_directories (${OPENNI2_INCLUDE_DIRS})
+else()
+  include_directories ("$ENV{OPENNI2_INCLUDE}")
+endif()
 
 # Define the source
 SET (SOURCE main.cxx)
@@ -53,8 +57,13 @@ LINK_DIRECTORIES (
     ${RSB_LIBRARY_DIRS}
     ${RSC_LIBRARY_DIRS}
     ${OPENCV_LIBRARY_DIRS}
-    ${OPENNI2_LIBRARY_DIRS}
 )
+if ($ENV{ARCH} MATCHES "arm")
+  LINK_DIRECTORIES (${OPENNI2_LIBRARY_DIRS})
+else()
+  LINK_DIRECTORIES ("$ENV{OPENNI2_REDIST}")
+endif()
+
 
 message(status OPENCV_LIBRARY_DIRS: ${OPENCV_LIBRARY_DIRS})
 
@@ -68,8 +77,12 @@ target_link_libraries (
     ${RST_LIBRARIES}
     ${Boost_LIBRARIES}
     ${OPENCV_LIBRARIES}
-    ${OPENNI2_LIBRARIES}
 )
+if ($ENV{ARCH} MATCHES "arm")
+  target_link_libraries ("${PROJECT_NAME}" ${OPENNI2_LIBRARIES})
+else()
+  target_link_libraries("${PROJECT_NAME}" "$ENV{OPENNI2_REDIST}" -lOpenNI2)
+endif()
 
 # Special flags for RST
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})

@@ -99,13 +99,12 @@ int main(int argc, char *argv[]) {
 
   // Init ROS
   ros::init(argc, argv, programName);
-  ros::NodeHandle node;
-  ros::NodeHandle private_nh("~");
+  ros::NodeHandle node("~");
 
-  private_nh.param<string>("rsbListenerScope", rsbListenerScope, "/prox");
-  ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
-  private_nh.param<string>("rosPublishPoseStamped", rosPublishPoseStamped, "/pose");
-  ROS_INFO("rosPublishTopic: %s", rosPublishPoseStamped.c_str());
+  node.param<string>("rsb_listener_scope", rsbListenerScope, "/prox");
+  ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
+  node.param<string>("ros_publish_topic", rosPublishPoseStamped, "/pose");
+  ROS_INFO("ros_publish_topic: %s", rosPublishPoseStamped.c_str());
 
   rosPosePub = node.advertise<geometry_msgs::PoseStamped>(rosPublishPoseStamped, 1);
 
