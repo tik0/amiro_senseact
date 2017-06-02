@@ -14,12 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
   compressed_image_transport
 )
 
-find_package(PkgConfig)
-pkg_check_modules(RSB rsb$ENV{MUROX_RSB_VERSION})
-pkg_check_modules(RSC rsc$ENV{MUROX_RSB_VERSION})
-FIND_PACKAGE(RST $ENV{MUROX_RSB_VERSION} REQUIRED COMPONENTS sandbox)
-pkg_check_modules(PROTOBUF protobuf)
-pkg_check_modules(OPENCV opencv)
+find_package(RSB REQUIRED)
+find_package(RSC REQUIRED)
+find_package(RST REQUIRED COMPONENTS sandbox)
+find_package(OpenCV REQUIRED)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -32,28 +30,27 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${RSB_INCLUDE_DIRS}
   ${RST_INCLUDE_DIRS}
-  ${PROTOBUF_INCLUDE_DIRS}
-  ${OPENCV_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 LINK_DIRECTORIES (
   ${RSB_LIBRARY_DIRS}
   ${RSC_LIBRARY_DIRS}
-  ${OPENCV_LIBRARY_DIRS}
+  ${OpenCV_LIBRARY_DIRS}
 )
 
-add_executable(rst_vision_image_to_ros_sensormsgs_image
-  src/rst_vision_image_to_ros_sensormsgs_image.cpp
-)
+# add_executable(rst_vision_image_to_ros_sensormsgs_image
+#   src/rst_vision_image_to_ros_sensormsgs_image.cpp
+#)
 
-target_link_libraries(rst_vision_image_to_ros_sensormsgs_image
-  ${catkin_LIBRARIES}
-  ${RSB_LIBRARIES}
-  ${RST_LIBRARIES}
-  ${RSTSANDBOX_LIBRARIES}
-  ${PROTOBUF_LIBRARIES}
-  ${OPENCV_LIBRARIES}
-)
+# target_link_libraries(rst_vision_image_to_ros_sensormsgs_image
+#   ${catkin_LIBRARIES}
+#   ${RSB_LIBRARIES}
+#   ${RST_LIBRARIES}
+#   ${RSTSANDBOX_LIBRARIES}
+#   ${PROTOBUF_LIBRARIES}
+#   ${OpenCV_LIBRARIES}
+# )
 
 add_executable(rst_vision_laserscan_to_ros_sensormsgs_Laserscan
   src/rst_vision_laserscan_to_ros_sensormsgs_Laserscan.cpp
@@ -64,8 +61,7 @@ target_link_libraries(rst_vision_laserscan_to_ros_sensormsgs_Laserscan
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
   ${RSTSANDBOX_LIBRARIES}
-  ${PROTOBUF_LIBRARIES}
-  ${OPENCV_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )
 
 add_executable(rst_value_array_to_ros_int_array
@@ -77,7 +73,6 @@ target_link_libraries(rst_value_array_to_ros_int_array
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
   ${RSTSANDBOX_LIBRARIES}
-  ${PROTOBUF_LIBRARIES}
 )
 
 add_executable(rst_pose_to_ros_posestamped
@@ -89,10 +84,9 @@ target_link_libraries(rst_pose_to_ros_posestamped
   ${RSB_LIBRARIES}
   ${RST_LIBRARIES}
   ${RSTSANDBOX_LIBRARIES}
-  ${PROTOBUF_LIBRARIES}
 )
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 
-add_dependencies(rst_vision_image_to_ros_sensormsgs_image sai_msgs_gencpp)
+# add_dependencies(rst_vision_image_to_ros_sensormsgs_image sai_msgs_gencpp)
 add_dependencies(rst_value_array_to_ros_int_array sai_msgs_gencpp)
