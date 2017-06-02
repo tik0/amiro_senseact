@@ -52,6 +52,7 @@ MotorCmd rankedMotorCmdTable[100];
 int idxNewCmd = 0, currIdx = -1;
 bool newLowerCmd = false;
 std::mutex table_mutex;
+int verbose = 0;
 
 void printRankedCmdTalbe(string reason) {
 	INFO_MSG("========= " << left << setw(40) << setfill('=') << reason);
@@ -90,12 +91,14 @@ void insertMotorCmdFromEvent(rsb::EventPtr motorCmdEvent) {
     if (entry.type()!=rst::generic::Value::INT){return;}
     motorCmdVec.push_back(entry.int_());
   }
-  if (motorCmdVec.size()<3){INFO_MSG("array too short\n"); return;}
+  if (motorCmdVec.size()<3){if (verbose>2){INFO_MSG("array too short\n");} return;}
 	boost::uint64_t duration = motorCmdVec.at(2);
 	struct MotorCmd newMotorCmd = {true, motorCmdVec.at(0), motorCmdVec.at(1), duration == 0 ? 1 : duration + motorCmdEvent->getMetaData().getReceiveTime()};
 	string behaviorScope = motorCmdEvent->getScopePtr()->getComponents().back();
 	int idx = (int(behaviorScope[0])-48) * 10 + (int(behaviorScope[1]) - 48);
-  INFO_MSG("IDX: " << idx << "duration: " <<newMotorCmd.expiration_time -motorCmdEvent->getMetaData().getReceiveTime()<< '\n');
+  if (verbose>0){
+    INFO_MSG("IDX: " << idx << "duration: " <<newMotorCmd.expiration_time -motorCmdEvent->getMetaData().getReceiveTime()<< '\n');
+  }
 	rankedMotorCmdTable[idx] = newMotorCmd;
 	newLowerCmd = idx <= currIdx;
 	idxNewCmd = idx;
@@ -172,7 +175,9 @@ int main (int argc, const char **argv){
 	  } catch(const rsc::threading::QueueEmptyException& timeoutException){
 		  // Popping timed out -> currently active cmd expired
 		  rankedMotorCmdTable[currIdx].valid = false;
-		  printRankedCmdTalbe("Current command expired ");
+      if (verbose>1){
+        printRankedCmdTalbe("Current command expired ");
+      }
 		  // Continue with execution of next higher level cmd
 		  continue;
 	  }
@@ -182,7 +187,9 @@ int main (int argc, const char **argv){
 		  currIdx = idxNewCmd;
 		  newLowerCmd = false;
 	  }
-	  printRankedCmdTalbe("Insertion ");
+    if (verbose>1){
+      printRankedCmdTalbe("Insertion ");
+    }
 	  --currIdx; // -1 because of increment at beginning
 	  // otherwise just continue with execution of previously active cmd:
 	  // -> currIdx not changed and cmd still valid
