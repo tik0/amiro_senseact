@@ -40,8 +40,9 @@ void processLaserScan(rsb::EventPtr event) {
   if (event->getType() == rstLaserScan) {
     boost::shared_ptr<rst::vision::LaserScan> rsbLaserScan = boost::static_pointer_cast<rst::vision::LaserScan>(event->getData());
     sensor_msgs::LaserScan rosLaserScan;
-    rosLaserScan.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
-    rosLaserScan.header.frame_id   = event->getScope().toString();
+    // rosLaserScan.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
+    rosLaserScan.header.stamp = ros::Time::now();
+    rosLaserScan.header.frame_id   = event->getScope().getComponents()[0] + "/laserscan";
 
     rosLaserScan.angle_min       = 0;
     rosLaserScan.angle_max       = rsbLaserScan->scan_angle();
@@ -73,7 +74,7 @@ int main(int argc, char * argv[]) {
   ros::NodeHandle node("~");
 
   node.param<string>("rsb_listener_scope", rsbListenerScope, "/laserScan");
-  node.param<string>("ros_publish_laserscan_topic", rosPublishLaserScanTopic, "/laserScan");
+  node.param<string>("ros_publish_topic", rosPublishLaserScanTopic, "/laserScan");
 
   ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
   ROS_INFO("ros_publish_laserscan_topic: %s", rosPublishLaserScanTopic.c_str());

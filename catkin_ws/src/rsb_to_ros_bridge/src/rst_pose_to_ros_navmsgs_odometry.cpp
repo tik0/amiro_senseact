@@ -52,8 +52,9 @@ void processRstGeometryPose(rsb::EventPtr event) {
   odom.pose.pose.position.x    = (double) t.x();
   odom.pose.pose.position.y    = (double) t.y();
   odom.pose.pose.position.z    = (double) t.z();
-  odom.header.stamp.nsec  = event->getMetaData().getCreateTime() * 1000;
-  odom.header.frame_id    = event->getScope().toString();
+  // odom.header.stamp.nsec  = event->getMetaData().getCreateTime() * 1000;
+  odom.header.stamp = ros::Time::now();
+  odom.header.frame_id    = event->getScope().getComponents()[0] + "/base_link";
 
   rosPosePub.publish(odom);
 }
