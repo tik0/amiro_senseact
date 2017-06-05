@@ -53,7 +53,7 @@ void processRstMessage(rsb::EventPtr event) {
   pS.pose.position.y=(double)t.y();
   pS.pose.position.z=(double)t.z();
   pS.header.stamp.nsec=event->getMetaData().getCreateTime()*1000;
-  pS.header.frame_id=event->getScope().toString();
+  pS.header.frame_id=event->getScope().getComponents()[0] + "/odom";
 
   rosPosePub.publish(pS);
 

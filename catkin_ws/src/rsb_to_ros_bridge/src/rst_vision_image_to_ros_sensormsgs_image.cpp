@@ -77,7 +77,7 @@ void processImage(rsb::EventPtr event) {
     void * t = static_cast<void *>(const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(&image->data()[0])));
     cv::Mat img(image->height(), image->width(), encodingCv, t);
     cvImage.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
-    cvImage.header.frame_id = event->getScope().toString();
+    cvImage.header.frame_id = event->getScope().getComponents()[0] + "/base_cam";
     cvImage.encoding = encodingCvBridge;
     cvImage.image = img;
     sensor_msgs::ImagePtr msg = cvImage.toImageMsg();
@@ -101,7 +101,7 @@ void processImage(rsb::EventPtr event) {
     }
     if (doPublish) {
       compressedImage.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
-      compressedImage.header.frame_id   = event->getScope().toString();
+      compressedImage.header.frame_id   = event->getScope().getComponents()[0] + "/base_cam";
       compressedImage.format = imageCompressionFormat;
       compressedImagePublisher.publish(compressedImage);
     }
