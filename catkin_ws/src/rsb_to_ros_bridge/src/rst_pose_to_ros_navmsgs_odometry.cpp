@@ -26,7 +26,7 @@ using namespace std;
 string rsbListenerScope;
 
 // ROS Publish Topic
-string rosPublishPoseStamped;
+string rosPublishTopic;
 
 ros::Publisher rosPosePub;
 
@@ -54,7 +54,7 @@ void processRstGeometryPose(rsb::EventPtr event) {
   odom.pose.pose.position.z    = (double) t.z();
   // odom.header.stamp.nsec  = event->getMetaData().getCreateTime() * 1000;
   odom.header.stamp = ros::Time::now();
-  odom.header.frame_id    = event->getScope().getComponents()[0] + "/base_link";
+  odom.header.frame_id    = event->getScope().getComponents()[0] + "/odom";
 
   rosPosePub.publish(odom);
 }
@@ -67,11 +67,14 @@ int main(int argc, char * argv[]) {
   ros::NodeHandle node("~");
 
   node.param<string>("rsb_listener_scope", rsbListenerScope, "/pose");
-  ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
-  node.param<string>("ros_publish_topic", rosPublishPoseStamped, "/pose");
-  ROS_INFO("ros_publish_topic: %s", rosPublishPoseStamped.c_str());
+  node.param<string>("ros_publish_topic", rosPublishTopic, "/pose");
 
-  rosPosePub = node.advertise<nav_msgs::Odometry>(rosPublishPoseStamped, 1);
+  ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
+  ROS_INFO("ros_publish_topic: %s", rosPublishTopic.c_str());
+
+  cout << "asdadwa d " << rsbListenerScope << endl;
+
+  rosPosePub = node.advertise<nav_msgs::Odometry>(rosPublishTopic, 1);
 
   rsb::Factory& factory = rsb::getFactory();
 

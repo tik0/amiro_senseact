@@ -74,7 +74,7 @@ void processValueArray(rsb::EventPtr event) {
   proxMsg.data.data=data;
   proxMsg.data.layout=layout;
   proxMsg.header.stamp.nsec=event->getMetaData().getCreateTime()*1000;
-  proxMsg.header.frame_id=event->getScope().toString();
+  proxMsg.header.frame_id=event->getScope().getComponents()[0] + "/base_prox";
 
   floorProxPub.publish(proxMsg);
 }
