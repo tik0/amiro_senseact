@@ -1,5 +1,5 @@
 // ============================================================================
-// Name        : _rsb_to_ros_time_converter_.cpp
+// Name        : rsb_to_ros_time_converter.cpp
 // Author      : Daniel Rudolph <drudolph@techfak.uni-bielefeld.de>
 // Description : Convert rsb timestamps into ros time.
 // ============================================================================
