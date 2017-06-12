@@ -31,6 +31,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include "rsb_to_ros_time_converter.hpp"
+
 using namespace std;
 
 // RSB Listener Scope
@@ -62,23 +64,23 @@ void processImage(rsb::EventPtr event) {
     int encodingCv;
     std::string encodingCvBridge;
     if (image->depth() == rst::vision::Image::DEPTH_8U && image->channels() == 3) {
-      encodingCv = CV_8UC3;
+      encodingCv       = CV_8UC3;
       encodingCvBridge = sensor_msgs::image_encodings::BGR8;
     } else if (image->depth() == rst::vision::Image::DEPTH_8U && image->channels() == 1) {
-      encodingCv = CV_8UC1;
+      encodingCv       = CV_8UC1;
       encodingCvBridge = sensor_msgs::image_encodings::MONO8;
-    // } else if (image->depth() == rst::vision::Image::DEPTH_16U && image->channels() == 1) {
-    //   encodingCv = CV_16UC1;
-    //   encodingCvBridge = sensor_msgs::image_encodings::MONO16;
+      // } else if (image->depth() == rst::vision::Image::DEPTH_16U && image->channels() == 1) {
+      //   encodingCv = CV_16UC1;
+      //   encodingCvBridge = sensor_msgs::image_encodings::MONO16;
     } else {
       ROS_INFO("Image encoding is not known! depth: %i, channel: %i", image->depth(), image->channels());
       return;
     }
     void * t = static_cast<void *>(const_cast<unsigned char *>(reinterpret_cast<const unsigned char *>(&image->data()[0])));
     cv::Mat img(image->height(), image->width(), encodingCv, t);
-    cvImage.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
+    cvImage.header.stamp    = getRosTimeFromRsbEvent(event);
     cvImage.header.frame_id = event->getScope().getComponents()[0] + "/base_cam";
-    cvImage.encoding = encodingCvBridge;
+    cvImage.encoding        = encodingCvBridge;
     cvImage.image = img;
     sensor_msgs::ImagePtr msg = cvImage.toImageMsg();
     imagePublisher.publish(msg);
@@ -100,8 +102,8 @@ void processImage(rsb::EventPtr event) {
       doPublish = true;
     }
     if (doPublish) {
-      compressedImage.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
-      compressedImage.header.frame_id   = event->getScope().getComponents()[0] + "/base_cam";
+      compressedImage.header.stamp    = getRosTimeFromRsbEvent(event);
+      compressedImage.header.frame_id = event->getScope().getComponents()[0] + "/base_cam";
       compressedImage.format = imageCompressionFormat;
       compressedImagePublisher.publish(compressedImage);
     }
