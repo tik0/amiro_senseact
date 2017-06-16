@@ -21,6 +21,8 @@
 // RST
 #include <rst/generic/Value.pb.h>
 
+#include "rsb_to_ros_time_converter.hpp"
+
 using namespace std;
 
 // RSB Listener Scope
@@ -35,23 +37,22 @@ ros::Publisher floorProxPub;
 const string programName = "rst_value_array_to_ros_int_array";
 
 
-
 void processValueArray(rsb::EventPtr event) {
-  if (event->getType() != "rst::generic::Value"){
+  if (event->getType() != "rst::generic::Value") {
     return;
   }
 
   boost::shared_ptr<rst::generic::Value> value = boost::static_pointer_cast<rst::generic::Value>(event->getData());
-  if (value->type() != rst::generic::Value::ARRAY){
+  if (value->type() != rst::generic::Value::ARRAY) {
     return;
   }
 
   int size = value->array_size();
-  std::vector<int32_t> data (0, 0);
+  std::vector<int32_t> data(0, 0);
   rst::generic::Value entry;
-  for (int i=0; i<size; i++){
-    entry=value->array(i);
-    if (entry.type()!=rst::generic::Value::INT){
+  for (int i = 0; i < size; i++) {
+    entry = value->array(i);
+    if (entry.type() != rst::generic::Value::INT) {
       return;
     }
 
@@ -63,23 +64,23 @@ void processValueArray(rsb::EventPtr event) {
   std_msgs::MultiArrayLayout layout;
   std::vector<std_msgs::MultiArrayDimension> dimensions;
   std_msgs::MultiArrayDimension dim;
-  dim.label="Proximity sensor values.";
-  dim.size=data.size();
-  dim.stride=data.size();
+  dim.label  = "Proximity sensor values.";
+  dim.size   = data.size();
+  dim.stride = data.size();
   dimensions.push_back(dim);
-  layout.dim=dimensions;
+  layout.dim = dimensions;
 
 
   sai_msgs::Int32MultiArrayStamped proxMsg;
-  proxMsg.data.data=data;
-  proxMsg.data.layout=layout;
-  proxMsg.header.stamp.nsec=event->getMetaData().getCreateTime()*1000;
-  proxMsg.header.frame_id=event->getScope().getComponents()[0] + "/base_prox";
+  proxMsg.data.data       = data;
+  proxMsg.data.layout     = layout;
+  proxMsg.header.stamp    = getRosTimeFromRsbEvent(event);
+  proxMsg.header.frame_id = event->getScope().getComponents()[0] + "/base_prox";
 
   floorProxPub.publish(proxMsg);
-}
+} // processValueArray
 
-int main(int argc, char *argv[]) {
+int main(int argc, char * argv[]) {
   ROS_INFO("Start: %s", programName.c_str());
 
   // Init ROS
@@ -95,9 +96,9 @@ int main(int argc, char *argv[]) {
 
   rsb::Factory& factory = rsb::getFactory();
 
-  boost::shared_ptr< rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
-    converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
-    rsb::converter::converterRepository<std::string>()->registerConverter(converter);
+  boost::shared_ptr<rsb::converter::ProtocolBufferConverter<rst::generic::Value> >
+  converter(new rsb::converter::ProtocolBufferConverter<rst::generic::Value>());
+  rsb::converter::converterRepository<std::string>()->registerConverter(converter);
 
   // Prepare RSB listener
   rsb::ListenerPtr floorProxListener = factory.createListener(rsbListenerScope);
@@ -105,5 +106,5 @@ int main(int argc, char *argv[]) {
 
   ros::spin();
 
- 	return 0;
+  return 0;
 }

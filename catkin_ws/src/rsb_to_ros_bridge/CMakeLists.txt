@@ -22,7 +22,7 @@ find_package(Protobuf REQUIRED)
 find_package(OpenCV 3.0 REQUIRED)
 
 catkin_package(
-#  INCLUDE_DIRS include
+ INCLUDE_DIRS include
 #  LIBRARIES rsb_to_ros_bridge
 #  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
@@ -35,6 +35,7 @@ include_directories(
   ${PROTOBUF_INCLUDE_DIRS}
   ${OPENCV_INCLUDE_DIRS}
   "$ENV{MUROX_PROJECT}/includes"
+  include
 )
 
 LINK_DIRECTORIES (
@@ -122,6 +123,7 @@ target_link_libraries(rsb_twb_to_ros_navmsgs_odometry
   ${RSTSANDBOX_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
 )
+
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 

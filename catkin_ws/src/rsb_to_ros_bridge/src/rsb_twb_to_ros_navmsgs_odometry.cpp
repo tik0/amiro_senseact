@@ -20,6 +20,8 @@
 // Proto types
 #include <types/loc.pb.h>
 
+#include "rsb_to_ros_time_converter.hpp"
+
 using namespace std;
 
 // RSB Listener Scope
@@ -61,7 +63,7 @@ void processTwbTrackingProtoObjectList(rsb::EventPtr event) {
     euler2Quaternion(rotEuler, rotQuat);
     nav_msgs::Odometry odom;
     odom.header.frame_id         = event->getScope().toString();
-    odom.header.stamp.nsec       = event->getMetaData().getCreateTime() * 1000;
+    odom.header.stamp            = getRosTimeFromRsbEvent(event);
     odom.child_frame_id          = std::string("base_link/") + std::to_string(obj.id());
     odom.pose.pose.position.x    = obj.position().translation().x();
     odom.pose.pose.position.y    = obj.position().translation().y();

@@ -20,6 +20,8 @@
 // RST
 #include <rst/geometry/Pose.pb.h>
 
+#include "rsb_to_ros_time_converter.hpp"
+
 using namespace std;
 
 // RSB Listener Scope
@@ -53,8 +55,8 @@ void processRstGeometryPose(rsb::EventPtr event) {
   odom.pose.pose.position.y    = (double) t.y();
   odom.pose.pose.position.z    = (double) t.z();
   // odom.header.stamp.nsec  = event->getMetaData().getCreateTime() * 1000;
-  odom.header.stamp = ros::Time::now();
-  odom.header.frame_id    = event->getScope().getComponents()[0] + "/odom";
+  odom.header.stamp    = getRosTimeFromRsbEvent(event);
+  odom.header.frame_id = event->getScope().getComponents()[0] + "/odom";
 
   rosPosePub.publish(odom);
 }
