@@ -1,7 +1,7 @@
 // ============================================================================
-// Name        : rst_value_array_to_ros_int_array.cpp
+// Name        : ros_geometry_msgs_posestamped_to_rst_geometry_pose.cpp
 // Author      : Jonas Dominik Homburg <jhomburg@techfak.uni-bielefeld.de>
-// Description : Recieve int32_t array as Value via rsb and publish them via ros.
+// Description : Recieve a ros PoseStamped and publish it as rst geometry pose.
 // ============================================================================
 
 // ROS

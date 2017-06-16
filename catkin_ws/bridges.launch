@@ -71,6 +71,12 @@
   <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
   <!-- <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/> -->
+  <node pkg="mapping" type="ros_laser_scan_to_ros_pointcloud2" name="amiro1_laser_to_point">
+    <param name="laserscan_topic" value="/amiro1/laserscan"/>
+    <param name="pointcloud2_topic" value="/amiro1/pointcloud2"/>
+    <!-- <param name="target_frame" value="amiro1/base_laser"/> -->
+  </node>
+
 
   <!-- ################################################# -->
   <!-- includes -->
