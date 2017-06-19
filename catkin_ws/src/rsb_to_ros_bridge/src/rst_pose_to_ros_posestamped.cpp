@@ -20,7 +20,8 @@
 // RST
 #include <rst/geometry/Pose.pb.h>
 
-#include "rsb_to_ros_time_converter.hpp"
+// #include "rsb_to_ros_time_converter.hpp"
+#include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
 
 using namespace std;
 
@@ -35,6 +36,7 @@ ros::Publisher rosPosePub;
 // program name
 const string programName = "rst_pose_to_ros_posestamped";
 
+bool rostimenow;
 
 void processRstMessage(rsb::EventPtr event) {
   if (event->getType() != "rst::geometry::Pose") {
@@ -53,7 +55,7 @@ void processRstMessage(rsb::EventPtr event) {
   pS.pose.position.x    = (double) t.x();
   pS.pose.position.y    = (double) t.y();
   pS.pose.position.z    = (double) t.z();
-  pS.header.stamp       = getRosTimeFromRsbEvent(event);
+  pS.header.stamp       = getRosTimeFromRsbEvent(event,rostimenow);
   pS.header.frame_id    = event->getScope().getComponents()[0] + "/odom";
 
   rosPosePub.publish(pS);
@@ -106,6 +108,8 @@ int main(int argc, char * argv[]) {
   ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
   node.param<string>("ros_publish_topic", rosPublishPoseStamped, "/pose");
   ROS_INFO("ros_publish_topic: %s", rosPublishPoseStamped.c_str());
+  node.param<bool>("rostimenow", rostimenow, false);
+  ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
 
   rosPosePub = node.advertise<geometry_msgs::PoseStamped>(rosPublishPoseStamped, 1);
 

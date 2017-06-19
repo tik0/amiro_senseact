@@ -20,7 +20,8 @@
 // RST
 #include <rst/geometry/Pose.pb.h>
 
-#include "rsb_to_ros_time_converter.hpp"
+// #include "rsb_to_ros_time_converter.hpp"
+#include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
 
 using namespace std;
 
@@ -34,6 +35,8 @@ ros::Publisher rosPosePub;
 
 // program name
 const string programName = "rst_pose_to_ros_navmsgs_odometry";
+
+bool rostimenow;
 
 
 void processRstGeometryPose(rsb::EventPtr event) {
@@ -55,7 +58,7 @@ void processRstGeometryPose(rsb::EventPtr event) {
   odom.pose.pose.position.y    = (double) t.y();
   odom.pose.pose.position.z    = (double) t.z();
   // odom.header.stamp.nsec  = event->getMetaData().getCreateTime() * 1000;
-  odom.header.stamp    = getRosTimeFromRsbEvent(event);
+  odom.header.stamp    = getRosTimeFromRsbEvent(event,rostimenow);
   odom.header.frame_id = event->getScope().getComponents()[0] + "/odom";
 
   rosPosePub.publish(odom);
@@ -70,9 +73,11 @@ int main(int argc, char * argv[]) {
 
   node.param<string>("rsb_listener_scope", rsbListenerScope, "/pose");
   node.param<string>("ros_publish_topic", rosPublishTopic, "/pose");
+  node.param<bool>("rostimenow", rostimenow, false);
 
   ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
   ROS_INFO("ros_publish_topic: %s", rosPublishTopic.c_str());
+  ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
 
   cout << "asdadwa d " << rsbListenerScope << endl;
 

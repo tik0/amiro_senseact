@@ -21,7 +21,8 @@
 // RST
 #include <rst/generic/Value.pb.h>
 
-#include "rsb_to_ros_time_converter.hpp"
+// #include "rsb_to_ros_time_converter.hpp"
+#include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
 
 using namespace std;
 
@@ -32,6 +33,8 @@ string rsbListenerScope;
 string rosPublishProximityTopic;
 
 ros::Publisher floorProxPub;
+
+bool rostimenow;
 
 // program name
 const string programName = "rst_value_array_to_ros_int_array";
@@ -74,7 +77,7 @@ void processValueArray(rsb::EventPtr event) {
   sai_msgs::Int32MultiArrayStamped proxMsg;
   proxMsg.data.data       = data;
   proxMsg.data.layout     = layout;
-  proxMsg.header.stamp    = getRosTimeFromRsbEvent(event);
+  proxMsg.header.stamp    = getRosTimeFromRsbEvent(event,rostimenow);
   proxMsg.header.frame_id = event->getScope().getComponents()[0] + "/base_prox";
 
   floorProxPub.publish(proxMsg);
@@ -91,6 +94,8 @@ int main(int argc, char * argv[]) {
   ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
   node.param<string>("ros_publish_topic", rosPublishProximityTopic, "/prox");
   ROS_INFO("ros_publish_topic: %s", rosPublishProximityTopic.c_str());
+  node.param<bool>("rostimenow", rostimenow, false);
+  ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
 
   floorProxPub = node.advertise<sai_msgs::Int32MultiArrayStamped>(rosPublishProximityTopic, 1);
 
