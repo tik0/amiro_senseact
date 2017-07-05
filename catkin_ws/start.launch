@@ -15,7 +15,7 @@
     <arg name="laserscan" value="1"/>
     <arg name="camera" value="0"/>
 
-    <arg name="twb" value="0"/>
+    <arg name="twb" value="1"/>
     <arg name="robot_localization" value="0"/>
 
     <arg name="rostimenow" value="$(arg rostimenow)"/>
@@ -31,7 +31,7 @@
     <arg name="no_static_map" value="0"/>
 
     <arg name="hector_mapping" value="1"/>
-    <arg name="ocotomap" value="0"/>
+    <arg name="octomap" value="0"/>
     <arg name="gmapping" value="0"/>
 
   </include>

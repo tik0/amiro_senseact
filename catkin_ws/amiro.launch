@@ -60,7 +60,9 @@
       <param name="rsb_listener_scope" value="/amiro$(arg amiroNr)/laserscan"/>
       <param name="ros_publish_topic" value="/amiro$(arg amiroNr)/laserscan"/>
       <param name="offset_scan" value="-2.35619"/>
-      <!-- -135° degree -->
+      <!-- SICK = -2.35619 = -135° degree -->
+      <!-- HOKUYO = -2.0944 = -120° degree -->
+
       <param name="rostimenow" value="$(arg rostimenow)"/>
     </node>
   </group>
