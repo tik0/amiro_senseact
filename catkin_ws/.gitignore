@@ -27,3 +27,7 @@ msg/_*.py
 mylogger.sh
 
 rsb.conf
+
+# clion stuff
+src/.idea/
+src/cmake-build-release/
