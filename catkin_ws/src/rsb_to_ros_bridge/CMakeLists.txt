@@ -35,6 +35,7 @@ include_directories(
   ${PROTOBUF_INCLUDE_DIRS}
   ${OPENCV_INCLUDE_DIRS}
   "$ENV{MUROX_PROJECT}/includes"
+
   include
 )
 
@@ -43,6 +44,10 @@ LINK_DIRECTORIES (
   ${RSC_LIBRARY_DIRS}
   ${OPENCV_LIBRARY_DIRS}
 )
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
 
 add_executable(rst_vision_image_to_ros_sensormsgs_image
   src/rst_vision_image_to_ros_sensormsgs_image.cpp

@@ -19,6 +19,7 @@ string childFrame;
 // program name
 const string programName = "dynamic_tf_with_odom";
 
+bool rostimenow;
 
 void process(const nav_msgs::Odometry::ConstPtr& msg) {
   static tf::TransformBroadcaster br;
@@ -26,7 +27,7 @@ void process(const nav_msgs::Odometry::ConstPtr& msg) {
   transform.setOrigin(tf::Vector3(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z) );
   transform.setRotation(tf::Quaternion(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w));
 
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, childFrame));
+  br.sendTransform(tf::StampedTransform(transform, rostimenow?ros::Time::now():msg->header.stamp , parentFrame, childFrame));
 }
 
 int main(int argc, char * argv[]) {
@@ -39,10 +40,12 @@ int main(int argc, char * argv[]) {
   node.param<string>("ros_listener_odom_topic", rosListenerTopic, "/topic");
   node.param<string>("parent_frame", parentFrame, "/parent");
   node.param<string>("child_frame", childFrame, "/child");
+  node.param<bool>("rostimenow", rostimenow, false);
 
   ROS_INFO("ros_listener_topic: %s", rosListenerTopic.c_str());
   ROS_INFO("parent_frame: %s", parentFrame.c_str());
   ROS_INFO("child_frame: %s", childFrame.c_str());
+  ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
 
   ros::Subscriber sub = node.subscribe(rosListenerTopic, 1, process);
 

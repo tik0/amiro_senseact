@@ -31,7 +31,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "rsb_to_ros_time_converter.hpp"
+// #include "rsb_to_ros_time_converter.hpp"
+#include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
 
 using namespace std;
 
@@ -48,6 +49,8 @@ static ros::Publisher compressedImagePublisher;
 
 // program name
 const string programName = "rst_vision_image_to_ros_sensormsgs_image";
+
+bool rostimenow;
 
 static string imageCompressionFormat;
 
@@ -102,7 +105,7 @@ void processImage(rsb::EventPtr event) {
       doPublish = true;
     }
     if (doPublish) {
-      compressedImage.header.stamp    = getRosTimeFromRsbEvent(event);
+      compressedImage.header.stamp    = getRosTimeFromRsbEvent(event,rostimenow);
       compressedImage.header.frame_id = event->getScope().getComponents()[0] + "/base_cam";
       compressedImage.format = imageCompressionFormat;
       compressedImagePublisher.publish(compressedImage);
@@ -121,11 +124,13 @@ int main(int argc, char * argv[]) {
   node.param<string>("ros_publish_image_topic", rosPublishImageTopic, "/image");
   node.param<string>("ros_publish_Compressed_image_topic", rosPublishCompressedImageTopic, "/image/compressed");
   node.param<string>("image_compression_format", imageCompressionFormat, "jpg");
+  node.param<bool>("rostimenow", rostimenow, false);
 
   ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
   ROS_INFO("ros_publish_image_topic: %s", rosPublishImageTopic.c_str());
   ROS_INFO("ros_publish_Compressed_image_topic: %s", rosPublishCompressedImageTopic.c_str());
   ROS_INFO("image_compression_format: %s", imageCompressionFormat.c_str());
+  ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
 
   image_transport::ImageTransport imageTransport(node);
   imagePublisher = imageTransport.advertise(rosPublishImageTopic, 1);

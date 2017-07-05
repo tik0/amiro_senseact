@@ -1,7 +1,7 @@
 // ============================================================================
-// Name        : rst_value_array_to_ros_int_array.cpp
+// Name        : ros_int_multiarray_rst_value_array.cpp
 // Author      : Jonas Dominik Homburg <jhomburg@techfak.uni-bielefeld.de>
-// Description : Recieve int32_t array as Value via rsb and publish them via ros.
+// Description : Recieve a ros multiarray and publish it as rsb value array.
 // ============================================================================
 
 // ROS

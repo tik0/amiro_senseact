@@ -11,7 +11,13 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
+  rsb_to_ros_bridge
 )
+
+find_package(PkgConfig)
+find_package(RSB 0.16 REQUIRED)
+find_package(RSC 0.16 REQUIRED)
+find_package(RST 0.16 REQUIRED COMPONENTS sandbox)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -26,6 +32,8 @@ catkin_package(
 ###########
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${RSB_INCLUDE_DIRS}
+  ${RST_INCLUDE_DIRS}
 )
 
 add_executable(dynamic_tf_with_odom

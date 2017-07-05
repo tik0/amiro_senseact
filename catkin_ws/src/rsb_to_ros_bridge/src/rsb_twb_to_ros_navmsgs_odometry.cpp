@@ -20,7 +20,8 @@
 // Proto types
 #include <types/loc.pb.h>
 
-#include "rsb_to_ros_time_converter.hpp"
+// #include "rsb_to_ros_time_converter.hpp"
+#include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
 
 using namespace std;
 
@@ -34,6 +35,9 @@ ros::Publisher rosPosePub;
 
 // program name
 const string programName = "rsb_twb_to_ros_navmsgs_odometry";
+
+//
+bool rostimenow;
 
 void euler2Quaternion(double (&euler)[3], double (&quat)[4]) {
   double c1 = cos(euler[2] / 2);
@@ -63,7 +67,7 @@ void processTwbTrackingProtoObjectList(rsb::EventPtr event) {
     euler2Quaternion(rotEuler, rotQuat);
     nav_msgs::Odometry odom;
     odom.header.frame_id         = event->getScope().toString();
-    odom.header.stamp            = getRosTimeFromRsbEvent(event);
+    odom.header.stamp            = getRosTimeFromRsbEvent(event,rostimenow);
     odom.child_frame_id          = std::string("base_link/") + std::to_string(obj.id());
     odom.pose.pose.position.x    = obj.position().translation().x();
     odom.pose.pose.position.y    = obj.position().translation().y();
@@ -96,6 +100,9 @@ int main(int argc, char * argv[]) {
   ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
   node.param<string>("ros_publish_topic", rosPublishPoseStamped, "/tracking");
   ROS_INFO("ros_publish_topic: %s", rosPublishPoseStamped.c_str());
+  node.param<bool>("rostimenow", rostimenow, false);
+  ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
+
 
   rosPosePub = node.advertise<nav_msgs::Odometry>(rosPublishPoseStamped, 1);
 
