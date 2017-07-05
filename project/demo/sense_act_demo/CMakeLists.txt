@@ -21,7 +21,3 @@ add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRGBDCam senseRGBDCam)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseRingProximity senseRingProximity)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseSickTim senseSickTim)
 add_subdirectory ($ENV{MUROX_PROJECT}/sense/senseSimple3DTo2D senseSimple3DTo2D)
-
-set(directory ros_navigation_stack_sense_act_tools)
-file(MAKE_DIRECTORY ${directory})
-file(COPY "rsb.conf" "start.sh" "stop.sh" DESTINATION ${directory})

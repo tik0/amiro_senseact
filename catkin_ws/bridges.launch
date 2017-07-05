@@ -1,50 +1,56 @@
 <launch>
-
+  <arg name="amiroNr" default="1" />
   <!-- ################################################# -->
   <!-- rsb_to_ros_bridge -->
   <!-- ################################################# -->
 
-  <!-- <node name="rst_vision_image_to_ros_sensormsgs_image" pkg="rsb_to_ros_bridge" type="rst_vision_image_to_ros_sensormsgs_image" respawn="false" output="screen" cwd="ROS_HOME">
-    <param name="rsb_listener_scope" value="/image/depth"/>
-    <param name="ros_publish_image_topic" value="/image"/>
-    <param name="ros_publish_Compressed_image_topic" value="/image/compressed"/>
+  <!-- <node name="rst_vision_image_to_ros_sensormsgs_image$(arg amiroNr)" pkg="rsb_to_ros_bridge" type="rst_vision_image_to_ros_sensormsgs_image" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
+    <param name="rsb_listener_scope" value="amiro$(arg amiroNr)/image/depth"/>
+    <param name="ros_publish_image_topic" value="amiro/$(arg amiroNr)/image"/>
+    <param name="ros_publish_Compressed_image_topic" value="amiro$(arg amiroNr)/image/compressed"/>
     <param name="image_compression_format" value="jpg"/>
   </node> -->
-  <!-- <node name="rsb_twb_to_ros_navmsgs_odometry" pkg="rsb_to_ros_bridge" type="rsb_twb_to_ros_navmsgs_odometry" respawn="false" output="screen" cwd="ROS_HOME">
+  <node name="rsb_twb_to_ros_navmsgs_odometry$(arg amiroNr)" pkg="rsb_to_ros_bridge" type="rsb_twb_to_ros_navmsgs_odometry" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
     <param name="rsb_listener_scope" value="/tracking/merger"/>
-    <param name="ros_publish_topic" value="/tracking"/>
-  </node> -->
-  <node name="rst_pose_to_ros_navmsgs_odometry" pkg="rsb_to_ros_bridge" type="rst_pose_to_ros_navmsgs_odometry" respawn="false" output="screen" cwd="ROS_HOME">
-    <param name="rsb_listener_scope" value="/amiro1/pose"/>
-    <param name="ros_publish_topic" value="/amiro1/odom"/>
+    <param name="ros_publish_topic" value="/tracking/$(arg amiroNr)"/>
+    <param name="marker_id" value="$(arg amiroNr)"/>
   </node>
-  <!-- <node name="rst_pose_to_ros_posestamped" pkg="rsb_to_ros_bridge" type="rst_pose_to_ros_posestamped" respawn="false" output="screen" cwd="ROS_HOME">
+  <node name="rst_pose_to_ros_navmsgs_odometry$(arg amiroNr)" pkg="rsb_to_ros_bridge" type="rst_pose_to_ros_navmsgs_odometry" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
+    <param name="rsb_listener_scope" value="/amiro$(arg amiroNr)/pose"/>
+    <param name="ros_publish_topic" value="/amiro$(arg amiroNr)/odom"/>
+  </node>
+  <!-- <node name="rst_pose_to_ros_posestamped$(arg amiroNr)" pkg="rsb_to_ros_bridge" type="rst_pose_to_ros_posestamped" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
     <param name="rsb_listener_scope" value="/pose"/>
     <param name="ros_publish_topic" value="/pose"/>
   </node> -->
-  <!-- <node name="rst_value_array_to_ros_int_array" pkg="rsb_to_ros_bridge" type="rst_value_array_to_ros_int_array" respawn="false" output="screen" cwd="ROS_HOME">
+  <!-- <node name="rst_value_array_to_ros_int_array" pkg="rsb_to_ros_bridge" type="rst_value_array_to_ros_int_array" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
     <param name="rsb_listener_scope" value="/rir_prox/original"/>
     <param name="ros_publish_topic" value="/rir_prox"/>
   </node> -->
-  <node name="rst_vision_laserscan_to_ros_sensormsgs_Laserscan" pkg="rsb_to_ros_bridge" type="rst_vision_laserscan_to_ros_sensormsgs_Laserscan" respawn="false" output="screen" cwd="ROS_HOME">
-    <param name="rsb_listener_scope" value="/amiro1/laserscan"/>
-    <param name="ros_publish_topic" value="/amiro1/laserscan"/>
-    <param name="angle_min" value="3.92699"/>
+  <node name="rst_vision_laserscan_to_ros_sensormsgs_Laserscan$(arg amiroNr)" pkg="rsb_to_ros_bridge" type="rst_vision_laserscan_to_ros_sensormsgs_Laserscan" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
+    <param name="rsb_listener_scope" value="/amiro$(arg amiroNr)/laserscan"/>
+    <param name="ros_publish_topic" value="/amiro$(arg amiroNr)/laserscan"/>
+    <param name="offset_scan" value="-2.35619"/> <!-- -135° degree -->
   </node>
 
   <!-- ################################################# -->
   <!-- ros_to_rsb_bridge -->
   <!-- ################################################# -->
 
-  <!-- <node name="ros_geometry_msgs_posestamped_to_rst_geometry_pose" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_posestamped_to_rst_geometry_pose" respawn="false" output="screen" cwd="ROS_HOME">
-    <param name="ros_listener_topic" value="/pose"/>
-    <param name="rsb_publish_scope" value="/pose"/>
+  <!-- <node name="ros_geometry_msgs_posestamped_to_rst_geometry_pose$(arg amiroNr)" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_posestamped_to_rst_geometry_pose" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
+    <param name="ros_listener_topic" value="amiro$(arg amiroNr)/pose"/>
+    <param name="rsb_publish_scope" value="amiro$(arg amiroNr)/pose"/>
   </node> -->
-  <node name="ros_geometry_msgs_twist_to_rst_value_array" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_twist_to_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME">
+  <node name="xbox_controller_bridge$(arg amiroNr)" pkg="ros_to_rsb_bridge$(arg amiroNr)" type="ros_geometry_msgs_twist_to_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
     <param name="ros_listener_topic" value="/teleop_velocity_smoother/raw_cmd_vel"/>
-    <param name="rsb_publish_scope" value="/motor/5"/>
+    <param name="rsb_publish_scope" value="/amiro$(arg amiroNr)/motor/5"/>
   </node>
-  <!-- <node name="ros_int_multiarray_rst_value_array" pkg="ros_to_rsb_bridge" type="ros_int_multiarray_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME">
+
+  <node name="Navstack_controll_bridge$(arg amiroNr)" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_twist_to_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
+    <param name="ros_listener_topic" value="/amiro$(arg amiroNr)/cmd_vel"/>
+    <param name="rsb_publish_scope" value="/amiro$(arg amiroNr)/motor/10"/>
+  </node>
+  <!-- <node name="ros_int_multiarray_rst_value_array" pkg="ros_to_rsb_bridge" type="ros_int_multiarray_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
     <param name="ros_listener_topic" value="/motor"/>
     <param name="rsb_publish_scope" value="/motor/10"/>
   </node> -->
@@ -55,13 +61,13 @@
   <!-- tf -->
   <!-- ################################################# -->
   <!-- <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="x y z qx qy qz qw frame_id child_frame_id  period_in_ms" /> -->
-  <node pkg="tf" type="static_transform_publisher" name="amiro1_map_odom" args="1 1 0 0 0 0 1 map amiro1/odom 100" />
-  <node pkg="dynamic_transform" type="dynamic_tf_with_odom" name="amiro1_odom_base_link">
-    <param name="ros_listener_odom_topic" value="/amiro1/odom"/>
-    <param name="parent_frame" value="amiro1/odom"/>
-    <param name="child_frame" value="amiro1/base_link"/>
-  </node>
-  <node pkg="tf" type="static_transform_publisher" name="amiro1_base_link_base_laser" args="0 0 0.10 0 0 0 1 amiro1/base_link amiro1/base_laser 100" />
+  <node pkg="tf" type="static_transform_publisher" name="amiro$(arg amiroNr)_map_odom" args="0 0 0 0 0 0 1 map amiro$(arg amiroNr)/odom 100" />
+  <!-- <node pkg="dynamic_transform" type="dynamic_tf_with_odom" name="amiro$(arg amiroNr)_odom_base_link">
+    <param name="ros_listener_odom_topic" value="/amiro$(arg amiroNr)/odom"/>
+    <param name="parent_frame" value="amiro$(arg amiroNr)/odom"/>
+    <param name="child_frame" value="amiro$(arg amiroNr)/base_link"/>
+  </node> -->
+  <node pkg="tf" type="static_transform_publisher" name="amiro$(arg amiroNr)_base_link_base_laser" args="0 0 0.167 0 0 0 amiro1/base_link amiro$(arg amiroNr)/base_laser 100" />
 
 
   <!-- ################################################# -->
@@ -69,8 +75,41 @@
   <!-- ################################################# -->
   <!-- <node name="image_view" pkg="rqt_image_view" type="rqt_image_view"/> -->
   <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
+  <node name="rviz1" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
   <!-- <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/> -->
+
+  <!-- <param name="robot_description" command="cat $(env MUROX_ROS)/amiro.urdf" args=""/> -->
+  <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" /> -->
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="amiro$(arg amiroNr)_odom_twb_ekf" clear_params="true">
+    <param name="frequency" value="20" />
+    <param name="map_frame" value="map" />
+    <param name="odom_frame" value="amiro$(arg amiroNr)/odom" />
+    <param name="base_link_frame" value="amiro$(arg amiroNr)/base_link" />
+
+    <remap from="odometry/filtered" to="/amiro$(arg amiroNr)/ekf" />
+    <param name="two_d_mode" value="true" />
+    <param name="publish_tf" value="true" />
+
+    <param name="odom0" value="amiro$(arg amiroNr)/odom"/>
+    <rosparam param="odom0_config">[true,  true,  false,
+                                false, false, true,
+                                true,  false, false,
+                                false, false, true,
+                                false, false, false]</rosparam>
+    <param name="odom0_differential" value="true"/>
+    <param name="odom0_relative" value="true"/>
+
+    <param name="odom1" value="/tracking/$(arg amiroNr)"/>
+    <rosparam param="odom1_config">[true,  true,  false,
+                                false, false, false,
+                                false,  false, false,
+                                false, false, false,
+                                false, false, false]</rosparam>
+    <param name="odom1_differential" value="false"/>
+    <param name="odom1_relative" value="false"/>
+  </node>
 
   <!-- ################################################# -->
   <!-- includes -->
@@ -80,14 +119,14 @@
     <arg name="model" value="$(env MUROX_ROS)/amiro.urdf" />
     <arg name="rvizconfig" value="$(env MUROX_ROS)/config.rviz" />
   </include> -->
-  <!-- <include file="$(find amiro_2dnav)/move_base.launch"/> -->
+  <include file="$(find amiro_2dnav)/move_base.launch"/>
   <!-- <include file="$(env MUROX_ROS)/keyboard_teleop.launch"/> -->
-  <!-- <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping1">
-    <param name="scan" value="/amiro1/laserscan"/>
-    <param name="base_frame" value="amiro1/laserscan"/>
-    <param name="map_frame" value="map"/>
-  </node> -->
-  <!-- rosrun gmapping slam_gmapping scan:=amiro1/laserscan _base_frame:=amiro1/laserscan -->
-
+    <!-- <node pkg="gmapping" type="slam_gmapping" name="gmapping_thing" output="screen" clear_params="true">
+      <remap from="scan" to="/amiro1/laserscan" />
+      <param name="base_frame" value="amiro1/base_link" />
+      <param name="odom_frame" value="amiro1/odom" />
+      <param name="map_update_interval" value="0.1"/>
+    </node> -->
+  <!-- rosrun gmapping slam_gmapping scan:=amiro1/laserscan _base_frame:=amiro1/base_laser _odom_frame:=amiro1/odom -->
 
 </launch>

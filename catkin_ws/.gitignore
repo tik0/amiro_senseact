@@ -6,6 +6,7 @@ Makefile
 build
 *.ninja*
 .catkin_workspace
+cmake-build-release/
 
 build/
 bin/
@@ -27,3 +28,5 @@ msg/_*.py
 mylogger.sh
 
 rsb.conf
+
+.idea/

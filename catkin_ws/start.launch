@@ -1,0 +1,26 @@
+<launch>
+
+  <include file="$(env MUROX_ROS)/xbox360_teleop.launch"/>
+  <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/>
+  <node name="rviz1" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
+  <!-- <node name="image_view" pkg="rqt_image_view" type="rqt_image_view"/> -->
+  <!-- <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/> -->
+
+  <include file="$(env MUROX_ROS)/amiro.launch">
+    <arg name="amiroNr" value="1"/>
+    <arg name="markerId" value="1"/>
+    <arg name="laserscan" value="1"/>
+    <arg name="camera" value="0"/>
+    <arg name="twb" value="0"/>
+    <arg name="xbox_controller" value="1"/>
+    <arg name="keyboard_controller" value="0"/>
+    <arg name="nav_stack" value="1"/>
+    <arg name="robot_localization" value="0"/>
+    <arg name="hector_mapping" value="1"/>
+    <arg name="dynamic_tf_with_odom" value="1"/>
+    <arg name="static_tf_map_odom" value="0"/>
+    <arg name="frontier_exploration" value="0"/>
+    <arg name="no_static_map" default="0"/>
+  </include>
+
+</launch>
