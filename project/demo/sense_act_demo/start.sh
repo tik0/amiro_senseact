@@ -1,4 +1,3 @@
-#!/bin/bash
 
 amiroNr=1
 

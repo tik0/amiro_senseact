@@ -6,6 +6,7 @@ Makefile
 build
 *.ninja*
 .catkin_workspace
+cmake-build-release/
 
 build/
 bin/
