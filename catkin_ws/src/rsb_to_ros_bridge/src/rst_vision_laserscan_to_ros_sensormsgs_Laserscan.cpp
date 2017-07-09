@@ -19,6 +19,9 @@
 // RST
 #include <rst/vision/LaserScan.pb.h>
 
+// #include "rsb_to_ros_time_converter.hpp"
+#include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
+
 using namespace std;
 
 // RSB Listener Scope
@@ -29,6 +32,10 @@ static string rosPublishLaserScanTopic;
 
 // ros::Publisher rosPublisher;
 static ros::Publisher laserScanPublisher;
+
+static double offset = 0.0;
+
+bool rostimenow;
 
 // program name
 const string programName = "rst_vision_laserscan_to_ros_sensormsgs_Laserscan";
@@ -41,11 +48,11 @@ void processLaserScan(rsb::EventPtr event) {
     boost::shared_ptr<rst::vision::LaserScan> rsbLaserScan = boost::static_pointer_cast<rst::vision::LaserScan>(event->getData());
     sensor_msgs::LaserScan rosLaserScan;
     // rosLaserScan.header.stamp.nsec = event->getMetaData().getCreateTime() * 1000;
-    rosLaserScan.header.stamp = ros::Time::now();
-    rosLaserScan.header.frame_id   = event->getScope().getComponents()[0] + "/laserscan";
+    rosLaserScan.header.stamp    = getRosTimeFromRsbEvent(event,rostimenow);
+    rosLaserScan.header.frame_id = event->getScope().getComponents()[0] + "/base_laser";
 
-    rosLaserScan.angle_min       = 0;
-    rosLaserScan.angle_max       = rsbLaserScan->scan_angle();
+    rosLaserScan.angle_min       = offset;
+    rosLaserScan.angle_max       = offset + rsbLaserScan->scan_angle();
     rosLaserScan.angle_increment = rsbLaserScan->scan_angle() / rsbLaserScan->scan_values().size();
     // rosLaserScan.time_increment
     // rosLaserScan.scan_time
@@ -73,11 +80,15 @@ int main(int argc, char * argv[]) {
   ros::init(argc, argv, programName);
   ros::NodeHandle node("~");
 
-  node.param<string>("rsb_listener_scope", rsbListenerScope, "/laserScan");
-  node.param<string>("ros_publish_topic", rosPublishLaserScanTopic, "/laserScan");
+  node.param<string>("rsb_listener_scope", rsbListenerScope, "/laserscan");
+  node.param<string>("ros_publish_topic", rosPublishLaserScanTopic, "/laserscan");
+  node.param<double>("offset_scan", offset, 0.0);
+  node.param<bool>("rostimenow", rostimenow, false);
 
   ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
   ROS_INFO("ros_publish_laserscan_topic: %s", rosPublishLaserScanTopic.c_str());
+  ROS_INFO("offset_scan: %f", offset);
+  ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
 
   laserScanPublisher = node.advertise<sensor_msgs::LaserScan>(rosPublishLaserScanTopic, 1);
 

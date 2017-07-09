@@ -28,3 +28,6 @@
 [submodule "project/ros/src/mapserver"]
 	path = project/ros/src/mapserver
 	url = https://github.com/tik0/mapserver.git
+[submodule "catkin_ws/src/amiro_robot"]
+	path = catkin_ws/src/amiro_robot
+	url = https://github.com/tik0/amiro_robot.git

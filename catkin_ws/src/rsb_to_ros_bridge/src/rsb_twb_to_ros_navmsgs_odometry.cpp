@@ -20,6 +20,8 @@
 // Proto types
 #include <types/loc.pb.h>
 
+#include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
+
 using namespace std;
 
 // RSB Listener Scope
@@ -30,8 +32,13 @@ string rosPublishPoseStamped;
 
 ros::Publisher rosPosePub;
 
+int markerId;
+
 // program name
 const string programName = "rsb_twb_to_ros_navmsgs_odometry";
+
+//
+bool rostimenow;
 
 void euler2Quaternion(double (&euler)[3], double (&quat)[4]) {
   double c1 = cos(euler[2] / 2);
@@ -56,13 +63,16 @@ void processTwbTrackingProtoObjectList(rsb::EventPtr event) {
 
   for (int i = 0; i < objectList->object_size(); i++) {
     twbTracking::proto::Object obj = objectList->object(i);
+    if (obj.id() != markerId) {
+      return;
+    }
     double rotEuler[3] = { obj.position().rotation().x(), obj.position().rotation().y(), obj.position().rotation().z() };
     double rotQuat[4];
     euler2Quaternion(rotEuler, rotQuat);
     nav_msgs::Odometry odom;
-    odom.header.frame_id         = event->getScope().toString();
-    odom.header.stamp.nsec       = event->getMetaData().getCreateTime() * 1000;
-    odom.child_frame_id          = std::string("base_link/") + std::to_string(obj.id());
+    odom.header.frame_id         = "map";
+    odom.header.stamp            = getRosTimeFromRsbEvent(event, , rostimenow);
+    odom.child_frame_id          = std::string("amiro") + std::to_string(obj.id()) + std::string("/base_link");
     odom.pose.pose.position.x    = obj.position().translation().x();
     odom.pose.pose.position.y    = obj.position().translation().y();
     odom.pose.pose.position.z    = obj.position().translation().z();
@@ -92,8 +102,12 @@ int main(int argc, char * argv[]) {
 
   node.param<string>("rsb_listener_scope", rsbListenerScope, "/tracking/merger");
   ROS_INFO("rsb_listener_scope: %s", rsbListenerScope.c_str());
-  node.param<string>("ros_publish_topic", rosPublishPoseStamped, "/tracking");
+  node.param<string>("ros_publish_topic", rosPublishPoseStamped, "/tracking/0");
   ROS_INFO("ros_publish_topic: %s", rosPublishPoseStamped.c_str());
+  node.param<bool>("rostimenow", rostimenow, false);
+  ROS_INFO("rostimenow: %s", rostimenow ? "True" : "False");
+  node.param<int>("marker_id", markerId, 0);
+  ROS_INFO("marker_id: %d", markerId);
 
   rosPosePub = node.advertise<nav_msgs::Odometry>(rosPublishPoseStamped, 1);
 

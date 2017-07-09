@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package>
+  <name>dynamic_transform</name>
+  <version>0.0.0</version>
+  <description>The dynamic_transform package</description>
+
+  <maintainer email="tkorthals@cit-ec.uni-bielefeld.de">tkorthals</maintainer>
+  <maintainer email="drudolph@techfak.uni-bielefeld.de">Daniel Rudolph</maintainer>
+  <maintainer email="jhomburg@techfak.uni-bielefeld.de">Jonas Homburg</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>compressed_image_transport</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>sai_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>rsb_to_ros_bridge</build_depend>
+  <run_depend>compressed_image_transport</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>sai_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>rsb_to_ros_bridge</run_depend>
+
+</package>

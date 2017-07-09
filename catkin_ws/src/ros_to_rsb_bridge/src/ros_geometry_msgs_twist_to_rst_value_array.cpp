@@ -70,10 +70,10 @@ int main(int argc, char * argv[]) {
   int frequency;
 
   node.param<string>("ros_listener_topic", rosListenerTopic, "/teleop_velocity_smoother/raw_cmd_vel");
-  ROS_INFO("ros_listener_topic: %s", rosListenerTopic.c_str());
   node.param<string>("rsb_publish_scope", rsbPublishScope, "/motor/5");
-  ROS_INFO("rsb_publish_scope: %s", rsbPublishScope.c_str());
   node.param<int>("duration_frequency", frequency, 10);
+  ROS_INFO("rsb_publish_scope: %s", rsbPublishScope.c_str());
+  ROS_INFO("ros_listener_topic: %s", rosListenerTopic.c_str());
   ROS_INFO("frequency: %d", frequency);
 
   durationTime = 1.0/frequency * 1e6;
