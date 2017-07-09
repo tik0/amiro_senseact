@@ -25,7 +25,7 @@
     return ros::Time(time_ms / msPerS, (time_ms % msPerS) * nsPerMs);
   }
 
-  inline ros::Time getRosTimeFromRsbEvent(const rsb::EventPtr event = NULL, int useRosTime = 0) {
+  inline ros::Time getRosTimeFromRsbEvent(const rsb::EventPtr event = NULL, bool useRosTime = false) {
     if (useRosTime) {
         return ros::Time::now();
     } else if (event == NULL) {

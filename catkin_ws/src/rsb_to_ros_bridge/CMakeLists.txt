@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rsb_to_ros_bridge)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
-add_definitions(-std=c++11)
+add_definitions("-std=c++11")
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -12,12 +12,13 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   compressed_image_transport
+  rosgraph_msgs
 )
 
 find_package(PkgConfig)
-find_package(RSB 0.16 REQUIRED)
-find_package(RSC 0.16 REQUIRED)
-find_package(RST 0.16 REQUIRED COMPONENTS sandbox)
+find_package(RSB ${MUROX_RSB_VERSION} REQUIRED)
+find_package(RSC ${MUROX_RSC_VERSION} REQUIRED)
+find_package(RST ${MUROX_RST_VERSION} REQUIRED COMPONENTS sandbox)
 find_package(Protobuf REQUIRED)
 find_package(OpenCV 3.0 REQUIRED)
 
@@ -129,6 +130,12 @@ target_link_libraries(rsb_twb_to_ros_navmsgs_odometry
   ${PROTOBUF_LIBRARIES}
 )
 
+add_executable(event_to_ros_clock src/event_to_ros_clock.cpp)
+
+target_link_libraries(event_to_ros_clock
+    ${catkin_LIBRARIES}
+    ${RSB_LIBRARIES}
+)
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
 

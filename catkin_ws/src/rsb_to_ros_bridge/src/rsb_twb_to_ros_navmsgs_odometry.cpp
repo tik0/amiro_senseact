@@ -22,6 +22,8 @@
 
 #include <rsb_to_ros_bridge/rsb_to_ros_time_converter.h>
 
+#include <string>
+
 using namespace std;
 
 // RSB Listener Scope
@@ -71,7 +73,7 @@ void processTwbTrackingProtoObjectList(rsb::EventPtr event) {
     euler2Quaternion(rotEuler, rotQuat);
     nav_msgs::Odometry odom;
     odom.header.frame_id         = "map";
-    odom.header.stamp            = getRosTimeFromRsbEvent(event, , rostimenow);
+    odom.header.stamp            = getRosTimeFromRsbEvent(event, rostimenow);
     odom.child_frame_id          = std::string("amiro") + std::to_string(obj.id()) + std::string("/base_link");
     odom.pose.pose.position.x    = obj.position().translation().x();
     odom.pose.pose.position.y    = obj.position().translation().y();
