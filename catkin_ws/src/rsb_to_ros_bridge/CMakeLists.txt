@@ -135,6 +135,7 @@ add_executable(event_to_ros_clock src/event_to_ros_clock.cpp)
 target_link_libraries(event_to_ros_clock
     ${catkin_LIBRARIES}
     ${RSB_LIBRARIES}
+    ${RST_LIBRARIES}
 )
 
 ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
