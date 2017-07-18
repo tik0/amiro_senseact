@@ -88,6 +88,7 @@ int main(int argc, char * argv[]) {
   ROS_INFO("rsbListenerScope: %s", rsbListenerScope.c_str());
   ROS_INFO("ros_publish_laserscan_topic: %s", rosPublishLaserScanTopic.c_str());
   ROS_INFO("offset_scan: %f", offset);
+  ROS_INFO("rostime now %d", rostimenow);
   ROS_INFO("rostimenow: %s", rostimenow?"True":"False");
 
   laserScanPublisher = node.advertise<sensor_msgs::LaserScan>(rosPublishLaserScanTopic, 1);

@@ -1,12 +1,19 @@
 <launch>
 
-  <arg name="rostimenow" default="0"/>
+  <arg name="rostimenow" default="true"/>
 
   <include file="$(env MUROX_ROS)/xbox360_teleop.launch"/>
-  <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/>
+  <!-- <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/> -->
   <node name="rviz1" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
   <!-- <node name="image_view" pkg="rqt_image_view" type="rqt_image_view"/> -->
   <!-- <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/> -->
+
+  <group if="$(arg rostimenow)">
+    <node pkg="rsb_to_ros_bridge" type="event_to_ros_clock" name="event_to_ros_clock" output="screen">
+      <param name="use_rsb_send_time" value="1"/>
+      <param name="scope_rsb" value="/amiro1/"/>
+    </node>
+  </group>
 
   <include file="$(env MUROX_ROS)/amiro.launch">
     <arg name="amiroNr" value="1"/>
@@ -16,22 +23,22 @@
     <arg name="camera" value="0"/>
 
     <arg name="twb" value="1"/>
-    <arg name="robot_localization" value="0"/>
+    <arg name="robot_localization" value="1"/>
 
     <arg name="rostimenow" value="$(arg rostimenow)"/>
 
-    <arg name="dynamic_tf_with_odom" value="1"/>
-    <arg name="static_tf_map_odom" value="0"/>
+    <arg name="dynamic_tf_with_odom" value="0"/>
+    <arg name="static_tf_map_odom" value="1"/>
 
     <arg name="xbox_controller" value="1"/>
     <arg name="keyboard_controller" value="0"/>
 
-    <arg name="nav_stack" value="1"/>
+    <arg name="nav_stack" value="0"/>
     <arg name="frontier_exploration" value="0"/>
     <arg name="no_static_map" value="0"/>
 
-    <arg name="hector_mapping" value="1"/>
-    <arg name="octomap" value="0"/>
+    <arg name="hector_mapping" value="0"/>
+    <arg name="octomap" value="1"/>
     <arg name="gmapping" value="0"/>
 
   </include>

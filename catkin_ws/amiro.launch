@@ -1,4 +1,5 @@
 <launch>
+  <arg name="rostimenow" default="false"/>
   <arg name="amiroNr" default="1"/>
   <arg name="markerId" default="1"/>
   <arg name="laserscan" default="0"/>
@@ -13,7 +14,6 @@
   <arg name="static_tf_map_odom" default="0"/>
   <arg name="frontier_exploration" default="0"/>
   <arg name="no_static_map" default="0"/>
-  <arg name="rostimenow" default="0"/>
   <arg name="octomap" default="0"/>
   <arg name="gmapping" default="0"/>
 
@@ -162,11 +162,11 @@
       <param name="odom_frame" value="amiro$(arg amiroNr)/odom"/>
       <param name="base_frame" value="amiro$(arg amiroNr)/base_link"/>
 
-      <param name="map_resolution" value="0.025"/>
-      <param name="map_size" value="1024"/>
+      <!-- <param name="map_resolution" value="0.005"/> -->
+      <!-- <param name="map_size" value="1024"/> -->
 
       <param name="pub_map_odom_transform" value="true"/>
-      <param name="laser_min_dist" value="0.01"/>
+      <!-- <param name="laser_min_dist" value="0.01"/> -->
     </node>
   </group>
 
@@ -181,6 +181,7 @@
       <!-- <param name="target_frame" value="amiro1/base_laser"/> -->
     </node>
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server$(arg amiroNr)">
+      <param name="base_frame_id" value="/amiro$(arg amiroNr)/base_link"/>
       <param name="resolution" value="0.0250"/>
       <param name="max_sensor_range" value="25.0"/>
       <remap from="cloud_in" to="/amiro$(arg amiroNr)/pointcloud2"/>
@@ -193,11 +194,13 @@
 
   <group if="$(arg gmapping)">
     <node pkg="gmapping" type="slam_gmapping" name="gmapping_thing$(arg amiroNr)" output="screen" clear_params="true">
-    <remap from="scan" to="/amiro$(arg amiroNr)/laserscan" />
-    <param name="base_frame" value="amiro$(arg amiroNr)/base_link" />
-    <param name="odom_frame" value="amiro$(arg amiroNr)/odom" />
-    <param name="map_update_interval" value="0.1"/>
-  </node>
+      <remap from="scan" to="/amiro$(arg amiroNr)/laserscan"/>
+      <param name="base_frame" value="amiro$(arg amiroNr)/base_link"/>
+      <param name="odom_frame" value="amiro$(arg amiroNr)/odom"/>
+      <!-- <param name="map_update_interval" value="0.1"/> -->
+      <!-- <param name="minimumScore" value="50"/> -->
+      <param name="particles" value="100"/>
+    </node>
   </group>
   <!-- ################################################# -->
   <!-- FRONTIER EXPLORATION -->

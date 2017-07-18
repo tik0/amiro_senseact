@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
   std::string topicClock;
   std::string scope;
 
-  n.param<std::string>("topic_clock", topicClock, "clock");
+  n.param<std::string>("topic_clock", topicClock, "/clock");
   n.param<std::string>("scope_rsb", scope, "/some/scope");
   n.param<int>("use_rsb_send_time", useRsbSendTime, 0);
 
