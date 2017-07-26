@@ -104,7 +104,8 @@
 
   <group if="$(arg dynamic_tf_with_odom)">
     <node pkg="dynamic_transform" type="dynamic_tf_with_odom" name="amiro$(arg amiroNr)_odom_base_link">
-      <param name="ros_listener_odom_topic" value="/amiro$(arg amiroNr)/odom"/>
+      <param name="ros_listener_odom_topic" value="/amiro$(arg amiroNr)/odom" unless="$(arg octomap)"/>
+      <param name="ros_listener_odom_topic" value="/amiro$(arg amiroNr)/ekf" if="$(arg octomap)"/>
       <param name="parent_frame" value="amiro$(arg amiroNr)/odom"/>
       <param name="child_frame" value="amiro$(arg amiroNr)/base_link"/>
     </node>
@@ -195,7 +196,7 @@
   <group if="$(arg gmapping)">
     <node pkg="gmapping" type="slam_gmapping" name="gmapping_thing$(arg amiroNr)" output="screen" clear_params="true">
       <remap from="scan" to="/amiro$(arg amiroNr)/laserscan"/>
-      <param name="base_frame" value="amiro$(arg amiroNr)/base_link"/>
+      <!-- <param name="base_frame" value="amiro$(arg amiroNr)/base_link"/> -->
       <param name="odom_frame" value="amiro$(arg amiroNr)/odom"/>
       <!-- <param name="map_update_interval" value="0.1"/> -->
       <!-- <param name="minimumScore" value="50"/> -->
