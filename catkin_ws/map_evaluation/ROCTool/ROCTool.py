@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 import ROCCalc
 import ROCPlot
 import cv2

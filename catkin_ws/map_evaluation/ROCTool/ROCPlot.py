@@ -15,8 +15,8 @@ def drawROCCurve(ROCs):
     box = ax.get_position()
     c=0.3
     ax.set_position([box.x0, box.y0+(1-c)*box.height, box.width, c*box.height])
-    plt.xlim([0.0, 0.1])
-    plt.ylim([0.5, 1.0])
+    plt.xlim([0.0, 1.01])
+    plt.ylim([0.0, 1.01])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     ax.legend(loc="center left",fontsize=10,bbox_to_anchor=(-.15, -1.5))
