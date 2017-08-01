@@ -42,6 +42,12 @@ const string programName = "rsb_twb_to_ros_navmsgs_odometry";
 //
 bool rostimenow;
 
+/**
+ * @brief Conversion Euler angles to Quaternion
+ * Considering Heading along z axis, pitch allow y axis and roll along x axis.
+ * @param[euler]  The three euler angles, the convention is Roll, Pitch, Yaw
+ * @param[quat] quaternion (x,y,z,w).
+ */
 void euler2Quaternion(double (&euler)[3], double (&quat)[4]) {
   double c1 = cos(euler[2] / 2);
   double s1 = sin(euler[2] / 2);
@@ -54,7 +60,9 @@ void euler2Quaternion(double (&euler)[3], double (&quat)[4]) {
   quat[1] = (double) (c1 * s2 * c3 + s1 * c2 * s3);
   quat[2] = (double) (s1 * c2 * c3 - c1 * s2 * s3);
   quat[3] = (double) (c1 * c2 * c3 + s1 * s2 * s3);
-}
+
+  // ROS_INFO("%f %f %f ... %f %f %f %f", euler[0], euler[1], euler[2], quat[0], quat[1], quat[2], quat[3]);
+} // euler2Quaternion
 
 void processTwbTrackingProtoObjectList(rsb::EventPtr event) {
   if (event->getType() != "twbTracking::proto::ObjectList") {
@@ -68,9 +76,10 @@ void processTwbTrackingProtoObjectList(rsb::EventPtr event) {
     if (obj.id() != markerId) {
       return;
     }
-    double rotEuler[3] = { obj.position().rotation().x(), obj.position().rotation().y(), obj.position().rotation().z() };
+    double rotEuler[3] = { obj.position().rotation().x() / 180.0 * M_PI, obj.position().rotation().y() / 180.0 * M_PI, - /* Angle in twb wrong way */obj.position().rotation().z() / 180.0 * M_PI };
     double rotQuat[4];
-    euler2Quaternion(rotEuler, rotQuat);
+    euler2Quaternion(rotEuler,
+      rotQuat);
     nav_msgs::Odometry odom;
     odom.header.frame_id         = "map";
     odom.header.stamp            = getRosTimeFromRsbEvent(event, rostimenow);

@@ -3,6 +3,8 @@
   <arg name="amiroNr" default="1"/>
   <arg name="markerId" default="1"/>
   <arg name="laserscan" default="0"/>
+  <arg name="laserscan_sick" default="0"/>
+  <arg name="laserscan_hokuyo" default="0"/>
   <arg name="camera" default="0"/>
   <arg name="twb" default="0"/>
   <arg name="xbox_controller" default="0"/>
@@ -59,10 +61,8 @@
     <node name="rst_vision_laserscan_to_ros_sensormsgs_Laserscan$(arg amiroNr)" pkg="rsb_to_ros_bridge" type="rst_vision_laserscan_to_ros_sensormsgs_Laserscan" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
       <param name="rsb_listener_scope" value="/amiro$(arg amiroNr)/laserscan"/>
       <param name="ros_publish_topic" value="/amiro$(arg amiroNr)/laserscan"/>
-      <param name="offset_scan" value="-2.35619"/>
-      <!-- SICK = -2.35619 = -135° degree -->
-      <!-- HOKUYO = -2.0944 = -120° degree -->
-
+      <param name="offset_scan" value="-2.35619" if="$(arg laserscan_sick)"/>
+      <param name="offset_scan" value="-2.0944" if="$(arg laserscan_hokuyo)"/>
       <param name="rostimenow" value="$(arg rostimenow)"/>
     </node>
   </group>
@@ -76,7 +76,7 @@
     <param name="rsb_publish_scope" value="amiro$(arg amiroNr)/pose"/>
   </node> -->
   <group if="$(arg xbox_controller)">
-    <node name="xbox_controller_bridge$(arg amiroNr)" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_twist_to_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME" clear_params="true">
+    <node name="xbox_controller_bridge$(arg amiroNr)" pkg="ros_to_rsb_bridge" type="ros_geometry_msgs_twist_to_rst_value_array" respawn="false" output="screen" cwd="ROS_HOME">
       <param name="ros_listener_topic" value="/teleop_velocity_smoother/raw_cmd_vel"/>
       <param name="rsb_publish_scope" value="/amiro$(arg amiroNr)/motor/5"/>
     </node>
@@ -129,14 +129,14 @@
       <param name="print_diagnostics" value="true"/>
 
       <param name="odom0" value="amiro$(arg amiroNr)/odom"/>
-      values is x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az.
-      <rosparam param="odom0_config">[true, true, false, false, false, true, true, false, false, false, false, true, false, false, false]</rosparam>
+      <!-- values is x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az. -->
+      <rosparam param="odom0_config">[true, true, false, false, false, true, false, false, false, false, false, false, false, false, false]</rosparam>
       <param name="odom0_differential" value="true"/>
       <param name="odom0_relative" value="true"/>
 
       <param name="odom1" value="/tracking/$(arg markerId)"/>
-      <rosparam param="odom1_config">[true, true, true, false, false, false, false, false, false, false, false, false, false, false, false]</rosparam>
-      <param name="odom1_differential" value="true"/>
+      <rosparam param="odom1_config">[true, true, false, false, false, false, false, false, false, false, false, false, false, false, false]</rosparam>
+      <param name="odom1_differential" value="false"/>
       <param name="odom1_relative" value="false"/>
     </node>
   </group>
@@ -182,9 +182,8 @@
       <!-- <param name="target_frame" value="amiro1/base_laser"/> -->
     </node>
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server$(arg amiroNr)">
-      <param name="base_frame_id" value="/amiro$(arg amiroNr)/base_link"/>
-      <param name="resolution" value="0.0250"/>
-      <param name="max_sensor_range" value="25.0"/>
+      <param name="resolution" value="0.0500"/>
+      <param name="max_sensor_range" value="5.0"/>
       <remap from="cloud_in" to="/amiro$(arg amiroNr)/pointcloud2"/>
     </node>
   </group>
