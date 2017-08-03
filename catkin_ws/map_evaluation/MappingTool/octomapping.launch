@@ -1,0 +1,21 @@
+<launch>
+  <arg name="amiroNr" default="1"/>
+  <arg name="resolution" default="0.05"/>
+  <arg name="sensor_model/hit" default="0.7"/>
+  <arg name="sensor_model/miss" default="0.4"/>
+  <arg name="max_sensor_range" default="5.0"/>
+
+  <node pkg="mapping" type="ros_laser_scan_to_ros_pointcloud2" name="amiro$(arg amiroNr)_laser_to_point">
+    <param name="laserscan_topic" value="/amiro$(arg amiroNr)/laserscan"/>
+    <param name="pointcloud2_topic" value="/amiro$(arg amiroNr)/pointcloud2"/>
+    <param name="target_frame" value="amiro$(arg amiroNr)/base_laser"/>
+  </node>
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server$(arg amiroNr)">
+    <param name="max_sensor_range" value="$(arg max_sensor_range)"/>
+    <remap from="cloud_in" to="/amiro$(arg amiroNr)/pointcloud2"/>
+    <remap from="projected_map" to="/map"/>
+    <param name="resolution" value="$(arg resolution)"/>
+    <param name="sensor_model/hit" value="$(arg sensor_model/hit)"/>
+    <param name="sensor_model/miss" value="$(arg sensor_model/miss)"/>
+  </node>
+</launch>
