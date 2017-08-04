@@ -5,6 +5,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
 
 def drawROCCurve(ROCs):
+    # plt.figure('ROC curve')
     plt.figure()
     lw = 2
     ax = plt.subplot(111)
