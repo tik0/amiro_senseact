@@ -1,4 +1,4 @@
-<data>
+<root>
   <algorithms>
     <algorithm name="gmapping">
       <bridge>
@@ -78,6 +78,9 @@
   <rsbag_files>
     <path>./../tide-files</path>
     <rsbag_file name="hokuyo">
+      <param name="rostimenow">"true"</param>
+      <param name="laserscan">"1"</param>
+      <param name="laserscan_hokuyo">"1"</param>
       <filename>amiro_hokuyo_controller.tide</filename>
       <speed>1</speed>
     </rsbag_file>
@@ -93,4 +96,4 @@
     </rsbag_file>
   </rsbag_files>
   <rsb-ros_bridge filepath="./../../start.launch"/>
-</data>
+</root>

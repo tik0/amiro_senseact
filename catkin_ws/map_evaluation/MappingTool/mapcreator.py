@@ -9,9 +9,6 @@ import math
 from collections import deque
 import ntpath
 
-# https://stackoverflow.com/questions/4789837/how-to-terminate-a-python-subprocess-launched-with-shell-true
-# https://stackoverflow.com/questions/2837214/python-popen-command-wait-until-the-command-is-finished
-
 def getBridgeParams(bridge_node):
     params = ""
     for param in bridge_node.findall('param'):
@@ -31,7 +28,6 @@ def runAlgorithm(root,rsbag_command,alg_command,mapfile):
     print alg_pid
     time.sleep(10)
     print rsbag_command
-    # subprocess.call(rsbag_command)
     rsbag = subprocess.Popen(rsbag_command, shell=True)
     rsbag.communicate()
     time.sleep(5)
@@ -41,9 +37,7 @@ def runAlgorithm(root,rsbag_command,alg_command,mapfile):
 
 def saveMap(filename):
     command = "rosrun map_server map_saver -f "+filename
-    # subprocess.call(command)
     mapsaver = subprocess.Popen(command, shell=True)
-    # mapsaver.communicate()
     print command
     print "================"
     print ""
@@ -73,7 +67,6 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
                         mapfile = mapfile+"_"+name+"_"+value
             command = "roslaunch "+algLaunch+" "+paramstring[:-1]
             runAlgorithm(root,rsbag_command,command,mapfile)
-            # saveMap(mapfile)
 
         # Cross evaluation of values for single parameters and groups of parameters with depending values
         for cross in alg.findall('cross'):
@@ -117,7 +110,7 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
             if len(crossparams)<1:
                 continue
             crossparamstrings = crossparams.pop()
-            crossmapstrings = crossmaps.pop() #TODO: prefix
+            crossmapstrings = crossmaps.pop()
             while len(crossparams)>0:
                 paramdeq = crossparams.pop()
                 mapdeq = crossmaps.pop()
@@ -129,12 +122,9 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
                         crossparamstrings.append(oldstring+" "+paramdeq.pop())
                         crossmapstrings.append(oldmap+"_"+mapdeq.pop())
             while len(crossparamstrings)>0:
-            # for crossstring in crossparamstrings:
                 command = "roslaunch "+algLaunch+" "+crossparamstrings.pop()
                 mapfile = rsbag_name+"_"+alg.get('name')+crossmapstrings.pop()
                 runAlgorithm(root,rsbag_command,command,mapfile)
-                # saveMap(mapfile)
-            # print crossparamstrings
         os.killpg(bridge_pid, signal.SIGTERM)
 
 
