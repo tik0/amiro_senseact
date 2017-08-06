@@ -8,10 +8,25 @@ import numpy as np
 import math
 from collections import deque
 import ntpath
+import psutil
+
+def killProcessTree(pid):
+    try:
+        parent = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return False
+    # children = parent.children(recursive=True)
+    children = parent.children(recursive=False)
+    for process in children:
+        process.send_signal(signal.SIGTERM)
+    return True
 
 def getBridgeParams(bridge_node):
     params = ""
-    for param in bridge_node.findall('param'):
+    paramnodes = bridge_node.findall('param')
+    if paramnodes == None:
+        return params
+    for param in paramnodes:
         name = param.get('name')
         value = param.text
         if name!=None and value!=None:
@@ -21,42 +36,47 @@ def getBridgeParams(bridge_node):
     return params
 
 def runAlgorithm(root,rsbag_command,alg_command,mapfile):
-    print alg_command
-    time.sleep(5)
-    alg = subprocess.Popen(alg_command, shell=True)
-    alg_pid = os.getpgid(alg.pid)
-    print alg_pid
+    print "Execute: ", alg_command
     time.sleep(10)
-    print rsbag_command
+    alg = subprocess.Popen(alg_command, shell=True)
+    alg_pid = alg.pid
+    time.sleep(10)
+    print "Execute: ", rsbag_command
     rsbag = subprocess.Popen(rsbag_command, shell=True)
     rsbag.communicate()
     time.sleep(5)
     saveMap(mapfile)
-    time.sleep(10)
-    os.killpg(alg_pid, signal.SIGTERM)
+    time.sleep(15)
+    print "Kill process: ", alg_pid
+    killProcessTree(alg_pid)
 
 def saveMap(filename):
     command = "rosrun map_server map_saver -f "+filename
     mapsaver = subprocess.Popen(command, shell=True)
-    print command
-    print "================"
-    print ""
+    print "Execute: ", command
+    time.sleep(7)
+    if killProcessTree(mapsaver.pid):
+        print "Successfully saved map!"
+    else:
+        print "Failed to save map!"
 
 def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
+    mapfilePath = root.find('map_path').text
+    if mapfilePath==None:
+        mapfilePath = "" #TODO: FIXME!!
     for alg in root.find('algorithms').findall('algorithm'):
         bridge_params = getBridgeParams(alg.find('bridge'))
         rsbrosbridge = "roslaunch "+root.find("rsb-ros_bridge").get('filepath')\
             +" "+rsbag_bridge_param+" "+bridge_params
-        print rsbrosbridge
+        print "Execute: ", rsbrosbridge
         bridge = subprocess.Popen(rsbrosbridge, shell=True)
-        bridge_pid = os.getpgid(bridge.pid)
-        print bridge_pid
+        bridge_pid = bridge.pid
 
         algFile = alg.find('file')
         algLaunch = os.path.join(algFile.text,algFile.get('name'))
         # Just one set of settings
         for single in alg.findall('single'):
-            mapfile = rsbag_name+"_"+alg.get('name')
+            mapfile = mapfilePath+rsbag_name+"_"+alg.get('name')
             paramstring = ""
             for param in single.findall('param'):
                 name = param.get('name')
@@ -118,19 +138,19 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
                 for i in range(0,c):
                     oldstring = crossparamstrings.popleft()
                     oldmap = crossmapstrings.popleft()
-                    while len(paramdeq)>0:
-                        crossparamstrings.append(oldstring+" "+paramdeq.pop())
-                        crossmapstrings.append(oldmap+"_"+mapdeq.pop())
-            while len(crossparamstrings)>0:
-                command = "roslaunch "+algLaunch+" "+crossparamstrings.pop()
-                mapfile = rsbag_name+"_"+alg.get('name')+crossmapstrings.pop()
+                    for j in range(0,len(paramdeq)):
+                        crossparamstrings.append(oldstring+" "+paramdeq[j])
+                        crossmapstrings.append(oldmap+"_"+mapdeq[j])
+            for i in range(0,len(crossparamstrings)):
+                command = "roslaunch "+algLaunch+" "+crossparamstrings[i]
+                mapfile = mapfilePath+rsbag_name+"_"+alg.get('name')+crossmapstrings[i]
                 runAlgorithm(root,rsbag_command,command,mapfile)
-        os.killpg(bridge_pid, signal.SIGTERM)
+        print "Kill process: ", bridge_pid
+        killProcessTree(bridge_pid)
 
 
 def forAllPlaybackSpeeds(root,rsbag_file,filePathName,name):
     rsbag_params = getBridgeParams(rsbag_file.find('bridge'))
-    print (rsbag_params)
     for speed in rsbag_file.findall('speed'):
         command = 'rsbagcl0.16 play -r"recorded-timing :speed '+speed.text+'" '+filePathName
         forAllAlgorithms(root,command,name,rsbag_params)
