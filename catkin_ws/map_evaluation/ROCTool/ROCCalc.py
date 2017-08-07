@@ -26,8 +26,8 @@ def loadImages(groundTruthFile, testPath):
     testImages = deque()
     testFiles = deque()
     for fileN in os.listdir(testPath):
-        if fileN.endswith(".pgm"):
-            imFile = "%s%s"%(testPath,fileN)
+        imFile = "%s%s"%(testPath,fileN)
+        if fileN.endswith(".pgm") and imFile!=groundTruthFile:
             print "Loading: %s"%(imFile)
             testImages.append(cv2.imread(imFile,0))
             testFiles.append(ntpath.basename(fileN))
@@ -50,6 +50,6 @@ def calcROC(gtImage, testImage, free, occupied):
     fp = np.sum(fpMat)
     fn = np.sum(fnMat)
 
-    tpr = tp / float(tp+fn)
-    fpr = fp / float(fp+tn)
+    tpr = float(tp) / float(tp+fn)
+    fpr = float(fp) / float(fp+tn)
     return (fpr,tpr)

@@ -2,16 +2,19 @@
 import ROCCalc
 import ROCPlot
 import ROCMapTransform
-import cv2
+import ROCSaveToFile
+# import cv2
 
 free = 254
 occupied = 0
+unknown = 206
 
 # gtFile = "./gmapping/amiro_hokuyo_controller_speed1_gmapping_default.pgm"
-gtFile = "../gmapping/amiro_sick_controller_speed1_gmapping_default.pgm"
-gtWarped = "../warped/amiro_sick_controller_speed1_gmapping_default.pgm"
+gtFile = "../gmapping/amiro_sick_controller_speed1_gmapping_particles_100.pgm"
+gtTransformed = "../transformed/gt.pgm"
 testFolder = "../gmapping/"
-saveFolder = "../warped/"
-ROCMapTransform.transformMap(gtFile,gtWarped,testFolder,saveFolder)
-ROCs = ROCCalc.calculateROCs(gtFile,testFolder,free,occupied)
+saveFolder = "../transformed/"
+ROCMapTransform.transformMap(gtFile,gtTransformed,testFolder,saveFolder,occupied,free,unknown)
+ROCs = ROCCalc.calculateROCs(gtTransformed,saveFolder,free,occupied)
 ROCPlot.drawROCCurve(ROCs)
+ROCSaveToFile.saveToCSV("rocs.csv",ROCs)
