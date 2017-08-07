@@ -1,8 +1,4 @@
-import os
-import numpy as np
-import math
 from collections import deque
-import ntpath
 
 def saveToCSV(filename,ROCs):
     csvFile = open(filename,"w")
