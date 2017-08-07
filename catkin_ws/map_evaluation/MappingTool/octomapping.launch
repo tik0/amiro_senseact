@@ -13,7 +13,7 @@
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server$(arg amiroNr)">
     <param name="max_sensor_range" value="$(arg max_sensor_range)"/>
     <remap from="cloud_in" to="/amiro$(arg amiroNr)/pointcloud2"/>
-    <remap from="projected_map" to="/map"/>
+    <remap from="/projected_map" to="/map"/>
     <param name="resolution" value="$(arg resolution)"/>
     <param name="sensor_model/hit" value="$(arg sensor_model/hit)"/>
     <param name="sensor_model/miss" value="$(arg sensor_model/miss)"/>

@@ -49,17 +49,17 @@
       </cross>
     </algorithm> -->
 
-    <algorithm name="hector_mapping">
+    <!-- <algorithm name="hector_mapping">
       <bridge>
         <param name="dynamic_tf_with_odom">1</param>
       </bridge>
       <file name="hector_mapping.launch">./</file>
-      <!-- <single>
+      <single>
         <param name="map_resolution">0.05</param>
         <param name="map_size">192</param>
         <param name="map_update_angle_thresh">0.9</param>
         <param name="map_update_distance_thresh">0.4</param>
-      </single> -->
+      </single>
       <cross>
         <group>
           <set>
@@ -114,9 +114,9 @@
           <value>0.7</value>
         </param>
       </cross>
-    </algorithm>
+    </algorithm> -->
 
-    <!-- <algorithm name="octopmapping">
+    <algorithm name="octopmapping">
       <bridge>
         <param name="dynamic_tf_with_ekf">1</param>
         <param name="static_tf_map_odom">1</param>
@@ -126,7 +126,9 @@
       <file name="octomapping.launch">./</file>
       <cross>
         <param name="resolution">
+          <value>0.025</value>
           <value>0.05</value>
+          <value>0.1</value>
         </param>
         <param name="sensor_model/hit">
           <value>0.7</value>
@@ -134,27 +136,45 @@
         <param name="sensor_model/miss">
           <value>0.4</value>
         </param>
-        <param name="max_sensor_range">
-          <value>0.5</value>
+        <param name="sensor_model/max_range">
+          <value>5</value>
         </param>
-      </corss>
+      </cross>
       <cross>
         <param name="resolution">
-          <value>0.05</value>
+          <value>0.025</value>
         </param>
         <param name="sensor_model/hit">
           <value>0.7</value>
+          <value>0.6</value>
+          <value>0.8</value>
         </param>
         <param name="sensor_model/miss">
           <value>0.4</value>
         </param>
-        <param name="max_sensor_range">
-          <value>0.5</value>
+        <param name="sensor_model/max_range">
+          <value>5</value>
         </param>
-      </corss>
+      </cross>
       <cross>
         <param name="resolution">
-          <value>0.05</value>
+          <value>0.025</value>
+        </param>
+        <param name="sensor_model/hit">
+          <value>0.7</value>
+        </param>
+        <param name="sensor_model/miss">
+          <value>0.45</value>
+          <value>0.4</value>
+          <value>0.3</value>
+        </param>
+        <param name="sensor_model/max_range">
+          <value>5</value>
+        </param>
+      </cross>
+      <cross>
+        <param name="resolution">
+          <value>0.025</value>
         </param>
         <param name="sensor_model/hit">
           <value>0.7</value>
@@ -162,11 +182,13 @@
         <param name="sensor_model/miss">
           <value>0.4</value>
         </param>
-        <param name="max_sensor_range">
-          <value>0.5</value>
+        <param name="sensor_model/max_range">
+          <value>2</value>
+          <value>5</value>
+          <value>7</value>
         </param>
-      </corss>
-    </algorithm> -->
+      </cross>
+    </algorithm>
   </algorithms>
   <rsbag_files>
     <path>./../tide-files</path>

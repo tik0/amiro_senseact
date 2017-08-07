@@ -63,7 +63,7 @@ def saveMap(filename):
 def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
     mapfilePath = root.find('map_path').text
     if mapfilePath==None:
-        mapfilePath = "" #TODO: FIXME!!
+        mapfilePath = ""
     for alg in root.find('algorithms').findall('algorithm'):
         bridge_params = getBridgeParams(alg.find('bridge'))
         rsbrosbridge = "roslaunch "+root.find("rsb-ros_bridge").get('filepath')\
@@ -84,7 +84,7 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
                 if value!=None and name != None:
                     paramstring = paramstring+name+":="+value+" "
                     if param.get('mapF')!="0":
-                        mapfile = mapfile+"_"+name+"_"+value
+                        mapfile = mapfile+"_"+name.replace("/","_")+"_"+value
             command = "roslaunch "+algLaunch+" "+paramstring[:-1]
             runAlgorithm(root,rsbag_command,command,mapfile)
 
@@ -103,7 +103,7 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
                         if value !=None:
                             paramdeq.append(name+":="+value)
                             if param.get('mapF')!="0":
-                                mapdeq.append(name+"_"+value)
+                                mapdeq.append(name.replace("/","_")+"_"+value)
                     if len(paramdeq)>0:
                         crossparams.append(paramdeq)
                         crossmaps.append(mapdeq)
@@ -120,7 +120,7 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
                         if value != None and name != None:
                             paramstring = paramstring+name+":="+value+" "
                             if param.get('mapF')!="0":
-                                mapstring = mapstring+"_"+name+"_"+value
+                                mapstring = mapstring+"_"+name.replace("/","_")+"_"+value
                     if len(paramstring)>0:
                         paramdeq.append(paramstring[:-1])
                         mapdeq.append(mapstring)
@@ -143,7 +143,7 @@ def forAllAlgorithms(root,rsbag_command,rsbag_name,rsbag_bridge_param):
                         crossmapstrings.append(oldmap+"_"+mapdeq[j])
             for i in range(0,len(crossparamstrings)):
                 command = "roslaunch "+algLaunch+" "+crossparamstrings[i]
-                mapfile = mapfilePath+rsbag_name+"_"+alg.get('name')+crossmapstrings[i]
+                mapfile = mapfilePath+rsbag_name+"_"+alg.get('name')+"_"+crossmapstrings[i]
                 runAlgorithm(root,rsbag_command,command,mapfile)
         print "Kill process: ", bridge_pid
         killProcessTree(bridge_pid)
