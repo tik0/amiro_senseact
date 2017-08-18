@@ -5,7 +5,7 @@ cmake_er .
 make
 
 
-destination=ros_navigation_stack_sense_act_tools
+destination=ros_sense_act_tools
 if [ -d "${destination}" ]; then
   rm -r ${destination}
 fi
