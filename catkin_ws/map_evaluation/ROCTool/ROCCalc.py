@@ -48,7 +48,12 @@ def calcROC(gtImage, testImage, free, occupied):
     tp = np.sum(tpMat)
     fp = np.sum(fpMat)
     fn = np.sum(fnMat)
-
-    tpr = float(tp) / float(tp+fn)
-    fpr = float(fp) / float(fp+tn)
+    if tp+fn>0:
+        tpr = float(tp) / float(tp+fn)
+    else:
+        tpr = float(0)
+    if fp+tn>0:
+        fpr = float(fp) / float(fp+tn)
+    else:
+        fpr = float(0)
     return (fpr,tpr)
