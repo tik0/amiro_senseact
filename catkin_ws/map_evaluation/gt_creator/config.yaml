@@ -12,8 +12,8 @@ offset:
 map:
   x: 1365
   y: 1451
-  scaling: 0.3 # how does 1 pixel scale in the resulting map
-  wallthickness: 20
+  scaling: 1 # how does 1 pixel scale in the resulting map
+  wallthickness: 10
 
 obstacle:
   box0:
