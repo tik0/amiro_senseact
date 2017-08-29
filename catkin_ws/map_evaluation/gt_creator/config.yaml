@@ -1,0 +1,59 @@
+# Default all types are in pixel
+
+gt_types:
+  free: 254
+  unknown: 206
+  occupied: 0
+
+offset:
+  x: 200
+  y: 200
+
+map:
+  x: 1365
+  y: 1451
+  scaling: 0.3 # how does 1 pixel scale in the resulting map
+  wallthickness: 1
+
+obstacle:
+  box0:
+    x: 259
+    y: 204
+    width: 210
+    height: 165
+
+  box1:
+    x: 243
+    y: 551
+    width: 225
+    height: 185
+
+  box2:
+    x: 303
+    y: 919
+    width: 165
+    height: 210
+
+  box3:
+    x: 820
+    y: 337
+    width: 185
+    height: 225
+
+  box4:
+    x: 820
+    y: 922
+    width: 210
+    height: 165
+
+  box5:
+    x: 981
+    y: 0
+    width: 210
+    height: 165
+
+  box6:
+    x: 1200
+    y: 1241
+    width: 165
+    height: 210
