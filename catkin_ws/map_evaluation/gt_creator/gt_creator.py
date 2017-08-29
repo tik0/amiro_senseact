@@ -6,9 +6,8 @@ import numpy as np
 import yaml
 
 debug = 0
-
-
 map_scaling = 0
+
 def scale(value):
     global map_scaling
     global debug
@@ -35,13 +34,13 @@ def parseConfigString(configstring):
     image = np.zeros((scale(map_y+2*offset_y), scale(map_x+2*offset_x), 1), np.uint8)
 
     #creates unknown area
-    cv2.rectangle(image, (scale(0), scale(0)), (image.shape[0], image.shape[1]), gt_unknown, -1)
+    cv2.rectangle(image, (scale(0), scale(0)), (image.shape[1], image.shape[0]), gt_unknown, cv2.FILLED)
 
     #create free area
-    cv2.rectangle(image, (scale(offset_x), scale(offset_y)), (scale(map_x+offset_x), scale(map_y+offset_y)), gt_free, -1)
+    cv2.rectangle(image, (scale(offset_x), scale(offset_y)), (scale(map_x+offset_x), scale(map_y+offset_y)), gt_free, cv2.FILLED)
 
     # create map borders
-    cv2.rectangle(image, (scale(offset_x), scale(offset_y)), (scale(map_x+offset_x), scale(map_y+offset_y)), gt_occupied, map_wallthickness, cv2.LINE_8)
+    cv2.rectangle(image, (scale(offset_x), scale(offset_y)), (scale(map_x+offset_x), scale(map_y+offset_y)), gt_occupied, map_wallthickness)
 
     # draw every obstacle
     numb_obstacle = len(configstring['obstacle'])
@@ -53,8 +52,10 @@ def parseConfigString(configstring):
             box_y = configstring['obstacle']['box'+str(i)]['y'] + offset_y
             box_width = configstring['obstacle']['box'+str(i)]['width']
             box_height = configstring['obstacle']['box'+str(i)]['height']
-            cv2.rectangle(image, (scale(box_x), scale(box_y)), (scale(box_x+box_width), scale(box_y+box_height)), gt_unknown, -1)
-            cv2.rectangle(image, (scale(box_x), scale(box_y)), (scale(box_x+box_width), scale(box_y+box_height)), gt_occupied, map_wallthickness, cv2.LINE_8)
+            #creates unknown area in the box
+            cv2.rectangle(image, (scale(box_x), scale(box_y)), (scale(box_x+box_width), scale(box_y+box_height)), gt_unknown, cv2.FILLED)
+            #we need to build a wall for the box
+            cv2.rectangle(image, (scale(box_x), scale(box_y)), (scale(box_x+box_width), scale(box_y+box_height)), gt_occupied, map_wallthickness)
             if (debug):
                 cv2.putText(image,'box'+str(i),(scale(box_x), scale(box_y)), cv2.FONT_HERSHEY_SIMPLEX, 1,128,2)
         except:
@@ -67,7 +68,7 @@ def parseConfigString(configstring):
     cv2.imwrite("gt.png", image)
 
 
-
+# MAIN
 if __name__ == "__main__":
 
     # Read sysargs

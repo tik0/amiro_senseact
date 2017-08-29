@@ -13,7 +13,7 @@ map:
   x: 1365
   y: 1451
   scaling: 0.3 # how does 1 pixel scale in the resulting map
-  wallthickness: 1
+  wallthickness: 20
 
 obstacle:
   box0:
