@@ -17,7 +17,7 @@ def drawROCCurve(ROCs):
         miny = min(miny,roc[1][1])
         maxx = max(maxx,roc[1][0])
         maxy = max(maxy,roc[1][1])
-        ax.plot(roc[1][0],roc[1][1], marker='o', markersize=7, lw=lw, label=roc[0])
+        ax.plot(roc[1][0],roc[1][1], marker='o', markersize=10*roc[2], lw=lw, label=roc[0])
     ax.plot([-1, 2], [-1, 2], color='navy', lw=lw, linestyle='--')
     minx=max(minx-0.2,0)
     miny=max(miny-0.2,0)
