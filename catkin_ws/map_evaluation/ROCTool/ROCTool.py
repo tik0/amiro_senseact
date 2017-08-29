@@ -18,7 +18,7 @@ gtTransformed = "../transformed/gt.pgm"
 testFolder = "../maps/"
 saveFolder = "../transformed/"
 poorMapsFolder = "../notUsed/"
-ROCMapTransform.transformMap2(gtFile,gtTransformed,testFolder,saveFolder,poorMapsFolder,occupied,free,unknown)
+# ROCMapTransform.transformMap2(gtFile,gtTransformed,testFolder,saveFolder,poorMapsFolder,occupied,free,unknown)
 ROCs = ROCCalc.calculateROCs(gtTransformed,saveFolder,free,occupied)
 ROCSaveToFile.saveToCSV("rocs.csv",ROCs)
 ROCPlot.drawROCCurve(ROCs)

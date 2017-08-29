@@ -12,9 +12,9 @@ def calculateROCs(groundTruthFile, testPath, free, occupied):
         im = testImages[i]
         fileN = testFiles[i]
         print "Calculate ROC for: %s and %s:"%(groundTruthFile,fileN)
-        fpr, fnr = calcROC(gtImage,im,free,occupied)
-        ROCs.append([fileN,[fpr,fnr]])
-        print "FPR: %f\tFNR: %f"%(fpr,fnr)
+        fpr, fnr, mr = calcROC(gtImage,im,free,occupied)
+        ROCs.append([fileN,[fpr,fnr],mr])
+        print "FPR: %f\tFNR: %f\t Matchrate: %f"%(fpr,fnr,mr)
     return ROCs
 
 def loadImages(groundTruthFile, testPath):
@@ -56,4 +56,9 @@ def calcROC(gtImage, testImage, free, occupied):
         fpr = float(fp) / float(fp+tn)
     else:
         fpr = float(0)
-    return (fpr,tpr)
+    match = np.equal(gtImage,testImage)
+    missmatch = np.logical_not(match)
+    mt = np.sum(match)
+    mmt = np.sum(missmatch)
+    mtr = float(tp)/float(tp+fp)
+    return (fpr,tpr,mtr)

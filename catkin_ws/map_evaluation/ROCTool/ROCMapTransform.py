@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from collections import deque
 import ntpath
+from matplotlib import pyplot as plt
 
 right_clicks = deque()
 
@@ -222,19 +223,22 @@ def transformMap2(groundTruthFile, saveFile, testPath, saveFolder, poorMapsfolde
             if m.distance < 0.7*n.distance:
                 good.append(m)
         print len(good)
-        # if len(good)<3:
-        #     print "Not enough points!"
-        #     cv2.imwrite(imFileP,im)
-        #     continue
-        src_pts = np.float32([ kp2[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-        dst_pts = np.float32([ kp1[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
-        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+        if len(good)<1:
+            print "Not enough points!"
+            cv2.imwrite(imFileP,im)
+            continue
+        dst_pts = np.float32([ kp2[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
+        src_pts = np.float32([ kp1[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+        M = cv2.estimateRigidTransform(src_pts, dst_pts, False)
+        # M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
         # M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC)
         if M!=None:
-            print "Homography found!"
+            # print "Homography found!"
             M = np.asarray(M,np.float32)
+            M = cv2.invertAffineTransform(M)
             # print M
-            imW = cv2.warpPerspective(im,M,(width,height))
+            # imW = cv2.warpPerspective(im,M,(width,height),flags=cv2.INTER_NEAREST+cv2.WARP_FILL_OUTLIERS+cv2.WARP_INVERSE_MAP)
+            imW = cv2.warpAffine(im,M,(width,height),cv2.INTER_NEAREST)
             imW = imW-hit
             imW = cv2.threshold(imW,unknown-2-hit,255,3)
             # (255-(imW+hit))-(255-miss)
@@ -243,6 +247,25 @@ def transformMap2(groundTruthFile, saveFile, testPath, saveFolder, poorMapsfolde
             # 255-(imw[1]+(255-miss))
             imW = miss-imW[1]
             cv2.imwrite(imFileW,imW)
+            # ========
+            # matchesMask = mask.ravel().tolist()
+            # h,w = im.shape
+            # pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+            # dst = cv2.perspectiveTransform(pts,M)
+            # try:
+            #     img2 = cv2.polylines(gtImage,[np.int32(dst)],True,255,3, cv2.LINE_AA)
+            #     draw_params = dict(matchColor = (0,255,0), # draw matches in green color
+            #         singlePointColor = None,
+            #         matchesMask = matchesMask, # draw only inliers
+            #         flags = 2)
+            #     img3 = cv2.drawMatches(im,kp2,gtImage,kp1,good,None,**draw_params)
+            #     plt.imshow(img3, 'gray'),plt.show()
+            #     plt.imshow(imW, 'gray'),plt.show()
+            # except:
+            #     continue
+            #     print "Error"
+
+            # ========
         else:
             print "No homography found!"
             cv2.imwrite(imFileP,im)
