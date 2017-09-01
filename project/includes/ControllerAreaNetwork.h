@@ -308,6 +308,16 @@ class ControllerAreaNetwork {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+  void sendWiiVector(float x, float y){
+      this->frame.can_id = 0;
+      this->encodeDeviceId(&frame, CAN::DIRECTION_VECTOR_WII_ID);
+      memcpy(&(this->frame.data[0]), &x, 4);
+      memcpy(&(this->frame.data[4]), &y, 4);
+      this->frame.can_dlc = 8;
+      this->transmitMessage(&frame);
+  }
+
   void broadcastShutdown() {
       this->frame.can_id = 0;
       this->encodeDeviceId(&frame, CAN::BROADCAST_SHUTDOWN);

@@ -14,5 +14,6 @@ senseRingProximity/
 senseSickTim/
 senseSimple3DTo2D/
 setLights/
-ros_navigation_stack_sense_act_tools/
+actAmiroVector/
+ros_sense_act_tools/
 install_manifest.txt
