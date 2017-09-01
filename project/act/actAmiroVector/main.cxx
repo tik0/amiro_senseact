@@ -2,10 +2,7 @@
 //============================================================================
 // Name        : main.cxx
 // Author      : tkorthals <tkorthals@cit-ec.uni-bielefeld.de>
-// Description : Send controls to the motor of AMiRo
-//               Velocity are received in mm/s via RSB
-//               Angular velocity are received in °/s via RSB
-// Edited by   : jhomburg <jhomburg@techfak.uni-bielefeld.de>
+// Description : Send motion vectors to the motor of AMiRo
 //============================================================================
 
 #include <MSG.h>
@@ -30,6 +27,8 @@
 using namespace std;
 
 
+static bool vectorTwbIsProx = false;
+
 void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   //Check if event is from type value
   if (event->getType() != "rst::math::Vec2DFloat"){
@@ -41,7 +40,11 @@ void sendMotorCmd(rsb::EventPtr event, ControllerAreaNetwork &CAN) {
   // Set the motor speed
   // Velocity send in µm/s
   // Angular velocity send in µrad/s
-  CAN.sendWiiVector(message->x(), message->y());
+  if (vectorTwbIsProx) {
+    CAN.sendTwbVector(message->x(), message->y());
+  } else {
+    CAN.sendProxVector(message->x(), message->y());
+  }
   DEBUG_MSG( "x: " << message->x() << " y: " << message->y())
 }
 
@@ -63,6 +66,7 @@ int main (int argc, const char **argv){
     ("x", po::value < int > (&x), "Static x vector")
     ("y", po::value < int > (&y), "Static y vector")
     ("useStaticVelocities", po::bool_switch(&useStaticVelocities)->default_value(false), "Make use of the given vector, instead of using spread")
+    ("vectorTwbIsProx", po::bool_switch(&vectorTwbIsProx)->default_value(false), "Send the vector with CAN id as proximity (and not as TWB)")
     ("sendStaticVelocitiesOnce", po::bool_switch(&sendStaticVelocitiesOnce)->default_value(false), "Send the static velocity command once")
     ("sendStaticVelocitiesPeriod", po::value < int > (&sendStaticVelocitiesPeriod_us), "Period between static velocity sending in µs");
 
@@ -93,7 +97,11 @@ int main (int argc, const char **argv){
       WARNING_MSG("Given vector length greater than 1");
     }
     while (rsc::misc::lastArrivedSignal() != rsc::misc::INTERRUPT_REQUESTED && rsc::misc::lastArrivedSignal() != rsc::misc::TERMINATE_REQUESTED) {
-      CAN.sendWiiVector(x, y);
+      if (vectorTwbIsProx) {
+        CAN.sendTwbVector(x, y);
+      } else {
+        CAN.sendProxVector(x, y);
+      }
       if (sendStaticVelocitiesOnce) {
         break;
       }
