@@ -28,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: amiro1/LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -440,12 +440,13 @@ Visualization Manager:
         Z: 0
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
+      Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.939796805
+      Pitch: 0.779796958
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.61544228
+      Yaw: 2.96043968
     Saved: ~
 Window Geometry:
   Displays:
@@ -463,5 +464,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1871
-  X: 49
-  Y: 24
+  X: 47
+  Y: 0

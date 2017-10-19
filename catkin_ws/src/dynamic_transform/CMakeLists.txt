@@ -15,9 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(PkgConfig)
-find_package(RSB 0.16 REQUIRED)
-find_package(RSC 0.16 REQUIRED)
-find_package(RST 0.16 REQUIRED COMPONENTS sandbox)
+find_package(RSB 0.15 REQUIRED)
+find_package(RSC 0.15 REQUIRED)
+find_package(RST 0.15 REQUIRED COMPONENTS sandbox)
 
 catkin_package(
 #  INCLUDE_DIRS include

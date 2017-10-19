@@ -31,3 +31,21 @@
 [submodule "catkin_ws/src/amiro_robot"]
 	path = catkin_ws/src/amiro_robot
 	url = https://github.com/tik0/amiro_robot.git
+[submodule "catkin_ws/src/turtlebot"]
+	path = catkin_ws/src/turtlebot
+	url = https://github.com/turtlebot/turtlebot.git
+[submodule "catkin_ws/src/hector_slam"]
+	path = catkin_ws/src/hector_slam
+	url = https://github.com/tu-darmstadt-ros-pkg/hector_slam.git
+[submodule "catkin_ws/src/slam_gmapping"]
+	path = catkin_ws/src/slam_gmapping
+	url = https://github.com/ros-perception/slam_gmapping.git
+[submodule "catkin_ws/src/octomap"]
+	path = catkin_ws/src/octomap
+	url = https://github.com/OctoMap/octomap.git
+[submodule "catkin_ws/src/octomap_mapping"]
+	path = catkin_ws/src/octomap_mapping
+	url = https://github.com/OctoMap/octomap_mapping.git
+[submodule "catkin_ws/src/octomap_ros"]
+	path = catkin_ws/src/octomap_ros
+	url = https://github.com/OctoMap/octomap_ros.git
