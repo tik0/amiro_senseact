@@ -35,8 +35,6 @@
 #include <rsb/MetaData.h>
 #include <rsb/util/QueuePushHandler.h>
 
-#//include <converter/vecIntConverter/main.hpp>
-//using namespace muroxConverter;
 #include <rst/generic/Value.pb.h>
 
 using namespace std;
@@ -428,7 +426,7 @@ void setColor(bool colorChanged, int counter10ms, int colorCounter, ControllerAr
 	 || ((blinking || blinkWarning || crossed) && counter10ms % steps10msHalf == 0)
 	 || (circleLeft || circleRight)
 	) {
-		for (uint led=0; led<8; led++) {
+		for (int led=0; led<8; led++) {
 			int ledNext = led+1;
 			if (ledNext >= 8) ledNext -= 8;
 

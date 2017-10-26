@@ -52,7 +52,7 @@
 
     <arg name="hector_mapping" value="1"/>
     <arg name="octomap" value="0"/>
-    <arg name="gmapping" value="0"/>
+    <arg name="gmapping" value="1"/>
 
   </include>
 

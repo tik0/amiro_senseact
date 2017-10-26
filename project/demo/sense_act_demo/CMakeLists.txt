@@ -6,6 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "$ENV{MUROX_PROJECT}/utilities/cmake"
 
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actAmiroLights actAmiroLights)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actAmiroMotor actAmiroMotor)
+add_subdirectory ($ENV{MUROX_PROJECT}/act/actAmiroVector actAmiroVector)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actEmergencyStop actEmergencyStop)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actPoseToTargetPosition actPoseToTargetPosition)
 add_subdirectory ($ENV{MUROX_PROJECT}/act/actTargetPosition actTargetPosition)

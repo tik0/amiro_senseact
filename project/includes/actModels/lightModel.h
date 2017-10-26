@@ -99,7 +99,7 @@ namespace LightModel {
 		 || (lightTypeIsInit(lightingType))
 		) {
 			commandVector.push_back(lightingType);
-			for (int led=0; led<colors.size(); led++) {
+			for (uint led=0; led<colors.size(); led++) {
 				commandVector.push_back((int)(colors[led].getRed()));
 				commandVector.push_back((int)(colors[led].getGreen()));
 				commandVector.push_back((int)(colors[led].getBlue()));

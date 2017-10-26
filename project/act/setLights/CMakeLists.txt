@@ -59,5 +59,4 @@ target_link_libraries (
     boost_thread
 )
 
-ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
-ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS})
+ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS} -Wall -Wno-deprecated-declarations -Wno-write-strings -Wno-unused-function -std=c++11)

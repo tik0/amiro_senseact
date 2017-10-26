@@ -308,6 +308,23 @@ class ControllerAreaNetwork {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  void sendMotorVector(float x, float y, uint32_t id = CAN::DIRECTION_VECTOR_TWB_ID){
+      this->frame.can_id = 0;
+      this->encodeDeviceId(&frame, id);
+      memcpy(&(this->frame.data[0]), &x, 4);
+      memcpy(&(this->frame.data[4]), &y, 4);
+      this->frame.can_dlc = 8;
+      this->transmitMessage(&frame);
+  }
+
+  void sendTwbVector(float x, float y){
+      sendMotorVector(x, y, CAN::DIRECTION_VECTOR_TWB_ID);
+  }
+  
+  void sendProxVector(float x, float y){
+      sendMotorVector(x, y, CAN::DIRECTION_VECTOR_PROX_ID);
+  }
+
   void broadcastShutdown() {
       this->frame.can_id = 0;
       this->encodeDeviceId(&frame, CAN::BROADCAST_SHUTDOWN);

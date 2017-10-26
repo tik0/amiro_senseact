@@ -27,9 +27,7 @@ INCLUDE("$ENV{MUROX_CMAKE_MODULES}/setCompilerIncludes.cmake")
 include_directories(
     ${RSB_INCLUDE_DIRS}                                             # RSB
     ${RSC_INCLUDE_DIRS}                                             # RSC
-    ${RST_INCLUDE_DIRS}                                             # RST
-    ${RST_INCLUDE_DIRS}                                             # RST
-    ${PROTOBUF_INCLUDE_DIRS}                                        # Protobuffer
+    4{RST_INCLUDE_DIRS}                                             # RST
     "$ENV{MUROX_INCLUDE_DIRS}"                                      # Other includes like converters and stuff
     ${CMAKE_CURRENT_BINARY_DIR}                                     # add the binary tree to the search path for
     ${GXX_INCLUDES}
@@ -39,8 +37,6 @@ include_directories(
 # Define the source
 SET (SOURCE main.cxx)
 
-# Add sources to build
-INCLUDE("$ENV{MUROX_CMAKE_MODULES}/colorSource.cmake")
 
 # add the executable
 ADD_EXECUTABLE ("${PROJECT_NAME}" ${SOURCE})
@@ -50,10 +46,9 @@ TARGET_LINK_LIBRARIES (
     ${RSB_LIBRARIES}
     ${RSC_LIBRARIES}
     ${RST_LIBRARIES}
-    ${RSTSANDBOX_LIBRARIES}
     ${Boost_LIBRARIES}
 )
 
 # Additional compiler flags
-#ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
-ADD_DEFINITIONS(${RST_CFLAGS} ${RSTSANDBOX_CFLAGS} -std=c++11)
+ADD_DEFINITIONS (-Wall -Wno-deprecated-declarations -O2 -Wno-write-strings -std=c++11)
+ADD_DEFINITIONS(${RST_CFLAGS})
