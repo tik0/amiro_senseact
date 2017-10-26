@@ -27,8 +27,6 @@ msg/_*.py
 #Custom Logger Script
 mylogger.sh
 
-rsb.conf
-
 # clion stuff
 src/.idea/
 src/cmake-build-release/
