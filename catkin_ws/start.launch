@@ -1,21 +1,21 @@
 <launch>
 
   <arg name="rostimenow" default="false"/>
-  <arg name="xboxController" default="0"/>
+  <arg name="xboxController" default="1"/>
 
-  <arg name="laserscan" default="0"/>
-  <arg name="laserscan_sick" default="0"/>
+  <arg name="laserscan" default="1"/>
+  <arg name="laserscan_sick" default="1"/>
   <arg name="laserscan_hokuyo" default="0"/>
 
-  <arg name="twb" default="0"/>
-  <arg name="robot_localization" default="0"/>
-  <arg name="dynamic_tf_with_odom" default="0"/>
+  <arg name="twb" default="1"/>
+  <arg name="robot_localization" default="1"/>
+  <arg name="dynamic_tf_with_odom" default="1"/>
   <arg name="dynamic_tf_with_ekf" default="0"/>
   <arg name="static_tf_map_odom" default="0"/>
 
   <include file="$(env MUROX_ROS)/xbox360_teleop.launch" if="$(arg xboxController)"/>
   <!-- <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/> -->
-  <!-- <node name="rviz1" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/> -->
+  <node name="rviz1" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
   <!-- <node name="image_view" pkg="rqt_image_view" type="rqt_image_view"/> -->
   <!-- <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/> -->
 
@@ -28,7 +28,7 @@
 
   <include file="$(env MUROX_ROS)/amiro.launch">
     <arg name="amiroNr" value="1"/>
-    <arg name="markerId" value="1"/>
+    <arg name="markerId" value="20"/>
 
     <arg name="laserscan" value="$(arg laserscan)"/>
     <arg name="laserscan_sick" value="$(arg laserscan_sick)"/>
@@ -47,10 +47,10 @@
     <arg name="xbox_controller" value="$(arg xboxController)"/>
     <arg name="keyboard_controller" value="0"/>
 
-    <arg name="nav_stack" value="0"/>
+    <arg name="nav_stack" value="1"/>
     <arg name="no_static_map" value="0"/>
 
-    <arg name="hector_mapping" value="0"/>
+    <arg name="hector_mapping" value="1"/>
     <arg name="octomap" value="0"/>
     <arg name="gmapping" value="0"/>
 

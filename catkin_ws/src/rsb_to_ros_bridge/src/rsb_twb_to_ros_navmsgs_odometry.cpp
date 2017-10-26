@@ -74,7 +74,7 @@ void processTwbTrackingProtoObjectList(rsb::EventPtr event) {
   for (int i = 0; i < objectList->object_size(); i++) {
     twbTracking::proto::Object obj = objectList->object(i);
     if (obj.id() != markerId) {
-      return;
+      continue;
     }
     double rotEuler[3] = { obj.position().rotation().x() / 180.0 * M_PI, obj.position().rotation().y() / 180.0 * M_PI, - /* Angle in twb wrong way */obj.position().rotation().z() / 180.0 * M_PI };
     double rotQuat[4];
