@@ -1,5 +1,10 @@
 # Default all types are in pixel
 
+cam:
+  m_per_pixel: 0.003
+
+gt_resolutions: [0.1, 0.05, 0.025]
+
 gt_types:
   free: 254
   unknown: 206
@@ -12,8 +17,6 @@ offset:
 map:
   x: 1365
   y: 1451
-  scaling: 1 # how does 1 pixel scale in the resulting map
-  wallthickness: 10
 
 obstacle:
   box0:
