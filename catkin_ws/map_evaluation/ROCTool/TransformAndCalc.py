@@ -107,5 +107,10 @@ def transformAndCalcBest(groundTruthFolder, testPath, saveFolder, poorMapsFolder
             # print(im_file)
             # print("\n")
             cv2.imwrite(im_file,best_im)
+        else:
+            if not os.path.isdir(poorMapsFolder):
+                os.makedirs(poorMapsFolder)
+            im_file = os.path.join(poorMapsFolder,fileN)
+            cv2.imwrite(im_file,im)
         # break
     return ROCs
