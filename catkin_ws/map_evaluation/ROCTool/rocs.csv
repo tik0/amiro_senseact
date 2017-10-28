@@ -1,4 +1,4 @@
-fpr,fnr,mr,filename
+fpr,tpr,mr,filename
 0.015983,0.629832,0.840716,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_20_resolution_0.025.png
 0.071736,0.807198,0.793122,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_39_resolution_0.05.png
 0.034763,0.295270,0.404378,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
