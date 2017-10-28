@@ -3,6 +3,7 @@ import ROCCalc
 import ROCPlot
 import ROCMapTransform
 import ROCSaveToFile
+import TransformAndCalc
 # import cv2
 
 free = 254
@@ -14,11 +15,13 @@ unknown = 206
 # testFolder = "../gmapping/"
 # saveFolder = "../transformed/"
 gtFile = "../gt/stitched_cut.png"
+gtPath = "../gt_creator/gt_maps/"
 gtTransformed = "../transformed/gt.pgm"
 testFolder = "../maps/"
 saveFolder = "../transformed/"
 poorMapsFolder = "../notUsed/"
-# ROCMapTransform.transformMap2(gtFile,gtTransformed,testFolder,saveFolder,poorMapsFolder,occupied,free,unknown)
-ROCs = ROCCalc.calculateROCs(gtTransformed,saveFolder,free,occupied)
+ROCs = TransformAndCalc.transformAndCalcBest(gtPath,testFolder,saveFolder,poorMapsFolder,occupied,free,unknown)
+# ROCMapTransform.transformMap(gtFile,gtTransformed,testFolder,saveFolder,poorMapsFolder,occupied,free,unknown)
+# ROCs = ROCCalc.calculateROCs(gtTransformed,saveFolder,free,occupied)
 ROCSaveToFile.saveToCSV("rocs.csv",ROCs)
 ROCPlot.drawROCCurve(ROCs)

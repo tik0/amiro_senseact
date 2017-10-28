@@ -1,69 +1,589 @@
 fpr,fnr,mr,filename
-0.030365,0.391452,0.565455,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.046310,0.607358,0.556546,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.059166,0.614401,0.521844,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.064765,0.862177,0.581900,sick_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.059705,0.760614,0.572035,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.038904,0.674957,0.642968,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.088467,0.676969,0.448974,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm
-0.022414,0.707266,0.750259,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.044003,0.526101,0.440713,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.033668,0.705228,0.646547,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.066407,0.869191,0.559376,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.029039,0.728838,0.711243,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.028177,0.646242,0.707679,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm
-0.125532,0.902475,0.434105,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm
-0.074567,0.849176,0.498669,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.057855,0.711430,0.553334,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.142153,0.835110,0.388813,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm
-0.034592,0.723231,0.595226,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.039636,0.779974,0.587242,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.048703,0.769300,0.623649,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.094103,0.764251,0.447032,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.042192,0.650964,0.497288,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.138117,0.898862,0.408148,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm
-0.073677,0.485577,0.378759,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.071118,0.602360,0.470474,hokuyo_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.053761,0.575479,0.502604,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.027355,0.622290,0.690057,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.069385,0.452733,0.358688,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.038904,0.674957,0.642968,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm
-0.147615,0.759290,0.359115,sick_2_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.019494,0.514033,0.716484,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.058698,0.451778,0.376796,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.037229,0.488542,0.567849,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.051863,0.770050,0.604449,sick_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.039185,0.633802,0.611566,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.131169,0.831535,0.404309,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm
-0.019028,0.362333,0.665684,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm
-0.069128,0.502346,0.434179,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.029039,0.728838,0.711243,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm
-0.041682,0.514833,0.561582,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm
-0.129090,0.577327,0.238088,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.102669,0.832854,0.467968,hokuyo_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.118493,0.801822,0.423205,sick_1_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.079907,0.784334,0.457104,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.049140,0.822509,0.625940,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.061486,0.263614,0.292607,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.045214,0.389357,0.429402,hokuyo_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.084308,0.437821,0.326836,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm
-0.030104,0.753172,0.693444,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.058756,0.493447,0.418061,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.073601,0.787512,0.532635,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.085186,0.842413,0.517689,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm
-0.081004,0.796271,0.515655,sick_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm
-0.034367,0.274277,0.447626,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm
-0.197108,0.655353,0.224350,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm
-0.034503,0.255064,0.426721,hokuyo_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.047200,0.524867,0.519177,hokuyo_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.065497,0.637259,0.483065,hokuyo_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.067003,0.537035,0.458334,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm
-0.018226,0.623558,0.772136,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm
-0.052175,0.422861,0.444034,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm
-0.128010,0.832850,0.403065,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm
-0.195159,0.730123,0.262709,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm
-0.019644,0.581261,0.745350,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm
-0.045711,0.239593,0.343862,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm
-0.047283,0.551496,0.423395,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.064938,0.485877,0.373391,hokuyo_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm
-0.075972,0.734127,0.511878,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm
+0.012419,0.666211,0.842828,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.097078,0.868278,0.709355,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.035715,0.290119,0.378522,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.012419,0.666211,0.842828,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.103074,0.872235,0.468312,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.077758,0.870939,0.649988,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.008473,0.552501,0.894699,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.034128,0.334847,0.392280,hokuyo_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.057818,0.802075,0.709469,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.055416,0.640555,0.750407,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.033558,0.900334,0.881685,sick_2_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.004870,0.638761,0.940868,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.029088,0.537116,0.474333,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.019914,0.654732,0.571106,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.069712,0.876928,0.770496,sick_1_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.079109,0.820990,0.517657,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.042162,0.664752,0.796383,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.084833,0.926756,0.606535,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.030631,0.728778,0.796311,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.011470,0.469349,0.891696,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.008406,0.636845,0.925113,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.050101,0.441937,0.253126,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.064988,0.668383,0.226718,hokuyo_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.034687,0.808528,0.769864,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.132170,0.554547,0.128319,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.035723,0.414581,0.719210,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.101364,0.765604,0.653532,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.090909,0.456614,0.313246,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.068378,0.618325,0.177708,hokuyo_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.069784,0.807734,0.619765,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.035549,0.840452,0.704467,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.099526,0.357241,0.236315,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [  0   0   0 ..., 205 205 205]
+ [  0   0   0 ..., 205 205 205]
+ [  0   0   0 ..., 205 205 205]]
+0.031056,0.395476,0.371860,sick_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.040974,0.615278,0.524916,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.037402,0.120511,0.017388,hokuyo_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.040134,0.593402,0.589761,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.051293,0.607665,0.540735,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.052902,0.806506,0.802432,hokuyo_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.122445,0.945929,0.551846,hokuyo_2_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.066658,0.654166,0.379257,hokuyo_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.050436,0.514402,0.341165,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.015358,0.676945,0.807574,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.036439,0.793332,0.698516,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.008406,0.636845,0.925113,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.013329,0.699132,0.830839,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.070284,0.598254,0.462981,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.093979,0.343674,0.203580,hokuyo_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.071150,0.795158,0.652873,hokuyo_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.010815,0.597561,0.881329,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.067471,0.879190,0.771526,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.017789,0.604496,0.827686,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.021446,0.726661,0.699665,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.054006,0.446152,0.551227,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.063248,0.890600,0.485959,sick_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [254 254 254 ..., 254 254 254]
+ [254 254 254 ..., 254 254 254]
+ [254 254 254 ..., 254 254 254]]
+0.011683,0.560156,0.845501,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.056250,0.538093,0.131828,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.136981,0.929906,0.647470,hokuyo_1_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.038131,0.856684,0.699646,sick_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.024031,0.660534,0.649197,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.013332,0.638947,0.774139,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.080715,0.582716,0.453174,hokuyo_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.076990,0.587286,0.519421,hokuyo_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.095479,0.847618,0.669933,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.083588,0.432765,0.429362,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.022559,0.646406,0.799089,sick_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.041237,0.779382,0.721846,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.028342,0.609847,0.830220,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.083583,0.201283,0.225696,hokuyo_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.042119,0.787385,0.665928,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.015207,0.607881,0.835400,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.074391,0.765271,0.650910,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.042706,0.836749,0.657025,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.037098,0.717431,0.721299,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.051293,0.607665,0.540735,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.010237,0.463370,0.817759,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.027576,0.766356,0.651466,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.037915,0.637152,0.598549,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.008902,0.640110,0.919407,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]]
+0.029506,0.468903,0.585747,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.087371,0.916945,0.460407,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.035893,0.852416,0.706317,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.100041,0.710307,0.651519,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.085621,0.912840,0.499724,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ [205 205 205 ..., 254 254 254]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
+0.039230,0.343850,0.339397,hokuyo_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ ..., 
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]
+ [205 205 205 ..., 205 205 205]]
