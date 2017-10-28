@@ -47,7 +47,7 @@ def parseConfigString(configstring):
     resolutions = configstring['gt_resolutions']
 
     for res in resolutions:
-        map_scaling = m_per_pixel/res;
+        map_scaling = m_per_pixel/res*3;
         for wt in range (wt_iteration_start, wt_iteration_end):
             print "start interation with map_wallthickness: " + str(wt)
             image = np.zeros((scale(map_y+2*offset_y), scale(map_x+2*offset_x), 1), np.uint8)
@@ -59,7 +59,7 @@ def parseConfigString(configstring):
             cv2.rectangle(image, (scale(offset_x), scale(offset_y)), (scale(map_x+offset_x), scale(map_y+offset_y)), gt_free, cv2.FILLED)
 
             # create map borders
-            cv2.rectangle(image, (scale(offset_x), scale(offset_y)), (scale(map_x+offset_x), scale(map_y+offset_y)), gt_occupied, wt)
+            cv2.rectangle(image, (scale(offset_x), scale(offset_y)), (scale(map_x+offset_x), scale(map_y+offset_y)), gt_occupied, scale(wt))
 
             # draw every obstacle
             numb_obstacle = len(configstring['obstacle'])
@@ -74,7 +74,7 @@ def parseConfigString(configstring):
                     #creates unknown area in the box
                     cv2.rectangle(image, (scale(box_x), scale(box_y)), (scale(box_x+box_width), scale(box_y+box_height)), gt_unknown, cv2.FILLED)
                     #we need to build a wall for the box
-                    cv2.rectangle(image, (scale(box_x), scale(box_y)), (scale(box_x+box_width), scale(box_y+box_height)), gt_occupied, wt)
+                    cv2.rectangle(image, (scale(box_x), scale(box_y)), (scale(box_x+box_width), scale(box_y+box_height)), gt_occupied, scale(wt))
                     if (print_box_name):
                         cv2.putText(image,'box'+str(i),(scale(box_x), scale(box_y)), cv2.FONT_HERSHEY_SIMPLEX, 1,128,2)
                 except:

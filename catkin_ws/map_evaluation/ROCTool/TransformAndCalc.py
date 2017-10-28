@@ -21,21 +21,26 @@ def transformAndCalcBest(groundTruthFolder, testPath, saveFolder, poorMapsFolder
     for fileN in os.listdir(groundTruthFolder):
         if not fileN.endswith(".png"):
             continue
-        imFile = "%s%s"%(groundTruthFolder,fileN)
+        imFile = os.path.join(groundTruthFolder,fileN)
         print("Loading: %s"%(imFile))
         im = cv2.imread(imFile,0)
         print("Loaded!")
         kp, des = feature_obj.detectAndCompute(im,None)
         des = np.asarray(des,np.float32)
-        groundTruthList.append((fileN,im,des,kp))
-        # break
+        groundTruthList.append((fileN,os.path.join(saveFolder,os.path.splitext(fileN)[0]),im,des,kp))
+
+    if not os.path.isdir(saveFolder):
+        os.makedirs(saveFolder)
+
+    # for gt_file,gt_folder,gt_im,gt_des,gt_kp in groundTruthList:
+    #     if not os.path.isdir(gt_folder):
+    #         os.makedirs(gt_folder)
 
     for fileN in os.listdir(testPath):
         if not fileN.endswith(".pgm"):
             continue
-        imFile = "%s%s"%(testPath,fileN)
-        # imFileW = "%s%s"%(saveFolder,fileN)
-        imFileP = "%s%s"%(poorMapsFolder,fileN)
+        imFile = os.path.join(testPath,fileN)
+        imFileP = os.path.join(poorMapsFolder,fileN)
         if out>0:
             print("Loading: %s"%(imFile))
         im = cv2.imread(imFile,0)
@@ -45,10 +50,10 @@ def transformAndCalcBest(groundTruthFolder, testPath, saveFolder, poorMapsFolder
         des = np.asarray(des,np.float32)
 
         best_fpr=best_fnr=best_mtr=best_val=0
-        best_file=None
+        best_file=best_folder=None
         best_im=None
 
-        for gt_file,gt_im,gt_des,gt_kp in groundTruthList:
+        for gt_file,gt_folder,gt_im,gt_des,gt_kp in groundTruthList:
             if out>1:
                 print("With: %s"%(gt_file))
             height, width = gt_im.shape
@@ -87,12 +92,20 @@ def transformAndCalcBest(groundTruthFolder, testPath, saveFolder, poorMapsFolder
                     best_fnr = fnr
                     best_mtr = mtr
                     best_file = gt_file
+                    best_folder = gt_folder
                     best_im = imW
             else:
                 if out>1:
                     print("No homography found!")
 
         if (best_im!=None):
-            ROCs.append([fileN,[best_fpr,best_fnr],best_mtr,best_im])
+            ROCs.append([fileN,[best_fpr,best_fnr],best_mtr,best_file])
+            if not os.path.isdir(best_folder):
+                os.makedirs(best_folder)
+            im_file = os.path.join(best_folder,fileN)
+            # print("\n")
+            # print(im_file)
+            # print("\n")
+            cv2.imwrite(im_file,best_im)
         # break
     return ROCs

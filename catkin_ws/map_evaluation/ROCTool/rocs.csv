@@ -1,589 +1,85 @@
 fpr,fnr,mr,filename
-0.012419,0.666211,0.842828,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.097078,0.868278,0.709355,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.035715,0.290119,0.378522,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.012419,0.666211,0.842828,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.103074,0.872235,0.468312,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.077758,0.870939,0.649988,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.008473,0.552501,0.894699,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.034128,0.334847,0.392280,hokuyo_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.057818,0.802075,0.709469,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.055416,0.640555,0.750407,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.033558,0.900334,0.881685,sick_2_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.004870,0.638761,0.940868,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.029088,0.537116,0.474333,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.019914,0.654732,0.571106,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.069712,0.876928,0.770496,sick_1_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.079109,0.820990,0.517657,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.042162,0.664752,0.796383,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.084833,0.926756,0.606535,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.030631,0.728778,0.796311,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.011470,0.469349,0.891696,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.008406,0.636845,0.925113,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.050101,0.441937,0.253126,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.064988,0.668383,0.226718,hokuyo_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.034687,0.808528,0.769864,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.132170,0.554547,0.128319,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.035723,0.414581,0.719210,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.101364,0.765604,0.653532,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.090909,0.456614,0.313246,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.068378,0.618325,0.177708,hokuyo_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.069784,0.807734,0.619765,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.035549,0.840452,0.704467,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.099526,0.357241,0.236315,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [  0   0   0 ..., 205 205 205]
- [  0   0   0 ..., 205 205 205]
- [  0   0   0 ..., 205 205 205]]
-0.031056,0.395476,0.371860,sick_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.040974,0.615278,0.524916,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.037402,0.120511,0.017388,hokuyo_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.040134,0.593402,0.589761,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.051293,0.607665,0.540735,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.052902,0.806506,0.802432,hokuyo_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.122445,0.945929,0.551846,hokuyo_2_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.066658,0.654166,0.379257,hokuyo_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.050436,0.514402,0.341165,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.015358,0.676945,0.807574,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.036439,0.793332,0.698516,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.008406,0.636845,0.925113,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.013329,0.699132,0.830839,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.070284,0.598254,0.462981,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.093979,0.343674,0.203580,hokuyo_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.071150,0.795158,0.652873,hokuyo_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.010815,0.597561,0.881329,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.067471,0.879190,0.771526,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.017789,0.604496,0.827686,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.021446,0.726661,0.699665,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.054006,0.446152,0.551227,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.063248,0.890600,0.485959,sick_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [254 254 254 ..., 254 254 254]
- [254 254 254 ..., 254 254 254]
- [254 254 254 ..., 254 254 254]]
-0.011683,0.560156,0.845501,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.056250,0.538093,0.131828,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.136981,0.929906,0.647470,hokuyo_1_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.038131,0.856684,0.699646,sick_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.024031,0.660534,0.649197,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.013332,0.638947,0.774139,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.080715,0.582716,0.453174,hokuyo_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.076990,0.587286,0.519421,hokuyo_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.095479,0.847618,0.669933,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.083588,0.432765,0.429362,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.022559,0.646406,0.799089,sick_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.041237,0.779382,0.721846,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.028342,0.609847,0.830220,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.083583,0.201283,0.225696,hokuyo_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.042119,0.787385,0.665928,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.015207,0.607881,0.835400,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.074391,0.765271,0.650910,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.042706,0.836749,0.657025,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.037098,0.717431,0.721299,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.051293,0.607665,0.540735,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.010237,0.463370,0.817759,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.027576,0.766356,0.651466,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.037915,0.637152,0.598549,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.008902,0.640110,0.919407,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,[[205 205 205 ..., 254 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]]
-0.029506,0.468903,0.585747,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.087371,0.916945,0.460407,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.035893,0.852416,0.706317,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.100041,0.710307,0.651519,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.085621,0.912840,0.499724,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,[[205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- [205 205 205 ..., 254 254 254]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
-0.039230,0.343850,0.339397,hokuyo_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,[[205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- ..., 
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]
- [205 205 205 ..., 205 205 205]]
+0.015983,0.629832,0.840716,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_20_resolution_0.025.png
+0.071736,0.807198,0.793122,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_39_resolution_0.05.png
+0.034763,0.295270,0.404378,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.015983,0.629832,0.840716,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,gt_wallthickness_20_resolution_0.025.png
+0.047213,0.849739,0.795185,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_33_resolution_0.1.png
+0.083553,0.875024,0.510867,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_15_resolution_0.05.png
+0.003872,0.521554,0.966468,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,gt_wallthickness_29_resolution_0.05.png
+0.030777,0.343274,0.565644,hokuyo_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_18_resolution_0.025.png
+0.080156,0.830296,0.405676,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_22_resolution_0.1.png
+0.047382,0.643315,0.743579,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_33_resolution_0.1.png
+0.083998,0.925073,0.488859,sick_2_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_11_resolution_0.025.png
+0.004745,0.425326,0.927731,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_20_resolution_0.025.png
+0.048049,0.447005,0.423192,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_15_resolution_0.05.png
+0.018680,0.688566,0.737032,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.056331,0.885598,0.799726,sick_1_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_29_resolution_0.05.png
+0.045219,0.827269,0.820192,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_29_resolution_0.05.png
+0.036921,0.659164,0.733520,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_20_resolution_0.025.png
+0.058644,0.908024,0.766944,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_33_resolution_0.1.png
+0.037953,0.748395,0.622290,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_11_resolution_0.025.png
+0.017239,0.378557,0.655641,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,gt_wallthickness_11_resolution_0.025.png
+0.017337,0.570232,0.737017,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,gt_wallthickness_11_resolution_0.025.png
+0.040744,0.437774,0.457055,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.065791,0.695178,0.593698,hokuyo_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_20_resolution_0.025.png
+0.031202,0.791367,0.673861,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_11_resolution_0.025.png
+0.046771,0.514868,0.715984,hokuyo_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_29_resolution_0.05.png
+0.051727,0.438771,0.610883,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,gt_wallthickness_28_resolution_0.025.png
+0.144316,0.825027,0.162108,hokuyo_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_5_resolution_0.05.png
+0.112226,0.333270,0.231778,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_15_resolution_0.05.png
+0.049342,0.576697,0.450922,hokuyo_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.059578,0.796150,0.612993,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_18_resolution_0.025.png
+0.040691,0.825557,0.624208,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_11_resolution_0.025.png
+0.063201,0.354585,0.320080,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,gt_wallthickness_11_resolution_0.025.png
+0.015852,0.515450,0.716171,sick_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.021417,0.521015,0.778590,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_20_resolution_0.025.png
+0.042244,0.234481,0.316271,hokuyo_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_15_resolution_0.05.png
+0.031582,0.571319,0.722747,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_20_resolution_0.025.png
+0.023039,0.466631,0.863642,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.5.pgm,gt_wallthickness_39_resolution_0.05.png
+0.081928,0.835014,0.548178,hokuyo_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_18_resolution_0.025.png
+0.113119,0.881798,0.552045,hokuyo_2_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_20_resolution_0.025.png
+0.034782,0.630968,0.800234,hokuyo_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_29_resolution_0.05.png
+0.022018,0.508806,0.772840,hokuyo_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_20_resolution_0.025.png
+0.020479,0.508576,0.786304,sick_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_28_resolution_0.025.png
+0.031263,0.797268,0.728288,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_15_resolution_0.05.png
+0.017337,0.570232,0.737017,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_11_resolution_0.025.png
+0.017545,0.691112,0.748697,sick_1_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.060243,0.540314,0.574242,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,gt_wallthickness_20_resolution_0.025.png
+0.091887,0.455045,0.306897,hokuyo_2_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_15_resolution_0.05.png
+0.062934,0.744154,0.730559,hokuyo_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_34_resolution_0.025.png
+0.007031,0.547762,0.892706,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_18_resolution_0.025.png
+0.073933,0.926802,0.684206,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_26_resolution_0.05.png
+0.011319,0.478084,0.898420,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.1_map_update_angle_thresh_0.9.pgm,gt_wallthickness_34_resolution_0.025.png
+0.029006,0.719842,0.627159,sick_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.066715,0.498319,0.452031,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_18_resolution_0.025.png
+0.053343,0.858539,0.622409,sick_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_15_resolution_0.05.png
+0.018740,0.553393,0.578420,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_8_resolution_0.025.png
+0.023238,0.469798,0.799404,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_34_resolution_0.025.png
+0.098014,0.926285,0.784310,hokuyo_1_hector_mapping_map_resolution_0.1_map_size_96_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_34_resolution_0.1.png
+0.041024,0.841186,0.632270,sick_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_11_resolution_0.025.png
+0.006094,0.615134,0.933262,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_26_resolution_0.05.png
+0.019919,0.639747,0.696750,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.058170,0.570306,0.602545,hokuyo_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_26_resolution_0.05.png
+0.053894,0.514387,0.632568,hokuyo_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_28_resolution_0.025.png
+0.085123,0.846339,0.732448,hokuyo_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_37_resolution_0.025.png
+0.078262,0.407034,0.314142,sick_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_15_resolution_0.05.png
+0.032742,0.695258,0.635817,sick_2_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_11_resolution_0.025.png
+0.039406,0.770553,0.744268,hokuyo_1_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_20_resolution_0.025.png
+0.014759,0.616016,0.912101,sick_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_37_resolution_0.025.png
+0.098113,0.246139,0.204949,hokuyo_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,gt_wallthickness_18_resolution_0.025.png
+0.020436,0.704697,0.868724,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_28_resolution_0.025.png
+0.027463,0.737397,0.632161,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_22_resolution_0.1.png
+0.034810,0.706637,0.841628,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_37_resolution_0.025.png
+0.037820,0.799149,0.629504,sick_1_gmapping_particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_11_resolution_0.025.png
+0.008489,0.695549,0.939400,sick_2_gmapping_particles_50_minimumScore_0.3_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_28_resolution_0.025.png
+0.023039,0.466631,0.863642,hokuyo_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_0.9.pgm,gt_wallthickness_39_resolution_0.05.png
+0.010708,0.495415,0.839188,sick_1_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,gt_wallthickness_18_resolution_0.025.png
+0.016926,0.710453,0.781082,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.4_map_update_angle_thresh_1.3.pgm,gt_wallthickness_11_resolution_0.025.png
+0.040103,0.674145,0.736714,sick_2_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_26_resolution_0.05.png
+0.021682,0.614379,0.661196,sick_2_hector_mapping_map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.9.pgm,gt_wallthickness_22_resolution_0.1.png
+0.024581,0.441507,0.577678,hokuyo_1_gmapping_particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
+0.053295,0.907179,0.803377,sick_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_34_resolution_0.025.png
+0.016191,0.811770,0.883697,sick_1_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.05.pgm,gt_wallthickness_20_resolution_0.025.png
+0.116681,0.748420,0.526395,hokuyo_2_gmapping_particles_20_minimumScore_0.3_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_26_resolution_0.05.png
+0.047709,0.912297,0.832467,sick_2_gmapping_particles_20_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_29_resolution_0.05.png
+0.027416,0.361261,0.769910,hokuyo_1_gmapping_particles_75_minimumScore_0.3_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_39_resolution_0.05.png
