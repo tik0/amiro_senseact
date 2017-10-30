@@ -1,6 +1,6 @@
 image: ../maps/sick_1_octopmapping_sensor_model_max_range_5_sensor_model_miss_0.4_sensor_model_hit_0.6_resolution_0.025.pgm
 resolution: 0.025000
-origin: [-6.575000, -8.275000, -nan]
+origin: [-6.450000, -8.275000, -nan]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.196

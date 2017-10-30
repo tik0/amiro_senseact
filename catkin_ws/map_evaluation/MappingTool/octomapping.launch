@@ -1,5 +1,6 @@
 <launch>
   <arg name="amiroNr" default="1"/>
+  <arg name="markerId" default="1"/>
   <arg name="resolution" default="0.05"/>
   <arg name="sensor_model/hit" default="0.7"/>
   <arg name="sensor_model/miss" default="0.4"/>
@@ -17,5 +18,29 @@
     <param name="resolution" value="$(arg resolution)"/>
     <param name="sensor_model/hit" value="$(arg sensor_model/hit)"/>
     <param name="sensor_model/miss" value="$(arg sensor_model/miss)"/>
+  </node>
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="amiro$(arg amiroNr)_odom_twb_ekf" clear_params="true">
+    <param name="frequency" value="20"/>
+    <param name="map_frame" value="map"/>
+    <param name="odom_frame" value="amiro$(arg amiroNr)/odom"/>
+    <param name="base_link_frame" value="amiro$(arg amiroNr)/base_link"/>
+
+    <remap from="odometry/filtered" to="/amiro$(arg amiroNr)/ekf"/>
+    <param name="two_d_mode" value="true"/>
+    <param name="publish_tf" value="true"/>
+    <!-- <param name="publish_tf" value="false"/> -->
+    <param name="print_diagnostics" value="true"/>
+
+    <!-- values is x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az. -->
+    <param name="odom0" value="amiro$(arg amiroNr)/odom"/>
+    <rosparam param="odom0_config">[true, true, false, false, false, true, false, false, false, false, false, false, false, false, false]</rosparam>
+    <param name="odom0_differential" value="true"/>
+    <param name="odom0_relative" value="true"/>
+
+    <param name="odom1" value="/tracking/$(arg markerId)"/>
+    <rosparam param="odom1_config">[true, true, false, false, false, true, false, false, false, false, false, false, false, false, false]</rosparam>
+    <param name="odom1_differential" value="false"/>
+    <param name="odom1_relative" value="false"/>
   </node>
 </launch>

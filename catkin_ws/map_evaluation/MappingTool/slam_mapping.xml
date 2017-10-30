@@ -121,7 +121,7 @@
         <param name="dynamic_tf_with_ekf">1</param>
         <param name="static_tf_map_odom">1</param>
         <param name="twb">1</param>
-        <param name="robot_localization">1</param>
+        <param name="robot_localization">0</param>
       </bridge>
       <file name="octomapping.launch">./</file>
       <cross>
@@ -199,7 +199,7 @@
         <param name="laserscan_hokuyo">"1"</param>
       </bridge>
       <filename>amiro_hokuyo_1.tide</filename>
-      <speed>2</speed>
+      <speed>1</speed>
     </rsbag_file>
     <rsbag_file name="hokuyo_2">
       <bridge>
@@ -208,7 +208,7 @@
         <param name="laserscan_hokuyo">"1"</param>
       </bridge>
       <filename>amiro_hokuyo_2.tide</filename>
-      <speed>2</speed>
+      <speed>1</speed>
     </rsbag_file>
     <rsbag_file name="sick_1">
       <bridge>
@@ -217,7 +217,7 @@
         <param name="laserscan_sick">"1"</param>
       </bridge>
       <filename>amiro_sick_1.tide</filename>
-      <speed>2</speed>
+      <speed>1</speed>
     </rsbag_file>
     <rsbag_file name="sick_2">
       <bridge>
@@ -227,7 +227,7 @@
       </bridge>
       <filename>amiro_sick_2.tide</filename>
       <!-- List of speed values -->
-      <speed>2</speed>
+      <speed>1</speed>
     </rsbag_file>
   </rsbag_files>
   <rsb-ros_bridge filepath="./../../start.launch"/>

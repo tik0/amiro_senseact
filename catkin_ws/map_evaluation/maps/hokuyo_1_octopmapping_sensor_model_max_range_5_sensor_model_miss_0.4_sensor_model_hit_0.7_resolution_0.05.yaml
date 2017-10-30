@@ -1,6 +1,6 @@
 image: ../maps/hokuyo_1_octopmapping_sensor_model_max_range_5_sensor_model_miss_0.4_sensor_model_hit_0.7_resolution_0.05.pgm
 resolution: 0.050000
-origin: [-634.199988, -90.950003, -nan]
+origin: [-4.600000, -3.500000, -nan]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.196
