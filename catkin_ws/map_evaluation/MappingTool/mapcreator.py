@@ -162,6 +162,7 @@ def forAllRsbagFiles(root):
         name = rsbag_file.get('name')
         fileName = rsbag_file.find('filename').text
         filePathName = os.path.join(rsbag_path,fileName)
+        print filePathName
         forAllPlaybackSpeeds(root,rsbag_file,filePathName,name)
 
 tree = ET.parse('slam_mapping.xml')

@@ -23,5 +23,5 @@ poorMapsFolder = "../notUsed/"
 ROCs = TransformAndCalc.transformAndCalcBest(gtPath,testFolder,saveFolder,poorMapsFolder,occupied,free,unknown)
 # ROCMapTransform.transformMap(gtFile,gtTransformed,testFolder,saveFolder,poorMapsFolder,occupied,free,unknown)
 # ROCs = ROCCalc.calculateROCs(gtTransformed,saveFolder,free,occupied)
-ROCSaveToFile.saveToCSV("rocs.csv",ROCs)
+ROCSaveToFile.saveToCSV("./../Auswertung/rocs.csv",ROCs)
 ROCPlot.drawROCCurve(ROCs)
