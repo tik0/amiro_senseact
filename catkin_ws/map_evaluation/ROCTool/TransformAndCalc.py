@@ -49,7 +49,7 @@ def transformAndCalcBest(groundTruthFolder, testPath, saveFolder, poorMapsFolder
         kp, des = feature_obj.detectAndCompute(im,None)
         des = np.asarray(des,np.float32)
 
-        best_fpr=best_fnr=best_mtr=best_val=0
+        best_fpr=best_tpr=best_mtr=best_val=0
         best_file=best_folder=None
         best_im=None
 
@@ -83,13 +83,13 @@ def transformAndCalcBest(groundTruthFolder, testPath, saveFolder, poorMapsFolder
                 imW = miss-hit-imW[1]
                 imW = cv2.threshold(imW,miss-unknown,255,3)
                 imW = miss-imW[1]
-                fpr, fnr, mtr = ROCCalc.calcROC(gt_im,imW,miss,hit)
+                fpr, tpr, mtr = ROCCalc.calcROC(gt_im,imW,miss,hit)
 
-                new_best_val = ((fnr-fpr)/2.0)*math.sqrt(2)
+                new_best_val = ((tpr-fpr)/2.0)*math.sqrt(2)
                 if (new_best_val>best_val):
                     best_val = new_best_val
                     best_fpr = fpr
-                    best_fnr = fnr
+                    best_tpr = tpr
                     best_mtr = mtr
                     best_file = gt_file
                     best_folder = gt_folder
@@ -99,7 +99,7 @@ def transformAndCalcBest(groundTruthFolder, testPath, saveFolder, poorMapsFolder
                     print("No homography found!")
 
         if (best_im!=None):
-            ROCs.append([fileN,[best_fpr,best_fnr],best_mtr,best_file])
+            ROCs.append([fileN,[best_fpr,best_tpr],best_mtr,best_file])
             if not os.path.isdir(best_folder):
                 os.makedirs(best_folder)
             im_file = os.path.join(best_folder,fileN)
