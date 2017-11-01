@@ -1,11 +1,11 @@
 <root>
   <algorithms>
-    <algorithm name="gmapping">
+    <!-- <algorithm name="gmapping">
       <bridge>
         <param name="dynamic_tf_with_odom">1</param>
       </bridge>
       <file name="gmapping.launch">./</file>
-      <!-- <single>
+      <single>
         <param name="delta" mapF="1">0.05</param>
         <param name="xmin" mapF="0">-5</param>
         <param name="xmax" mapF="0">5</param>
@@ -15,7 +15,7 @@
         <param name="minimumScore">0.0</param>
         <param name="particles">30</param>
         <param name="ignored example param"></param>
-      </single> -->
+      </single>
       <cross>
         <group>
           <set>
@@ -47,7 +47,7 @@
           <value>75</value>
         </param>
       </cross>
-    </algorithm>
+    </algorithm> -->
 
     <algorithm name="hector_mapping">
       <bridge>
@@ -66,14 +66,14 @@
             <param name="map_resolution">0.025</param>
             <param name="map_size">384</param>
           </set>
-          <set>
+          <!-- <set>
             <param name="map_resolution">0.05</param>
             <param name="map_size">192</param>
           </set>
           <set>
             <param name="map_resolution">0.1</param>
             <param name="map_size">96</param>
-          </set>
+          </set> -->
         </group>
         <param name="map_update_angle_thresh">
           <value>0.5</value>
@@ -81,9 +81,9 @@
           <value>1.3</value>
         </param>
         <param name="map_update_distance_thresh">
-          <value>0.1</value>
+          <!-- <value>0.1</value> -->
           <value>0.4</value>
-          <value>0.7</value>
+          <!-- <value>0.7</value> -->
         </param>
       </cross>
       <!-- <cross>
@@ -142,7 +142,7 @@
       </cross> -->
     </algorithm>
 
-    <!-- <algorithm name="octopmapping">
+    <!-- <algorithm name="octomapping">
       <bridge>
         <param name="dynamic_tf_with_ekf">1</param>
         <param name="static_tf_map_odom">1</param>
@@ -227,7 +227,7 @@
       <filename>amiro_hokuyo_1.tide</filename>
       <speed>1</speed>
     </rsbag_file>
-    <rsbag_file name="hokuyo_2">
+    <!-- <rsbag_file name="hokuyo_2">
       <bridge>
         <param name="rostimenow">"true"</param>
         <param name="laserscan">"1"</param>
@@ -252,9 +252,9 @@
         <param name="laserscan_sick">"1"</param>
       </bridge>
       <filename>amiro_sick_2.tide</filename>
-      <!-- List of speed values -->
+      List of speed values
       <speed>1</speed>
-    </rsbag_file>
+    </rsbag_file> -->
   </rsbag_files>
   <rsb-ros_bridge filepath="./../../start.launch"/>
   <map_path>../maps/</map_path>
