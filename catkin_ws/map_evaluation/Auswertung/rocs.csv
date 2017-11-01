@@ -102,7 +102,6 @@ fpr,tpr,mr,filename
 0.072826,0.835189,0.794349,hokuyo_1_gmapping__particles_50_minimumScore_0.01_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_39_resolution_0.05.png
 0.056584,0.642437,0.566116,hokuyo_2_gmapping__particles_20_minimumScore_0.3_map_update_interval_2.0_delta_0.05.pgm,gt_wallthickness_18_resolution_0.025.png
 0.038313,0.542156,0.777673,hokuyo_2_gmapping__particles_20_minimumScore_0.01_map_update_interval_2.0_delta_0.05.pgm,gt_wallthickness_29_resolution_0.05.png
-0.053343,0.858513,0.622359,sick_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_angle_thresh_0.9_map_update_distance_thresh_0.4.pgm,gt_wallthickness_15_resolution_0.05.png
 0.057244,0.787118,0.485849,sick_2_gmapping__particles_50_minimumScore_0.3_map_update_interval_8_delta_0.05.pgm,gt_wallthickness_22_resolution_0.1.png
 0.037801,0.850049,0.730221,sick_2_gmapping__particles_20_minimumScore_0.01_map_update_interval_2.0_delta_0.05.pgm,gt_wallthickness_18_resolution_0.025.png
 0.042960,0.754702,0.729442,hokuyo_1_gmapping__particles_20_minimumScore_0.01_map_update_interval_2.0_delta_0.05.pgm,gt_wallthickness_20_resolution_0.025.png
@@ -125,7 +124,6 @@ fpr,tpr,mr,filename
 0.005680,0.573560,0.933675,sick_1_gmapping__particles_50_minimumScore_0.01_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_20_resolution_0.025.png
 0.042227,0.724450,0.745725,hokuyo_2_gmapping__particles_50_minimumScore_0.3_map_update_interval_2.0_delta_0.05.pgm,gt_wallthickness_26_resolution_0.05.png
 0.043739,0.911353,0.851032,sick_2_gmapping__particles_75_minimumScore_0.0_map_update_interval_5.0_delta_0.1.pgm,gt_wallthickness_37_resolution_0.025.png
-0.041024,0.841186,0.632270,sick_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_angle_thresh_0.9_map_update_distance_thresh_0.4.pgm,gt_wallthickness_11_resolution_0.025.png
 0.002209,0.562209,0.975978,sick_1_gmapping__particles_20_minimumScore_0.0_map_update_interval_8_delta_0.025.pgm,gt_wallthickness_26_resolution_0.05.png
 0.003852,0.521364,0.966626,sick_1_hector_mapping__map_resolution_0.025_map_size_384_map_update_distance_thresh_0.7_map_update_angle_thresh_0.5.pgm,gt_wallthickness_29_resolution_0.05.png
 0.009426,0.554092,0.922259,hokuyo_2_gmapping__particles_75_minimumScore_0.3_map_update_interval_8_delta_0.025.pgm,gt_wallthickness_33_resolution_0.1.png
@@ -331,7 +329,6 @@ fpr,tpr,mr,filename
 0.023920,0.625750,0.467020,sick_2_gmapping__particles_50_minimumScore_0.0_map_update_interval_5.0_delta_0.025.pgm,gt_wallthickness_5_resolution_0.05.png
 0.020811,0.600140,0.697163,sick_2_gmapping__particles_75_minimumScore_0.0_map_update_interval_2.0_delta_0.025.pgm,gt_wallthickness_11_resolution_0.025.png
 0.040038,0.898833,0.863204,sick_2_gmapping__particles_75_minimumScore_0.0_map_update_interval_8_delta_0.1.pgm,gt_wallthickness_37_resolution_0.025.png
-0.081924,0.835014,0.548192,hokuyo_1_hector_mapping_map_resolution_0.05_map_size_192_map_update_angle_thresh_0.9_map_update_distance_thresh_0.4.pgm,gt_wallthickness_18_resolution_0.025.png
 0.008358,0.637418,0.911610,sick_1_gmapping__particles_75_minimumScore_0.01_map_update_interval_2.0_delta_0.025.pgm,gt_wallthickness_20_resolution_0.025.png
 0.034185,0.821611,0.663668,sick_1_gmapping__particles_50_minimumScore_0.01_map_update_interval_2.0_delta_0.05.pgm,gt_wallthickness_11_resolution_0.025.png
 0.045472,0.446809,0.385714,hokuyo_2_gmapping__particles_20_minimumScore_0.0_map_update_interval_8_delta_0.025.pgm,gt_wallthickness_22_resolution_0.1.png
@@ -389,7 +386,6 @@ fpr,tpr,mr,filename
 0.040294,0.880901,0.604566,sick_2_gmapping__particles_20_minimumScore_0.0_map_update_interval_8_delta_0.05.pgm,gt_wallthickness_22_resolution_0.1.png
 0.039335,0.844026,0.844026,sick_1_gmapping__particles_20_minimumScore_0.3_map_update_interval_8_delta_0.1.pgm,gt_wallthickness_29_resolution_0.05.png
 0.062502,0.892566,0.324778,sick_2_hector_mapping__map_resolution_0.05_map_size_192_map_update_distance_thresh_0.7_map_update_angle_thresh_0.5.pgm,gt_wallthickness_5_resolution_0.05.png
-0.062929,0.744197,0.730586,hokuyo_2_hector_mapping_map_resolution_0.05_map_size_192_map_update_angle_thresh_0.9_map_update_distance_thresh_0.4.pgm,gt_wallthickness_34_resolution_0.025.png
 0.065510,0.884954,0.838606,hokuyo_1_gmapping__particles_50_minimumScore_0.3_map_update_interval_2.0_delta_0.1.pgm,gt_wallthickness_34_resolution_0.1.png
 0.049354,0.859850,0.800783,sick_1_gmapping__particles_75_minimumScore_0.01_map_update_interval_8_delta_0.1.pgm,gt_wallthickness_34_resolution_0.025.png
 0.048735,0.866584,0.756045,sick_1_gmapping__particles_20_minimumScore_0.0_map_update_interval_2.0_delta_0.1.pgm,gt_wallthickness_26_resolution_0.05.png
