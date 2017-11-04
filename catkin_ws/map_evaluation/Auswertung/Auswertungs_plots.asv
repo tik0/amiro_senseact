@@ -44,21 +44,20 @@ update_interval_2 = find(not(cellfun('isempty',strfind(algorithm,'update_interva
 len = size(fpr,1);
 data = [tpr,fpr,zeros(len,4)];
 
-data(res_0025,3) = ones(size(res_0025,1),1).*(0.025-0.025)/(0.1-0.025);
-data(res_005,3) = ones(size(res_005,1),1).*(0.05-0.025)/(0.1-0.025);
-data(res_01,3) = ones(size(res_01,1),1).*(0.1-0.025)/(0.1-0.025);
+data(res_0025,3) = ones(size(res_0025,1),1).*0.025;
+data(res_005,3) = ones(size(res_005,1),1).*0.05;
+data(res_01,3) = ones(size(res_01,1),1).*0.1;
 
-data(particles_20,4) = ones(size(particles_20,1),1).*(20-20)/(75-20);
-data(particles_50,4) = ones(size(particles_50,1),1).*(50-20)/(75-20);
-data(particles_75,4) = ones(size(particles_75,1),1).*(75-20)/(75-20);
+data(particles_20,4) = ones(size(particles_20,1),1).*20;
+data(particles_50,4) = ones(size(particles_50,1),1).*50;
+data(particles_75,4) = ones(size(particles_75,1),1).*75;
 
 data(minimumScore_00,5) = ones(size(minimumScore_00,1),1).*0;
-data(minimumScore_001,5) = ones(size(minimumScore_001,1),1).*0.01/0.3;
-data(minimumScore_03,5) = ones(size(minimumScore_03,1),1).*0.3/0.3;
+data(minimumScore_001,5) = ones(size(minimumScore_001,1),1).*0.01;
+data(minimumScore_03,5) = ones(size(minimumScore_03,1),1).*0.3;
 
-data(update_interval_8,6) = ones(size(update_interval_8,1),1).*(8-2)/(8-2);
-data(update_interval_5,6) = ones(size(update_interval_5,1),1).*(5-2)/(8-2);
-data(update_interval_2,6) = ones(size(update_interval_2,1),1).*(2-2)/(8-2);
+data(update_interval_8,6) = ones(size(update_interval_8,1),1).*8;
+data(update_interval_5,6) = ones(size(up
 
 [coeff,score,latend]=pca(data);
 coeff
