@@ -7,8 +7,8 @@ cGrey = [191,191,191]./255;
 uDGreen = [0,117,86]./255;
 cBGreen = [204,227,221]./255;
 cPurple = [127,13,93]./255;
-doPrint = true;
-% doPrint = false;
+% doPrint = true;
+doPrint = false;
 
 
 [fpr,tpr,mr,algorithm,ground_truth] = importfile('rocs.csv',2,0);
@@ -638,18 +638,12 @@ fig_num = fig_num+1;
 data = [tpr,fpr];
 
 figure(fig_num)
-plot(fpr(gmapping),tpr(gmapping),'o','Color',uLGreen);
+plot(fpr(gmapping),tpr(gmapping),'o','Color',uL,'MarkerSize',5);
 hold on;
-plot(fpr(hector_mapping),tpr(hector_mapping),'o','Color',cRed);
-plot(fpr(octomapping),tpr(octomapping),'o','Color',cBlue);
+plot(fpr(hector_mapping),tpr(hector_mapping),'x','Color',uLGreen,'MarkerSize',5);
+plot(fpr(octomapping),tpr(octomapping),'*','Color',cBlue,'MarkerSize',5');
 hold off;
-xlim([0,0.16]);
-ylim([0,1]);
-xlabel('FPR');
-ylabel('TPR');
-lgd = legend('gmapping','hector mapping','octo mapping','Location','southeast');
-if doPrint print('Mapping_Algorithms_overview','-dsvg'); end
-fig_num = fig_num+1;
+
 
 % Mean doesn't help
 % particles_20_fpr_m = sum(fpr(particles_20))/size((particles_20),1);
