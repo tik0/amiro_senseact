@@ -1,4 +1,13 @@
 clear;
+cOrange = [245,159,0]./255;
+cRed = [121,16,17]./255;
+cBlue = [0,154,198]./255;
+uLGreen = [182,200,40]./255;
+cGrey = [191,191,191]./255;
+uDGreen = [0,117,86]./255;
+cBGreen = [204,227,221]./255;
+cPurple = [127,13,93]./255;
+
 
 [fpr,tpr,mr,algorithm,ground_truth] = importfile('rocs.csv',2,0);
 
@@ -42,27 +51,116 @@ update_interval_2 = find(not(cellfun('isempty',strfind(algorithm,'update_interva
 
 % let's try pca
 len = size(fpr,1);
-data = [tpr,fpr,zeros(len,4)];
+data = [tpr,fpr,zeros(len,1)];
+index=3;
 
-data(res_0025,3) = ones(size(res_0025,1),1).*(0.025-0.025)/(0.1-0.025);
-data(res_005,3) = ones(size(res_005,1),1).*(0.05-0.025)/(0.1-0.025);
-data(res_01,3) = ones(size(res_01,1),1).*(0.1-0.025)/(0.1-0.025);
+data(res_0025,index) = ones(size(res_0025,1),1).*0.025;
+data(res_005,index) = ones(size(res_005,1),1).*0.05;
+data(res_01,index) = ones(size(res_01,1),1).*0.1;
+% index = index+1;
+[coeff,score,latend]=pca(data(gmapping,:));
 
-data(particles_20,4) = ones(size(particles_20,1),1).*(20-20)/(75-20);
-data(particles_50,4) = ones(size(particles_50,1),1).*(50-20)/(75-20);
-data(particles_75,4) = ones(size(particles_75,1),1).*(75-20)/(75-20);
+fig_num = 1;
+figure(fig_num)
+scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Resolution');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
+fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
+hold on;
+plot3([0.025,0.1].*m1+fitobj1.a,[0.025,0.1].*m2+fitobj2.a,[0.025,0.1],'-','Color',cOrange);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+fig_num = fig_num+1;
 
-data(minimumScore_00,5) = ones(size(minimumScore_00,1),1).*0;
-data(minimumScore_001,5) = ones(size(minimumScore_001,1),1).*0.01/0.3;
-data(minimumScore_03,5) = ones(size(minimumScore_03,1),1).*0.3/0.3;
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+hold on;
+xrange = [0.0,0.12];
+ylim1 = [0,1];
+% ylim2 = ylim(hAx(2));
+ylim2 = [0,0.16];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Resolution');
+hold off;
+fig_num = fig_num+1;
 
-data(update_interval_8,6) = ones(size(update_interval_8,1),1).*(8-2)/(8-2);
-data(update_interval_5,6) = ones(size(update_interval_5,1),1).*(5-2)/(8-2);
-data(update_interval_2,6) = ones(size(update_interval_2,1),1).*(2-2)/(8-2);
+% data(particles_20,index) = ones(size(particles_20,1),1).*20;
+% data(particles_50,index) = ones(size(particles_50,1),1).*50;
+% data(particles_75,index) = ones(size(particles_75,1),1).*75;
+% % index = index+1;
+% figure(2)
+% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+%     'MarkerFaceColor',[0 .75 .75],...
+%     'MarkerEdgeColor','k');
+% xlabel('TPR');
+% ylabel('FPR');
+% zlabel('Particles');
+% 
+% data(minimumScore_00,index) = ones(size(minimumScore_00,1),1).*0;
+% data(minimumScore_001,index) = ones(size(minimumScore_001,1),1).*0.01;
+% data(minimumScore_03,index) = ones(size(minimumScore_03,1),1).*0.3;
+% % index = index+1;
+% figure(3)
+% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+%     'MarkerFaceColor',[0 .75 .75],...
+%     'MarkerEdgeColor','k');
+% xlabel('TPR');
+% ylabel('FPR');
+% zlabel('MinimumScore');
+% 
+% data(update_interval_8,index) = ones(size(update_interval_8,1),1).*(8-2)/(8-2);
+% data(update_interval_5,index) = ones(size(update_interval_5,1),1).*(5-2)/(8-2);
+% data(update_interval_2,index) = ones(size(update_interval_2,1),1).*(2-2)/(8-2);
+% figure(4)
+% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+%     'MarkerFaceColor',[0 .75 .75],...
+%     'MarkerEdgeColor','k');
+% xlabel('TPR');
+% ylabel('FPR');
+% zlabel('Update Interval');
 
-[coeff,score,latend]=pca(data);
-coeff
-latend
+% [coeff,score,latend]=pca(data(gmapping,:));
+% coeff
+% latend
+% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+%     'MarkerFaceColor',[0 .75 .75],...
+%     'MarkerEdgeColor','k');
 
 
 
