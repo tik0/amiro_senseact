@@ -7,7 +7,8 @@ cGrey = [191,191,191]./255;
 uDGreen = [0,117,86]./255;
 cBGreen = [204,227,221]./255;
 cPurple = [127,13,93]./255;
-doPrint = False
+% doPrint = true;
+doPrint = false;
 
 
 [fpr,tpr,mr,algorithm,ground_truth] = importfile('rocs.csv',2,0);
@@ -632,6 +633,16 @@ hold off;
 if doPrint print('HectorMapping_Resolution_2D','-dsvg'); end
 fig_num = fig_num+1;
 
+
+% Some more plots
+data = [tpr,fpr];
+
+figure(fig_num)
+plot(fpr(gmapping),tpr(gmapping),'o','Color',uL,'MarkerSize',5);
+hold on;
+plot(fpr(hector_mapping),tpr(hector_mapping),'x','Color',uLGreen,'MarkerSize',5);
+plot(fpr(octomapping),tpr(octomapping),'*','Color',cBlue,'MarkerSize',5');
+hold off;
 
 
 % Mean doesn't help

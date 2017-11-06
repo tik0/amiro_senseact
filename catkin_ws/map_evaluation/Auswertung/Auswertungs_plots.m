@@ -634,6 +634,22 @@ if doPrint print('HectorMapping_Resolution_2D','-dsvg'); end
 fig_num = fig_num+1;
 
 
+% Some more plots
+data = [tpr,fpr];
+
+figure(fig_num)
+plot(fpr(gmapping),tpr(gmapping),'o','Color',uLGreen);
+hold on;
+plot(fpr(hector_mapping),tpr(hector_mapping),'o','Color',cRed);
+plot(fpr(octomapping),tpr(octomapping),'o','Color',cBlue);
+hold off;
+xlim([0,0.16]);
+ylim([0,1]);
+xlabel('FPR');
+ylabel('TPR');
+lgd = legend('gmapping','hector mapping','octo mapping','Location','southeast');
+if doPrint print('Mapping_Algorithms_overview','-dsvg'); end
+fig_num = fig_num+1;
 
 % Mean doesn't help
 % particles_20_fpr_m = sum(fpr(particles_20))/size((particles_20),1);
