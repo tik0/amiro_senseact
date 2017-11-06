@@ -59,11 +59,13 @@ data(res_005,index) = ones(size(res_005,1),1).*0.05;
 data(res_01,index) = ones(size(res_01,1),1).*0.1;
 % index = index+1;
 [coeff,score,latend]=pca(data(gmapping,:));
+vrange = [0.025,0.1];
+xrange = [0.0,0.12];
 
 fig_num = 1;
 figure(fig_num)
 scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
-    'MarkerFaceColor',uDGreen,...
+    'MarkerFaceColor',cBlue,...
     'MarkerEdgeColor','k');
 xlabel('TPR');
 ylabel('FPR');
@@ -75,27 +77,26 @@ f2 = fittype(strcat(num2str(m2),'*x+a'));
 fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
 fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
 hold on;
-plot3([0.025,0.1].*m1+fitobj1.a,[0.025,0.1].*m2+fitobj2.a,[0.025,0.1]);
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',);
 hold off;
 view(-45,50)
-XColor(cBlue);
-
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
 fig_num = fig_num+1;
 
 figure(fig_num)
 [hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
 hLine1.LineStyle = 'none';
 hLine1.Marker = '.';
-hLine1.MarkerFaceColor = cBlue;
-hLine1.MarkerEdgeColor = cBlue;
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
 hLine2.LineStyle = 'none';
 hLine2.Marker = 'x';
 hLine2.MarkerFaceColor = cRed;
 hLine2.MarkerEdgeColor = cRed;
-hAx(1).YColor = cBlue;
+hAx(1).YColor = uDGreen;
 hAx(2).YColor = cRed;
-hold on;
-xrange = [0.0,0.12];
+
 ylim1 = [0,1];
 % ylim2 = ylim(hAx(2));
 ylim2 = [0,0.16];
@@ -103,80 +104,203 @@ ylim(hAx(1),ylim1);
 ylim(hAx(2),ylim2);
 xlim(hAx(1),xrange);
 xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
 [hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
 ylim(hAx(1),ylim1);
 ylim(hAx(2),ylim2);
 xlim(hAx(1),xrange);
 xlim(hAx(2),xrange);
 hLine1.LineStyle = '-';
-hLine1.Color = cBlue;
+hLine1.Color = uDGreen;
 hLine2.LineStyle = '-';
 hLine2.Color = cRed;
-hAx(1).YColor = cBlue;
+hAx(1).YColor = uDGreen;
 hAx(2).YColor = cRed;
 ylabel(hAx(1),'TPR');
 ylabel(hAx(2),'FPR');
 xlabel('Resolution');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
 hold off;
 fig_num = fig_num+1;
 
-% data(particles_20,index) = ones(size(particles_20,1),1).*20;
-% data(particles_50,index) = ones(size(particles_50,1),1).*50;
-% data(particles_75,index) = ones(size(particles_75,1),1).*75;
+
+data(particles_20,index) = ones(size(particles_20,1),1).*20;
+data(particles_50,index) = ones(size(particles_50,1),1).*50;
+data(particles_75,index) = ones(size(particles_75,1),1).*75;
+% index = index+1;
+[coeff,score,latend]=pca(data(gmapping,:));
+vrange = [20,75];
+xrange = [15,80];
+
+figure(fig_num)
+scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Resolution');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
+fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+% ylim2 = ylim(hAx(2));
+ylim2 = [0,0.16];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Resolution');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+fig_num = fig_num+1;
+
+
+
+
+data(minimumScore_00,index) = ones(size(minimumScore_00,1),1).*0;
+data(minimumScore_001,index) = ones(size(minimumScore_001,1),1).*0.01;
+data(minimumScore_03,index) = ones(size(minimumScore_03,1),1).*0.3;
 % % index = index+1;
-% figure(2)
-% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
-%     'MarkerFaceColor',[0 .75 .75],...
-%     'MarkerEdgeColor','k');
-% xlabel('TPR');
-% ylabel('FPR');
-% zlabel('Particles');
-% 
-% data(minimumScore_00,index) = ones(size(minimumScore_00,1),1).*0;
-% data(minimumScore_001,index) = ones(size(minimumScore_001,1),1).*0.01;
-% data(minimumScore_03,index) = ones(size(minimumScore_03,1),1).*0.3;
-% % index = index+1;
-% figure(3)
-% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
-%     'MarkerFaceColor',[0 .75 .75],...
-%     'MarkerEdgeColor','k');
-% xlabel('TPR');
-% ylabel('FPR');
-% zlabel('MinimumScore');
-% 
-% data(update_interval_8,index) = ones(size(update_interval_8,1),1).*(8-2)/(8-2);
-% data(update_interval_5,index) = ones(size(update_interval_5,1),1).*(5-2)/(8-2);
-% data(update_interval_2,index) = ones(size(update_interval_2,1),1).*(2-2)/(8-2);
-% figure(4)
-% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
-%     'MarkerFaceColor',[0 .75 .75],...
-%     'MarkerEdgeColor','k');
-% xlabel('TPR');
-% ylabel('FPR');
-% zlabel('Update Interval');
+[coeff,score,latend]=pca(data(gmapping,:));
+vrange = [0,0.3];
+xrange = [-0.05,0.35];
 
-% [coeff,score,latend]=pca(data(gmapping,:));
-% coeff
-% latend
-% scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
-%     'MarkerFaceColor',[0 .75 .75],...
-%     'MarkerEdgeColor','k');
+figure(fig_num)
+scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Resolution');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
+fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+% ylim2 = ylim(hAx(2));
+ylim2 = [0,0.16];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Resolution');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+fig_num = fig_num+1;
 
 
+data(update_interval_8,index) = ones(size(update_interval_8,1),1).*(8-2)/(8-2);
+data(update_interval_5,index) = ones(size(update_interval_5,1),1).*(5-2)/(8-2);
+data(update_interval_2,index) = ones(size(update_interval_2,1),1).*(2-2)/(8-2);
 
-% index_default = intersect(intersect(particles_20,minimumScore_00),update_interval_5);
-% 
-% plot(fpr(index_default),tpr(index_default),'bx')
-% hold on;
-% plot(fpr(intersect(index_default,res_0025)),tpr(intersect(index_default,res_0025)),'ro');
-% plot(fpr(intersect(index_default,res_005)),tpr(intersect(index_default,res_005)),'go');
-% plot(fpr(intersect(index_default,res_01)),tpr(intersect(index_default,res_01)),'bo');
-% 
-% plot(fpr(intersect(index_default,hokuyo_1)),tpr(intersect(index_default,hokuyo_1)),'co','Markersize',15);
-% plot(fpr(intersect(index_default,hokuyo_2)),tpr(intersect(index_default,hokuyo_2)),'mo','Markersize',15);
-% plot(fpr(intersect(index_default,sick_1)),tpr(intersect(index_default,sick_1)),'yo','Markersize',15);
-% plot(fpr(intersect(index_default,sick_2)),tpr(intersect(index_default,sick_2)),'ko','Markersize',15);
-% hold off;
 
 
 
