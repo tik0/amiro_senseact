@@ -232,7 +232,7 @@ figure(fig_num)
 plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
 xlim(xrange);
 ylim(ylim1);
-xlabel('Resolution');
+xlabel('Particles');
 ylabel('Score');
 title('Youden''s J Statistic');
 if doPrint print('Gmapping_Particles_JStatistic_Score','-dsvg'); end
@@ -323,7 +323,7 @@ figure(fig_num)
 plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
 xlim(xrange);
 ylim(ylim1);
-xlabel('Resolution');
+xlabel('Minimum Score');
 ylabel('Score');
 title('Youden''s J Statistic');
 if doPrint print('Gmapping_MinimumScore_JStatistic_Score','-dsvg'); end
@@ -413,7 +413,7 @@ figure(fig_num)
 plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
 xlim(xrange);
 ylim(ylim1);
-xlabel('Resolution');
+xlabel('Update Interval');
 ylabel('Score');
 title('Youden''s J Statistic');
 if doPrint print('Gmapping_UpdateInterval_JStatistic_Score','-dsvg'); end
@@ -509,7 +509,7 @@ figure(fig_num)
 plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
 xlim(xrange);
 ylim(ylim1);
-xlabel('Resolution');
+xlabel('Update Angle Threshold');
 ylabel('Score');
 title('Youden''s J Statistic');
 if doPrint print('HectorMapping_UpdateAngleThresh_JStatistic_Score','-dsvg'); end
@@ -604,7 +604,7 @@ figure(fig_num)
 plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
 xlim(xrange);
 ylim(ylim1);
-xlabel('Resolution');
+xlabel('Update Distance Threshold');
 ylabel('Score');
 title('Youden''s J Statistic');
 if doPrint print('HectorMapping_UpdateDistanceThresh_JStatistic_Score','-dsvg'); end
