@@ -509,7 +509,7 @@ hAx(1).YColor = uDGreen;
 hAx(2).YColor = cRed;
 
 ylim1 = [0,1];
-ylim2 = [0,0.16];
+ylim2 = [0,0.2];
 ylim(hAx(1),ylim1);
 ylim(hAx(2),ylim2);
 xlim(hAx(1),xrange);
@@ -612,7 +612,7 @@ hAx(1).YColor = uDGreen;
 hAx(2).YColor = cRed;
 
 ylim1 = [0,1];
-ylim2 = [0,0.16];
+ylim2 = [0,0.2];
 ylim(hAx(1),ylim1);
 ylim(hAx(2),ylim2);
 xlim(hAx(1),xrange);
@@ -712,7 +712,7 @@ hAx(1).YColor = uDGreen;
 hAx(2).YColor = cRed;
 
 ylim1 = [0,1];
-ylim2 = [0,0.16];
+ylim2 = [0,0.2];
 ylim(hAx(1),ylim1);
 ylim(hAx(2),ylim2);
 xlim(hAx(1),xrange);
