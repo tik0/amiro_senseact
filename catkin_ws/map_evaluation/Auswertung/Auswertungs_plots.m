@@ -8,7 +8,7 @@ uDGreen = [0,117,86]./255;
 cBGreen = [204,227,221]./255;
 cPurple = [127,13,93]./255;
 doPrint = true;
-% doPrint = false;
+doPrint = false;
 
 
 [fpr,tpr,mr,algorithm,ground_truth] = importfile('rocs.csv',2,0);
@@ -20,7 +20,7 @@ mr = mr(I);
 ground_truth = ground_truth(I);
 
 coords = [fpr,tpr];
-text = [algorithm,ground_truth];
+% text = [algorithm,ground_truth];
 
 hokuyo_1 = find(not(cellfun('isempty',strfind(algorithm,'hokuyo_1'))));
 hokuyo_2 = find(not(cellfun('isempty',strfind(algorithm,'hokuyo_2'))));
@@ -776,6 +776,24 @@ ylabel('TPR');
 lgd = legend('gmapping','hector mapping','octo mapping','Location','southeast');
 % if doPrint print('Mapping_Algorithms_overview','-dsvg'); end
 % print('Mapping_Algorithms_overview','-dsvg');
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(fpr(octomapping),tpr(octomapping),'x','Color',cBlue,'MarkerSize',12);
+hold on;
+xs = fpr(octomapping);
+ys = tpr(octomapping);
+plot([xs(1),xs(1)],[ys(1),xs(1)],'--','Color',cRed);
+plot([0,0.5],[0,.5],'--','Color',cOrange);
+txt = 'J';
+text(xs(1)+.005,xs(1)+(ys(1)-xs(1))/2.0,txt);
+lgd = legend('Octomapping','Location','southeast');
+hold off;
+xlim([0,.5]);
+ylim([0,.5]);
+xlabel('FPR');
+ylabel('TPR');
+print('Octomapping_JScore','-dsvg');
 fig_num = fig_num+1;
 
 % Mean doesn't help
