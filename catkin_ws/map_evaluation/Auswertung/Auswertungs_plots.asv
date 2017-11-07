@@ -8,7 +8,7 @@ uDGreen = [0,117,86]./255;
 cBGreen = [204,227,221]./255;
 cPurple = [127,13,93]./255;
 doPrint = true;
-doPrint = false;
+% doPrint = false;
 
 
 [fpr,tpr,mr,algorithm,ground_truth] = importfile('rocs.csv',2,0);
@@ -66,9 +66,17 @@ xrange = [0.0,0.12];
 
 fig_num = 1;
 figure(fig_num)
-scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+scatter3(data(intersect(gmapping,res_0025),1),data(intersect(gmapping,res_0025),2),data(intersect(gmapping,res_0025),3),...
     'MarkerFaceColor',cBlue,...
     'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(gmapping,res_005),1),data(intersect(gmapping,res_005),2),data(intersect(gmapping,res_005),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(gmapping,res_01),1),data(intersect(gmapping,res_01),2),data(intersect(gmapping,res_01),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
 xlabel('TPR');
 ylabel('FPR');
 zlabel('Resolution');
@@ -144,7 +152,7 @@ ylim(ylim1);
 xlabel('Resolution');
 ylabel('Score');
 title('Youden''s J Statistic');
-if doPrint print('Youden_Score'); end
+if doPrint print('Gmapping_Resolution_JStatistic_Score','-dsvg'); end
 fig_num = fig_num+1;
 
 
@@ -157,9 +165,17 @@ vrange = [20,75];
 xrange = [15,80];
 
 figure(fig_num)
-scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
+scatter3(data(intersect(gmapping,particles_20),1),data(intersect(gmapping,particles_20),2),data(intersect(gmapping,particles_20),3),...
     'MarkerFaceColor',cBlue,...
     'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(gmapping,particles_50),1),data(intersect(gmapping,particles_50),2),data(intersect(gmapping,particles_50),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(gmapping,particles_75),1),data(intersect(gmapping,particles_75),2),data(intersect(gmapping,particles_75),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
 xlabel('TPR');
 ylabel('FPR');
 zlabel('Particles');
@@ -228,7 +244,15 @@ hold off;
 if doPrint print('Gmapping_Particles_2D','-dsvg'); end
 fig_num = fig_num+1;
 
-
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Particles');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('Gmapping_Particles_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
 
 
 data(minimumScore_00,index) = ones(size(minimumScore_00,1),1).*0;
@@ -243,6 +267,8 @@ figure(fig_num)
 scatter3(data(gmapping,1),data(gmapping,2),data(gmapping,3),...
     'MarkerFaceColor',cBlue,...
     'MarkerEdgeColor','k');
+hold on;
+hold off;
 xlabel('TPR');
 ylabel('FPR');
 zlabel('Minimum Score');
@@ -309,6 +335,16 @@ hAx(2).YTickLabelMode = 'auto';
 hAx(1).Box = 'off';
 hold off;
 if doPrint print('Gmapping_MinimumScore_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Minimum Score');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('Gmapping_MinimumScore_JStatistic_Score','-dsvg'); end
 fig_num = fig_num+1;
 
 
@@ -389,6 +425,16 @@ hAx(2).YTickLabelMode = 'auto';
 hAx(1).Box = 'off';
 hold off;
 if doPrint print('Gmapping_UpdateInterval_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Update Interval');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('Gmapping_UpdateInterval_JStatistic_Score','-dsvg'); end
 fig_num = fig_num+1;
 
 
@@ -477,6 +523,16 @@ hold off;
 if doPrint print('HectorMapping_UpdateAngleThresh_2D','-dsvg'); end
 fig_num = fig_num+1;
 
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Update Angle Threshold');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('HectorMapping_UpdateAngleThresh_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
 
 
 update_distance_01 = find(not(cellfun('isempty',strfind(algorithm,'update_distance_thresh_0.1'))));
@@ -562,6 +618,17 @@ hold off;
 if doPrint print('HectorMapping_UpdateDistanceThresh_2D','-dsvg'); end
 fig_num = fig_num+1;
 
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Update Distance Threshold');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('HectorMapping_UpdateDistanceThresh_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
+
 
 data(res_0025,index) = ones(size(res_0025,1),1).*0.025;
 data(res_005,index) = ones(size(res_005,1),1).*0.05;
@@ -643,6 +710,17 @@ hold off;
 if doPrint print('HectorMapping_Resolution_2D','-dsvg'); end
 fig_num = fig_num+1;
 
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Resolution');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('HectorMapping_Resolution_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
+
 
 % Some more plots
 data = [tpr,fpr];
@@ -658,7 +736,7 @@ ylim([0,1]);
 xlabel('FPR');
 ylabel('TPR');
 lgd = legend('gmapping','hector mapping','octo mapping','Location','southeast');
-if doPrint print('Mapping_Algorithms_overview','-dsvg'); end
+% if doPrint print('Mapping_Algorithms_overview','-dsvg'); end
 % print('Mapping_Algorithms_overview','-dsvg');
 fig_num = fig_num+1;
 
