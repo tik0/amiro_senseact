@@ -1,4 +1,15 @@
 clear;
+cOrange = [245,159,0]./255;
+cRed = [121,16,17]./255;
+cBlue = [0,154,198]./255;
+uLGreen = [182,200,40]./255;
+cGrey = [191,191,191]./255;
+uDGreen = [0,117,86]./255;
+cBGreen = [204,227,221]./255;
+cPurple = [127,13,93]./255;
+doPrint = true;
+doPrint = false;
+
 
 [fpr,tpr,mr,algorithm,ground_truth] = importfile('rocs.csv',2,0);
 
@@ -9,7 +20,7 @@ mr = mr(I);
 ground_truth = ground_truth(I);
 
 coords = [fpr,tpr];
-text = [algorithm,ground_truth];
+% text = [algorithm,ground_truth];
 
 hokuyo_1 = find(not(cellfun('isempty',strfind(algorithm,'hokuyo_1'))));
 hokuyo_2 = find(not(cellfun('isempty',strfind(algorithm,'hokuyo_2'))));
@@ -42,45 +53,748 @@ update_interval_2 = find(not(cellfun('isempty',strfind(algorithm,'update_interva
 
 % let's try pca
 len = size(fpr,1);
-data = [tpr,fpr,zeros(len,4)];
+data = [tpr,fpr,zeros(len,1)];
+index=3;
 
-data(res_0025,3) = ones(size(res_0025,1),1).*(0.025-0.025)/(0.1-0.025);
-data(res_005,3) = ones(size(res_005,1),1).*(0.05-0.025)/(0.1-0.025);
-data(res_01,3) = ones(size(res_01,1),1).*(0.1-0.025)/(0.1-0.025);
+data(res_0025,index) = ones(size(res_0025,1),1).*0.025;
+data(res_005,index) = ones(size(res_005,1),1).*0.05;
+data(res_01,index) = ones(size(res_01,1),1).*0.1;
+% index = index+1;
+[coeff,score,latend]=pca(data(gmapping,:));
+vrange = [0.025,0.1];
+xrange = [0.0,0.12];
 
-data(particles_20,4) = ones(size(particles_20,1),1).*(20-20)/(75-20);
-data(particles_50,4) = ones(size(particles_50,1),1).*(50-20)/(75-20);
-data(particles_75,4) = ones(size(particles_75,1),1).*(75-20)/(75-20);
+fig_num = 1;
+figure(fig_num)
+scatter3(data(intersect(gmapping,res_0025),1),data(intersect(gmapping,res_0025),2),data(intersect(gmapping,res_0025),3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(gmapping,res_005),1),data(intersect(gmapping,res_005),2),data(intersect(gmapping,res_005),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(gmapping,res_01),1),data(intersect(gmapping,res_01),2),data(intersect(gmapping,res_01),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Resolution');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
+fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',3);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+if doPrint print('Gmapping_Resolution_Cloud','-dsvg'); end
+fig_num = fig_num+1;
 
-data(minimumScore_00,5) = ones(size(minimumScore_00,1),1).*0;
-data(minimumScore_001,5) = ones(size(minimumScore_001,1),1).*0.01/0.3;
-data(minimumScore_03,5) = ones(size(minimumScore_03,1),1).*0.3/0.3;
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
 
-data(update_interval_8,6) = ones(size(update_interval_8,1),1).*(8-2)/(8-2);
-data(update_interval_5,6) = ones(size(update_interval_5,1),1).*(5-2)/(8-2);
-data(update_interval_2,6) = ones(size(update_interval_2,1),1).*(2-2)/(8-2);
+ylim1 = [0,1];
+ylim2 = [0,0.16];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
 
-[coeff,score,latend]=pca(data);
-coeff
-latend
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Resolution');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+if doPrint print('Gmapping_Resolution_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Resolution');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('Gmapping_Resolution_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
+
+data(particles_20,index) = ones(size(particles_20,1),1).*20;
+data(particles_50,index) = ones(size(particles_50,1),1).*50;
+data(particles_75,index) = ones(size(particles_75,1),1).*75;
+% index = index+1;
+[coeff,score,latend]=pca(data(gmapping,:));
+vrange = [20,75];
+xrange = [15,80];
+
+figure(fig_num)
+scatter3(data(intersect(gmapping,particles_20),1),data(intersect(gmapping,particles_20),2),data(intersect(gmapping,particles_20),3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(gmapping,particles_50),1),data(intersect(gmapping,particles_50),2),data(intersect(gmapping,particles_50),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(gmapping,particles_75),1),data(intersect(gmapping,particles_75),2),data(intersect(gmapping,particles_75),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Particles');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
+fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',3);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+if doPrint print('Gmapping_Particles_Cloud','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+ylim2 = [0,0.16];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Particles');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+if doPrint print('Gmapping_Particles_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Particles');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('Gmapping_Particles_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
+
+data(minimumScore_00,index) = ones(size(minimumScore_00,1),1).*0;
+data(minimumScore_001,index) = ones(size(minimumScore_001,1),1).*0.01;
+data(minimumScore_03,index) = ones(size(minimumScore_03,1),1).*0.3;
+% % index = index+1;
+[coeff,score,latend]=pca(data(gmapping,:));
+vrange = [0,0.3];
+xrange = [-0.05,0.35];
+
+figure(fig_num)
+scatter3(data(intersect(gmapping,minimumScore_00),1),data(intersect(gmapping,minimumScore_00),2),data(intersect(gmapping,minimumScore_00),3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(gmapping,minimumScore_001),1),data(intersect(gmapping,minimumScore_001),2),data(intersect(gmapping,minimumScore_001),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(gmapping,minimumScore_03),1),data(intersect(gmapping,minimumScore_03),2),data(intersect(gmapping,minimumScore_03),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Minimum Score');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
+fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',3);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+if doPrint print('Gmapping_MinimumScore_Cloud','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+ylim2 = [0,0.16];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Minimum Score');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+if doPrint print('Gmapping_MinimumScore_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Minimum Score');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('Gmapping_MinimumScore_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
+
+data(update_interval_8,index) = ones(size(update_interval_8,1),1).*8;
+data(update_interval_5,index) = ones(size(update_interval_5,1),1).*5;
+data(update_interval_2,index) = ones(size(update_interval_2,1),1).*2;
+[coeff,score,latend]=pca(data(gmapping,:));
+vrange = [2,8];
+xrange = [1,9];
+
+figure(fig_num)
+scatter3(data(intersect(gmapping,update_interval_2),1),data(intersect(gmapping,update_interval_2),2),data(intersect(gmapping,update_interval_2),3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(gmapping,update_interval_5),1),data(intersect(gmapping,update_interval_5),2),data(intersect(gmapping,update_interval_5),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(gmapping,update_interval_8),1),data(intersect(gmapping,update_interval_8),2),data(intersect(gmapping,update_interval_8),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Map Update Interval');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(gmapping,3),data(gmapping,1),f1);
+fitobj2 = fit(data(gmapping,3),data(gmapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',3);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+if doPrint print('Gmapping_UpdateInterval_Cloud','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(gmapping,3),data(gmapping,1),data(gmapping,3),data(gmapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+ylim2 = [0,0.16];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Map Update Interval');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+if doPrint print('Gmapping_UpdateInterval_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Update Interval');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('Gmapping_UpdateInterval_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
 
 
 
-% index_default = intersect(intersect(particles_20,minimumScore_00),update_interval_5);
-% 
-% plot(fpr(index_default),tpr(index_default),'bx')
-% hold on;
-% plot(fpr(intersect(index_default,res_0025)),tpr(intersect(index_default,res_0025)),'ro');
-% plot(fpr(intersect(index_default,res_005)),tpr(intersect(index_default,res_005)),'go');
-% plot(fpr(intersect(index_default,res_01)),tpr(intersect(index_default,res_01)),'bo');
-% 
-% plot(fpr(intersect(index_default,hokuyo_1)),tpr(intersect(index_default,hokuyo_1)),'co','Markersize',15);
-% plot(fpr(intersect(index_default,hokuyo_2)),tpr(intersect(index_default,hokuyo_2)),'mo','Markersize',15);
-% plot(fpr(intersect(index_default,sick_1)),tpr(intersect(index_default,sick_1)),'yo','Markersize',15);
-% plot(fpr(intersect(index_default,sick_2)),tpr(intersect(index_default,sick_2)),'ko','Markersize',15);
-% hold off;
+% hector mapping
+update_angle_05 = find(not(cellfun('isempty',strfind(algorithm,'update_angle_thresh_0.5'))));
+update_angle_09 = find(not(cellfun('isempty',strfind(algorithm,'update_angle_thresh_0.9'))));
+update_angle_13 = find(not(cellfun('isempty',strfind(algorithm,'update_angle_thresh_1.3'))));
+
+data(update_angle_05,index) = ones(size(update_angle_05,1),1).*0.5;
+data(update_angle_09,index) = ones(size(update_angle_09,1),1).*0.9;
+data(update_angle_13,index) = ones(size(update_angle_13,1),1).*1.3;
+[coeff,score,latend]=pca(data(hector_mapping,:));
+vrange = [0.5,1.3];
+xrange = [0.3,1.5];
+
+figure(fig_num)
+scatter3(data(intersect(hector_mapping,update_angle_05),1),data(intersect(hector_mapping,update_angle_05),2),data(intersect(hector_mapping,update_angle_05),3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(hector_mapping,update_angle_09),1),data(intersect(hector_mapping,update_angle_09),2),data(intersect(hector_mapping,update_angle_09),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(hector_mapping,update_angle_13),1),data(intersect(hector_mapping,update_angle_13),2),data(intersect(hector_mapping,update_angle_13),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Update Angle Threshold');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(hector_mapping,3),data(hector_mapping,1),f1);
+fitobj2 = fit(data(hector_mapping,3),data(hector_mapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',3);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+if doPrint print('HectorMapping_UpdateAngleThresh_Cloud','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(hector_mapping,3),data(hector_mapping,1),data(hector_mapping,3),data(hector_mapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+ylim2 = [0,0.2];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Update Angle Threshold');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+if doPrint print('HectorMapping_UpdateAngleThresh_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Update Angle Threshold');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('HectorMapping_UpdateAngleThresh_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
 
 
+
+update_distance_01 = find(not(cellfun('isempty',strfind(algorithm,'update_distance_thresh_0.1'))));
+update_distance_04 = find(not(cellfun('isempty',strfind(algorithm,'update_distance_thresh_0.4'))));
+update_distance_07 = find(not(cellfun('isempty',strfind(algorithm,'update_distance_thresh_0.7'))));
+
+data(update_distance_01,index) = ones(size(update_distance_01,1),1).*0.1;
+data(update_distance_04,index) = ones(size(update_distance_04,1),1).*0.4;
+data(update_distance_07,index) = ones(size(update_distance_07,1),1).*0.7;
+[coeff,score,latend]=pca(data(hector_mapping,:));
+vrange = [0.1,0.7];
+xrange = [0,0.8];
+
+figure(fig_num)
+scatter3(data(intersect(hector_mapping,update_distance_01),1),data(intersect(hector_mapping,update_distance_01),2),data(intersect(hector_mapping,update_distance_01),3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(hector_mapping,update_distance_04),1),data(intersect(hector_mapping,update_distance_04),2),data(intersect(hector_mapping,update_distance_04),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(hector_mapping,update_distance_07),1),data(intersect(hector_mapping,update_distance_07),2),data(intersect(hector_mapping,update_distance_07),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Update Distance Threshold');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(hector_mapping,3),data(hector_mapping,1),f1);
+fitobj2 = fit(data(hector_mapping,3),data(hector_mapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',3);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+if doPrint print('HectorMapping_UpdateDistanceThresh_Cloud','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(hector_mapping,3),data(hector_mapping,1),data(hector_mapping,3),data(hector_mapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+ylim2 = [0,0.2];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Update Distance Threshold');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+if doPrint print('HectorMapping_UpdateDistanceThresh_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Update Distance Threshold');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('HectorMapping_UpdateDistanceThresh_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
+
+
+data(res_0025,index) = ones(size(res_0025,1),1).*0.025;
+data(res_005,index) = ones(size(res_005,1),1).*0.05;
+data(res_01,index) = ones(size(res_01,1),1).*0.1;
+% index = index+1;
+[coeff,score,latend]=pca(data(hector_mapping,:));
+vrange = [0.025,0.1];
+xrange = [0.0,0.12];
+
+figure(fig_num)
+scatter3(data(intersect(hector_mapping,res_0025),1),data(intersect(hector_mapping,res_0025),2),data(intersect(hector_mapping,res_0025),3),...
+    'MarkerFaceColor',cBlue,...
+    'MarkerEdgeColor','k');
+hold on;
+scatter3(data(intersect(hector_mapping,res_005),1),data(intersect(hector_mapping,res_005),2),data(intersect(hector_mapping,res_005),3),...
+    'MarkerFaceColor',uLGreen,...
+    'MarkerEdgeColor','k');
+scatter3(data(intersect(hector_mapping,res_01),1),data(intersect(hector_mapping,res_01),2),data(intersect(hector_mapping,res_01),3),...
+    'MarkerFaceColor',cGrey,...
+    'MarkerEdgeColor','k');
+hold off;
+xlabel('TPR');
+ylabel('FPR');
+zlabel('Resolution');
+m1=coeff(1,1)/coeff(3,1);
+m2=coeff(2,1)/coeff(3,1);
+f1 = fittype(strcat(num2str(m1),'*x+a'));
+f2 = fittype(strcat(num2str(m2),'*x+a'));
+fitobj1 = fit(data(hector_mapping,3),data(hector_mapping,1),f1);
+fitobj2 = fit(data(hector_mapping,3),data(hector_mapping,2),f2);
+hold on;
+plot3(vrange.*m1+fitobj1.a,vrange.*m2+fitobj2.a,vrange,'-','Color',cOrange,'LineWidth',3);
+hold off;
+view(-45,50)
+set(gca,'xcolor',uDGreen);
+set(gca,'ycolor',cRed);
+if doPrint print('HectorMapping_Resolution_Cloud','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+[hAx,hLine1,hLine2] = plotyy(data(hector_mapping,3),data(hector_mapping,1),data(hector_mapping,3),data(hector_mapping,2));
+hLine1.LineStyle = 'none';
+hLine1.Marker = '.';
+hLine1.MarkerFaceColor = uDGreen;
+hLine1.MarkerEdgeColor = uDGreen;
+hLine2.LineStyle = 'none';
+hLine2.Marker = 'x';
+hLine2.MarkerFaceColor = cRed;
+hLine2.MarkerEdgeColor = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+
+ylim1 = [0,1];
+ylim2 = [0,0.2];
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hAx(2).YTick = linspace(ylim2(1),ylim2(2),10);
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold on;
+[hAx,hLine1,hLine2] = plotyy(xrange,xrange.*m1+fitobj1.a,xrange,xrange.*m2+fitobj2.a);
+
+ylim(hAx(1),ylim1);
+ylim(hAx(2),ylim2);
+xlim(hAx(1),xrange);
+xlim(hAx(2),xrange);
+hLine1.LineStyle = '-';
+hLine1.Color = uDGreen;
+hLine2.LineStyle = '-';
+hLine2.Color = cRed;
+hAx(1).YColor = uDGreen;
+hAx(2).YColor = cRed;
+ylabel(hAx(1),'TPR');
+ylabel(hAx(2),'FPR');
+xlabel('Resolution');
+hAx(1).YTickMode = 'auto';
+hAx(2).YTickMode = 'auto';
+hAx(1).YTickLabelMode = 'auto';
+hAx(2).YTickLabelMode = 'auto';
+hAx(1).Box = 'off';
+hold off;
+if doPrint print('HectorMapping_Resolution_2D','-dsvg'); end
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(xrange,xrange.*(m1-m2)+fitobj1.a-fitobj2.a);
+xlim(xrange);
+ylim(ylim1);
+xlabel('Resolution');
+ylabel('Score');
+title('Youden''s J Statistic');
+if doPrint print('HectorMapping_Resolution_JStatistic_Score','-dsvg'); end
+fig_num = fig_num+1;
+
+
+
+% Some more plots
+data = [tpr,fpr];
+
+figure(fig_num)
+plot(fpr(gmapping),tpr(gmapping),'o','Color',uLGreen);
+hold on;
+plot(fpr(hector_mapping),tpr(hector_mapping),'o','Color',cRed);
+plot(fpr(octomapping),tpr(octomapping),'o','Color',cBlue);
+hold off;
+xlim([0,0.16]);
+ylim([0,1]);
+xlabel('FPR');
+ylabel('TPR');
+lgd = legend('gmapping','hector mapping','octo mapping','Location','southeast');
+% if doPrint print('Mapping_Algorithms_overview','-dsvg'); end
+% print('Mapping_Algorithms_overview','-dsvg');
+fig_num = fig_num+1;
+
+figure(fig_num)
+plot(fpr(octomapping),tpr(octomapping),'x','Color',cBlue,'MarkerSize',12);
+hold on;
+xs = fpr(octomapping);
+ys = tpr(octomapping);
+plot([xs(1),xs(1)],[ys(1),xs(1)],'--','Color',cRed);
+plot([0,0.5],[0,.5],'--','Color',cOrange);
+txt = 'J';
+text(xs(1)+.005,xs(1)+(ys(1)-xs(1))/2.0,txt);
+lgd = legend('Octomapping','Location','southeast');
+hold off;
+xlim([0,.5]);
+ylim([0,.5]);
+xlabel('FPR');
+ylabel('TPR');
+print('Octomapping_JScore','-dsvg');
+fig_num = fig_num+1;
 
 % Mean doesn't help
 % particles_20_fpr_m = sum(fpr(particles_20))/size((particles_20),1);
@@ -156,14 +870,6 @@ latend
 
 % just random stuff following
 
-% hector mapping
-% update_angle_05
-% update_angle_09
-% update_angle_13
-% 
-% update_distance_01
-% update_distance_04
-% update_distance_07
 
 
 % mapping = gmapping;
