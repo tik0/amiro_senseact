@@ -171,8 +171,8 @@
       <param name="odom_frame" value="amiro$(arg amiroNr)/odom"/>
       <param name="base_frame" value="amiro$(arg amiroNr)/base_link"/>
 
-      <!-- <param name="map_resolution" value="0.005"/> -->
-      <!-- <param name="map_size" value="1024"/> -->
+      <param name="map_resolution" value="0.1"/>
+      <param name="map_size" value="5000"/>
 
       <param name="pub_map_odom_transform" value="true"/>
       <!-- <param name="laser_min_dist" value="0.01"/> -->
@@ -205,9 +205,12 @@
       <remap from="scan" to="/amiro$(arg amiroNr)/laserscan"/>
       <param name="base_frame" value="amiro$(arg amiroNr)/base_link"/>
       <param name="odom_frame" value="amiro$(arg amiroNr)/odom"/>
-      <!-- <param name="map_update_interval" value="0.1"/> -->
+      <param name="map_update_interval" value="0.01"/>
       <!-- <param name="minimumScore" value="50"/> -->
-      <param name="particles" value="100"/>
+      <param name="delta" value="0.1"/>
+      <param name="minimumScore" value="0"/>
+      <param name="particles" value="50"/>
+      <param name="kernelSize" value="2"/>
     </node>
   </group>
   <!-- ################################################# -->
@@ -217,7 +220,7 @@
   <group if="$(arg frontier_exploration)">
     <node pkg="frontier_exploration" type="explore_client" name="amiro$(arg amiroNr)_explore_client" output="screen"/>
     <node pkg="frontier_exploration" type="explore_server" name="amiro$(arg amiroNr)_explore_server" output="screen">
-      <param name="frequency" value="1.0"/>
+      <param name="frequency" value="0.0"/>
       <!-- Should be less than sensor range -->
       <param name="goal_aliasing" value="1.5"/>
       <rosparam file="$(find amiro_2dnav)/costmap_common_params.yaml" command="load" ns="explore_costmap"/>

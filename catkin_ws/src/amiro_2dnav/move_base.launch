@@ -5,7 +5,7 @@
   <arg name="base_local_planner" default="base_local_planner/TrajectoryPlannerROS"/>
   <arg name="no_static_map" default="0"/>
 
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base$(arg amiroNr)" output="screen">
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <remap from="/cmd_vel" to="/amiro$(arg amiroNr)/cmd_vel"/>
 
     <param name="controller_frequency" value="15.0"/>
