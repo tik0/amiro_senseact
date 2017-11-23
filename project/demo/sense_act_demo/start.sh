@@ -1,6 +1,4 @@
 
-amiroNr=1
-
-./sendOdometryProtoPose -o /amiro${amiroNr}/pose -r 1 > /dev/0 &
-./senseSickTim -o /amiro${amiroNr}/laserscan > /dev/0 &
-./motorControl -i /amiro${amiroNr}/motor > /dev/0 &
+./sendOdometryProtoPose -o /$(hostname)/pose -r 1 > /dev/0 &
+./senseSickTim -o /$(hostname)/laserscan > /dev/0 &
+./motorControl -i /$(hostname)/motor > /dev/0 &
