@@ -49,8 +49,8 @@
     <arg name="xbox_controller" value="$(arg xboxController)"/>
     <arg name="keyboard_controller" value="0"/>
 
-    <arg name="nav_stack" value="1"/>
-    <arg name="no_static_map" value="1"/>
+    <arg name="nav_stack" value="0"/>
+    <arg name="no_static_map" value="0"/>
     <arg name="frontier_exploration" value="0"/>
 
     <arg name="hector_mapping" value="1"/>
