@@ -46,3 +46,6 @@
 [submodule "catkin_ws/src/octomap_ros"]
 	path = catkin_ws/src/octomap_ros
 	url = https://github.com/OctoMap/octomap_ros.git
+[submodule "catkin_ws/src/frontier_exploration"]
+	path = catkin_ws/src/frontier_exploration
+	url = https://github.com/paulbovbel/frontier_exploration.git
