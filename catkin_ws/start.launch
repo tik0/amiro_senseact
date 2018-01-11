@@ -1,33 +1,35 @@
 <launch>
 
   <arg name="rostimenow" default="false"/>
-  <arg name="xboxController" default="0"/>
+  <arg name="xboxController" default="1"/>
 
-  <arg name="laserscan" default="0"/>
-  <arg name="laserscan_sick" default="0"/>
+  <arg name="laserscan" default="1"/>
+  <arg name="laserscan_sick" default="1"/>
   <arg name="laserscan_hokuyo" default="0"/>
 
   <arg name="twb" default="0"/>
   <arg name="robot_localization" default="0"/>
-  <arg name="dynamic_tf_with_odom" default="0"/>
+  <arg name="dynamic_tf_with_odom" default="1"/>
   <arg name="dynamic_tf_with_ekf" default="0"/>
   <arg name="static_tf_map_odom" default="0"/>
 
+  <!-- Generate the clock scope from a any topic on /amiro1 -->
+  <group if="$(arg rostimenow)">
+    <param name="use_sim_time" value="$(arg rostimenow)"/>
+    <node pkg="rsb_to_ros_bridge" type="event_to_ros_clock" name="event_to_ros_clock" output="screen">
+      <param name="use_rsb_send_time" value="1"/>
+      <param name="scope_rsb" value="/amiro8/"/>
+    </node>
+  </group>
+  
   <include file="$(env MUROX_ROS)/xbox360_teleop.launch" if="$(arg xboxController)"/>
   <!-- <node name="rqt_topic" pkg="rqt_topic" type="rqt_topic"/> -->
-  <!-- <node name="rviz1" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/> -->
+  <node name="rviz1" pkg="rviz" type="rviz" args="-d $(env MUROX_ROS)/config.rviz"/>
   <!-- <node name="image_view" pkg="rqt_image_view" type="rqt_image_view"/> -->
   <!-- <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui"/> -->
 
-  <group if="$(arg rostimenow)">
-    <node pkg="rsb_to_ros_bridge" type="event_to_ros_clock" name="event_to_ros_clock" output="screen">
-      <param name="use_rsb_send_time" value="1"/>
-      <param name="scope_rsb" value="/amiro1/"/>
-    </node>
-  </group>
-
   <include file="$(env MUROX_ROS)/amiro.launch">
-    <arg name="amiroNr" value="1"/>
+    <arg name="amiroNr" value="8"/>
     <arg name="markerId" value="1"/>
 
     <arg name="laserscan" value="$(arg laserscan)"/>
@@ -49,11 +51,21 @@
 
     <arg name="nav_stack" value="0"/>
     <arg name="no_static_map" value="0"/>
+    <arg name="frontier_exploration" value="0"/>
 
-    <arg name="hector_mapping" value="0"/>
+    <arg name="hector_mapping" value="1"/>
     <arg name="octomap" value="0"/>
     <arg name="gmapping" value="0"/>
 
   </include>
 
+  <!--AMiRo CAD model-->
+  <include file="$(find amiro_description)/launch/amiro.launch" clear_params="true" ns="amiro8">
+    <arg name="robot_name" value="amiro8" />
+    <arg name="use_gazebo" value="false" />
+    <arg name="robot_position" value="-x 0.0 -y 0.0 -z 0.01" />
+    <arg name="update_rate" value="50.0" />
+    <arg name="robot_model" value="amiro_hokuyo.xacro" />
+  </include>
+  
 </launch>

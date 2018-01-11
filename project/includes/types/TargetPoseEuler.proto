@@ -1,6 +1,5 @@
 package rst.geometry;
 
-import "rst/geometry/Translation.proto";
 import "PoseEuler.proto";
 
 option java_outer_classname = "TargetPoseEulerType";
